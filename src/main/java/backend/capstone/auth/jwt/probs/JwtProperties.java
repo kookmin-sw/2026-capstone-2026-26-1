@@ -1,4 +1,4 @@
-package backend.capstone.auth.jwt;
+package backend.capstone.auth.jwt.probs;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 

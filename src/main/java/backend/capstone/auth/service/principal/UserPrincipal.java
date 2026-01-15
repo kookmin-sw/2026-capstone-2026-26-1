@@ -1,4 +1,4 @@
-package backend.capstone.auth.dto;
+package backend.capstone.auth.service.principal;
 
 import java.util.Collection;
 import java.util.List;

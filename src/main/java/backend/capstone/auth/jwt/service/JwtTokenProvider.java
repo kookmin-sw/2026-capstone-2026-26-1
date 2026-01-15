@@ -1,5 +1,6 @@
-package backend.capstone.auth.jwt;
+package backend.capstone.auth.jwt.service;
 
+import backend.capstone.auth.jwt.probs.JwtProperties;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;

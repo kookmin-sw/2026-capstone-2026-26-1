@@ -1,6 +1,6 @@
 package backend.capstone.auth.service;
 
-import backend.capstone.auth.dto.UserPrincipal;
+import backend.capstone.auth.service.principal.UserPrincipal;
 import backend.capstone.auth.util.OAuthAttributes;
 import backend.capstone.domain.user.entity.User;
 import backend.capstone.domain.user.mapper.UserMapper;
