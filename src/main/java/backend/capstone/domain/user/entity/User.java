@@ -7,6 +7,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -37,5 +38,14 @@ public class User {
 		this.providerId = providerId;
 		this.nickname = nickname;
 		this.profileImageUrl = profileImageUrl;
+	}
+
+	public void updateProfile(String nickname, String profileImageUrl) {
+		if (!Objects.equals(this.nickname, nickname)) {
+			this.nickname = nickname;
+		}
+		if (!Objects.equals(this.profileImageUrl, profileImageUrl)) {
+			this.profileImageUrl = profileImageUrl;
+		}
 	}
 }
