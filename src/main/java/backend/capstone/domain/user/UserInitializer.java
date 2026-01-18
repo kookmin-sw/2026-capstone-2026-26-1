@@ -19,7 +19,7 @@ public class UserInitializer implements ApplicationRunner {
 	@Override
 	public void run(ApplicationArguments args) throws Exception {
 		User testUser1 = User.builder()
-			.nickname("지은")
+			.nickname("테스트유저")
 			.profileImageUrl("https://example.com/profile1.jpg")
 			.provider(ProviderType.KAKAO)
 			.providerId("test_kakao_1")
