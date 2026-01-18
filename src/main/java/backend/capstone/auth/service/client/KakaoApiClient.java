@@ -2,7 +2,6 @@ package backend.capstone.auth.service.client;
 
 import backend.capstone.auth.service.dto.KakaoUserInfoResponse;
 import lombok.RequiredArgsConstructor;
-import org.springdoc.core.service.RequestBodyService;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -14,7 +13,6 @@ public class KakaoApiClient {
 
 	private final WebClient webClient;
 	private static final String USER_INFO_URI = "https://kapi.kakao.com/v2/user/me";
-	private final RequestBodyService requestBodyBuilder;
 
 	public KakaoUserInfoResponse getUserInfo(String kakaoAccessToken) {
 		return webClient.get()
