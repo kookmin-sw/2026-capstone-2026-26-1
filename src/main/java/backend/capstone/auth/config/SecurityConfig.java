@@ -1,5 +1,6 @@
 package backend.capstone.auth.config;
 
+import backend.capstone.auth.entrypoint.ExAuthenticationEntryPoint;
 import backend.capstone.auth.jwt.filter.JwtAuthenticationFilter;
 import backend.capstone.auth.service.CustomOAuth2UserService;
 import lombok.RequiredArgsConstructor;
@@ -16,9 +17,10 @@ public class SecurityConfig {
 
 	private final CustomOAuth2UserService customOAuth2UserService;
 	private final JwtAuthenticationFilter jwtFilter;
+	private final ExAuthenticationEntryPoint exAuthenticationEntryPoint;
 
 	@Bean
-	public SecurityFilterChain securityFilterChain(HttpSecurity http) {
+	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 		http
 			.csrf(csrf -> csrf.disable())
 			.formLogin(fl -> fl.disable())
@@ -35,6 +37,10 @@ public class SecurityConfig {
 					"/v3/api-docs/**", "/webjars/**", "/swagger-resources/**", "/favicon.ico")
 				.permitAll()
 				.anyRequest().authenticated()
+			)
+
+			.exceptionHandling(
+				ex -> ex.authenticationEntryPoint(exAuthenticationEntryPoint)
 			)
 
 			.oauth2Login(oauth2 -> oauth2

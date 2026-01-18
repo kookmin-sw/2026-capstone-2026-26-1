@@ -1,5 +1,6 @@
 package backend.capstone.auth.jwt.filter;
 
+import backend.capstone.auth.jwt.exception.JwtAuthenticationException;
 import backend.capstone.auth.jwt.service.JwtTokenProvider;
 import backend.capstone.domain.user.entity.User;
 import backend.capstone.domain.user.service.UserService;
@@ -29,17 +30,27 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 		FilterChain filterChain) throws ServletException, IOException {
 		String token = resolveBearerToken(request);
 
-		if (token != null && tokenProvider.validate(token)) {
+		try {
+			tokenProvider.validateOrThrow(token);
+
 			Long userId = tokenProvider.getUserIdFromToken(token);
-
 			User user = userService.findById(userId);
-			UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-				user, null, List.of());
 
-			SecurityContextHolder.getContext().setAuthentication(authentication);
+			UsernamePasswordAuthenticationToken auth =
+				new UsernamePasswordAuthenticationToken(user, null, List.of());
 
-			filterChain.doFilter(request, response);
+			SecurityContextHolder.getContext().setAuthentication(auth);
+
+		} catch (JwtAuthenticationException e) {
+			SecurityContextHolder.clearContext();
+
+			// TODO: 로깅: 운영에선 token 전문 찍지 말고 앞부분만/해시만
+			log.info("[JWT] rejected: code={}, msg={}, uri={}, token={}",
+				e.getErrorCode(), e.getMessage(), request.getRequestURI(), token);
 		}
+
+		filterChain.doFilter(request, response);
+
 	}
 
 	@Override
