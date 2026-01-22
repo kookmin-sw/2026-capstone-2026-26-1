@@ -7,24 +7,24 @@ import backend.capstone.domain.user.entity.User;
 import lombok.NoArgsConstructor;
 
 @NoArgsConstructor(access = lombok.AccessLevel.PRIVATE)
-public class UserMapper {
+public final class UserMapper {
 
-	public static User toEntity(OAuthAttributes oAuthAttributes) {
-		return User.builder()
-			.provider(oAuthAttributes.getProvider())
-			.providerId(oAuthAttributes.getProviderId())
-			.nickname(oAuthAttributes.getNickname())
-			.profileImageUrl(oAuthAttributes.getProfileImageUrl())
-			.build();
-	}
+    public static User toEntity(OAuthAttributes oAuthAttributes) {
+        return User.builder()
+            .provider(oAuthAttributes.getProvider())
+            .providerId(oAuthAttributes.getProviderId())
+            .nickname(oAuthAttributes.getNickname())
+            .profileImageUrl(oAuthAttributes.getProfileImageUrl())
+            .build();
+    }
 
-	public static User toEntity(KakaoUserInfoResponse kakaoUser) {
-		return User.builder()
-			.provider(ProviderType.KAKAO)
-			.providerId(kakaoUser.id())
-			.nickname(kakaoUser.kakao_account().profile().nickname())
-			.profileImageUrl(kakaoUser.kakao_account().profile().profile_image_url())
-			.build();
-	}
+    public static User toEntity(KakaoUserInfoResponse kakaoUser) {
+        return User.builder()
+            .provider(ProviderType.KAKAO)
+            .providerId(kakaoUser.id())
+            .nickname(kakaoUser.kakao_account().profile().nickname())
+            .profileImageUrl(kakaoUser.kakao_account().profile().profile_image_url())
+            .build();
+    }
 
 }

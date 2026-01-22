@@ -28,8 +28,9 @@ public class AuthService {
         KakaoUserInfoResponse kakaoUser = kakaoApiClient.getUserInfo(kakaoAccessToken);
         User user = userService.upsertKakaoUser(kakaoUser);
         String accessToken = jwtTokenProvider.createAccessToken(user.getId());
+        String refreshToken = jwtTokenProvider.createRefreshToken(user.getId());
         return new LoginResponse(user.getId(), user.getNickname(), user.getProfileImageUrl(),
-            accessToken);
+            accessToken, refreshToken);
     }
 
     private String redisKey(Long userId) {
