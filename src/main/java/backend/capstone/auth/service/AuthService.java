@@ -1,15 +1,15 @@
 package backend.capstone.auth.service;
 
 import backend.capstone.auth.dto.LoginResponse;
-import backend.capstone.auth.jwt.probs.JwtProperties;
+import backend.capstone.auth.dto.TokenPair;
+import backend.capstone.auth.exception.AuthErrorCode;
 import backend.capstone.auth.jwt.service.JwtTokenProvider;
 import backend.capstone.auth.service.client.KakaoApiClient;
 import backend.capstone.auth.service.dto.KakaoUserInfoResponse;
-import backend.capstone.auth.util.RefreshTokenHasher;
 import backend.capstone.domain.user.entity.User;
 import backend.capstone.domain.user.service.UserService;
+import backend.capstone.global.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,8 +20,7 @@ public class AuthService {
     private final KakaoApiClient kakaoApiClient;
     private final UserService userService;
     private final JwtTokenProvider jwtTokenProvider;
-    private final StringRedisTemplate redisTemplate;
-    private final JwtProperties props;
+    private final RefreshTokenService refreshTokenService;
 
     @Transactional
     public LoginResponse kakaoLogin(String kakaoAccessToken) {
@@ -33,26 +32,18 @@ public class AuthService {
             accessToken, refreshToken);
     }
 
-    private String redisKey(Long userId) {
-        return "rt:user:" + userId;
-    }
-
-    public void save(Long userId, String refreshTokenRaw) {
-        String hash = RefreshTokenHasher.sha256Hex(refreshTokenRaw);
-        redisTemplate.opsForValue().set(redisKey(userId), hash, props.refreshExpSeconds());
-    }
-
-    public boolean validateRefreshToken(Long userId, String refreshTokenRaw) {
-        String storedHash = redisTemplate.opsForValue().get(redisKey(userId));
-        if (storedHash == null) {
-            return false;
+    @Transactional
+    public TokenPair refreshAccessToken(String refreshToken) {
+        Long userId = jwtTokenProvider.getUserIdFromToken(refreshToken);
+        if (!refreshTokenService.validateRefreshToken(userId, refreshToken)) {
+            throw new BusinessException(AuthErrorCode.INVALID_REFRESH_TOKEN);
         }
-        String incomingHash = RefreshTokenHasher.sha256Hex(refreshTokenRaw);
-        return storedHash.equals(incomingHash);
-    }
+        String newAccess = jwtTokenProvider.createAccessToken(userId);
+        String newRefresh = jwtTokenProvider.createRefreshToken(userId);
 
-    public void delete(Long userId) {
-        redisTemplate.delete(redisKey(userId));
+        refreshTokenService.save(userId, newRefresh); //유저당 1개면 덮어쓰기
+
+        return new TokenPair(newAccess, newRefresh);
     }
 
 

@@ -20,74 +20,74 @@ import org.springframework.stereotype.Component;
 @Component
 public class JwtTokenProvider {
 
-	private final JwtProperties props;
-	private final Key key;
+    private final JwtProperties props;
+    private final Key key;
 
-	public JwtTokenProvider(JwtProperties props) {
-		this.props = props;
-		this.key = Keys.hmacShaKeyFor(props.secret().getBytes(StandardCharsets.UTF_8));
-	}
+    public JwtTokenProvider(JwtProperties props) {
+        this.props = props;
+        this.key = Keys.hmacShaKeyFor(props.secret().getBytes(StandardCharsets.UTF_8));
+    }
 
-	public String createAccessToken(Long userId) {
-		Instant now = Instant.now();
+    public String createAccessToken(Long userId) {
+        Instant now = Instant.now();
 
-		return Jwts.builder()
-			.subject(String.valueOf(userId))
-			.issuedAt(Date.from(now))
-			.expiration(Date.from(now.plusSeconds(props.accessExpSeconds())))
-			.signWith(key)
-			.compact();
-	}
+        return Jwts.builder()
+            .subject(String.valueOf(userId))
+            .issuedAt(Date.from(now))
+            .expiration(Date.from(now.plusSeconds(props.accessExpSeconds())))
+            .signWith(key)
+            .compact();
+    }
 
-	public String createRefreshToken(Long userId) {
-		Instant now = Instant.now();
+    public String createRefreshToken(Long userId) {
+        Instant now = Instant.now();
 
-		return Jwts.builder()
-			.subject(String.valueOf(userId))
-			.issuedAt(Date.from(now))
-			.expiration(Date.from(now.plusSeconds(props.refreshExpSeconds())))
-			.signWith(key)
-			.compact();
-	}
+        return Jwts.builder()
+            .subject(String.valueOf(userId))
+            .issuedAt(Date.from(now))
+            .expiration(Date.from(now.plusSeconds(props.refreshExpSeconds())))
+            .signWith(key)
+            .compact();
+    }
 
-	public boolean validateOrThrow(String token) {
-		try {
-			parseClaims(token);
-			return true;
-		} catch (ExpiredJwtException e) {
-			throw new JwtAuthenticationException(JwtErrorCode.EXPIRED);
+    public boolean validateOrThrow(String token) {
+        try {
+            parseClaims(token);
+            return true;
+        } catch (ExpiredJwtException e) {
+            throw new JwtAuthenticationException(JwtErrorCode.EXPIRED);
 
-		} catch (UnsupportedJwtException e) {
-			throw new JwtAuthenticationException(JwtErrorCode.UNSUPPORTED);
+        } catch (UnsupportedJwtException e) {
+            throw new JwtAuthenticationException(JwtErrorCode.UNSUPPORTED);
 
-		} catch (MalformedJwtException e) {
-			throw new JwtAuthenticationException(JwtErrorCode.MALFORMED);
+        } catch (MalformedJwtException e) {
+            throw new JwtAuthenticationException(JwtErrorCode.MALFORMED);
 
-		} catch (SecurityException | SignatureException e) {
-			// 위조/서명불일치/secret 불일치
-			throw new JwtAuthenticationException(JwtErrorCode.INVALID_SIGNATURE);
+        } catch (SecurityException | SignatureException e) {
+            // 위조/서명불일치/secret 불일치
+            throw new JwtAuthenticationException(JwtErrorCode.INVALID_SIGNATURE);
 
-		} catch (IllegalArgumentException e) {
-			throw new JwtAuthenticationException(JwtErrorCode.INVALID_TOKEN);
+        } catch (IllegalArgumentException e) {
+            throw new JwtAuthenticationException(JwtErrorCode.INVALID_TOKEN);
 
-		} catch (JwtException e) {
-			// 기타 JWT 관련 예외
-			throw new JwtAuthenticationException(JwtErrorCode.INVALID_TOKEN);
-		}
-	}
+        } catch (JwtException e) {
+            // 기타 JWT 관련 예외
+            throw new JwtAuthenticationException(JwtErrorCode.INVALID_TOKEN);
+        }
+    }
 
-	public Long getUserIdFromToken(String token) {
-		Claims claims = parseClaims(token);
-		return Long.parseLong(claims.getSubject());
-	}
+    public Long getUserIdFromToken(String token) {
+        Claims claims = parseClaims(token);
+        return Long.parseLong(claims.getSubject());
+    }
 
-	//토큰 파싱
-	private Claims parseClaims(String token) {
-		return Jwts.parser()
-			.verifyWith((javax.crypto.SecretKey) key)
-			.build()
-			.parseSignedClaims(token)
-			.getPayload();
-	}
+    //토큰 파싱
+    private Claims parseClaims(String token) {
+        return Jwts.parser()
+            .verifyWith((javax.crypto.SecretKey) key)
+            .build()
+            .parseSignedClaims(token)
+            .getPayload();
+    }
 
 }
