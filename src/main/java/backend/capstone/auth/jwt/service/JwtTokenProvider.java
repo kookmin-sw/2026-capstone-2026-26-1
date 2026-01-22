@@ -1,7 +1,6 @@
 package backend.capstone.auth.jwt.service;
 
-import backend.capstone.auth.jwt.exception.JwtAuthenticationException;
-import backend.capstone.auth.jwt.exception.JwtErrorCode;
+import backend.capstone.auth.jwt.TokenStatus;
 import backend.capstone.auth.jwt.probs.JwtProperties;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -50,29 +49,28 @@ public class JwtTokenProvider {
             .compact();
     }
 
-    public boolean validateOrThrow(String token) {
+    public TokenStatus validateToken(String token) {
+        if (token == null || token.isBlank()) {
+            return TokenStatus.MISSING_TOKEN;
+        }
+
         try {
             parseClaims(token);
-            return true;
+            return TokenStatus.VALID;
         } catch (ExpiredJwtException e) {
-            throw new JwtAuthenticationException(JwtErrorCode.EXPIRED);
-
+            return TokenStatus.EXPIRED;
         } catch (UnsupportedJwtException e) {
-            throw new JwtAuthenticationException(JwtErrorCode.UNSUPPORTED);
-
+            return TokenStatus.UNSUPPORTED;
         } catch (MalformedJwtException e) {
-            throw new JwtAuthenticationException(JwtErrorCode.MALFORMED);
-
+            return TokenStatus.MALFORMED;
         } catch (SecurityException | SignatureException e) {
             // 위조/서명불일치/secret 불일치
-            throw new JwtAuthenticationException(JwtErrorCode.INVALID_SIGNATURE);
-
+            return TokenStatus.INVALID_SIGNATURE;
         } catch (IllegalArgumentException e) {
-            throw new JwtAuthenticationException(JwtErrorCode.INVALID_TOKEN);
-
+            return TokenStatus.INVALID_TOKEN;
         } catch (JwtException e) {
             // 기타 JWT 관련 예외
-            throw new JwtAuthenticationException(JwtErrorCode.INVALID_TOKEN);
+            return TokenStatus.INVALID_TOKEN;
         }
     }
 

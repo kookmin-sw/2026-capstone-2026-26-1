@@ -1,5 +1,7 @@
 package backend.capstone.auth.util;
 
+import backend.capstone.auth.exception.AuthErrorCode;
+import backend.capstone.global.exception.BusinessException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -20,7 +22,7 @@ public final class RefreshTokenHasher {
             }
             return sb.toString();
         } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
+            throw new BusinessException(AuthErrorCode.HASH_NOT_SUPPORT);
         }
     }
 

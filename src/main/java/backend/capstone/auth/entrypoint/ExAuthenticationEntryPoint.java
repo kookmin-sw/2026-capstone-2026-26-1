@@ -1,5 +1,6 @@
 package backend.capstone.auth.entrypoint;
 
+import backend.capstone.auth.exception.AuthErrorCode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -24,9 +25,14 @@ public class ExAuthenticationEntryPoint implements AuthenticationEntryPoint {
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding("UTF-8");
 
+        AuthErrorCode errorCode = (AuthErrorCode) request.getAttribute("AUTH_ERROR_CODE");
+        if (errorCode == null) {
+            errorCode = AuthErrorCode.UNKNOWN_ERROR;
+        }
+
         objectMapper.writeValue(response.getWriter(), Map.of(
-            "error", "UNAUTHORIZED",
-            "message", "로그인이 필요한 서비스입니다"
+            "code", errorCode.name(),
+            "message", errorCode.getMessage()
         ));
 
     }
