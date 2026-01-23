@@ -60,6 +60,8 @@ jobs:
           KAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID }}
           KAKAO_REDIRECT_URI=${{secrets.KAKAO_REDIRECT_URI }}
           JWT_SECRET=${{ secrets.JWT_SECRET }}
+          REDIS_HOST=${{ secrets.REDIS_HOST }}
+          REDIS_PORT=${{ secrets.REDIS_PORT }}
           EOF
 
       # EC2로 .env 업로드

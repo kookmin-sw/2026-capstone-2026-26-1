@@ -5,6 +5,10 @@ spring:
     password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
   jpa:
     hibernate:
       ddl-auto: create
@@ -34,8 +38,8 @@ spring:
 
 jwt:
   secret: "${JWT_SECRET}"
-  access-exp-seconds: 1800 # 30분
-  refresh-exp-seconds: 1209600 # 14일
+  access-exp-seconds: 60 # 1분
+  refresh-exp-seconds: 2592000 # 30일
 
 logging:
   level:

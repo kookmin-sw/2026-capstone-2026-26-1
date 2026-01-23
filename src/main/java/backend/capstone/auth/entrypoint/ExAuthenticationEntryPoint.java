@@ -1,7 +1,7 @@
 package backend.capstone.auth.entrypoint;
 
+import backend.capstone.auth.exception.AuthErrorCode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -16,19 +16,24 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class ExAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
-	private final ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper;
 
-	@Override
-	public void commence(HttpServletRequest request, HttpServletResponse response,
-		AuthenticationException authException) throws IOException, ServletException {
-		response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-		response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-		response.setCharacterEncoding("UTF-8");
+    @Override
+    public void commence(HttpServletRequest request, HttpServletResponse response,
+        AuthenticationException authException) throws IOException {
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.setCharacterEncoding("UTF-8");
 
-		objectMapper.writeValue(response.getWriter(), Map.of(
-			"error", "UNAUTHORIZED",
-			"message", "로그인이 필요한 서비스입니다"
-		));
+        AuthErrorCode errorCode = (AuthErrorCode) request.getAttribute("AUTH_ERROR_CODE");
+        if (errorCode == null) {
+            errorCode = AuthErrorCode.UNKNOWN_ERROR;
+        }
 
-	}
+        objectMapper.writeValue(response.getWriter(), Map.of(
+            "code", errorCode.name(),
+            "message", errorCode.getMessage()
+        ));
+
+    }
 }

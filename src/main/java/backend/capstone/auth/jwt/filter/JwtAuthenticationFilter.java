@@ -1,6 +1,7 @@
 package backend.capstone.auth.jwt.filter;
 
-import backend.capstone.auth.jwt.exception.JwtAuthenticationException;
+import backend.capstone.auth.exception.AuthErrorCode;
+import backend.capstone.auth.jwt.TokenStatus;
 import backend.capstone.auth.jwt.service.JwtTokenProvider;
 import backend.capstone.domain.user.entity.User;
 import backend.capstone.domain.user.service.UserService;
@@ -22,59 +23,63 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @Slf4j
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-	private final JwtTokenProvider tokenProvider;
-	private final UserService userService;
+    private final JwtTokenProvider tokenProvider;
+    private final UserService userService;
 
-	@Override
-	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
-		FilterChain filterChain) throws ServletException, IOException {
-		String token = resolveBearerToken(request);
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
+        FilterChain filterChain) throws ServletException, IOException {
+        String token = resolveBearerToken(request);
 
-		try {
-			tokenProvider.validateOrThrow(token);
+        TokenStatus tokenStatus = tokenProvider.validateToken(token);
 
-			Long userId = tokenProvider.getUserIdFromToken(token);
-			User user = userService.findById(userId);
+        if (tokenStatus == TokenStatus.VALID) {
+            Long userId = tokenProvider.getUserIdFromToken(token);
+            User user = userService.findById(userId);
 
-			UsernamePasswordAuthenticationToken auth =
-				new UsernamePasswordAuthenticationToken(user, null, List.of());
+            UsernamePasswordAuthenticationToken auth =
+                new UsernamePasswordAuthenticationToken(user, null, List.of());
 
-			SecurityContextHolder.getContext().setAuthentication(auth);
+            SecurityContextHolder.getContext().setAuthentication(auth);
+        } else {
+            SecurityContextHolder.clearContext();
+            log.info("[JWT] 토큰 문제 발생: url={}, status={}", request.getRequestURI(), tokenStatus);
 
-		} catch (JwtAuthenticationException e) {
-			SecurityContextHolder.clearContext();
+            if (tokenStatus == TokenStatus.EXPIRED) {
+                request.setAttribute("AUTH_ERROR_CODE", AuthErrorCode.ACCESS_TOKEN_EXPIRED);
+            } else if (tokenStatus == TokenStatus.MISSING_TOKEN) {
+                request.setAttribute("AUTH_ERROR_CODE", AuthErrorCode.MISSING_ACCESS_TOKEN);
+            } else {
+                request.setAttribute("AUTH_ERROR_CODE", AuthErrorCode.INVALID_ACCESS_TOKEN);
+            }
+        }
 
-			// TODO: 로깅: 운영에선 token 전문 찍지 말고 앞부분만/해시만
-			log.info("[JWT] rejected: code={}, msg={}, uri={}, token={}",
-				e.getErrorCode(), e.getMessage(), request.getRequestURI(), token);
-		}
+        filterChain.doFilter(request, response);
 
-		filterChain.doFilter(request, response);
+    }
 
-	}
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String uri = request.getRequestURI();
+        return uri.startsWith("/swagger-ui")
+            || uri.equals("/swagger-ui.html")
+            || uri.startsWith("/v3/api-docs")
+            || uri.startsWith("/webjars")
+            || uri.startsWith("/swagger-resources")
+            || uri.startsWith("/api/auth")
+            || uri.startsWith("/oauth2")
+            || uri.startsWith("/login")
+            || uri.equals("/favicon.ico");
+    }
 
-	@Override
-	protected boolean shouldNotFilter(HttpServletRequest request) {
-		String uri = request.getRequestURI();
-		return uri.startsWith("/swagger-ui")
-			|| uri.equals("/swagger-ui.html")
-			|| uri.startsWith("/v3/api-docs")
-			|| uri.startsWith("/webjars")
-			|| uri.startsWith("/swagger-resources")
-			|| uri.startsWith("/api/auth")
-			|| uri.startsWith("/oauth2")
-			|| uri.startsWith("/login")
-			|| uri.equals("/favicon.ico");
-	}
-
-	private String resolveBearerToken(HttpServletRequest request) {
-		String header = request.getHeader("Authorization");
-		if (header == null) {
-			return null;
-		}
-		if (!header.startsWith("Bearer ")) {
-			return null;
-		}
-		return header.substring(7);
-	}
+    private String resolveBearerToken(HttpServletRequest request) {
+        String header = request.getHeader("Authorization");
+        if (header == null) {
+            return null;
+        }
+        if (!header.startsWith("Bearer ")) {
+            return null;
+        }
+        return header.substring(7);
+    }
 }
