@@ -34,7 +34,7 @@ public class AuthController {
         return authService.refreshAccessToken(refreshToken);
     }
 
-    @GetMapping("/test")
+    @GetMapping("/test-issue")
     public TokenPair issueTestJwt() {
         return authService.testIssue();
     }

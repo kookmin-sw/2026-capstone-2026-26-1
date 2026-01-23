@@ -2,6 +2,7 @@ package backend.capstone.auth.service;
 
 import backend.capstone.auth.jwt.probs.JwtProperties;
 import backend.capstone.auth.util.RefreshTokenHasher;
+import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -28,7 +29,8 @@ public class RefreshTokenService {
 
     public void save(Long userId, String refreshTokenRaw) {
         String hash = RefreshTokenHasher.sha256Hex(refreshTokenRaw);
-        redisTemplate.opsForValue().set(redisKey(userId), hash, props.refreshExpSeconds());
+        redisTemplate.opsForValue()
+            .set(redisKey(userId), hash, props.refreshExpSeconds(), TimeUnit.SECONDS);
     }
 
     public void delete(Long userId) {
