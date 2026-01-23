@@ -3,7 +3,6 @@ package backend.capstone.auth.controller;
 import backend.capstone.auth.dto.KakaoLoginRequest;
 import backend.capstone.auth.dto.LoginResponse;
 import backend.capstone.auth.dto.TokenPair;
-import backend.capstone.auth.jwt.service.JwtTokenProvider;
 import backend.capstone.auth.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -18,23 +17,25 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
-public class AuthController {
+public class AuthController implements AuthControllerSpec {
 
     private final AuthService authService;
-    private final JwtTokenProvider jwtTokenProvider;
 
+    @Override
     @PostMapping("/login/kakao")
     @ResponseStatus(HttpStatus.CREATED)
     public LoginResponse kakaoLogin(@RequestBody KakaoLoginRequest request) {
         return authService.kakaoLogin(request.kakaoAccessToken());
     }
 
+    @Override
     @PostMapping("/refresh")
     @ResponseStatus(HttpStatus.CREATED)
     public TokenPair refresh(@RequestHeader(value = "X-Refresh-Token") String refreshToken) {
         return authService.refreshAccessToken(refreshToken);
     }
 
+    @Override
     @GetMapping("/test-issue")
     public TokenPair issueTestJwt() {
         return authService.testIssue();
