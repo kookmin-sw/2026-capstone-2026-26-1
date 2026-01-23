@@ -7,9 +7,8 @@ spring:
 
   data:
     redis:
-      host: localhost
-      port: 6379 #TODO: 환경변수로 변경
-
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
   jpa:
     hibernate:
       ddl-auto: create
