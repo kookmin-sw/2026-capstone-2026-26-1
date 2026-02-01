@@ -1,5 +1,6 @@
-package com.example.passedpath.ui.main
+package com.example.passedpath.feature.main
 
+import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -9,15 +10,25 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.passedpath.data.network.RetrofitClient
+import kotlinx.coroutines.launch
+import retrofit2.HttpException
 
 @Composable
 fun MainScreen(
     onLogout: () -> Unit
 ) {
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val testApi = remember { RetrofitClient.createTestApi(context) }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -28,6 +39,31 @@ fun MainScreen(
 
         // 메인 화면 타이틀
         Text(text = "메인 화면")
+
+        Button(
+            onClick = {
+                coroutineScope.launch {
+                    try {
+                        val result = testApi.test()
+                        Log.d("TEST", "API 성공: $result")
+
+                    } catch (e: HttpException) {
+
+                        val errorBody = e.response()?.errorBody()?.string()
+
+                        Log.e("TEST", "HTTP ${e.code()} 에러")
+                        Log.e("TEST", "에러 바디: $errorBody")
+
+                    } catch (e: Exception) {
+                        Log.e("TEST", "기타 에러", e)
+                    }
+
+                }
+            }
+        ) {
+            Text("TEST API 호출")
+        }
+
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -46,7 +82,6 @@ fun MainScreen(
         // TODO: 지도 화면 연결
     }
 }
-
 
 
 @Preview(showBackground = true)

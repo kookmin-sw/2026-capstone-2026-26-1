@@ -1,4 +1,4 @@
-package com.example.passedpath.datastore
+package com.example.passedpath.data.datastore
 
 
 import android.content.Context
@@ -12,16 +12,30 @@ private val Context.dataStore by preferencesDataStore(name = "auth")
 object TokenDataStore {
 
     private val ACCESS_TOKEN = stringPreferencesKey("access_token")
+    private val REFRESH_TOKEN = stringPreferencesKey("refresh_token")
 
-    suspend fun saveAccessToken(context: Context, token: String) {
+    // accessToken + refreshToken 저장
+    suspend fun saveTokens(
+        context: Context,
+        accessToken: String,
+        refreshToken: String
+    ) {
         context.dataStore.edit { prefs ->
-            prefs[ACCESS_TOKEN] = token
+            prefs[ACCESS_TOKEN] = accessToken
+            prefs[REFRESH_TOKEN] = refreshToken
         }
     }
 
+    // accessToken 조회
     suspend fun getAccessToken(context: Context): String? {
         return context.dataStore.data.first()[ACCESS_TOKEN]
     }
+
+    // refreshToken 조회
+    suspend fun getRefreshToken(context: Context): String? {
+        return context.dataStore.data.first()[REFRESH_TOKEN]
+    }
+
 
     // accessToken 삭제
     suspend fun clear(context: Context) {
@@ -29,4 +43,6 @@ object TokenDataStore {
             prefs.remove(ACCESS_TOKEN)
         }
     }
+
+
 }
