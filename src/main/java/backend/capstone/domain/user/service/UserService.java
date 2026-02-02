@@ -15,25 +15,24 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class UserService {
 
-	private final UserRepository userRepository;
+    private final UserRepository userRepository;
 
-	@Transactional
-	public User upsertKakaoUser(KakaoUserInfoResponse kakaoUser) {
-		return userRepository.findByProviderAndProviderId(ProviderType.KAKAO, kakaoUser.id())
-			.map(existing -> {
-				existing.updateProfile(kakaoUser.kakao_account().profile().nickname(),
-					kakaoUser.kakao_account().profile().profile_image_url());
-				return existing;
-			})
-			.orElseGet(() -> userRepository.save(
-				UserMapper.toEntity(kakaoUser))
-			);
-	}
+    @Transactional
+    public User upsertKakaoUser(KakaoUserInfoResponse kakaoUser) {
+        return userRepository.findByProviderAndProviderId(ProviderType.KAKAO, kakaoUser.id())
+            .map(existing -> {
+                existing.updateProfile(kakaoUser.kakao_account().profile().nickname());
+                return existing;
+            })
+            .orElseGet(() -> userRepository.save(
+                UserMapper.toEntity(kakaoUser))
+            );
+    }
 
-	@Transactional(readOnly = true)
-	public User findById(Long userId) {
-		return userRepository.findById(userId)
-			.orElseThrow(() -> new BusinessException(UserErrorCode.NOT_FOUND_USER));
-	}
+    @Transactional(readOnly = true)
+    public User findById(Long userId) {
+        return userRepository.findById(userId)
+            .orElseThrow(() -> new BusinessException(UserErrorCode.NOT_FOUND_USER));
+    }
 
 }

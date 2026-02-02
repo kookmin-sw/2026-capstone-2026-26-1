@@ -33,8 +33,7 @@ public class AuthService {
         String refreshToken = jwtTokenProvider.createRefreshToken(user.getId());
         refreshTokenService.save(user.getId(), refreshToken);
 
-        return new LoginResponse(user.getId(), user.getNickname(), user.getProfileImageUrl(),
-            accessToken, refreshToken);
+        return new LoginResponse(user.getId(), user.getNickname(), accessToken, refreshToken);
     }
 
     @Transactional

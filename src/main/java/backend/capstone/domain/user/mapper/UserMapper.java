@@ -23,7 +23,6 @@ public final class UserMapper {
             .provider(ProviderType.KAKAO)
             .providerId(kakaoUser.id())
             .nickname(kakaoUser.kakao_account().profile().nickname())
-            .profileImageUrl(kakaoUser.kakao_account().profile().profile_image_url())
             .build();
     }
 
