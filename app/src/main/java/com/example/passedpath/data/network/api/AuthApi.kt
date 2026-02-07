@@ -1,8 +1,8 @@
-package com.example.passedpath.network.api
+package com.example.passedpath.data.network.api
 
-import com.example.passedpath.network.dto.KakaoLoginRequest
-import com.example.passedpath.network.dto.KakaoLoginResponse
-import com.example.passedpath.network.dto.RefreshTokenResponse
+import com.example.passedpath.data.network.dto.KakaoLoginRequest
+import com.example.passedpath.data.network.dto.KakaoLoginResponse
+import com.example.passedpath.data.network.dto.RefreshTokenResponse
 import retrofit2.http.Body
 import retrofit2.http.Header
 import retrofit2.http.POST
@@ -26,7 +26,7 @@ interface AuthApi {
     ): KakaoLoginResponse
 
     @POST("/api/auth/refresh")
-    suspend fun RefreshTokenResponse(
+    suspend fun refreshToken(
         @Header("X-Refresh-Token") refreshToken: String
     ): RefreshTokenResponse
 }

@@ -1,15 +1,18 @@
 package com.example.passedpath.navigation
 
+import android.util.Log
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.example.passedpath.datastore.TokenDataStore
-import com.example.passedpath.ui.login.LoginScreen
-import com.example.passedpath.ui.main.MainScreen
+import com.example.passedpath.feature.auth.AuthEvent
+import com.example.passedpath.data.datastore.TokenDataStore
+import com.example.passedpath.feature.auth.LoginScreen
+import com.example.passedpath.feature.main.MainScreen
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
@@ -19,6 +22,18 @@ fun AppNavHost(
     navController: NavHostController
 ) {
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+
+    // 로그아웃 이벤트 수신
+    LaunchedEffect(Unit) {
+        AuthEvent.logoutEvent.collect {
+            Log.d("AUTH", "강제 로그아웃 처리")
+
+            navController.navigate(NavRoute.LOGIN) {
+                popUpTo(0)
+            }
+        }
+    }
 
     // 앱 시작 시 accessToken 존재 여부 확인
     val startDestination = remember {
@@ -53,12 +68,12 @@ fun AppNavHost(
 
                         // accessToken 삭제
                         TokenDataStore.clear(context)
-                        android.util.Log.d("AUTH", "accessToken 삭제")
+                        Log.d("AUTH", "accessToken 삭제")
 
                         // 로그인 화면으로 이동
                         navController.navigate(NavRoute.LOGIN) {
                             popUpTo(NavRoute.MAIN) { inclusive = true }
-                            android.util.Log.d("AUTH", "Login 화면 이동")
+                            Log.d("AUTH", "Login 화면 이동")
                         }
                     }
                 }

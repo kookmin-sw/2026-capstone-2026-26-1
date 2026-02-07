@@ -1,4 +1,4 @@
-package com.example.passedpath.ui.login
+package com.example.passedpath.feature.auth
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -22,7 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-
+import com.example.passedpath.feature.auth.LoginViewModel
 
 @Composable
 fun LoginScreen(
@@ -32,39 +32,39 @@ fun LoginScreen(
     val context = LocalContext.current
 
     Column(
-        modifier = Modifier
+        modifier = Modifier.Companion
             .fillMaxSize()
             .padding(24.dp),
-        horizontalAlignment = Alignment.Start
+        horizontalAlignment = Alignment.Companion.Start
     ) {
 
-        Spacer(modifier = Modifier.height(40.dp))
+        Spacer(modifier = Modifier.Companion.height(40.dp))
 
         Box(
-            modifier = Modifier
+            modifier = Modifier.Companion
                 .size(48.dp)
-                .background(Color.LightGray)
+                .background(Color.Companion.LightGray)
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.Companion.height(24.dp))
 
         Text(
             text = "하루를 따라\n기록합니다",
             fontSize = 28.sp,
-            fontWeight = FontWeight.Bold,
+            fontWeight = FontWeight.Companion.Bold,
             lineHeight = 36.sp
         )
 
-        Spacer(modifier = Modifier.height(40.dp))
+        Spacer(modifier = Modifier.Companion.height(40.dp))
 
         Box(
-            modifier = Modifier
+            modifier = Modifier.Companion
                 .fillMaxWidth()
                 .height(220.dp)
-                .background(Color.LightGray)
+                .background(Color.Companion.LightGray)
         )
 
-        Spacer(modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.Companion.weight(1f))
 
         Button(
             onClick = {
@@ -78,18 +78,18 @@ fun LoginScreen(
                     }
                 )
             },
-            modifier = Modifier
+            modifier = Modifier.Companion
                 .fillMaxWidth()
                 .height(52.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color(0xFFFEE500),
-                contentColor = Color.Black
+                contentColor = Color.Companion.Black
             )
         ) {
             Text(
                 text = "카카오 로그인",
                 fontSize = 16.sp,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Companion.Bold
             )
         }
 

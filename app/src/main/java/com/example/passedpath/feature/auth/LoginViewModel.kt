@@ -1,14 +1,12 @@
-package com.example.passedpath.ui.login
+package com.example.passedpath.feature.auth
 
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.passedpath.auth.KakaoAuthManager
-import com.example.passedpath.datastore.TokenDataStore
-import com.example.passedpath.network.RetrofitClient
-import com.example.passedpath.repository.AuthRepository
+import com.example.passedpath.data.datastore.TokenDataStore
+import com.example.passedpath.data.network.RetrofitClient
+import com.example.passedpath.data.repository.AuthRepository
 import kotlinx.coroutines.launch
-
 
 class LoginViewModel : ViewModel() {
     fun kakaoLogin(
@@ -25,12 +23,13 @@ class LoginViewModel : ViewModel() {
                 viewModelScope.launch {
                     val response = repository.loginWithKakao(kakaoAccessToken)
 
-                    TokenDataStore.saveAccessToken(
+                    // accessToken + refreshToken 저장
+                    TokenDataStore.saveTokens(
                         context = context,
-                        token = response.accessToken
+                        accessToken = response.accessToken,
+                        refreshToken = response.refreshToken
                     )
 
-                    // 로그인 성공 콜백
                     onLoginSuccess()
                 }
             },
