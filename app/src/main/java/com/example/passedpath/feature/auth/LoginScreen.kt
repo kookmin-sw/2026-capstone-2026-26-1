@@ -1,5 +1,6 @@
 package com.example.passedpath.feature.auth
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -75,6 +76,9 @@ fun LoginScreen(
                         navController.navigate("main") {
                             popUpTo("login") { inclusive = true }
                         }
+                    },
+                    onLoginError = { message ->
+                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                     }
                 )
             },
