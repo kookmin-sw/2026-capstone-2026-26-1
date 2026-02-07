@@ -13,7 +13,7 @@ import retrofit2.converter.scalars.ScalarsConverterFactory
 
 object RetrofitClient {
 
-    private const val BASE_URL = "http://15.165.115.7/"
+    private const val BASE_URL = "https://passedpath.site/"
 
     fun createTestApi(context: Context): TestApi {
         val authApi = createAuthApi(context) // refresh용 AuthApi

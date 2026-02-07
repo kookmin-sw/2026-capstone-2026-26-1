@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
     package="com.example.passedpath">
 
     <!-- 앱의 인터넷 사용 권한 설정-->
@@ -15,8 +14,7 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.PassedPath"
-        android:usesCleartextTraffic="true">
+        android:theme="@style/Theme.PassedPath">
 
         <activity
             android:name=".MainActivity"
@@ -37,10 +35,12 @@
             <!-- 카카오 로그인 후 리다이렉트 -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
+
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
 
-                <data android:host="oauth"
+                <data
+                    android:host="oauth"
                     android:scheme="kakao5438e21dc2bb87eaf82c9ba604ba5cbb" />
             </intent-filter>
         </activity>
