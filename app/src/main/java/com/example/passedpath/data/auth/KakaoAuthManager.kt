@@ -1,4 +1,4 @@
-package com.example.passedpath.feature.auth
+package com.example.passedpath.data.auth
 
 import android.content.Context
 import com.kakao.sdk.auth.model.OAuthToken
@@ -18,13 +18,13 @@ object KakaoAuthManager {
             }
         }
 
-        if (UserApiClient.instance.isKakaoTalkLoginAvailable(context)) {
-            UserApiClient.instance.loginWithKakaoTalk(
+        if (UserApiClient.Companion.instance.isKakaoTalkLoginAvailable(context)) {
+            UserApiClient.Companion.instance.loginWithKakaoTalk(
                 context = context,
                 callback = callback   // ✅ 이거 중요
             )
         } else {
-            UserApiClient.instance.loginWithKakaoAccount(
+            UserApiClient.Companion.instance.loginWithKakaoAccount(
                 context = context,
                 callback = callback   // ✅ 이거 중요
             )
