@@ -27,7 +27,7 @@ fun MainScreen(
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-    val testApi = remember { RetrofitClient.createTestApi(context) }
+    val testApi = remember { RetrofitClient.testApi(context) }
 
     Column(
         modifier = Modifier
