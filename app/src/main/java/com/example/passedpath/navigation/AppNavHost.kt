@@ -9,10 +9,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.example.passedpath.feature.auth.AuthEvent
 import com.example.passedpath.data.datastore.TokenDataStore
+import com.example.passedpath.feature.auth.AuthEvent
 import com.example.passedpath.feature.auth.LoginScreen
 import com.example.passedpath.feature.main.MainScreen
+import com.example.passedpath.feature.permission.LocationPermissionGateScreen
+import com.example.passedpath.feature.permission.LocationPermissionIntroScreen
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
@@ -39,12 +41,20 @@ fun AppNavHost(
     val startDestination = remember {
         runBlocking {
             val token = TokenDataStore.getAccessToken(context)
-            if (token != null) {
-                android.util.Log.d("AUTH", "저장된 accessToken 있음 → Main 시작")
+            if (token == null) {
+                Log.d("AUTH", "저장된 accessToken 없음 → Login 시작")
+                return@runBlocking NavRoute.LOGIN
+            }
+
+            val alwaysGranted = com.example.passedpath.feature.permission.LocationPermissionGate
+                .isBackgroundAlwaysGranted(context)
+
+            if (alwaysGranted) {
+                Log.d("AUTH", "토큰 있음 + ALWAYS 허용 → Main 시작")
                 NavRoute.MAIN
             } else {
-                android.util.Log.d("AUTH", "저장된 accessToken 없음 → Login 시작")
-                NavRoute.LOGIN
+                Log.d("AUTH", "토큰 있음 + ALWAYS 미허용 → PermissionIntro 시작")
+                NavRoute.PERMISSION_INTRO
             }
         }
     }
@@ -56,6 +66,21 @@ fun AppNavHost(
     ) {
         composable(NavRoute.LOGIN) {
             LoginScreen(navController = navController)
+        }
+
+        composable(NavRoute.PERMISSION_INTRO) {
+            LocationPermissionIntroScreen(
+                onStartClick = {
+                    navController.navigate(NavRoute.PERMISSION_GATE)
+                }
+            )
+        }
+
+        composable(NavRoute.PERMISSION_GATE) {
+            LocationPermissionGateScreen(
+                navController = navController,
+                viewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+            )
         }
 
         composable(NavRoute.MAIN) {
