@@ -3,12 +3,21 @@ package com.example.passedpath.feature.permission
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.NavController
+import com.example.passedpath.navigation.NavRoute
+import com.example.passedpath.ui.PermissionSettingDialog
+import com.example.passedpath.util.AppSettingsNavigator
+
+// Gate 전용 상태
+private enum class GatePhase {
+    CHECKING,
+    NEED_SETTINGS
+}
 
 @Composable
 fun LocationPermissionGateScreen(
@@ -16,54 +25,66 @@ fun LocationPermissionGateScreen(
     viewModel: LocationPermissionViewModel
 ) {
     val context = LocalContext.current
-    val state by viewModel.state.collectAsState()
+    val lifecycleOwner = LocalLifecycleOwner.current
 
-    // 포그라운드 위치 권한 요청을 위한 런처
+    var phase by remember { mutableStateOf(GatePhase.CHECKING) }
+    var waitingForSettings by remember { mutableStateOf(false) }
+
+    // 포그라운드 권한 요청 런처
     val permissionLauncher =
         rememberLauncherForActivityResult(
             ActivityResultContracts.RequestPermission()
-        ) {
-            // 권한 결과는 OS가 처리하므로 별도 분기 없음
-        }
+        ) { /* 결과 해석 없음 */ }
 
-    // 화면 진입 시 한 번만 권한 플로우 시작
+    // Gate 진입 시 최초 체크
     LaunchedEffect(Unit) {
-        viewModel.checkOnAppStart(
-            context = context,
-            requestForegroundPermission = {
-                // 포그라운드 위치 권한 팝업 요청
-                permissionLauncher.launch(
-                    Manifest.permission.ACCESS_FINE_LOCATION
-                )
+        permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+
+        if (LocationPermissionGate.isBackgroundAlwaysGranted(context)) {
+            navController.navigate(NavRoute.MAIN) {
+                popUpTo(NavRoute.PERMISSION_INTRO) { inclusive = true }
             }
-        )
+        } else {
+            phase = GatePhase.NEED_SETTINGS
+        }
     }
 
-    // 권한 상태 변화에 따라 다음 화면으로 이동
-    LaunchedEffect(state) {
-        when (state) {
+    // 설정 앱 복귀 감지
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME && waitingForSettings) {
+                waitingForSettings = false
 
-            LocationPermissionState.NORMAL -> {
-                // 항상 허용 상태이므로 정상 메인 화면으로 이동
-                navController.navigate("main") {
-                    popUpTo("permission_gate") { inclusive = true }
+                if (LocationPermissionGate.isBackgroundAlwaysGranted(context)) {
+                    navController.navigate(NavRoute.MAIN) {
+                        popUpTo(NavRoute.PERMISSION_INTRO) { inclusive = true }
+                    }
+                } else {
+                    navController.navigate(NavRoute.LIMITED_MAIN) {
+                        popUpTo(NavRoute.PERMISSION_INTRO) { inclusive = true }
+                    }
                 }
             }
-
-            LocationPermissionState.NEED_SETTINGS -> {
-                // 항상 허용이 아니므로 설정 이동 팝업을 보여줘야 함
-                // TODO 설정 이동 팝업 표시
-                // 팝업 확인 시 AppSettingNavigation.openAppSettings(context)
-            }
-
-            LocationPermissionState.LIMITED -> {
-                // 설정 이후에도 항상 허용이 아니므로 제한 메인으로 이동
-                navController.navigate("limited_main") {
-                    popUpTo("permission_gate") { inclusive = true }
-                }
-            }
-
-            null -> Unit
         }
+
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
+    // 설정 이동 다이얼로그
+    if (phase == GatePhase.NEED_SETTINGS) {
+        PermissionSettingDialog(
+            onConfirm = {
+                waitingForSettings = true
+                AppSettingsNavigator.openAppSettings(context)
+            },
+            onDismiss = {
+                navController.navigate(NavRoute.LIMITED_MAIN) {
+                    popUpTo(NavRoute.PERMISSION_INTRO) { inclusive = true }
+                }
+            }
+        )
     }
 }

@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -20,14 +22,23 @@ import androidx.compose.ui.unit.dp
 import com.example.passedpath.data.network.RetrofitClient
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
+import androidx.compose.runtime.getValue
 
 @Composable
 fun MainScreen(
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    viewModel: MainViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val testApi = remember { RetrofitClient.testApi(context) }
+    val permissionState by viewModel.permissionUiState.collectAsState()
+
+    // 화면 진입 시 권한 상태 확인
+    LaunchedEffect(Unit) {
+        viewModel.checkPermission(context)
+    }
+
 
     Column(
         modifier = Modifier
@@ -39,6 +50,17 @@ fun MainScreen(
 
         // 메인 화면 타이틀
         Text(text = "메인 화면")
+        Spacer(modifier = Modifier.height(16.dp))
+
+        if (permissionState == LocationPermissionUiState.FULL) {
+            // ✅ 항상 허용: 정상 기능
+            Text(text = "📍 위치 기능 활성화됨")
+            // TODO: 지도 / 위치 추적 UI
+        } else {
+            // ⚠️ 제한 상태: 안내 UI
+            Text(text = "📍 제한상태")
+        }
+
 
         Button(
             onClick = {
