@@ -1,13 +1,14 @@
-package backend.capstone.domain.timeline.gpspoint.dto;
+package backend.capstone.domain.timeline.dto;
 
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
 import java.util.List;
 
 public record GpsPointBatchUploadRequest(
 //    String deviceId,
-    List<GpsPointRequest> gpsPoints //TODO: 최대 사이즈 제한
+    @Size(max = 250) List<GpsPointRequest> gpsPoints
 ) {
 
     public record GpsPointRequest(

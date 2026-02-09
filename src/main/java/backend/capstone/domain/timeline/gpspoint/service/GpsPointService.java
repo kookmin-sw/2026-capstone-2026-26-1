@@ -1,7 +1,7 @@
 package backend.capstone.domain.timeline.gpspoint.service;
 
-import backend.capstone.domain.timeline.gpspoint.dto.GpsPointBatchUploadRequest;
-import backend.capstone.domain.timeline.gpspoint.dto.GpsPointBatchUploadRequest.GpsPointRequest;
+import backend.capstone.domain.timeline.dto.GpsPointBatchUploadRequest;
+import backend.capstone.domain.timeline.dto.GpsPointBatchUploadRequest.GpsPointRequest;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
