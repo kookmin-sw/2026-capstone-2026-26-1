@@ -1,4 +1,4 @@
-package backend.capstone.domain.gpspoint.entity;
+package backend.capstone.domain.timeline.gpspoint.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

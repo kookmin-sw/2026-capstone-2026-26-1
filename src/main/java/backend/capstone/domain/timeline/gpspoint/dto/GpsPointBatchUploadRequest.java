@@ -1,4 +1,4 @@
-package backend.capstone.domain.gpspoint.dto;
+package backend.capstone.domain.timeline.gpspoint.dto;
 
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
