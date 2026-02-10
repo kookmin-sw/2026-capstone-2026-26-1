@@ -17,6 +17,8 @@ val Gray400 = Color(0xFFA6ADB9)
 
 val Primary = Green500
 
+
+// darkColorScheme
 val Purple80 = Color(0xFFD0BCFF)
 val PurpleGrey80 = Color(0xFFCCC2DC)
 val Pink80 = Color(0xFFEFB8C8)

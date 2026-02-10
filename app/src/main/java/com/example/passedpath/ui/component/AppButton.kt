@@ -1,6 +1,7 @@
 package com.example.passedpath.ui.component
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -17,7 +18,6 @@ import androidx.compose.ui.unit.dp
 import com.example.passedpath.ui.theme.Gray200
 import com.example.passedpath.ui.theme.Gray400
 import com.example.passedpath.ui.theme.PassedPathTheme
-import androidx.compose.foundation.layout.Spacer // Need to add this import
 
 @Composable
 fun AppButton(
@@ -25,7 +25,7 @@ fun AppButton(
     onClick: () -> Unit,            // 버튼 클릭시 동작
     modifier: Modifier = Modifier,  // 수정자
     enabled: Boolean = true,        // 비활성 여부
-    variant: ButtonVariant = ButtonVariant.PRIMARY, // 버튼 종류
+    variant: ButtonVariant = ButtonVariant.PRIMARY, // 🌟버튼 종류
 ) {
     when (variant) {
         ButtonVariant.PRIMARY, ButtonVariant.SECONDARY -> {
@@ -60,6 +60,7 @@ fun AppButton(
                 )
             }
         }
+
         ButtonVariant.TEXT_ONLY -> {
             TextButton(
                 onClick = onClick,
