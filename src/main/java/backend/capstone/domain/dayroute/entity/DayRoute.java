@@ -49,4 +49,9 @@ public class DayRoute {
         this.user = user;
         this.date = date;
     }
+
+    public void updateTime(LocalDateTime startTime, LocalDateTime endTime) {
+        this.startTime = startTime;
+        this.endTime = endTime;
+    }
 }

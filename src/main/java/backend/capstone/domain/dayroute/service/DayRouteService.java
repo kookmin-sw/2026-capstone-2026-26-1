@@ -5,6 +5,7 @@ import backend.capstone.domain.dayroute.dto.GpsPointBatchUploadResponse;
 import backend.capstone.domain.dayroute.entity.DayRoute;
 import backend.capstone.domain.dayroute.mapper.DayRouteMapper;
 import backend.capstone.domain.dayroute.repository.DayRouteRepository;
+import backend.capstone.domain.gpspoint.dto.GpsPointRecordedAtRange;
 import backend.capstone.domain.gpspoint.service.GpsPointService;
 import backend.capstone.domain.user.entity.User;
 import java.time.LocalDate;
@@ -25,6 +26,10 @@ public class DayRouteService {
         GpsPointBatchUploadRequest request) {
         DayRoute dayRoute = createDayRouteIfNotExists(user, request.date());
         gpsPointService.batchInsert(dayRoute.getId(), request);
+
+        // 업로드된 좌표의 시간 범위로 DayRoute 시간 업데이트
+        GpsPointRecordedAtRange gpsPointRange = gpsPointService.getGpsPointRange(dayRoute);
+        dayRoute.updateTime(gpsPointRange.getStartTime(), gpsPointRange.getEndTime());
 
         return new GpsPointBatchUploadResponse("좌표 업로드에 성공했습니다.");
     }
