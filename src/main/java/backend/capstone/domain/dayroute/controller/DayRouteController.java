@@ -2,7 +2,7 @@ package backend.capstone.domain.dayroute.controller;
 
 import backend.capstone.domain.dayroute.dto.GpsPointBatchUploadRequest;
 import backend.capstone.domain.dayroute.dto.GpsPointBatchUploadResponse;
-import backend.capstone.domain.dayroute.gpspoint.service.GpsPointService;
+import backend.capstone.domain.dayroute.service.DayRouteService;
 import backend.capstone.domain.user.entity.User;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -17,14 +17,13 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/day-route")
 public class DayRouteController {
 
-    private final GpsPointService gpsPointService;
+    private DayRouteService dayRouteService;
 
-    @PostMapping("/gps-points/batch-upload")
+    @PostMapping("/gps-points/upload")
     public GpsPointBatchUploadResponse uploadGpsPoints(
         @Valid @RequestBody GpsPointBatchUploadRequest request,
         @AuthenticationPrincipal User user
     ) {
-        gpsPointService.batchInsert(user.getId(), request);
-        return new GpsPointBatchUploadResponse("좌표 업로드에 성공했습니다.");
+        return dayRouteService.uploadGpsPoint(user, request);
     }
 }

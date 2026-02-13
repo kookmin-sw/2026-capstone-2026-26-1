@@ -2,13 +2,14 @@ package backend.capstone.domain.dayroute.dto;
 
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.Size;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
 public record GpsPointBatchUploadRequest(
 //    String deviceId,
-    @Size(max = 250) List<GpsPointRequest> gpsPoints
+    LocalDate date,
+    List<GpsPointRequest> gpsPoints
 ) {
 
     public record GpsPointRequest(

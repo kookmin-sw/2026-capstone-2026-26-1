@@ -1,6 +1,6 @@
-package backend.capstone.domain.dayroute.gpspoint.entity;
+package backend.capstone.domain.gpspoint.entity;
 
-import backend.capstone.domain.user.entity.User;
+import backend.capstone.domain.dayroute.entity.DayRoute;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -21,8 +21,9 @@ import lombok.NoArgsConstructor;
 @Table(
     name = "gps_point",
     uniqueConstraints = {
-        @UniqueConstraint(name = "uk_user_recorded_at", columnNames = {"user_id", "recorded_at"})
-    } //TODO: user_id대신 device_id 넣기
+        @UniqueConstraint(name = "uk_day_route_recorded_at", columnNames = {"day_route_id",
+            "recorded_at"})
+    }
 )
 public class GpsPoint {
 
@@ -32,8 +33,8 @@ public class GpsPoint {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "user_id")
-    private User userId;
+    @JoinColumn(name = "day_route_id")
+    private DayRoute dayRoute;
 
 //    private String deviceId;
 

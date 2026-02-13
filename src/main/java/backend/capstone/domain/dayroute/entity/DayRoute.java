@@ -11,6 +11,7 @@ import jakarta.persistence.ManyToOne;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -42,4 +43,10 @@ public class DayRoute {
     private boolean deleted;
 
     private boolean bookmarked;
+
+    @Builder
+    public DayRoute(User user, LocalDate date) {
+        this.user = user;
+        this.date = date;
+    }
 }
