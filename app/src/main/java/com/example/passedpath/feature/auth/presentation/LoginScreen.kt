@@ -1,4 +1,4 @@
-package com.example.passedpath.feature.auth
+package com.example.passedpath.feature.auth.presentation
 
 import android.widget.Toast
 import androidx.compose.foundation.background

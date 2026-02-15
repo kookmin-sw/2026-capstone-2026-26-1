@@ -1,4 +1,4 @@
-package com.example.passedpath.data.auth
+package com.example.passedpath.feature.auth.data
 
 import android.content.Context
 import android.util.Log

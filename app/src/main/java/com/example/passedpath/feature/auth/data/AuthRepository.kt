@@ -1,6 +1,5 @@
-package com.example.passedpath.data.repository
+package com.example.passedpath.feature.auth.data
 
-import com.example.passedpath.data.auth.AuthTokenManager
 import com.example.passedpath.data.network.api.AuthApi
 import com.example.passedpath.data.network.dto.ErrorResponse
 import com.example.passedpath.data.network.dto.KakaoLoginRequest

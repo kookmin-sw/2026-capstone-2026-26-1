@@ -1,4 +1,4 @@
-package com.example.passedpath.feature.auth
+package com.example.passedpath.feature.auth.presentation
 
 import kotlinx.coroutines.flow.MutableSharedFlow
 
