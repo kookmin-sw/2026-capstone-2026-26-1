@@ -7,8 +7,8 @@ import android.os.Build
 import androidx.core.content.ContextCompat
 
 // 실제 화면이 아니라, 앱 진입시 흐름을 분기하는 Gate
-
 // 위치 권한을 OS 기준으로만 판별하는 유틸
+
 object LocationPermissionGate {
 
     // 포그라운드 위치 권한 허용 여부 확인
