@@ -12,8 +12,8 @@ import com.example.passedpath.data.datastore.TokenDataStore
 import com.example.passedpath.feature.auth.presentation.screen.LoginScreen
 import com.example.passedpath.feature.auth.presentation.state.AuthEvent
 import com.example.passedpath.feature.main.MainScreen
-import com.example.passedpath.feature.permission.LocationPermissionGate
-import com.example.passedpath.feature.permission.LocationPermissionIntroScreen
+import com.example.passedpath.feature.permission.data.manager.LocationPermissionGate
+import com.example.passedpath.feature.permission.presentation.screen.LocationPermissionIntroScreen
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 

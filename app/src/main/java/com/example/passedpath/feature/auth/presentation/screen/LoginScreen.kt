@@ -24,7 +24,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.passedpath.feature.auth.presentation.viewmodel.LoginViewModel
-import com.example.passedpath.feature.permission.LocationPermissionGate
+import com.example.passedpath.feature.permission.data.manager.LocationPermissionGate
 import com.example.passedpath.navigation.NavRoute
 
 @Composable

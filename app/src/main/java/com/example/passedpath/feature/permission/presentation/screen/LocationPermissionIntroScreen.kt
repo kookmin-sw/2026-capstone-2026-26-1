@@ -1,4 +1,4 @@
-package com.example.passedpath.feature.permission
+package com.example.passedpath.feature.permission.presentation.screen
 
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.example.passedpath.R
+import com.example.passedpath.feature.permission.data.manager.LocationPermissionGate
 import com.example.passedpath.ui.PermissionSettingDialog
 import com.example.passedpath.ui.component.AppButton
 import com.example.passedpath.ui.theme.PassedPathTheme

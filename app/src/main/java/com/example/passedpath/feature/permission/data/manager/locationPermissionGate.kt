@@ -1,4 +1,4 @@
-package com.example.passedpath.feature.permission
+package com.example.passedpath.feature.permission.data.manager
 
 import android.Manifest
 import android.content.Context

@@ -2,7 +2,7 @@ package com.example.passedpath.feature.main
 
 import android.content.Context
 import androidx.lifecycle.ViewModel
-import com.example.passedpath.feature.permission.LocationPermissionGate
+import com.example.passedpath.feature.permission.data.manager.LocationPermissionGate
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
