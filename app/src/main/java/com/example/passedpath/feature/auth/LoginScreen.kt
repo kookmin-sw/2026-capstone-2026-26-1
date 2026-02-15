@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.passedpath.feature.auth.LoginViewModel
+import com.example.passedpath.navigation.NavRoute
 
 @Composable
 fun LoginScreen(
@@ -73,8 +74,8 @@ fun LoginScreen(
                     context = context,
                     onLoginSuccess = {
                         // 로그인 성공 → 메인 화면 이동
-                        navController.navigate("main") {
-                            popUpTo("login") { inclusive = true }
+                        navController.navigate(NavRoute.PERMISSION_INTRO) {
+                            popUpTo(NavRoute.LOGIN) { inclusive = true }
                         }
                     },
                     onLoginError = { message ->

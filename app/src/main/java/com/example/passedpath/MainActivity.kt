@@ -6,15 +6,26 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.navigation.compose.rememberNavController
 import com.example.passedpath.navigation.AppNavHost
+import com.example.passedpath.ui.theme.PassedPathTheme
 
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // composable 함수 진입점
+        // "UI는 compose로 생성한다"
         setContent {
-            val navController = rememberNavController()
-            AppNavHost(navController = navController)
+
+            // 앱 전체를 passedpathTheme으로 감쌈
+            PassedPathTheme {
+
+                // Navigation Controller
+                val navController = rememberNavController()
+
+
+                AppNavHost(navController = navController)
+            }
         }
     }
 }
