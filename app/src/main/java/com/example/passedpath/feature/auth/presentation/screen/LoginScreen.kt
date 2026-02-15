@@ -1,4 +1,4 @@
-package com.example.passedpath.feature.auth.presentation
+package com.example.passedpath.feature.auth.presentation.screen
 
 import android.widget.Toast
 import androidx.compose.foundation.background
@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import com.example.passedpath.feature.auth.presentation.viewmodel.LoginViewModel
 import com.example.passedpath.feature.permission.LocationPermissionGate
 import com.example.passedpath.navigation.NavRoute
 

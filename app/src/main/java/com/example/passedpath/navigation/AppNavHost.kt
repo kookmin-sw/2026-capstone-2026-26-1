@@ -9,8 +9,8 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.passedpath.data.datastore.TokenDataStore
-import com.example.passedpath.feature.auth.presentation.AuthEvent
-import com.example.passedpath.feature.auth.presentation.LoginScreen
+import com.example.passedpath.feature.auth.presentation.screen.LoginScreen
+import com.example.passedpath.feature.auth.presentation.state.AuthEvent
 import com.example.passedpath.feature.main.MainScreen
 import com.example.passedpath.feature.permission.LocationPermissionGate
 import com.example.passedpath.feature.permission.LocationPermissionIntroScreen

@@ -1,9 +1,9 @@
-package com.example.passedpath.feature.auth.data
+package com.example.passedpath.feature.auth.data.manager
 
 import android.content.Context
 import android.util.Log
 import com.example.passedpath.data.datastore.TokenDataStore
-import com.example.passedpath.data.network.api.AuthApi
+import com.example.passedpath.feature.auth.data.remote.api.AuthApi
 
 
 class AuthTokenManager(

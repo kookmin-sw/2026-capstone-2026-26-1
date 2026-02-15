@@ -1,8 +1,8 @@
-package com.example.passedpath.data.network.api
+package com.example.passedpath.feature.auth.data.remote.api
 
-import com.example.passedpath.data.network.dto.KakaoLoginRequest
-import com.example.passedpath.data.network.dto.KakaoLoginResponse
-import com.example.passedpath.data.network.dto.RefreshTokenResponse
+import com.example.passedpath.feature.auth.data.remote.dto.KakaoLoginRequest
+import com.example.passedpath.feature.auth.data.remote.dto.KakaoLoginResponse
+import com.example.passedpath.feature.auth.data.remote.dto.RefreshTokenResponse
 import retrofit2.http.Body
 import retrofit2.http.Header
 import retrofit2.http.POST

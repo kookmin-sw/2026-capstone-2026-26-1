@@ -1,9 +1,10 @@
-package com.example.passedpath.feature.auth.data
+package com.example.passedpath.feature.auth.data.repository
 
-import com.example.passedpath.data.network.api.AuthApi
-import com.example.passedpath.data.network.dto.ErrorResponse
-import com.example.passedpath.data.network.dto.KakaoLoginRequest
-import com.example.passedpath.data.network.dto.KakaoLoginResponse
+import com.example.passedpath.feature.auth.data.manager.AuthTokenManager
+import com.example.passedpath.feature.auth.data.remote.api.AuthApi
+import com.example.passedpath.feature.auth.data.remote.dto.ErrorResponse
+import com.example.passedpath.feature.auth.data.remote.dto.KakaoLoginRequest
+import com.example.passedpath.feature.auth.data.remote.dto.KakaoLoginResponse
 import com.google.gson.Gson
 import retrofit2.HttpException
 

@@ -1,4 +1,4 @@
-package com.example.passedpath.feature.auth.presentation
+package com.example.passedpath.feature.auth.presentation.viewmodel
 
 import android.content.Context
 import android.util.Log
@@ -6,9 +6,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.passedpath.data.datastore.TokenDataStore
 import com.example.passedpath.data.network.RetrofitClient
-import com.example.passedpath.feature.auth.data.AuthRepository
-import com.example.passedpath.feature.auth.data.AuthTokenManager
-import com.example.passedpath.feature.auth.data.KakaoAuthManager
+import com.example.passedpath.feature.auth.data.manager.AuthTokenManager
+import com.example.passedpath.feature.auth.data.manager.KakaoAuthManager
+import com.example.passedpath.feature.auth.data.repository.AuthRepository
 import kotlinx.coroutines.launch
 
 class LoginViewModel : ViewModel() {

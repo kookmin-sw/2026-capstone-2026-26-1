@@ -1,4 +1,4 @@
-package com.example.passedpath.data.network.dto
+package com.example.passedpath.feature.auth.data.remote.dto
 
 // DTO(Data Transfer Object)
 // 서버로부터 전달받는 데이터 객체 정의

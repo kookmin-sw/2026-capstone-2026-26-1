@@ -1,4 +1,4 @@
-package com.example.passedpath.feature.auth.data
+package com.example.passedpath.feature.auth.data.manager
 
 import android.content.Context
 import com.kakao.sdk.auth.model.OAuthToken

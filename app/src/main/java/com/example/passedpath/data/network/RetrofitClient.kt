@@ -1,8 +1,8 @@
 package com.example.passedpath.data.network
 
 import android.content.Context
-import com.example.passedpath.data.network.api.AuthApi
 import com.example.passedpath.data.network.api.TestApi
+import com.example.passedpath.feature.auth.data.remote.api.AuthApi
 import com.example.passedpath.interceptor.AuthInterceptor
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
