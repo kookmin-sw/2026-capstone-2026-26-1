@@ -1,4 +1,4 @@
-package com.example.passedpath.feature.main
+package com.example.passedpath.feature.main.presentation.state
 
 // 메인 화면 기능 제한용 상태
 enum class LocationPermissionUiState {

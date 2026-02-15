@@ -1,4 +1,4 @@
-package com.example.passedpath.feature.main
+package com.example.passedpath.feature.main.presentation.screen
 
 import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
@@ -20,6 +20,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.passedpath.data.network.RetrofitClient
+import com.example.passedpath.feature.main.presentation.state.LocationPermissionUiState
+import com.example.passedpath.feature.main.presentation.viewmodel.MainViewModel
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import androidx.compose.runtime.getValue

@@ -1,7 +1,8 @@
-package com.example.passedpath.feature.main
+package com.example.passedpath.feature.main.presentation.viewmodel
 
 import android.content.Context
 import androidx.lifecycle.ViewModel
+import com.example.passedpath.feature.main.presentation.state.LocationPermissionUiState
 import com.example.passedpath.feature.permission.data.manager.LocationPermissionGate
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
