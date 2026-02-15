@@ -11,15 +11,24 @@ class AuthInterceptor(
     private val context: Context
 ) : Interceptor {
 
+    private fun shouldSkipAuthorization(path: String): Boolean {
+        return path.startsWith("/api/auth/login") ||
+            path.startsWith("/api/auth/signup") ||
+            path.startsWith("/api/auth/refresh")
+    }
+
     override fun intercept(chain: Interceptor.Chain): Response {
         val originalRequest = chain.request()
+        val path = originalRequest.url.encodedPath
 
-        // datastore에서 access token 조회 (동기 허용 범위)
+        if (shouldSkipAuthorization(path)) {
+            return chain.proceed(originalRequest)
+        }
+
         val accessToken = runBlocking {
             TokenDataStore.getAccessToken(context)
         }
 
-        // Authorization 헤더 추가
         val authRequest = originalRequest.newBuilder().apply {
             if (!accessToken.isNullOrEmpty()) {
                 addHeader("Authorization", "Bearer $accessToken")
@@ -28,7 +37,6 @@ class AuthInterceptor(
 
         val response = chain.proceed(authRequest)
 
-        // 401은 "감지만" 한다
         if (response.code == 401) {
             Log.w("AUTH", "401 Unauthorized detected")
         }

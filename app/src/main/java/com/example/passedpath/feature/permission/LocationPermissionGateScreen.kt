@@ -60,7 +60,7 @@ fun LocationPermissionGateScreen(
                         popUpTo(NavRoute.PERMISSION_INTRO) { inclusive = true }
                     }
                 } else {
-                    navController.navigate(NavRoute.LIMITED_MAIN) {
+                    navController.navigate(NavRoute.MAIN) {
                         popUpTo(NavRoute.PERMISSION_INTRO) { inclusive = true }
                     }
                 }
@@ -81,7 +81,7 @@ fun LocationPermissionGateScreen(
                 AppSettingsNavigator.openAppSettings(context)
             },
             onDismiss = {
-                navController.navigate(NavRoute.LIMITED_MAIN) {
+                navController.navigate(NavRoute.MAIN) {
                     popUpTo(NavRoute.PERMISSION_INTRO) { inclusive = true }
                 }
             }
