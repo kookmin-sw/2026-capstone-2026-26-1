@@ -2,12 +2,13 @@ package backend.capstone.domain.gpspoint.repository;
 
 import backend.capstone.domain.dayroute.entity.DayRoute;
 import backend.capstone.domain.gpspoint.dto.GpsPointRecordedAtRange;
+import backend.capstone.domain.gpspoint.entity.GpsPoint;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface GpsPointRepository extends
-    JpaRepository<backend.capstone.domain.gpspoint.entity.GpsPoint, Long> {
+    JpaRepository<GpsPoint, Long> {
 
     @Query("""
             select new backend.capstone.domain.gpspoint.dto.GpsPointRecordedAtRange(
