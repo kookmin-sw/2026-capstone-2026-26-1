@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/day-routes")
 public class DayRouteController {
 
-    private DayRouteService dayRouteService;
+    private final DayRouteService dayRouteService;
 
     @PostMapping("/gps-points/upload")
     public GpsPointBatchUploadResponse uploadGpsPoints(

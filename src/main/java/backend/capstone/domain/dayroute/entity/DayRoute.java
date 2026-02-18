@@ -16,6 +16,7 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -38,7 +39,7 @@ public class DayRoute {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
 
@@ -57,7 +58,7 @@ public class DayRoute {
 
     private boolean bookmarked;
 
-    @OneToMany(fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "dayRoute")
     @OrderBy("recordedAt ASC")
     private List<GpsPoint> gpsPoints;
 
@@ -65,6 +66,7 @@ public class DayRoute {
     public DayRoute(User user, LocalDate date) {
         this.user = user;
         this.date = date;
+        gpsPoints = new ArrayList<>();
     }
 
     public void updateTime(LocalDateTime startTime, LocalDateTime endTime) {
