@@ -1,5 +1,6 @@
 package backend.capstone.domain.dayroute.service;
 
+import backend.capstone.domain.dayroute.dto.DayRouteDetailResponse;
 import backend.capstone.domain.dayroute.dto.GpsPointBatchUploadRequest;
 import backend.capstone.domain.dayroute.dto.GpsPointBatchUploadResponse;
 import backend.capstone.domain.dayroute.dto.GpsPointsResponse;
@@ -12,6 +13,7 @@ import backend.capstone.domain.gpspoint.entity.GpsPoint;
 import backend.capstone.domain.gpspoint.service.GpsPointService;
 import backend.capstone.domain.place.dto.PlaceAddRequest;
 import backend.capstone.domain.place.dto.PlaceAddResponse;
+import backend.capstone.domain.place.entity.Place;
 import backend.capstone.domain.place.service.PlaceService;
 import backend.capstone.domain.user.entity.User;
 import backend.capstone.domain.user.service.UserService;
@@ -58,15 +60,23 @@ public class DayRouteService {
     }
 
     @Transactional(readOnly = true)
-    public GpsPointsResponse getGpsPointList(LocalDate date, Long userId) {
+    public GpsPointsResponse getGpsPoints(LocalDate date, Long userId) {
         User user = userService.findById(userId);
-
-        DayRoute dayRoute = dayRouteRepository.findByUserAndDate(user, date)
-            .orElseThrow(() -> new BusinessException(DayRouteErrorCode.DAY_ROUTE_NOT_FOUND));
+        DayRoute dayRoute = getDayRouteByDateAndUser(date, user);
 
         List<GpsPoint> gpsPoints = gpsPointService.getGpsPointsByDayRouteId(dayRoute.getId());
 
-        return DayRouteMapper.toGpsPointListResponse(gpsPoints);
+        return DayRouteMapper.toGpsPointsResponse(gpsPoints);
+    }
+
+    @Transactional(readOnly = true)
+    public DayRouteDetailResponse getDayRouteDetail(LocalDate date, Long userId) {
+        User user = userService.findById(userId);
+
+        DayRoute dayRoute = getDayRouteByDateAndUser(date, user);
+        List<Place> places = placeService.getPlacesByDayRoute(dayRoute);
+
+        return DayRouteMapper.toDayRouteDetailResponse(dayRoute, places);
     }
 
     @Transactional
@@ -77,6 +87,12 @@ public class DayRouteService {
 
         return placeService.addPlace(dayRoute, request);
     }
+
+    private DayRoute getDayRouteByDateAndUser(LocalDate date, User user) {
+        return dayRouteRepository.findByUserAndDate(user, date)
+            .orElseThrow(() -> new BusinessException(DayRouteErrorCode.DAY_ROUTE_NOT_FOUND));
+    }
+
 
     private DayRoute createDayRouteIfNotExists(User user, LocalDate date) {
         return dayRouteRepository.findByUserAndDate(user, date)
@@ -98,5 +114,4 @@ public class DayRouteService {
         // 예: 도메인 예외로 변환
         throw new BusinessException(DayRouteErrorCode.GPS_POINT_UPLOAD_FAILURE);
     }
-
 }
