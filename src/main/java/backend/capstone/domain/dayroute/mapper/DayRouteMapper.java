@@ -1,6 +1,6 @@
 package backend.capstone.domain.dayroute.mapper;
 
-import backend.capstone.domain.dayroute.dto.DayRouteDetailResponse;
+import backend.capstone.domain.dayroute.dto.GpsPointsResponse;
 import backend.capstone.domain.dayroute.entity.DayRoute;
 import backend.capstone.domain.gpspoint.entity.GpsPoint;
 import backend.capstone.domain.user.entity.User;
@@ -19,16 +19,10 @@ public class DayRouteMapper {
             .build();
     }
 
-    public static DayRouteDetailResponse toDayRouteDetailResponse(DayRoute dayRoute,
-        List<GpsPoint> gpsPoints) {
-
-        return DayRouteDetailResponse.builder()
-            .dayRouteId(dayRoute.getId())
-            .date(dayRoute.getDate())
-            .totalDistance(dayRoute.getTotalDistance())
-            .isBookmarked(dayRoute.isBookmarked())
+    public static GpsPointsResponse toGpsPointListResponse(List<GpsPoint> gpsPoints) {
+        return GpsPointsResponse.builder()
             .gpsPoints(gpsPoints.stream()
-                .map(gp -> new DayRouteDetailResponse.GpsPointListResponse(
+                .map(gp -> new GpsPointsResponse.GpsPointItem(
                     gp.getRecordedAt(),
                     gp.getLatitude(),
                     gp.getLongitude()

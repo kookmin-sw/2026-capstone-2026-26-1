@@ -1,8 +1,8 @@
 package backend.capstone.domain.dayroute.service;
 
-import backend.capstone.domain.dayroute.dto.DayRouteDetailResponse;
 import backend.capstone.domain.dayroute.dto.GpsPointBatchUploadRequest;
 import backend.capstone.domain.dayroute.dto.GpsPointBatchUploadResponse;
+import backend.capstone.domain.dayroute.dto.GpsPointsResponse;
 import backend.capstone.domain.dayroute.entity.DayRoute;
 import backend.capstone.domain.dayroute.exception.DayRouteErrorCode;
 import backend.capstone.domain.dayroute.mapper.DayRouteMapper;
@@ -44,10 +44,10 @@ public class DayRouteService {
         backoff = @Backoff(delay = 100, multiplier = 2)
     )
     @Transactional
-    public GpsPointBatchUploadResponse uploadGpsPoint(Long userId,
+    public GpsPointBatchUploadResponse uploadGpsPoint(LocalDate date, Long userId,
         GpsPointBatchUploadRequest request) {
         User user = userService.findById(userId);
-        DayRoute dayRoute = createDayRouteIfNotExists(user, request.date());
+        DayRoute dayRoute = createDayRouteIfNotExists(user, date);
         gpsPointService.batchInsert(dayRoute.getId(), request);
 
         // 업로드된 좌표의 시간 범위로 DayRoute 시간 업데이트
@@ -58,13 +58,15 @@ public class DayRouteService {
     }
 
     @Transactional(readOnly = true)
-    public DayRouteDetailResponse getDayRouteDetail(Long dayRouteId, Long userId) {
-        DayRoute dayRoute = dayRouteRepository.findByIdAndUser(dayRouteId, userId)
-            .orElseThrow(() -> new BusinessException(DayRouteErrorCode.CANNOT_ACCESS_DAY_ROUTE));
+    public GpsPointsResponse getGpsPointList(LocalDate date, Long userId) {
+        User user = userService.findById(userId);
 
-        List<GpsPoint> gpsPoints = gpsPointService.getGpsPointsByDayRouteId(dayRouteId);
+        DayRoute dayRoute = dayRouteRepository.findByUserAndDate(user, date)
+            .orElseThrow(() -> new BusinessException(DayRouteErrorCode.DAY_ROUTE_NOT_FOUND));
 
-        return DayRouteMapper.toDayRouteDetailResponse(dayRoute, gpsPoints);
+        List<GpsPoint> gpsPoints = gpsPointService.getGpsPointsByDayRouteId(dayRoute.getId());
+
+        return DayRouteMapper.toGpsPointListResponse(gpsPoints);
     }
 
     @Transactional

@@ -1,9 +1,9 @@
 package backend.capstone.domain.dayroute.controller;
 
 import backend.capstone.auth.dto.UserPrincipal;
-import backend.capstone.domain.dayroute.dto.DayRouteDetailResponse;
 import backend.capstone.domain.dayroute.dto.GpsPointBatchUploadRequest;
 import backend.capstone.domain.dayroute.dto.GpsPointBatchUploadResponse;
+import backend.capstone.domain.dayroute.dto.GpsPointsResponse;
 import backend.capstone.domain.dayroute.service.DayRouteService;
 import backend.capstone.domain.place.dto.PlaceAddRequest;
 import backend.capstone.domain.place.dto.PlaceAddResponse;
@@ -25,23 +25,24 @@ public class DayRouteController {
 
     private final DayRouteService dayRouteService;
 
-    @PostMapping("/gps-points/upload")
+    @PostMapping("/{date}/gps-points:batch")
     public GpsPointBatchUploadResponse uploadGpsPoints(
+        @PathVariable LocalDate date,
         @Valid @RequestBody GpsPointBatchUploadRequest request,
         @AuthenticationPrincipal UserPrincipal principal
     ) {
-        return dayRouteService.uploadGpsPoint(principal.userId(), request);
+        return dayRouteService.uploadGpsPoint(date, principal.userId(), request);
     }
 
-    @GetMapping("/{dayRouteId}/gps-points")
-    public DayRouteDetailResponse getDayRouteDetail(
-        @PathVariable Long dayRouteId,
+    @GetMapping("/{date}/gps-points")
+    public GpsPointsResponse getDayRouteDetail(
+        @PathVariable LocalDate date,
         @AuthenticationPrincipal UserPrincipal principal
     ) {
-        return dayRouteService.getDayRouteDetail(dayRouteId, principal.userId());
+        return dayRouteService.getGpsPointList(date, principal.userId());
     }
 
-    @PostMapping("/{date}/places")
+    @PostMapping("/{date}/places:add")
     public PlaceAddResponse addPlaceToDayRoute(
         @PathVariable LocalDate date,
         @AuthenticationPrincipal UserPrincipal principal,
