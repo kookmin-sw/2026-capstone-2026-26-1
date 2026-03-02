@@ -16,7 +16,11 @@ import backend.capstone.global.exception.BusinessException;
 import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.CannotAcquireLockException;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Recover;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,7 +32,13 @@ public class DayRouteService {
     private final GpsPointService gpsPointService;
     private final UserService userService;
 
-    //TODO: 업로드 실패 예외처리 필요
+    @Retryable(
+        retryFor = {
+            CannotAcquireLockException.class
+        },
+        maxAttempts = 3,
+        backoff = @Backoff(delay = 100, multiplier = 2)
+    )
     @Transactional
     public GpsPointBatchUploadResponse uploadGpsPoint(Long userId,
         GpsPointBatchUploadRequest request) {
@@ -65,6 +75,13 @@ public class DayRouteService {
                             () -> new BusinessException(DayRouteErrorCode.DAY_ROUTE_CREATE_FAILED));
                 }
             });
+    }
+
+    @Recover
+    public GpsPointBatchUploadResponse recover(RuntimeException e, Long userId,
+        GpsPointBatchUploadRequest request) {
+        // 예: 도메인 예외로 변환
+        throw new BusinessException(DayRouteErrorCode.GPS_POINT_UPLOAD_FAILURE);
     }
 
 }
