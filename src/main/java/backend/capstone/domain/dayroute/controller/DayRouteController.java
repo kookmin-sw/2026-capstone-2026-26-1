@@ -51,7 +51,7 @@ public class DayRouteController {
         return dayRouteService.getDayRouteDetail(date, principal.userId());
     }
 
-    @PostMapping("/{date}/places:add")
+    @PostMapping("/{date}/places")
     public PlaceAddResponse addPlaceToDayRoute(
         @PathVariable LocalDate date,
         @AuthenticationPrincipal UserPrincipal principal,
