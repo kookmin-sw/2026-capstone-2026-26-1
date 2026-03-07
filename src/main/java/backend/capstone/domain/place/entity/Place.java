@@ -50,4 +50,9 @@ public class Place {
         this.orderIndex = orderIndex;
     }
 
+    public void update(String roadAddress, String name) {
+        this.roadAddress = roadAddress;
+        this.name = name;
+    }
+
 }

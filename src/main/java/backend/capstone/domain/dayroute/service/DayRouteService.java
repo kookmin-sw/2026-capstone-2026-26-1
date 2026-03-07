@@ -13,6 +13,8 @@ import backend.capstone.domain.gpspoint.entity.GpsPoint;
 import backend.capstone.domain.gpspoint.service.GpsPointService;
 import backend.capstone.domain.place.dto.PlaceAddRequest;
 import backend.capstone.domain.place.dto.PlaceAddResponse;
+import backend.capstone.domain.place.dto.PlaceUpdateRequest;
+import backend.capstone.domain.place.dto.PlaceUpdateResponse;
 import backend.capstone.domain.place.entity.Place;
 import backend.capstone.domain.place.service.PlaceService;
 import backend.capstone.domain.user.service.UserService;
@@ -81,11 +83,18 @@ public class DayRouteService {
         return placeService.addPlace(dayRoute, request);
     }
 
+    @Transactional
+    public PlaceUpdateResponse updatePlace(LocalDate date, Long userId,
+        Long placeId, PlaceUpdateRequest request) {
+        DayRoute dayRoute = getDayRouteByDateAndUserId(date, userId);
+
+        return placeService.updatePlace(dayRoute, placeId, request);
+    }
+
     private DayRoute getDayRouteByDateAndUserId(LocalDate date, Long userId) {
         return dayRouteRepository.findByUserIdAndDate(userId, date)
             .orElseThrow(() -> new BusinessException(DayRouteErrorCode.DAY_ROUTE_NOT_FOUND));
     }
-
 
     private DayRoute createDayRouteIfNotExists(Long userId, LocalDate date) {
         return dayRouteRepository.findByUserIdAndDate(userId, date)

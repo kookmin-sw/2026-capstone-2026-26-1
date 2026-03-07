@@ -3,6 +3,7 @@ package backend.capstone.domain.place.mapper;
 import backend.capstone.domain.dayroute.entity.DayRoute;
 import backend.capstone.domain.place.dto.PlaceAddRequest;
 import backend.capstone.domain.place.dto.PlaceAddResponse;
+import backend.capstone.domain.place.dto.PlaceUpdateResponse;
 import backend.capstone.domain.place.entity.Place;
 import lombok.NoArgsConstructor;
 
@@ -24,6 +25,13 @@ public class PlaceMapper {
             .placeName(place.getName())
             .roadAddress(place.getRoadAddress())
             .orderIndex(place.getOrderIndex())
+            .build();
+    }
+
+    public static PlaceUpdateResponse toPlaceUpdateResponse(Place place) {
+        return PlaceUpdateResponse.builder()
+            .roadAddress(place.getRoadAddress())
+            .placeName(place.getName())
             .build();
     }
 
