@@ -25,10 +25,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/day-routes")
-public class DayRouteController {
+public class DayRouteController implements DayRouteControllerSpec {
 
     private final DayRouteService dayRouteService;
 
+    @Override
     @PostMapping("/{date}/gps-points:batch")
     public GpsPointBatchUploadResponse uploadGpsPoints(
         @PathVariable LocalDate date,
@@ -38,6 +39,7 @@ public class DayRouteController {
         return dayRouteService.uploadGpsPoint(date, principal.userId(), request);
     }
 
+    @Override
     @GetMapping("/{date}/gps-points")
     public GpsPointsResponse getGpsPoints(
         @PathVariable LocalDate date,
@@ -46,6 +48,7 @@ public class DayRouteController {
         return dayRouteService.getGpsPoints(date, principal.userId());
     }
 
+    @Override
     @GetMapping("/{date}")
     public DayRouteDetailResponse getDayRouteDetail(
         @PathVariable LocalDate date,
@@ -54,6 +57,7 @@ public class DayRouteController {
         return dayRouteService.getDayRouteDetail(date, principal.userId());
     }
 
+    @Override
     @PostMapping("/{date}/places")
     public PlaceAddResponse addPlaceToDayRoute(
         @PathVariable LocalDate date,
