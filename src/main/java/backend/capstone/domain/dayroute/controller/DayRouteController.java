@@ -5,7 +5,7 @@ import backend.capstone.domain.dayroute.dto.DayRouteDetailResponse;
 import backend.capstone.domain.dayroute.dto.GpsPointBatchUploadRequest;
 import backend.capstone.domain.dayroute.dto.GpsPointBatchUploadResponse;
 import backend.capstone.domain.dayroute.dto.GpsPointsResponse;
-import backend.capstone.domain.dayroute.service.DayRouteService;
+import backend.capstone.domain.dayroute.facade.DayRouteFacade;
 import backend.capstone.domain.place.dto.PlaceAddRequest;
 import backend.capstone.domain.place.dto.PlaceAddResponse;
 import backend.capstone.domain.place.dto.PlaceUpdateRequest;
@@ -27,7 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/day-routes")
 public class DayRouteController implements DayRouteControllerSpec {
 
-    private final DayRouteService dayRouteService;
+    private final DayRouteFacade dayRouteFacade;
 
     @Override
     @PostMapping("/{date}/gps-points:batch")
@@ -36,7 +36,7 @@ public class DayRouteController implements DayRouteControllerSpec {
         @Valid @RequestBody GpsPointBatchUploadRequest request,
         @AuthenticationPrincipal UserPrincipal principal
     ) {
-        return dayRouteService.uploadGpsPoint(date, principal.userId(), request);
+        return dayRouteFacade.uploadGpsPoint(date, principal.userId(), request);
     }
 
     @Override
@@ -45,7 +45,7 @@ public class DayRouteController implements DayRouteControllerSpec {
         @PathVariable LocalDate date,
         @AuthenticationPrincipal UserPrincipal principal
     ) {
-        return dayRouteService.getGpsPoints(date, principal.userId());
+        return dayRouteFacade.getGpsPoints(date, principal.userId());
     }
 
     @Override
@@ -54,7 +54,7 @@ public class DayRouteController implements DayRouteControllerSpec {
         @PathVariable LocalDate date,
         @AuthenticationPrincipal UserPrincipal principal
     ) {
-        return dayRouteService.getDayRouteDetail(date, principal.userId());
+        return dayRouteFacade.getDayRouteDetail(date, principal.userId());
     }
 
     @Override
@@ -64,7 +64,7 @@ public class DayRouteController implements DayRouteControllerSpec {
         @AuthenticationPrincipal UserPrincipal principal,
         @RequestBody PlaceAddRequest request
     ) {
-        return dayRouteService.addPlaceToDayRoute(date, principal.userId(), request);
+        return dayRouteFacade.addPlaceToDayRoute(date, principal.userId(), request);
     }
 
     @PutMapping("/{date}/places/{placeId}")
@@ -74,7 +74,7 @@ public class DayRouteController implements DayRouteControllerSpec {
         @AuthenticationPrincipal UserPrincipal principal,
         @RequestBody PlaceUpdateRequest request
     ) {
-        return dayRouteService.updatePlace(date, principal.userId(), placeId, request);
+        return dayRouteFacade.updatePlace(date, principal.userId(), placeId, request);
     }
 
 }

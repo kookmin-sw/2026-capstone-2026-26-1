@@ -10,6 +10,7 @@ import backend.capstone.domain.place.dto.PlaceAddResponse;
 import backend.capstone.domain.place.dto.PlaceUpdateRequest;
 import backend.capstone.domain.place.dto.PlaceUpdateResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.time.LocalDate;
 
@@ -21,7 +22,7 @@ public interface DayRouteControllerSpec {
         description = "경로 변수로 넣어주는 date는 2026-03-08 같은 형식으로 넣어주세요<br>"
     )
     GpsPointBatchUploadResponse uploadGpsPoints(
-        LocalDate date,
+        @Parameter(example = "2026-01-01") LocalDate date,
         GpsPointBatchUploadRequest request,
         UserPrincipal principal
     );
@@ -33,7 +34,7 @@ public interface DayRouteControllerSpec {
             """
     )
     GpsPointsResponse getGpsPoints(
-        LocalDate date,
+        @Parameter(example = "2026-01-01") LocalDate date,
         UserPrincipal principal
     );
 
@@ -42,7 +43,7 @@ public interface DayRouteControllerSpec {
         description = "place의 orderIndex는 장소들의 순서이며 이 순서대로 오름차순 정렬해서 데이터가 반환됩니다."
     )
     DayRouteDetailResponse getDayRouteDetail(
-        LocalDate date,
+        @Parameter(example = "2026-01-01") LocalDate date,
         UserPrincipal principal
     );
 
@@ -50,7 +51,7 @@ public interface DayRouteControllerSpec {
         summary = "장소 등록 API"
     )
     PlaceAddResponse addPlaceToDayRoute(
-        LocalDate date,
+        @Parameter(example = "2026-01-01") LocalDate date,
         UserPrincipal principal,
         PlaceAddRequest request
     );
@@ -62,8 +63,8 @@ public interface DayRouteControllerSpec {
             """
     )
     PlaceUpdateResponse updatePlace(
-        LocalDate date,
-        Long placeId,
+        @Parameter(example = "2026-01-01") LocalDate date,
+        @Parameter(example = "1") Long placeId,
         UserPrincipal principal,
         PlaceUpdateRequest request
     );
