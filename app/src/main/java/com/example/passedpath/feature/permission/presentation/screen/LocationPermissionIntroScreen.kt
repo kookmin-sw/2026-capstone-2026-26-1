@@ -84,7 +84,7 @@ fun LocationPermissionIntroScreen(
         }
 
         Image(
-            painter = painterResource(id = R.drawable.onboarding_image),
+            painter = painterResource(id = R.drawable.location_perrmission_intro_image),
             contentDescription = "Onboarding illustration for location permission",
             modifier = Modifier
                 .fillMaxWidth(0.8f)
