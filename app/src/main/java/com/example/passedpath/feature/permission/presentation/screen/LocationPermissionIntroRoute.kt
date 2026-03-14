@@ -1,4 +1,4 @@
-﻿package com.example.passedpath.feature.permission.presentation.screen
+package com.example.passedpath.feature.permission.presentation.screen
 
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -12,7 +12,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.viewmodel.compose.viewModel

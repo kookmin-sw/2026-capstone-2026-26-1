@@ -3,6 +3,7 @@ package com.example.passedpath.navigation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.example.passedpath.BuildConfig
 import com.example.passedpath.app.AppContainer
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -22,6 +23,11 @@ class AppEntryViewModel(
 
     init {
         viewModelScope.launch {
+            if (BuildConfig.DEV_SKIP_LOGIN) {
+                _state.value = AppEntryState.Ready(NavRoute.MAIN)
+                return@launch
+            }
+
             val token = appContainer.authSessionStorage.getAccessToken()
 
             val destination = when {

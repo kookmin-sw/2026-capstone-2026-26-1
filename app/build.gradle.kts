@@ -19,7 +19,12 @@ android {
     }
 
     buildTypes {
+        debug {
+            buildConfigField("Boolean", "DEV_SKIP_LOGIN", "true")
+        }
+
         release {
+            buildConfigField("Boolean", "DEV_SKIP_LOGIN", "false")
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -35,6 +40,7 @@ android {
         jvmTarget = "11"
     }
     buildFeatures {
+        buildConfig = true
         compose = true
     }
 }
