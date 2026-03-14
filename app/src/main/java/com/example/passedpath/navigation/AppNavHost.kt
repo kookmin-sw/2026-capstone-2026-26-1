@@ -2,28 +2,18 @@ package com.example.passedpath.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.example.passedpath.app.appContainer
-import com.example.passedpath.feature.auth.presentation.screen.LoginScreen
+import com.example.passedpath.feature.auth.presentation.screen.LoginRoute
 import com.example.passedpath.feature.auth.presentation.state.AuthEvent
-import com.example.passedpath.feature.main.presentation.screen.MainScreen
-import com.example.passedpath.feature.permission.presentation.screen.LocationPermissionIntroScreen
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import com.example.passedpath.feature.main.presentation.screen.MainRoute
+import com.example.passedpath.feature.permission.presentation.screen.LocationPermissionIntroRoute
 
 @Composable
 fun AppNavHost(
     navController: NavHostController
 ) {
-    val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
-    val appContainer = context.appContainer
-
     LaunchedEffect(Unit) {
         AuthEvent.logoutEvent.collect {
             navController.navigate(NavRoute.LOGIN) {
@@ -32,34 +22,32 @@ fun AppNavHost(
         }
     }
 
-    val startDestination = remember {
-        runBlocking {
-            val token = appContainer.authSessionStorage.getAccessToken()
-
-            if (token == null) {
-                return@runBlocking NavRoute.LOGIN
-            }
-
-            val alwaysGranted = appContainer.permissionChecker.isBackgroundAlwaysGranted()
-
-            if (alwaysGranted) {
-                NavRoute.MAIN
-            } else {
-                NavRoute.PERMISSION_INTRO
-            }
-        }
-    }
-
     NavHost(
         navController = navController,
-        startDestination = startDestination
+        startDestination = NavRoute.ENTRY
     ) {
+        composable(NavRoute.ENTRY) {
+            AppEntryRoute(
+                onResolved = { destination ->
+                    navController.navigate(destination) {
+                        popUpTo(NavRoute.ENTRY) { inclusive = true }
+                    }
+                }
+            )
+        }
+
         composable(NavRoute.LOGIN) {
-            LoginScreen(navController = navController)
+            LoginRoute(
+                onNavigate = { destination ->
+                    navController.navigate(destination) {
+                        popUpTo(NavRoute.LOGIN) { inclusive = true }
+                    }
+                }
+            )
         }
 
         composable(NavRoute.PERMISSION_INTRO) {
-            LocationPermissionIntroScreen(
+            LocationPermissionIntroRoute(
                 onPermissionResolved = {
                     navController.navigate(NavRoute.MAIN) {
                         popUpTo(NavRoute.PERMISSION_INTRO) { inclusive = true }
@@ -69,17 +57,7 @@ fun AppNavHost(
         }
 
         composable(NavRoute.MAIN) {
-            MainScreen(
-                onLogout = {
-                    coroutineScope.launch {
-                        appContainer.authSessionStorage.clear()
-
-                        navController.navigate(NavRoute.LOGIN) {
-                            popUpTo(0)
-                        }
-                    }
-                }
-            )
+            MainRoute()
         }
     }
 }

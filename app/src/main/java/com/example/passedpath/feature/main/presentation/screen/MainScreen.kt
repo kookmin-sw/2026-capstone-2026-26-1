@@ -1,4 +1,4 @@
-package com.example.passedpath.feature.main.presentation.screen
+ï»¿package com.example.passedpath.feature.main.presentation.screen
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -9,34 +9,19 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.passedpath.app.appContainer
 import com.example.passedpath.feature.main.presentation.state.LocationPermissionUiState
-import com.example.passedpath.feature.main.presentation.viewmodel.MainViewModel
-import com.example.passedpath.feature.main.presentation.viewmodel.MainViewModelFactory
 
 @Composable
 fun MainScreen(
-    onLogout: () -> Unit,
-    viewModel: MainViewModel = viewModel(
-        factory = MainViewModelFactory(LocalContext.current.appContainer)
-    )
+    permissionState: LocationPermissionUiState,
+    testResult: String?,
+    onTestClick: () -> Unit,
+    onLogoutClick: () -> Unit
 ) {
-    val permissionState by viewModel.permissionUiState.collectAsState()
-    val testResult by viewModel.testResult.collectAsState()
-
-    LaunchedEffect(Unit) {
-        viewModel.checkPermission()
-    }
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -44,21 +29,17 @@ fun MainScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text(text = "ë©”ì¸ ?”ë©´")
+        Text(text = "Main")
         Spacer(modifier = Modifier.height(16.dp))
 
         if (permissionState == LocationPermissionUiState.FULL) {
-            Text(text = "?“ ?„ì¹˜ ê¸°ëŠ¥ ?œì„±?”ë¨")
+            Text(text = "Background location is enabled")
         } else {
-            Text(text = "?“ ?œí•œ?íƒœ")
+            Text(text = "Background location is limited")
         }
 
-        Button(
-            onClick = {
-                viewModel.testApi()
-            }
-        ) {
-            Text("TEST API ?¸ì¶œ")
+        Button(onClick = onTestClick) {
+            Text("Test API")
         }
 
         testResult?.let { result ->
@@ -68,12 +49,8 @@ fun MainScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        Button(
-            onClick = {
-                onLogout()
-            }
-        ) {
-            Text(text = "ë¡œê·¸?„ì›ƒ")
+        Button(onClick = onLogoutClick) {
+            Text(text = "Logout")
         }
     }
 }
@@ -82,6 +59,9 @@ fun MainScreen(
 @Composable
 fun MainScreenPreview() {
     MainScreen(
-        onLogout = {}
+        permissionState = LocationPermissionUiState.FULL,
+        testResult = "OK",
+        onTestClick = {},
+        onLogoutClick = {}
     )
 }

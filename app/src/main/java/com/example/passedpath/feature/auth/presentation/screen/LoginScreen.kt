@@ -1,6 +1,5 @@
-package com.example.passedpath.feature.auth.presentation.screen
+﻿package com.example.passedpath.feature.auth.presentation.screen
 
-import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -18,32 +17,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
 import com.example.passedpath.R
-import com.example.passedpath.app.appContainer
-import com.example.passedpath.feature.auth.presentation.viewmodel.LoginDestination
-import com.example.passedpath.feature.auth.presentation.viewmodel.LoginViewModel
-import com.example.passedpath.feature.auth.presentation.viewmodel.LoginViewModelFactory
-import com.example.passedpath.navigation.NavRoute
 import com.example.passedpath.ui.theme.PassedPathTheme
 
 @Composable
 fun LoginScreen(
-    navController: NavHostController,
-    viewModel: LoginViewModel = viewModel(
-        factory = LoginViewModelFactory(LocalContext.current.appContainer)
-    )
+    onLoginClick: () -> Unit
 ) {
-    val context = LocalContext.current
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -55,8 +40,7 @@ fun LoginScreen(
         Image(
             painter = painterResource(id = R.drawable.login_logo),
             contentDescription = "logo for login screen",
-            modifier = Modifier
-                .fillMaxHeight(0.1f)
+            modifier = Modifier.fillMaxHeight(0.1f)
         )
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -80,24 +64,7 @@ fun LoginScreen(
         Spacer(modifier = Modifier.weight(1f))
 
         Button(
-            onClick = {
-                viewModel.kakaoLogin(
-                    context = context,
-                    onLoginSuccess = { destination ->
-                        val nextRoute = when (destination) {
-                            LoginDestination.MAIN -> NavRoute.MAIN
-                            LoginDestination.PERMISSION_INTRO -> NavRoute.PERMISSION_INTRO
-                        }
-
-                        navController.navigate(nextRoute) {
-                            popUpTo(NavRoute.LOGIN) { inclusive = true }
-                        }
-                    },
-                    onLoginError = { message ->
-                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-                    }
-                )
-            },
+            onClick = onLoginClick,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(52.dp),
@@ -119,8 +86,6 @@ fun LoginScreen(
 @Composable
 private fun LoginScreenPreview() {
     PassedPathTheme {
-        LoginScreen(
-            navController = rememberNavController()
-        )
+        LoginScreen(onLoginClick = {})
     }
 }
