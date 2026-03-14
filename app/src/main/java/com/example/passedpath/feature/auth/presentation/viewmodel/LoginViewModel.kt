@@ -1,10 +1,11 @@
-package com.example.passedpath.feature.auth.presentation.viewmodel
+﻿package com.example.passedpath.feature.auth.presentation.viewmodel
 
 import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.example.passedpath.R
 import com.example.passedpath.app.AppContainer
 import com.example.passedpath.feature.auth.data.manager.KakaoAuthManager
 import com.example.passedpath.feature.auth.data.repository.AuthRepository
@@ -24,7 +25,7 @@ class LoginViewModel(
     fun kakaoLogin(
         context: Context,
         onLoginSuccess: (LoginDestination) -> Unit,
-        onLoginError: (String) -> Unit
+        onLoginError: (Int) -> Unit
     ) {
         KakaoAuthManager.login(
             context = context,
@@ -43,13 +44,13 @@ class LoginViewModel(
                         onLoginSuccess(destination)
                     } catch (e: Exception) {
                         Log.e("LOGIN", "Server login failed", e)
-                        onLoginError("Server connection failed. Please try again.")
+                        onLoginError(R.string.login_error_server_connection)
                     }
                 }
             },
             onError = { error ->
                 Log.e("LOGIN", "Kakao login failed", error)
-                onLoginError("Kakao login failed.")
+                onLoginError(R.string.login_error_kakao_failed)
             }
         )
     }

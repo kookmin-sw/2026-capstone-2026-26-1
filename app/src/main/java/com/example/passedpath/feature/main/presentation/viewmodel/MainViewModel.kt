@@ -4,12 +4,14 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.example.passedpath.R
 import com.example.passedpath.app.AppContainer
 import com.example.passedpath.data.datastore.AuthSessionStorage
 import com.example.passedpath.feature.auth.presentation.state.AuthEvent
 import com.example.passedpath.feature.main.data.repository.TestRepository
 import com.example.passedpath.feature.main.presentation.state.LocationPermissionUiState
 import com.example.passedpath.feature.permission.data.manager.LocationPermissionChecker
+import com.example.passedpath.ui.state.AsyncUiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -25,8 +27,8 @@ class MainViewModel(
         MutableStateFlow(LocationPermissionUiState.LIMITED)
     val permissionUiState: StateFlow<LocationPermissionUiState> = _permissionUiState
 
-    private val _testResult = MutableStateFlow<String?>(null)
-    val testResult: StateFlow<String?> = _testResult
+    private val _testResult = MutableStateFlow<AsyncUiState<String>>(AsyncUiState.Idle)
+    val testResult: StateFlow<AsyncUiState<String>> = _testResult
 
     init {
         checkPermission()
@@ -45,17 +47,18 @@ class MainViewModel(
 
     fun testApi() {
         viewModelScope.launch {
+            _testResult.value = AsyncUiState.Loading
             try {
                 val result = testRepository.test()
-                _testResult.value = result
+                _testResult.value = AsyncUiState.Success(result)
                 Log.d("TEST", "API success: $result")
             } catch (e: HttpException) {
                 val errorBody = e.response()?.errorBody()?.string()
-                _testResult.value = "HTTP ${e.code()}"
+                _testResult.value = AsyncUiState.Error(R.string.main_test_error_http)
                 Log.e("TEST", "HTTP ${e.code()} error")
                 Log.e("TEST", "Error body: $errorBody")
             } catch (e: Exception) {
-                _testResult.value = "Request failed"
+                _testResult.value = AsyncUiState.Error(R.string.main_test_error_generic)
                 Log.e("TEST", "Unexpected error", e)
             }
         }

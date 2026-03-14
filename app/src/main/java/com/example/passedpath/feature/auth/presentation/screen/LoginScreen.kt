@@ -18,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -39,14 +40,14 @@ fun LoginScreen(
 
         Image(
             painter = painterResource(id = R.drawable.login_logo),
-            contentDescription = "logo for login screen",
+            contentDescription = stringResource(R.string.login_logo_content_description),
             modifier = Modifier.fillMaxHeight(0.1f)
         )
 
         Spacer(modifier = Modifier.height(24.dp))
 
         Text(
-            text = "Track the paths you walked",
+            text = stringResource(R.string.login_tagline),
             fontSize = 28.sp,
             fontWeight = FontWeight.Bold,
             lineHeight = 36.sp
@@ -74,7 +75,7 @@ fun LoginScreen(
             )
         ) {
             Text(
-                text = "Login with Kakao",
+                text = stringResource(R.string.login_with_kakao),
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold
             )

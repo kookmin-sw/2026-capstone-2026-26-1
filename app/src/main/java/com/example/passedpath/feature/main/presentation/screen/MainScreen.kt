@@ -11,14 +11,17 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.passedpath.R
 import com.example.passedpath.feature.main.presentation.state.LocationPermissionUiState
+import com.example.passedpath.ui.state.AsyncUiState
 
 @Composable
 fun MainScreen(
     permissionState: LocationPermissionUiState,
-    testResult: String?,
+    testResult: AsyncUiState<String>,
     onTestClick: () -> Unit,
     onLogoutClick: () -> Unit
 ) {
@@ -29,28 +32,39 @@ fun MainScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text(text = "Main")
+        Text(text = stringResource(R.string.main_title))
         Spacer(modifier = Modifier.height(16.dp))
 
         if (permissionState == LocationPermissionUiState.FULL) {
-            Text(text = "Background location is enabled")
+            Text(text = stringResource(R.string.main_permission_full))
         } else {
-            Text(text = "Background location is limited")
+            Text(text = stringResource(R.string.main_permission_limited))
         }
 
         Button(onClick = onTestClick) {
-            Text("Test API")
+            Text(text = stringResource(R.string.main_test_api))
         }
 
-        testResult?.let { result ->
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(text = result)
+        when (testResult) {
+            AsyncUiState.Idle -> Unit
+            AsyncUiState.Loading -> {
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(text = stringResource(R.string.main_test_loading))
+            }
+            is AsyncUiState.Success -> {
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(text = testResult.data)
+            }
+            is AsyncUiState.Error -> {
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(text = stringResource(testResult.messageResId))
+            }
         }
 
         Spacer(modifier = Modifier.height(24.dp))
 
         Button(onClick = onLogoutClick) {
-            Text(text = "Logout")
+            Text(text = stringResource(R.string.main_logout))
         }
     }
 }
@@ -60,7 +74,7 @@ fun MainScreen(
 fun MainScreenPreview() {
     MainScreen(
         permissionState = LocationPermissionUiState.FULL,
-        testResult = "OK",
+        testResult = AsyncUiState.Success("OK"),
         onTestClick = {},
         onLogoutClick = {}
     )

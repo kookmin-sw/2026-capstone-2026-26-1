@@ -13,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.passedpath.R
@@ -38,21 +39,21 @@ fun LocationPermissionIntroScreen(
             modifier = Modifier.padding(top = 80.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(text = "Location permission is needed")
+            Text(text = stringResource(R.string.permission_intro_title))
             Spacer(modifier = Modifier.height(12.dp))
-            Text(text = "To keep tracking your path in background, allow location access.")
+            Text(text = stringResource(R.string.permission_intro_description))
         }
 
         Image(
             painter = painterResource(id = R.drawable.location_perrmission_intro_image),
-            contentDescription = "Onboarding illustration for location permission",
+            contentDescription = stringResource(R.string.permission_intro_image_content_description),
             modifier = Modifier
                 .fillMaxWidth(0.8f)
                 .padding(vertical = 48.dp)
         )
 
         AppButton(
-            text = "Continue",
+            text = stringResource(R.string.permission_intro_continue),
             onClick = onContinueClick,
             modifier = Modifier.padding(bottom = 24.dp)
         )

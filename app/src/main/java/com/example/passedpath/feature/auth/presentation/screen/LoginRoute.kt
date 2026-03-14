@@ -31,8 +31,8 @@ fun LoginRoute(
 
                     onNavigate(nextRoute)
                 },
-                onLoginError = { message ->
-                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                onLoginError = { messageResId ->
+                    Toast.makeText(context, context.getString(messageResId), Toast.LENGTH_SHORT).show()
                 }
             )
         }

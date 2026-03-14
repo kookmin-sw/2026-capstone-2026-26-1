@@ -1,3 +1,30 @@
-<resources>
+﻿<resources>
     <string name="app_name">PassedPath</string>
+    <string name="login_logo_content_description">Logo for login screen</string>
+    <string name="login_tagline">Track the paths you walked</string>
+    <string name="login_with_kakao">Login with Kakao</string>
+    <string name="login_error_server_connection">Server connection failed. Please try again.</string>
+    <string name="login_error_kakao_failed">Kakao login failed.</string>
+    <string name="main_title">Main</string>
+    <string name="main_permission_full">Background location is enabled</string>
+    <string name="main_permission_limited">Background location is limited</string>
+    <string name="main_test_api">Test API</string>
+    <string name="main_logout">Logout</string>
+    <string name="main_test_loading">Loading test result...</string>
+    <string name="main_test_error_http">Request failed with server error.</string>
+    <string name="main_test_error_generic">Request failed. Please try again.</string>
+    <string name="permission_intro_title">Location permission is needed</string>
+    <string name="permission_intro_description">To keep tracking your path in background, allow location access.</string>
+    <string name="permission_intro_image_content_description">Onboarding illustration for location permission</string>
+    <string name="permission_intro_continue">Continue</string>
+    <string name="permission_dialog_title">Please allow location access</string>
+    <string name="permission_dialog_subtitle">To keep recording your path after the app is closed, enable background location access.</string>
+    <string name="permission_dialog_image_content_description">Location permission setting guide</string>
+    <string name="permission_dialog_step_1">Tap the button below to open settings.</string>
+    <string name="permission_dialog_step_2">Go to App permissions and open Location.</string>
+    <string name="permission_dialog_step_3_prefix">Change the access level to </string>
+    <string name="permission_dialog_step_3_highlight">Allow all the time</string>
+    <string name="permission_dialog_step_3_suffix">.</string>
+    <string name="permission_dialog_open_settings">Open settings</string>
+    <string name="permission_dialog_not_now">Not now</string>
 </resources>
