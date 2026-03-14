@@ -1,4 +1,4 @@
-package com.example.passedpath.ui
+﻿package com.example.passedpath.ui
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -15,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -44,9 +45,8 @@ fun PermissionSettingDialog(
         ) {
             Spacer(modifier = Modifier.height(48.dp))
 
-            // Title
             Text(
-                text = "이렇게 설정해 주세요",
+                text = stringResource(R.string.permission_dialog_title),
                 fontSize = 24.sp,
                 fontFamily = Pretendard,
                 fontWeight = FontWeight.Bold,
@@ -54,9 +54,8 @@ fun PermissionSettingDialog(
             )
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Subtitle
             Text(
-                text = "앱이 종료되어도 지나온 길을 기록할 수 있어요",
+                text = stringResource(R.string.permission_dialog_subtitle),
                 fontSize = 16.sp,
                 fontFamily = Pretendard,
                 fontWeight = FontWeight.Normal,
@@ -64,10 +63,9 @@ fun PermissionSettingDialog(
             )
             Spacer(modifier = Modifier.height(36.dp))
 
-            // Image
             Image(
                 painter = painterResource(id = R.drawable.setting_image),
-                contentDescription = "Location permission setting guide",
+                contentDescription = stringResource(R.string.permission_dialog_image_content_description),
                 modifier = Modifier
                     .fillMaxWidth(0.8f)
                     .background(Color(0xFFF0F2F5), RoundedCornerShape(16.dp))
@@ -75,42 +73,37 @@ fun PermissionSettingDialog(
             )
             Spacer(modifier = Modifier.height(36.dp))
 
-            // Instructions
-            Column(
-                modifier = Modifier.fillMaxWidth()
-            ) {
+            Column(modifier = Modifier.fillMaxWidth()) {
                 InstructionStep(
                     step = 1,
-                    text = "아래에서 ‘설정 열기’를 눌러 주세요"
+                    text = stringResource(R.string.permission_dialog_step_1)
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 InstructionStep(
                     step = 2,
-                    text = "어플리케이션 > 앱 권한 > 위치에서"
+                    text = stringResource(R.string.permission_dialog_step_2)
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 InstructionStep(
                     step = 3,
-                    text = "위치 접근을 ",
-                    highlightText = "‘항상 허용’",
-                    suffixText = "으로 바꿔 주세요"
+                    text = stringResource(R.string.permission_dialog_step_3_prefix),
+                    highlightText = stringResource(R.string.permission_dialog_step_3_highlight),
+                    suffixText = stringResource(R.string.permission_dialog_step_3_suffix)
                 )
             }
             Spacer(modifier = Modifier.height(32.dp))
 
-            // "설정 열기" button
             AppButton(
-                text = "설정 열기",
+                text = stringResource(R.string.permission_dialog_open_settings),
                 onClick = onConfirm,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)
             )
-            Spacer(modifier = Modifier.height(16.dp)) // Spacer between buttons
+            Spacer(modifier = Modifier.height(16.dp))
 
-            // "나중에 할게요" button
             AppButton(
-                text = "나중에 할게요",
+                text = stringResource(R.string.permission_dialog_not_now),
                 onClick = onDismiss,
                 modifier = Modifier,
                 variant = ButtonVariant.TEXT_ONLY
@@ -121,14 +114,21 @@ fun PermissionSettingDialog(
 }
 
 @Composable
-fun InstructionStep(step: Int, text: String, highlightText: String? = null, suffixText: String? = null) {
+fun InstructionStep(
+    step: Int,
+    text: String,
+    highlightText: String? = null,
+    suffixText: String? = null
+) {
     Text(
         text = buildAnnotatedString {
-            withStyle(style = SpanStyle(
-                color = Color(0xFF1ABC9C),
-                fontWeight = FontWeight.Bold,
-                fontSize = 18.sp
-            )) {
+            withStyle(
+                style = SpanStyle(
+                    color = Color(0xFF1ABC9C),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp
+                )
+            ) {
                 append("$step ")
             }
             append(text)
@@ -146,8 +146,6 @@ fun InstructionStep(step: Int, text: String, highlightText: String? = null, suff
         color = Color.Black
     )
 }
-
-/* ---------- Preview ---------- */
 
 @Preview(showBackground = true, name = "Permission Setting Dialog")
 @Composable

@@ -1,14 +1,13 @@
 package com.example.passedpath.interceptor
 
-import android.content.Context
 import android.util.Log
-import com.example.passedpath.data.datastore.TokenDataStore
+import com.example.passedpath.data.datastore.AuthSessionStorage
 import kotlinx.coroutines.runBlocking
 import okhttp3.Interceptor
 import okhttp3.Response
 
 class AuthInterceptor(
-    private val context: Context
+    private val sessionStorage: AuthSessionStorage
 ) : Interceptor {
 
     private fun shouldSkipAuthorization(path: String): Boolean {
@@ -26,7 +25,7 @@ class AuthInterceptor(
         }
 
         val accessToken = runBlocking {
-            TokenDataStore.getAccessToken(context)
+            sessionStorage.getAccessToken()
         }
 
         val authRequest = originalRequest.newBuilder().apply {
