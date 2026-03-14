@@ -12,7 +12,8 @@ import com.example.passedpath.feature.permission.presentation.screen.LocationPer
 
 @Composable
 fun AppNavHost(
-    navController: NavHostController
+    navController: NavHostController,
+    appEntryViewModel: AppEntryViewModel
 ) {
     LaunchedEffect(Unit) {
         AuthEvent.logoutEvent.collect {
@@ -28,6 +29,7 @@ fun AppNavHost(
     ) {
         composable(NavRoute.ENTRY) {
             AppEntryRoute(
+                viewModel = appEntryViewModel,
                 onResolved = { destination ->
                     navController.navigate(destination) {
                         popUpTo(NavRoute.ENTRY) { inclusive = true }

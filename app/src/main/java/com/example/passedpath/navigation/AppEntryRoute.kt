@@ -1,24 +1,19 @@
 package com.example.passedpath.navigation
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.passedpath.app.appContainer
+import androidx.compose.ui.graphics.Color
 
 @Composable
 fun AppEntryRoute(
     onResolved: (String) -> Unit,
-    viewModel: AppEntryViewModel = viewModel(
-        factory = AppEntryViewModelFactory(LocalContext.current.appContainer)
-    )
+    viewModel: AppEntryViewModel
 ) {
     val state by viewModel.state.collectAsState()
 
@@ -28,9 +23,8 @@ fun AppEntryRoute(
     }
 
     Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        CircularProgressIndicator()
-    }
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.White)
+    )
 }
