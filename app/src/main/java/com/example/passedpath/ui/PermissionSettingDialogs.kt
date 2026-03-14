@@ -64,7 +64,7 @@ fun PermissionSettingDialog(
             Spacer(modifier = Modifier.height(36.dp))
 
             Image(
-                painter = painterResource(id = R.drawable.setting_image),
+                painter = painterResource(id = R.drawable.location_perrmission_intro_image),
                 contentDescription = stringResource(R.string.permission_dialog_image_content_description),
                 modifier = Modifier
                     .fillMaxWidth(0.8f)
