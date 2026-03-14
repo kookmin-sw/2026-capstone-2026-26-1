@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
@@ -29,15 +28,19 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.example.passedpath.R
+import com.example.passedpath.app.appContainer
+import com.example.passedpath.feature.auth.presentation.viewmodel.LoginDestination
 import com.example.passedpath.feature.auth.presentation.viewmodel.LoginViewModel
-import com.example.passedpath.feature.permission.data.manager.LocationPermissionGate
+import com.example.passedpath.feature.auth.presentation.viewmodel.LoginViewModelFactory
 import com.example.passedpath.navigation.NavRoute
 import com.example.passedpath.ui.theme.PassedPathTheme
 
 @Composable
 fun LoginScreen(
     navController: NavHostController,
-    viewModel: LoginViewModel = viewModel()
+    viewModel: LoginViewModel = viewModel(
+        factory = LoginViewModelFactory(LocalContext.current.appContainer)
+    )
 ) {
     val context = LocalContext.current
 
@@ -59,7 +62,7 @@ fun LoginScreen(
         Spacer(modifier = Modifier.height(24.dp))
 
         Text(
-            text = "지나온 길을 \n기록합니다",
+            text = "Track the paths you walked",
             fontSize = 28.sp,
             fontWeight = FontWeight.Bold,
             lineHeight = 36.sp
@@ -80,11 +83,10 @@ fun LoginScreen(
             onClick = {
                 viewModel.kakaoLogin(
                     context = context,
-                    onLoginSuccess = {
-                        val nextRoute = if (LocationPermissionGate.isBackgroundAlwaysGranted(context)) {
-                            NavRoute.MAIN
-                        } else {
-                            NavRoute.PERMISSION_INTRO
+                    onLoginSuccess = { destination ->
+                        val nextRoute = when (destination) {
+                            LoginDestination.MAIN -> NavRoute.MAIN
+                            LoginDestination.PERMISSION_INTRO -> NavRoute.PERMISSION_INTRO
                         }
 
                         navController.navigate(nextRoute) {

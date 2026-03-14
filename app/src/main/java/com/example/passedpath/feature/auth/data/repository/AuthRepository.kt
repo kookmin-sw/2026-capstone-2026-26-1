@@ -1,5 +1,6 @@
 package com.example.passedpath.feature.auth.data.repository
 
+import com.example.passedpath.data.datastore.AuthSessionStorage
 import com.example.passedpath.feature.auth.data.manager.AuthTokenManager
 import com.example.passedpath.feature.auth.data.remote.api.AuthApi
 import com.example.passedpath.feature.auth.data.remote.dto.ErrorResponse
@@ -8,17 +9,20 @@ import com.example.passedpath.feature.auth.data.remote.dto.KakaoLoginResponse
 import com.google.gson.Gson
 import retrofit2.HttpException
 
-
 class AuthRepository(
     private val authApi: AuthApi,
-    private val tokenManager: AuthTokenManager
+    private val tokenManager: AuthTokenManager,
+    private val sessionStorage: AuthSessionStorage
 ) {
 
-    // 카카오 로그인 → 서버 로그인
     suspend fun loginWithKakao(kakaoAccessToken: String): KakaoLoginResponse {
         return try {
-            requestLogin(kakaoAccessToken)
-
+            requestLogin(kakaoAccessToken).also { response ->
+                sessionStorage.saveTokens(
+                    accessToken = response.accessToken,
+                    refreshToken = response.refreshToken
+                )
+            }
         } catch (e: HttpException) {
             if (e.code() == 401) {
                 val errorBody = e.response()?.errorBody()?.string()
@@ -28,26 +32,27 @@ class AuthRepository(
                     errorResponse?.code == "ACCESS_TOKEN_EXPIRED" &&
                     tokenManager.refreshAccessToken()
                 ) {
-                    return requestLogin(kakaoAccessToken)
+                    return requestLogin(kakaoAccessToken).also { response ->
+                        sessionStorage.saveTokens(
+                            accessToken = response.accessToken,
+                            refreshToken = response.refreshToken
+                        )
+                    }
                 } else {
-                    // 만료 토큰이 아님 → 세션 무효
                     tokenManager.logout()
                     throw e
                 }
             } else {
-                // TODO: 상위(ViewModel)에서 로그아웃/에러 처리
                 throw e
             }
         }
     }
 
-    // 실제 서버 로그인 요청
     private suspend fun requestLogin(kakaoAccessToken: String): KakaoLoginResponse {
         val request = KakaoLoginRequest(kakaoAccessToken)
         return authApi.loginWithKakao(request)
     }
 
-    // 401 error시에 requestBody 파싱 함수
     private fun parseError(body: String?): ErrorResponse? {
         return try {
             Gson().fromJson(body, ErrorResponse::class.java)
@@ -55,5 +60,4 @@ class AuthRepository(
             null
         }
     }
-
 }
