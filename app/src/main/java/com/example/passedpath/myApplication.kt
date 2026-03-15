@@ -12,6 +12,6 @@ class GlobalApplication : Application() {
         super.onCreate()
 
         appContainer = AppContainer(this)
-        KakaoSdk.init(this, "5438e21dc2bb87eaf82c9ba604ba5cbb")
+        KakaoSdk.init(this, BuildConfig.KAKAO_NATIVE_APP_KEY)
     }
 }
