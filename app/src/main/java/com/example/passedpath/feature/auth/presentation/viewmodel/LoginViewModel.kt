@@ -32,7 +32,11 @@ class LoginViewModel(
             onSuccess = { kakaoAccessToken ->
                 viewModelScope.launch {
                     try {
-                        authRepository.loginWithKakao(kakaoAccessToken)
+                        val response = authRepository.loginWithKakao(kakaoAccessToken)
+                        Log.d(
+                            "LOGIN",
+                            "Kakao profile received: nickname=${response.nickname}, profileImageUrl=${response.profileImageUrl}"
+                        )
 
                         val destination =
                             if (permissionChecker.isBackgroundAlwaysGranted()) {

@@ -36,7 +36,7 @@ android {
 
     buildTypes {
         debug {
-            buildConfigField("Boolean", "DEV_SKIP_LOGIN", "true")
+            buildConfigField("Boolean", "DEV_SKIP_LOGIN", "false")
         }
 
         release {
