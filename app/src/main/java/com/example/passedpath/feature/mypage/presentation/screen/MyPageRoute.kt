@@ -16,8 +16,10 @@ fun MyPageRoute(
     )
 ) {
     val testResult by viewModel.testResult.collectAsState()
+    val userProfile by viewModel.userProfile.collectAsState()
 
     MyPageScreen(
+        userProfile = userProfile,
         testResult = testResult,
         onTestClick = viewModel::testApi,
         onLogoutClick = viewModel::logout

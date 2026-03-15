@@ -15,6 +15,7 @@
     <string name="main_test_error_http">Request failed with server error.</string>
     <string name="main_test_error_generic">Request failed. Please try again.</string>
     <string name="mypage_title">My Page</string>
+    <string name="mypage_profile_missing">Profile not loaded yet</string>
     <string name="permission_intro_title">Location permission is needed</string>
     <string name="permission_intro_description">To keep tracking your path in background, allow location access.</string>
     <string name="permission_intro_image_content_description">Onboarding illustration for location permission</string>

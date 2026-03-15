@@ -15,10 +15,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.passedpath.R
+import com.example.passedpath.data.datastore.UserProfile
 import com.example.passedpath.ui.state.AsyncUiState
 
 @Composable
 fun MyPageScreen(
+    userProfile: UserProfile?,
     testResult: AsyncUiState<String>,
     onTestClick: () -> Unit,
     onLogoutClick: () -> Unit
@@ -31,6 +33,13 @@ fun MyPageScreen(
         verticalArrangement = Arrangement.Center
     ) {
         Text(text = stringResource(R.string.mypage_title))
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(text = userProfile?.nickname ?: stringResource(R.string.mypage_profile_missing))
+        Spacer(modifier = Modifier.height(8.dp))
+        userProfile?.profileImageUrl?.let { profileImageUrl ->
+            Text(text = profileImageUrl)
+        }
         Spacer(modifier = Modifier.height(24.dp))
 
         Button(onClick = onTestClick) {
@@ -65,6 +74,11 @@ fun MyPageScreen(
 @Composable
 private fun MyPageScreenPreview() {
     MyPageScreen(
+        userProfile = UserProfile(
+            userId = 1L,
+            nickname = "PassedPath",
+            profileImageUrl = "https://example.com/profile.png"
+        ),
         testResult = AsyncUiState.Success("test"),
         onTestClick = {},
         onLogoutClick = {}

@@ -18,7 +18,7 @@ object TokenDataStore {
     private val NICKNAME = stringPreferencesKey("nickname")
     private val PROFILE_IMAGE_URL = stringPreferencesKey("profile_image_url")
 
-    // accessToken + refreshToken 저장
+    // accessToken + refreshToken ????
     suspend fun saveTokens(
         context: Context,
         accessToken: String,
@@ -34,21 +34,25 @@ object TokenDataStore {
         context: Context,
         userId: Long,
         nickname: String,
-        profileImageUrl: String
+        profileImageUrl: String?
     ) {
         context.dataStore.edit { prefs ->
             prefs[USER_ID] = userId
             prefs[NICKNAME] = nickname
-            prefs[PROFILE_IMAGE_URL] = profileImageUrl
+            if (profileImageUrl != null) {
+                prefs[PROFILE_IMAGE_URL] = profileImageUrl
+            } else {
+                prefs.remove(PROFILE_IMAGE_URL)
+            }
         }
     }
 
-    // accessToken 조회
+    // accessToken ???
     suspend fun getAccessToken(context: Context): String? {
         return context.dataStore.data.first()[ACCESS_TOKEN]
     }
 
-    // refreshToken 조회
+    // refreshToken ???
     suspend fun getRefreshToken(context: Context): String? {
         return context.dataStore.data.first()[REFRESH_TOKEN]
     }
@@ -57,7 +61,7 @@ object TokenDataStore {
         val preferences = context.dataStore.data.first()
         val userId = preferences[USER_ID] ?: return null
         val nickname = preferences[NICKNAME] ?: return null
-        val profileImageUrl = preferences[PROFILE_IMAGE_URL] ?: return null
+        val profileImageUrl = preferences[PROFILE_IMAGE_URL]
 
         return UserProfile(
             userId = userId,
@@ -67,7 +71,7 @@ object TokenDataStore {
     }
 
 
-    // accessToken 삭제
+    // accessToken ???
     suspend fun clear(context: Context) {
         context.dataStore.edit { prefs ->
             prefs.remove(ACCESS_TOKEN)

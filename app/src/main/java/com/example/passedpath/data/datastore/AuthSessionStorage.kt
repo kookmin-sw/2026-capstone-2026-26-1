@@ -27,7 +27,7 @@ class AuthSessionStorage(
     suspend fun saveUserProfile(
         userId: Long,
         nickname: String,
-        profileImageUrl: String
+        profileImageUrl: String?
     ) {
         TokenDataStore.saveUserProfile(
             context = context,

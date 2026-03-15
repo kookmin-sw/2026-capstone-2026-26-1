@@ -13,7 +13,7 @@ package com.example.passedpath.feature.auth.data.remote.dto
 data class KakaoLoginResponse(
     val userId: Long,
     val nickname: String,
-    val profileImageUrl: String,
+    val profileImageUrl: String?,
     val accessToken: String,
     val refreshToken: String
 )
