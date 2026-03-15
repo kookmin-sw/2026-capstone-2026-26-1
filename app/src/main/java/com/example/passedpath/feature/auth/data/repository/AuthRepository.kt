@@ -22,6 +22,11 @@ class AuthRepository(
                     accessToken = response.accessToken,
                     refreshToken = response.refreshToken
                 )
+                sessionStorage.saveUserProfile(
+                    userId = response.userId,
+                    nickname = response.nickname,
+                    profileImageUrl = response.profileImageUrl
+                )
             }
         } catch (e: HttpException) {
             if (e.code() == 401) {
@@ -36,6 +41,11 @@ class AuthRepository(
                         sessionStorage.saveTokens(
                             accessToken = response.accessToken,
                             refreshToken = response.refreshToken
+                        )
+                        sessionStorage.saveUserProfile(
+                            userId = response.userId,
+                            nickname = response.nickname,
+                            profileImageUrl = response.profileImageUrl
                         )
                     }
                 } else {
