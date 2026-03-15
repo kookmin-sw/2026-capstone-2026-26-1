@@ -24,6 +24,23 @@ class AuthSessionStorage(
         return TokenDataStore.getRefreshToken(context)
     }
 
+    suspend fun saveUserProfile(
+        userId: Long,
+        nickname: String,
+        profileImageUrl: String
+    ) {
+        TokenDataStore.saveUserProfile(
+            context = context,
+            userId = userId,
+            nickname = nickname,
+            profileImageUrl = profileImageUrl
+        )
+    }
+
+    suspend fun getUserProfile(): UserProfile? {
+        return TokenDataStore.getUserProfile(context)
+    }
+
     suspend fun clear() {
         TokenDataStore.clear(context)
     }
