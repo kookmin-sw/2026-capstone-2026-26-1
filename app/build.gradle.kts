@@ -46,6 +46,9 @@ android {
 }
 
 dependencies {
+    // 지도용 aps-compose 라이브러리 추가
+    implementation("com.google.maps.android:maps-compose:8.2.1")
+
     // Jetpack 네비게이션 라이브러리 중 컴포즈 전용 모듈 추가
     implementation("androidx.navigation:navigation-compose:2.7.7")
 
