@@ -9,6 +9,7 @@
     <string name="main_permission_full">Background location is enabled</string>
     <string name="main_permission_limited">Background location is limited</string>
     <string name="main_go_to_mypage">Go to My Page</string>
+    <string name="main_map_marker_title">Seoul City Hall</string>
     <string name="main_test_api">Test API</string>
     <string name="main_logout">Logout</string>
     <string name="main_test_loading">Loading test result...</string>
