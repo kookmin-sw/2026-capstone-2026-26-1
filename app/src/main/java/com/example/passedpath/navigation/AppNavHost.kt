@@ -8,6 +8,7 @@ import androidx.navigation.compose.composable
 import com.example.passedpath.feature.auth.presentation.screen.LoginRoute
 import com.example.passedpath.feature.auth.presentation.state.AuthEvent
 import com.example.passedpath.feature.main.presentation.screen.MainRoute
+import com.example.passedpath.feature.mypage.presentation.screen.MyPageRoute
 import com.example.passedpath.feature.permission.presentation.screen.LocationPermissionIntroRoute
 
 @Composable
@@ -59,7 +60,15 @@ fun AppNavHost(
         }
 
         composable(NavRoute.MAIN) {
-            MainRoute()
+            MainRoute(
+                onMyPageClick = {
+                    navController.navigate(NavRoute.MYPAGE)
+                }
+            )
+        }
+
+        composable(NavRoute.MYPAGE) {
+            MyPageRoute()
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿package com.example.passedpath.feature.main.presentation.screen
+package com.example.passedpath.feature.main.presentation.screen
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -16,14 +16,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.passedpath.R
 import com.example.passedpath.feature.main.presentation.state.LocationPermissionUiState
-import com.example.passedpath.ui.state.AsyncUiState
 
 @Composable
 fun MainScreen(
     permissionState: LocationPermissionUiState,
-    testResult: AsyncUiState<String>,
-    onTestClick: () -> Unit,
-    onLogoutClick: () -> Unit
+    onMyPageClick: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -41,30 +38,10 @@ fun MainScreen(
             Text(text = stringResource(R.string.main_permission_limited))
         }
 
-        Button(onClick = onTestClick) {
-            Text(text = stringResource(R.string.main_test_api))
-        }
-
-        when (testResult) {
-            AsyncUiState.Idle -> Unit
-            AsyncUiState.Loading -> {
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(text = stringResource(R.string.main_test_loading))
-            }
-            is AsyncUiState.Success -> {
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(text = testResult.data)
-            }
-            is AsyncUiState.Error -> {
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(text = stringResource(testResult.messageResId))
-            }
-        }
-
         Spacer(modifier = Modifier.height(24.dp))
 
-        Button(onClick = onLogoutClick) {
-            Text(text = stringResource(R.string.main_logout))
+        Button(onClick = onMyPageClick) {
+            Text(text = stringResource(R.string.main_go_to_mypage))
         }
     }
 }
@@ -74,8 +51,6 @@ fun MainScreen(
 fun MainScreenPreview() {
     MainScreen(
         permissionState = LocationPermissionUiState.FULL,
-        testResult = AsyncUiState.Success("OK"),
-        onTestClick = {},
-        onLogoutClick = {}
+        onMyPageClick = {}
     )
 }
