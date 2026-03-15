@@ -11,6 +11,7 @@ import backend.capstone.domain.dayroute.service.DayRouteService;
 import backend.capstone.domain.gpspoint.dto.GpsPointRecordedAtRange;
 import backend.capstone.domain.gpspoint.entity.GpsPoint;
 import backend.capstone.domain.gpspoint.service.GpsPointService;
+import backend.capstone.domain.gpspoint.util.PolylineUtil;
 import backend.capstone.domain.place.dto.PlaceAddRequest;
 import backend.capstone.domain.place.dto.PlaceAddResponse;
 import backend.capstone.domain.place.dto.PlaceUpdateRequest;
@@ -64,10 +65,16 @@ public class DayRouteFacade {
         return DayRouteMapper.toGpsPointsResponse(gpsPoints);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public DayRouteDetailResponse getDayRouteDetail(LocalDate date, Long userId) {
         DayRoute dayRoute = dayRouteService.getDayRouteByDateAndUserId(date, userId);
         List<Place> places = placeService.getPlacesByDayRoute(dayRoute);
+
+        if (dayRoute.getEncodedPath() == null) {
+            List<GpsPoint> gpsPoints = gpsPointService.getGpsPointsByDayRouteId(dayRoute);
+            String encodePath = PolylineUtil.encode(gpsPoints);
+            dayRoute.updateEncodedPath(encodePath, gpsPoints.size());
+        }
 
         return DayRouteMapper.toDayRouteDetailResponse(dayRoute, places);
     }

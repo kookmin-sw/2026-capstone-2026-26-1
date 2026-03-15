@@ -4,7 +4,6 @@ import backend.capstone.auth.dto.UserPrincipal;
 import backend.capstone.domain.dayroute.dto.DayRouteDetailResponse;
 import backend.capstone.domain.dayroute.dto.GpsPointBatchUploadRequest;
 import backend.capstone.domain.dayroute.dto.GpsPointBatchUploadResponse;
-import backend.capstone.domain.dayroute.dto.GpsPointsResponse;
 import backend.capstone.domain.dayroute.facade.DayRouteFacade;
 import backend.capstone.domain.place.dto.PlaceAddRequest;
 import backend.capstone.domain.place.dto.PlaceAddResponse;
@@ -39,14 +38,14 @@ public class DayRouteController implements DayRouteControllerSpec {
         return dayRouteFacade.uploadGpsPoint(date, principal.userId(), request);
     }
 
-    @Override
-    @GetMapping("/{date}/gps-points")
-    public GpsPointsResponse getGpsPoints(
-        @PathVariable LocalDate date,
-        @AuthenticationPrincipal UserPrincipal principal
-    ) {
-        return dayRouteFacade.getGpsPoints(date, principal.userId());
-    }
+//    @Override
+//    @GetMapping("/{date}/gps-points")
+//    public GpsPointsResponse getGpsPoints(
+//        @PathVariable LocalDate date,
+//        @AuthenticationPrincipal UserPrincipal principal
+//    ) {
+//        return dayRouteFacade.getGpsPoints(date, principal.userId());
+//    }
 
     @Override
     @GetMapping("/{date}")
