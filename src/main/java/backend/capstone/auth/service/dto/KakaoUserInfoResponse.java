@@ -12,7 +12,8 @@ public record KakaoUserInfoResponse(
     }
 
     public record Profile(
-        String nickname
+        String nickname,
+        String profile_image_url
     ) {
 
     }

@@ -1,5 +1,6 @@
 package backend.capstone.auth.filter;
 
+import backend.capstone.auth.dto.UserPrincipal;
 import backend.capstone.auth.exception.AuthErrorCode;
 import backend.capstone.auth.jwt.TokenStatus;
 import backend.capstone.auth.jwt.service.JwtTokenProvider;
@@ -40,7 +41,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 User user = userService.findById(userId);
 
                 UsernamePasswordAuthenticationToken auth =
-                    new UsernamePasswordAuthenticationToken(user, null, List.of());
+                    new UsernamePasswordAuthenticationToken(new UserPrincipal(userId), null,
+                        List.of());
 
                 SecurityContextHolder.getContext().setAuthentication(auth);
             } catch (BusinessException e) {

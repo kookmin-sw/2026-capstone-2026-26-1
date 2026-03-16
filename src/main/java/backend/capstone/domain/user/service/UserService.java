@@ -20,13 +20,7 @@ public class UserService {
     @Transactional
     public User upsertKakaoUser(KakaoUserInfoResponse kakaoUser) {
         return userRepository.findByProviderAndProviderId(ProviderType.KAKAO, kakaoUser.id())
-            .map(existing -> {
-                existing.updateProfile(kakaoUser.kakao_account().profile().nickname());
-                return existing;
-            })
-            .orElseGet(() -> userRepository.save(
-                UserMapper.toEntity(kakaoUser))
-            );
+            .orElseGet(() -> userRepository.save(UserMapper.toEntity(kakaoUser)));
     }
 
     @Transactional(readOnly = true)
