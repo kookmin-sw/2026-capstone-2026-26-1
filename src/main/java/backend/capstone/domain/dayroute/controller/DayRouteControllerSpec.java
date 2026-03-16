@@ -68,5 +68,14 @@ public interface DayRouteControllerSpec {
         PlaceUpdateRequest request
     );
 
+    @Operation(
+        summary = "장소 삭제 API"
+    )
+    void deletePlace(
+        @Parameter(example = "2026-01-01") LocalDate date,
+        @Parameter(example = "1") Long placeId,
+        UserPrincipal principal
+    );
+
 
 }

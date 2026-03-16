@@ -95,6 +95,13 @@ public class DayRouteFacade {
         return placeService.updatePlace(dayRoute, placeId, request);
     }
 
+    @Transactional
+    public void deletePlace(LocalDate date, Long userId, Long placeId) {
+        DayRoute dayRoute = dayRouteService.getDayRouteByDateAndUserId(date, userId);
+
+        placeService.deletePlace(dayRoute, placeId);
+    }
+
     @Recover
     public GpsPointBatchUploadResponse recover(RuntimeException e, Long userId,
         GpsPointBatchUploadRequest request) {

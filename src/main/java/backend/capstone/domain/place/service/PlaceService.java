@@ -46,4 +46,14 @@ public class PlaceService {
         return PlaceMapper.toPlaceUpdateResponse(place);
     }
 
+    @Transactional
+    public void deletePlace(DayRoute dayRoute, Long placeId) {
+        Place place = placeRepository.findByIdAndDayRoute(placeId, dayRoute)
+            .orElseThrow(() -> new BusinessException(PlaceErrorCode.PLACE_NOT_FOUND));
+
+        int deletedOrderIdx = place.getOrderIndex();
+        placeRepository.delete(place);
+        placeRepository.decrementOrderIndexesGreaterThan(dayRoute, deletedOrderIdx);
+    }
+
 }
