@@ -15,10 +15,14 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -55,6 +59,22 @@ private val bottomNavItems = listOf(
 
 private val bottomBarRoutes = bottomNavItems.map { it.route }.toSet()
 
+private fun Modifier.topShadow(
+    shadowColor: Color = Color.Black.copy(alpha = 0.08f),
+    shadowHeight: Dp = 10.dp
+): Modifier = drawBehind {
+    val shadowHeightPx = shadowHeight.toPx()
+    drawRect(
+        brush = Brush.verticalGradient(
+            colors = listOf(shadowColor, Color.Transparent),
+            startY = 0f,
+            endY = -shadowHeightPx
+        ),
+        topLeft = Offset(0f, -shadowHeightPx),
+        size = size.copy(height = shadowHeightPx)
+    )
+}
+
 @Composable
 fun AppScaffold(
     navController: NavHostController,
@@ -68,7 +88,10 @@ fun AppScaffold(
         bottomBar = {
             if (showBottomBar) {
                 NavigationBar(
-                    modifier = Modifier.height(84.dp)
+                    modifier = Modifier
+                        .height(84.dp)
+                        .topShadow(),
+                    containerColor = Color.White
                 ) {
                     bottomNavItems.forEach { item ->
                         val selected = currentDestination
