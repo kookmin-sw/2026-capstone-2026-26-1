@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Text
@@ -32,8 +31,7 @@ import com.google.maps.android.compose.rememberCameraPositionState
 
 @Composable
 fun MainScreen(
-    permissionState: LocationPermissionUiState,
-    onMyPageClick: () -> Unit
+    permissionState: LocationPermissionUiState
 ) {
     val seoulCityHall = LatLng(37.5662952, 126.9779451)
     val cameraPositionState = rememberCameraPositionState {
@@ -70,7 +68,6 @@ fun MainScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 14.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
@@ -84,10 +81,6 @@ fun MainScreen(
                             }
                         )
                     }
-
-                    Button(onClick = onMyPageClick) {
-                        Text(text = stringResource(R.string.main_go_to_mypage))
-                    }
                 }
             }
         }
@@ -98,7 +91,6 @@ fun MainScreen(
 @Composable
 fun MainScreenPreview() {
     MainScreen(
-        permissionState = LocationPermissionUiState.FULL,
-        onMyPageClick = {}
+        permissionState = LocationPermissionUiState.FULL
     )
 }

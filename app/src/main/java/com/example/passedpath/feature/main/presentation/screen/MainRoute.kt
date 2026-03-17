@@ -11,7 +11,6 @@ import com.example.passedpath.feature.main.presentation.viewmodel.MainViewModelF
 
 @Composable
 fun MainRoute(
-    onMyPageClick: () -> Unit,
     viewModel: MainViewModel = viewModel(
         factory = MainViewModelFactory(LocalContext.current.appContainer)
     )
@@ -19,7 +18,6 @@ fun MainRoute(
     val permissionState by viewModel.permissionUiState.collectAsState()
 
     MainScreen(
-        permissionState = permissionState,
-        onMyPageClick = onMyPageClick
+        permissionState = permissionState
     )
 }
