@@ -70,9 +70,21 @@ private val bottomNavItems = listOf(
 
 private val bottomBarRoutes = bottomNavItems.map { it.route }.toSet()
 
+private object BottomBarTokens {
+    val containerHeight = 84.dp
+    val containerColor = Color.White
+    val shadowColor = Color.Black.copy(alpha = 0.08f)
+    val shadowHeight = 10.dp
+    const val itemWidthRatio = 0.267f
+    val iconSize = 24.dp
+    val labelTextSize = 12.sp
+    val selectedColor = Green500
+    val unselectedColor = Gray300
+}
+
 private fun Modifier.topShadow(
-    shadowColor: Color = Color.Black.copy(alpha = 0.08f),
-    shadowHeight: Dp = 10.dp
+    shadowColor: Color = BottomBarTokens.shadowColor,
+    shadowHeight: Dp = BottomBarTokens.shadowHeight
 ): Modifier = drawBehind {
     val shadowHeightPx = shadowHeight.toPx()
     drawRect(
@@ -115,8 +127,8 @@ private fun BottomBarItem(
                 Icon(
                     imageVector = item.icon,
                     contentDescription = contentDescription,
-                    tint = if (selected) Green500 else Gray300,
-                    modifier = Modifier.height(24.dp)
+                    tint = if (selected) BottomBarTokens.selectedColor else BottomBarTokens.unselectedColor,
+                    modifier = Modifier.height(BottomBarTokens.iconSize)
                 )
             }
 
@@ -124,16 +136,16 @@ private fun BottomBarItem(
                 Icon(
                     painter = painterResource(item.iconResId),
                     contentDescription = contentDescription,
-                    tint = if (selected) Green500 else Gray300,
-                    modifier = Modifier.height(24.dp)
+                    tint = if (selected) BottomBarTokens.selectedColor else BottomBarTokens.unselectedColor,
+                    modifier = Modifier.height(BottomBarTokens.iconSize)
                 )
             }
         }
 
         Text(
             text = stringResource(item.labelResId),
-            color = if (selected) Green500 else Gray300,
-            fontSize = 12.sp,
+            color = if (selected) BottomBarTokens.selectedColor else BottomBarTokens.unselectedColor,
+            fontSize = BottomBarTokens.labelTextSize,
             style = MaterialTheme.typography.labelSmall
         )
     }
@@ -153,16 +165,16 @@ fun AppScaffold(
             if (showBottomBar) {
                 NavigationBar(
                     modifier = Modifier
-                        .height(84.dp)
+                        .height(BottomBarTokens.containerHeight)
                         .topShadow(),
-                    containerColor = Color.White
+                    containerColor = BottomBarTokens.containerColor
                 ) {
                     BoxWithConstraints(
                         modifier = Modifier
                             .fillMaxWidth()
                             .fillMaxHeight()
                     ) {
-                        val itemWidth = maxWidth * 0.267f
+                        val itemWidth = maxWidth * BottomBarTokens.itemWidthRatio
 
                         Row(
                             modifier = Modifier
