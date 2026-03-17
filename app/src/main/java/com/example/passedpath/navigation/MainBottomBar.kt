@@ -87,6 +87,59 @@ private fun Modifier.topShadow(
 }
 
 @Composable
+private fun BottomBarItem(
+    item: BottomNavItem,
+    selected: Boolean,
+    width: Dp,
+    onClick: () -> Unit
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val contentDescription = stringResource(item.labelResId)
+
+    Column(
+        modifier = Modifier
+            .width(width)
+            .fillMaxHeight()
+            .selectable(
+                selected = selected,
+                interactionSource = interactionSource,
+                indication = null,
+                role = Role.Tab,
+                onClick = onClick
+            ),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        when {
+            item.icon != null -> {
+                Icon(
+                    imageVector = item.icon,
+                    contentDescription = contentDescription,
+                    tint = if (selected) Green500 else Gray300,
+                    modifier = Modifier.height(24.dp)
+                )
+            }
+
+            item.iconResId != null -> {
+                Icon(
+                    painter = painterResource(item.iconResId),
+                    contentDescription = contentDescription,
+                    tint = if (selected) Green500 else Gray300,
+                    modifier = Modifier.height(24.dp)
+                )
+            }
+        }
+
+        Text(
+            text = stringResource(item.labelResId),
+            color = if (selected) Green500 else Gray300,
+            fontSize = 12.sp,
+            style = MaterialTheme.typography.labelSmall
+        )
+    }
+}
+
+@Composable
 fun AppScaffold(
     navController: NavHostController,
     content: @Composable (Modifier) -> Unit
@@ -122,57 +175,20 @@ fun AppScaffold(
                                     ?.hierarchy
                                     ?.any { it.route == item.route } == true
 
-                                val interactionSource = remember { MutableInteractionSource() }
-
-                                Column(
-                                    modifier = Modifier
-                                        .width(itemWidth)
-                                        .fillMaxHeight()
-                                        .selectable(
-                                            selected = selected,
-                                            interactionSource = interactionSource,
-                                            indication = null,
-                                            role = Role.Tab
-                                        ) {
-                                            navController.navigate(item.route) {
-                                                popUpTo(navController.graph.findStartDestination().id) {
-                                                    saveState = true
-                                                }
-                                                launchSingleTop = true
-                                                restoreState = true
+                                BottomBarItem(
+                                    item = item,
+                                    selected = selected,
+                                    width = itemWidth,
+                                    onClick = {
+                                        navController.navigate(item.route) {
+                                            popUpTo(navController.graph.findStartDestination().id) {
+                                                saveState = true
                                             }
-                                        },
-                                    verticalArrangement = Arrangement.Center,
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    val contentDescription = stringResource(item.labelResId)
-                                    when {
-                                        item.icon != null -> {
-                                            Icon(
-                                                imageVector = item.icon,
-                                                contentDescription = contentDescription,
-                                                tint = if (selected) Green500 else Gray300,
-                                                modifier = Modifier.height(24.dp)
-                                            )
-                                        }
-
-                                        item.iconResId != null -> {
-                                            Icon(
-                                                painter = painterResource(item.iconResId),
-                                                contentDescription = contentDescription,
-                                                tint = if (selected) Green500 else Gray300,
-                                                modifier = Modifier.height(24.dp)
-                                            )
+                                            launchSingleTop = true
+                                            restoreState = true
                                         }
                                     }
-
-                                    Text(
-                                        text = stringResource(item.labelResId),
-                                        color = if (selected) Green500 else Gray300,
-                                        fontSize = 12.sp,
-                                        style = MaterialTheme.typography.labelSmall
-                                    )
-                                }
+                                )
                             }
                         }
                     }
