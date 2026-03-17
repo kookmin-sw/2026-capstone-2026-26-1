@@ -1,6 +1,8 @@
 package com.example.passedpath.navigation
 
 import androidx.annotation.StringRes
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Group
@@ -17,6 +19,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -64,7 +67,9 @@ fun AppScaffold(
     Scaffold(
         bottomBar = {
             if (showBottomBar) {
-                NavigationBar {
+                NavigationBar(
+                    modifier = Modifier.height(84.dp)
+                ) {
                     bottomNavItems.forEach { item ->
                         val selected = currentDestination
                             ?.hierarchy
@@ -100,7 +105,11 @@ fun AppScaffold(
                                 }
                             },
                             label = {
-                                Text(text = stringResource(item.labelResId))
+                                Text(
+                                    text = stringResource(item.labelResId),
+                                    modifier = Modifier
+                                        .offset(y = (-10).dp)
+                                )
                             },
                             colors = NavigationBarItemDefaults.colors(
                                 selectedIconColor = Green500,
