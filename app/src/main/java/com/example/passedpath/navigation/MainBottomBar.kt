@@ -1,8 +1,8 @@
 package com.example.passedpath.navigation
 
 import androidx.annotation.StringRes
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Person
@@ -30,6 +31,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -102,65 +104,75 @@ fun AppScaffold(
                         .topShadow(),
                     containerColor = Color.White
                 ) {
-                    Row(
+                    BoxWithConstraints(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .fillMaxHeight(),
-                        horizontalArrangement = Arrangement.SpaceEvenly
+                            .fillMaxHeight()
                     ) {
-                        bottomNavItems.forEach { item ->
-                            val selected = currentDestination
-                                ?.hierarchy
-                                ?.any { it.route == item.route } == true
+                        val itemWidth = maxWidth * 0.267f
 
-                            val interactionSource = remember { MutableInteractionSource() }
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .fillMaxHeight(),
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            bottomNavItems.forEach { item ->
+                                val selected = currentDestination
+                                    ?.hierarchy
+                                    ?.any { it.route == item.route } == true
 
-                            Column(
-                                modifier = Modifier
-                                    .width(96.dp)
-                                    .fillMaxHeight()
-                                    .clickable(
-                                        interactionSource = interactionSource,
-                                        indication = null
-                                    ) {
-                                        navController.navigate(item.route) {
-                                            popUpTo(navController.graph.findStartDestination().id) {
-                                                saveState = true
+                                val interactionSource = remember { MutableInteractionSource() }
+
+                                Column(
+                                    modifier = Modifier
+                                        .width(itemWidth)
+                                        .fillMaxHeight()
+                                        .selectable(
+                                            selected = selected,
+                                            interactionSource = interactionSource,
+                                            indication = null,
+                                            role = Role.Tab
+                                        ) {
+                                            navController.navigate(item.route) {
+                                                popUpTo(navController.graph.findStartDestination().id) {
+                                                    saveState = true
+                                                }
+                                                launchSingleTop = true
+                                                restoreState = true
                                             }
-                                            launchSingleTop = true
-                                            restoreState = true
+                                        },
+                                    verticalArrangement = Arrangement.Center,
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    val contentDescription = stringResource(item.labelResId)
+                                    when {
+                                        item.icon != null -> {
+                                            Icon(
+                                                imageVector = item.icon,
+                                                contentDescription = contentDescription,
+                                                tint = if (selected) Green500 else Gray300,
+                                                modifier = Modifier.height(24.dp)
+                                            )
                                         }
-                                    },
-                                verticalArrangement = Arrangement.Center,
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                val contentDescription = stringResource(item.labelResId)
-                                when {
-                                    item.icon != null -> {
-                                        Icon(
-                                            imageVector = item.icon,
-                                            contentDescription = contentDescription,
-                                            tint = if (selected) Green500 else Gray300,
-                                            modifier = Modifier.height(24.dp)
-                                        )
+
+                                        item.iconResId != null -> {
+                                            Icon(
+                                                painter = painterResource(item.iconResId),
+                                                contentDescription = contentDescription,
+                                                tint = if (selected) Green500 else Gray300,
+                                                modifier = Modifier.height(24.dp)
+                                            )
+                                        }
                                     }
 
-                                    item.iconResId != null -> {
-                                        Icon(
-                                            painter = painterResource(item.iconResId),
-                                            contentDescription = contentDescription,
-                                            tint = if (selected) Green500 else Gray300,
-                                            modifier = Modifier.height(24.dp)
-                                        )
-                                    }
+                                    Text(
+                                        text = stringResource(item.labelResId),
+                                        color = if (selected) Green500 else Gray300,
+                                        fontSize = 12.sp,
+                                        style = MaterialTheme.typography.labelSmall
+                                    )
                                 }
-
-                                Text(
-                                    text = stringResource(item.labelResId),
-                                    color = if (selected) Green500 else Gray300,
-                                    fontSize = 12.sp,
-                                    style = MaterialTheme.typography.labelSmall
-                                )
                             }
                         }
                     }
