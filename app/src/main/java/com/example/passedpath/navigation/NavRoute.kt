@@ -5,4 +5,5 @@ object NavRoute {
     const val LOGIN = "login"
     const val PERMISSION_INTRO = "permission_intro"
     const val MAIN = "main"
+    const val MYPAGE = "mypage"
 }

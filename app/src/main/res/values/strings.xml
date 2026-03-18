@@ -1,4 +1,4 @@
-﻿<resources>
+<resources>
     <string name="app_name">PassedPath</string>
     <string name="login_logo_content_description">Logo for login screen</string>
     <string name="login_tagline">Track the paths you walked</string>
@@ -8,11 +8,15 @@
     <string name="main_title">Main</string>
     <string name="main_permission_full">Background location is enabled</string>
     <string name="main_permission_limited">Background location is limited</string>
+    <string name="main_go_to_mypage">Go to My Page</string>
+    <string name="main_map_marker_title">Seoul City Hall</string>
     <string name="main_test_api">Test API</string>
     <string name="main_logout">Logout</string>
     <string name="main_test_loading">Loading test result...</string>
     <string name="main_test_error_http">Request failed with server error.</string>
     <string name="main_test_error_generic">Request failed. Please try again.</string>
+    <string name="mypage_title">My Page</string>
+    <string name="mypage_profile_missing">Profile not loaded yet</string>
     <string name="permission_intro_title">Location permission is needed</string>
     <string name="permission_intro_description">To keep tracking your path in background, allow location access.</string>
     <string name="permission_intro_image_content_description">Onboarding illustration for location permission</string>

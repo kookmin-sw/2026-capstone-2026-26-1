@@ -1,4 +1,4 @@
-﻿package com.example.passedpath.feature.main.presentation.screen
+package com.example.passedpath.feature.main.presentation.screen
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -11,17 +11,15 @@ import com.example.passedpath.feature.main.presentation.viewmodel.MainViewModelF
 
 @Composable
 fun MainRoute(
+    onMyPageClick: () -> Unit,
     viewModel: MainViewModel = viewModel(
         factory = MainViewModelFactory(LocalContext.current.appContainer)
     )
 ) {
     val permissionState by viewModel.permissionUiState.collectAsState()
-    val testResult by viewModel.testResult.collectAsState()
 
     MainScreen(
         permissionState = permissionState,
-        testResult = testResult,
-        onTestClick = viewModel::testApi,
-        onLogoutClick = viewModel::logout
+        onMyPageClick = onMyPageClick
     )
 }

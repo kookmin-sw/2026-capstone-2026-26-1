@@ -16,6 +16,7 @@ fun requireLocalProperty(name: String): String =
 
 val kakaoNativeAppKey = requireLocalProperty("kakao.nativeAppKey")
 val appBaseUrl = requireLocalProperty("app.baseUrl")
+val googleMapsApiKey = requireLocalProperty("google.mapsApiKey")
 
 android {
     namespace = "com.example.passedpath"
@@ -32,6 +33,7 @@ android {
         buildConfigField("String", "KAKAO_NATIVE_APP_KEY", "\"$kakaoNativeAppKey\"")
         buildConfigField("String", "BASE_URL", "\"$appBaseUrl\"")
         manifestPlaceholders["kakaoScheme"] = "kakao$kakaoNativeAppKey"
+        manifestPlaceholders["googleMapsApiKey"] = googleMapsApiKey
     }
 
     buildTypes {
@@ -49,11 +51,11 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = "17"
     }
     buildFeatures {
         buildConfig = true

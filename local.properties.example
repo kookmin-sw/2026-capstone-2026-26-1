@@ -1,3 +1,4 @@
 # Copy required entries into your local.properties.
 kakao.nativeAppKey=YOUR_KAKAO_NATIVE_APP_KEY
 app.baseUrl=https\://your-api-host/
+google.mapsApiKey=YOUR_GOOGLE_MAPS_ANDROID_API_KEY
