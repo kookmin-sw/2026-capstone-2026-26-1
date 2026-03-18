@@ -5,10 +5,14 @@
     <string name="login_with_kakao">Login with Kakao</string>
     <string name="login_error_server_connection">Server connection failed. Please try again.</string>
     <string name="login_error_kakao_failed">Kakao login failed.</string>
+    <string name="bottom_nav_friends">친구</string>
+    <string name="bottom_nav_main">나의 지나온길</string>
+    <string name="bottom_nav_profile">프로필</string>
+    <string name="friends_title">친구</string>
+    <string name="friends_placeholder">친구 화면은 준비 중입니다.</string>
     <string name="main_title">Main</string>
     <string name="main_permission_full">Background location is enabled</string>
     <string name="main_permission_limited">Background location is limited</string>
-    <string name="main_go_to_mypage">Go to My Page</string>
     <string name="main_map_marker_title">Seoul City Hall</string>
     <string name="main_test_api">Test API</string>
     <string name="main_logout">Logout</string>
