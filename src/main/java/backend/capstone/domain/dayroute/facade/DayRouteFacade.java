@@ -1,6 +1,10 @@
 package backend.capstone.domain.dayroute.facade;
 
 import backend.capstone.domain.dayroute.dto.DayRouteDetailResponse;
+import backend.capstone.domain.dayroute.dto.DayRouteMemoRequest;
+import backend.capstone.domain.dayroute.dto.DayRouteMemoResponse;
+import backend.capstone.domain.dayroute.dto.DayRouteTitleRequest;
+import backend.capstone.domain.dayroute.dto.DayRouteTitleResponse;
 import backend.capstone.domain.dayroute.dto.GpsPointBatchUploadRequest;
 import backend.capstone.domain.dayroute.dto.GpsPointBatchUploadResponse;
 import backend.capstone.domain.dayroute.dto.GpsPointsResponse;
@@ -109,6 +113,23 @@ public class DayRouteFacade {
         DayRoute dayRoute = dayRouteService.getDayRouteByDateAndUserId(date, userId);
 
         placeService.reorderPlace(dayRoute, request);
+    }
+
+    @Transactional
+    public DayRouteMemoResponse saveMemo(LocalDate date, Long userId, DayRouteMemoRequest request) {
+        DayRoute dayRoute = dayRouteService.getOrCreate(userId, date);
+        dayRouteService.updateMemo(dayRoute, request.memo());
+
+        return new DayRouteMemoResponse(dayRoute.getMemo());
+    }
+
+    @Transactional
+    public DayRouteTitleResponse saveTitle(LocalDate date, Long userId,
+        DayRouteTitleRequest request) {
+        DayRoute dayRoute = dayRouteService.getOrCreate(userId, date);
+        dayRouteService.updateTitle(dayRoute, request.title());
+
+        return new DayRouteTitleResponse(dayRoute.getTitle());
     }
 
     @Recover

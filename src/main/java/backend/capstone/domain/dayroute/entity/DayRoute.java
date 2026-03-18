@@ -83,4 +83,12 @@ public class DayRoute {
         this.encodedPath = encodedPath;
         this.pathPointCount = pathPointCount;
     }
+
+    public void updateTitle(String title) {
+        this.title = title;
+    }
+
+    public void updateMemo(String memo) {
+        this.memo = memo;
+    }
 }

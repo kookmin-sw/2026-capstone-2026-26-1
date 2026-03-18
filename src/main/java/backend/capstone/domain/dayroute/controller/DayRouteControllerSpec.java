@@ -22,12 +22,14 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.time.LocalDate;
 
-@Tag(name = "day route API")
+@Tag(name = "경로 API")
 public interface DayRouteControllerSpec {
 
     @Operation(
-        summary = "GPS point upload API",
-        description = "date path variable must be passed in yyyy-MM-dd format such as 2026-03-08."
+        summary = "좌표 업로드 API",
+        description = """
+            경로 변수로 들어오는 date는 2026-03-08 같은 형식으로 넣어주세요.
+            """
     )
     GpsPointBatchUploadResponse uploadGpsPoints(
         @Parameter(example = "2026-01-01") LocalDate date,
@@ -36,8 +38,8 @@ public interface DayRouteControllerSpec {
     );
 
     @Operation(
-        summary = "day route detail API",
-        description = "Places are returned in ascending order by orderIndex."
+        summary = "경로 조회 API",
+        description = "place는 orderIndex를 기준으로 오름차순 정렬되어 반환됩니다."
     )
     DayRouteDetailResponse getDayRouteDetail(
         @Parameter(example = "2026-01-01") LocalDate date,
@@ -45,7 +47,7 @@ public interface DayRouteControllerSpec {
     );
 
     @Operation(
-        summary = "memo save API"
+        summary = "메모 작성 API"
     )
     DayRouteMemoResponse saveMemo(
         @Parameter(example = "2026-01-01") LocalDate date,
@@ -54,7 +56,7 @@ public interface DayRouteControllerSpec {
     );
 
     @Operation(
-        summary = "title save API"
+        summary = "제목 작성 API"
     )
     DayRouteTitleResponse saveTitle(
         @Parameter(example = "2026-01-01") LocalDate date,
@@ -63,7 +65,7 @@ public interface DayRouteControllerSpec {
     );
 
     @Operation(
-        summary = "place add API"
+        summary = "장소 등록 API"
     )
     PlaceAddResponse addPlaceToDayRoute(
         @Parameter(example = "2026-01-01") LocalDate date,
@@ -72,8 +74,10 @@ public interface DayRouteControllerSpec {
     );
 
     @Operation(
-        summary = "place update API",
-        description = "Send unchanged values as they are. The request fields fully overwrite the DB values."
+        summary = "장소 수정 API",
+        description = """
+            수정하지 않은 필드도 그대로 넣어주세요. 요청 필드 값으로 DB 값이 그대로 덮어써집니다.(put mapping임)
+            """
     )
     PlaceUpdateResponse updatePlace(
         @Parameter(example = "2026-01-01") LocalDate date,
@@ -83,7 +87,7 @@ public interface DayRouteControllerSpec {
     );
 
     @Operation(
-        summary = "place delete API"
+        summary = "장소 삭제 API"
     )
     void deletePlace(
         @Parameter(example = "2026-01-01") LocalDate date,
@@ -92,8 +96,10 @@ public interface DayRouteControllerSpec {
     );
 
     @Operation(
-        summary = "place reorder API",
-        description = "Receives the full reordered placeId array and updates the place order for the date."
+        summary = "장소 순서 변경 API",
+        description = """
+            정렬된 placeId 배열 전체를 받아 해당 날짜의 장소 순서를 일괄 변경합니다.
+            """
     )
     void reorderPlace(
         @Parameter(example = "2026-01-01") LocalDate date,

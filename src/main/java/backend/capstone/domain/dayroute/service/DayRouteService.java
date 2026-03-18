@@ -41,4 +41,14 @@ public class DayRouteService {
             });
     }
 
+    @Transactional
+    public void updateTitle(DayRoute dayRoute, String title) {
+        dayRoute.updateTitle(title);
+    }
+
+    @Transactional
+    public void updateMemo(DayRoute dayRoute, String memo) {
+        dayRoute.updateMemo(memo);
+    }
+
 }
