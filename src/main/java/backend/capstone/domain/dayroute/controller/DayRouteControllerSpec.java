@@ -2,6 +2,10 @@ package backend.capstone.domain.dayroute.controller;
 
 import backend.capstone.auth.dto.UserPrincipal;
 import backend.capstone.domain.dayroute.dto.DayRouteDetailResponse;
+import backend.capstone.domain.dayroute.dto.DayRouteMemoRequest;
+import backend.capstone.domain.dayroute.dto.DayRouteMemoResponse;
+import backend.capstone.domain.dayroute.dto.DayRouteTitleRequest;
+import backend.capstone.domain.dayroute.dto.DayRouteTitleResponse;
 import backend.capstone.domain.dayroute.dto.GpsPointBatchUploadRequest;
 import backend.capstone.domain.dayroute.dto.GpsPointBatchUploadResponse;
 import backend.capstone.domain.place.dto.PlaceAddRequest;
@@ -18,12 +22,12 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.time.LocalDate;
 
-@Tag(name = "일차 경로 관련 API")
+@Tag(name = "day route API")
 public interface DayRouteControllerSpec {
 
     @Operation(
-        summary = "좌표 일괄 업로드 API",
-        description = "경로 변수로 넣어주는 date는 2026-03-08 같은 형식으로 넣어주세요<br>"
+        summary = "GPS point upload API",
+        description = "date path variable must be passed in yyyy-MM-dd format such as 2026-03-08."
     )
     GpsPointBatchUploadResponse uploadGpsPoints(
         @Parameter(example = "2026-01-01") LocalDate date,
@@ -31,20 +35,9 @@ public interface DayRouteControllerSpec {
         UserPrincipal principal
     );
 
-//    @Operation(
-//        summary = "좌표 목록 조회 API",
-//        description = """
-//            해당 일차의 좌표 목록을 조회합니다.
-//            """
-//    )
-//    GpsPointsResponse getGpsPoints(
-//        @Parameter(example = "2026-01-01") LocalDate date,
-//        UserPrincipal principal
-//    );
-
     @Operation(
-        summary = "해당 일차 조회 API",
-        description = "place의 orderIndex는 장소들의 순서이며 이 순서대로 오름차순 정렬해서 데이터가 반환됩니다."
+        summary = "day route detail API",
+        description = "Places are returned in ascending order by orderIndex."
     )
     DayRouteDetailResponse getDayRouteDetail(
         @Parameter(example = "2026-01-01") LocalDate date,
@@ -52,7 +45,25 @@ public interface DayRouteControllerSpec {
     );
 
     @Operation(
-        summary = "장소 등록 API"
+        summary = "memo save API"
+    )
+    DayRouteMemoResponse saveMemo(
+        @Parameter(example = "2026-01-01") LocalDate date,
+        UserPrincipal principal,
+        DayRouteMemoRequest request
+    );
+
+    @Operation(
+        summary = "title save API"
+    )
+    DayRouteTitleResponse saveTitle(
+        @Parameter(example = "2026-01-01") LocalDate date,
+        UserPrincipal principal,
+        DayRouteTitleRequest request
+    );
+
+    @Operation(
+        summary = "place add API"
     )
     PlaceAddResponse addPlaceToDayRoute(
         @Parameter(example = "2026-01-01") LocalDate date,
@@ -61,10 +72,8 @@ public interface DayRouteControllerSpec {
     );
 
     @Operation(
-        summary = "장소 수정 API",
-        description = """
-            수정되지 않은 정보도 값으로 넣어주세요. 해당 필드들은 DB에서 통째로 업데이트됩니다.
-            """
+        summary = "place update API",
+        description = "Send unchanged values as they are. The request fields fully overwrite the DB values."
     )
     PlaceUpdateResponse updatePlace(
         @Parameter(example = "2026-01-01") LocalDate date,
@@ -74,7 +83,7 @@ public interface DayRouteControllerSpec {
     );
 
     @Operation(
-        summary = "장소 삭제 API"
+        summary = "place delete API"
     )
     void deletePlace(
         @Parameter(example = "2026-01-01") LocalDate date,
@@ -83,10 +92,8 @@ public interface DayRouteControllerSpec {
     );
 
     @Operation(
-        summary = "장소 순서 재정렬 API",
-        description = """
-            재정렬된 placeId 배열 전체를 받아 해당 날짜의 장소 순서를 일괄 변경합니다.
-            """
+        summary = "place reorder API",
+        description = "Receives the full reordered placeId array and updates the place order for the date."
     )
     void reorderPlace(
         @Parameter(example = "2026-01-01") LocalDate date,

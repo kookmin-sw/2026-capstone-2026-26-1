@@ -40,19 +40,28 @@ public class Place {
 
     private String name;
 
+    private double latitude;
+
+    private double longitude;
+
     private int orderIndex;
 
     @Builder
-    Place(DayRoute dayRoute, String roadAddress, String name, int orderIndex) {
+    Place(DayRoute dayRoute, String roadAddress, String name, double latitude, double longitude,
+        int orderIndex) {
         this.dayRoute = dayRoute;
         this.roadAddress = roadAddress;
         this.name = name;
+        this.latitude = latitude;
+        this.longitude = longitude;
         this.orderIndex = orderIndex;
     }
 
-    public void update(String roadAddress, String name) {
+    public void update(String roadAddress, String name, double latitude, double longitude) {
         this.roadAddress = roadAddress;
         this.name = name;
+        this.latitude = latitude;
+        this.longitude = longitude;
     }
 
     public void changeOrderIndex(int orderIndex) {

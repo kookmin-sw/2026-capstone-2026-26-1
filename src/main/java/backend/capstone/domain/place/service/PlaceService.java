@@ -45,7 +45,8 @@ public class PlaceService {
         Place place = placeRepository.findByIdAndDayRoute(placeId, dayRoute)
             .orElseThrow(() -> new BusinessException(PlaceErrorCode.PLACE_NOT_FOUND));
 
-        place.update(request.roadAddress(), request.placeName());
+        place.update(request.roadAddress(), request.placeName(), request.latitude(),
+            request.longitude());
 
         return PlaceMapper.toPlaceUpdateResponse(place);
     }

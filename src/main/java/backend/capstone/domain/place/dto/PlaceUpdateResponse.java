@@ -5,7 +5,9 @@ import lombok.Builder;
 @Builder
 public record PlaceUpdateResponse(
     String roadAddress,
-    String placeName
+    String placeName,
+    double latitude,
+    double longitude
 ) {
 
 }
