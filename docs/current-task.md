@@ -15,6 +15,7 @@ Project: PassedPath Android app
 - Main screen state model exists: permission state, current location, first camera centering flag, today path points.
 - Entry and permission intro flow use the original background-permission-first policy.
 - Step 3 is implemented: one-shot current location fetch and initial camera move.
+- Step 4 is implemented: current location button moves camera to the latest known location.
 
 ## Decisions already made
 - Use `ACCESS_FINE_LOCATION` as the real tracking baseline.
@@ -25,9 +26,8 @@ Project: PassedPath Android app
 
 ## Next steps
 1. Continuous location updates.
-2. Current location button.
-3. Polyline accumulation and daily persistence.
-4. Background service and background permission refinement.
+2. Polyline accumulation and daily persistence.
+3. Background service and background permission refinement.
 
 ## Guardrails for future sessions
 - Do not weaken app entry from background permission gating to foreground-only gating.

@@ -12,11 +12,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -33,6 +37,7 @@ import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
+import kotlinx.coroutines.launch
 
 @Composable
 fun MainScreen(
@@ -49,6 +54,7 @@ fun MainScreen(
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(initialCameraTarget, 15f)
     }
+    val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(currentLocation, uiState.hasCenteredOnCurrentLocation) {
         if (currentLocation != null && !uiState.hasCenteredOnCurrentLocation) {
@@ -103,17 +109,43 @@ fun MainScreen(
                 }
             }
 
-            if (uiState.permissionState == LocationPermissionUiState.DENIED) {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors()
-                ) {
-                    Column(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.End
+            ) {
+                if (currentLocation != null) {
+                    FloatingActionButton(
+                        onClick = {
+                            coroutineScope.launch {
+                                cameraPositionState.animate(
+                                    CameraUpdateFactory.newLatLngZoom(
+                                        currentLocation.toLatLng(),
+                                        17f
+                                    )
+                                )
+                            }
+                        }
                     ) {
-                        Text(text = "Location permission is off")
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(text = "Current location and path recording stay hidden until fine location is granted.")
+                        Icon(
+                            painter = painterResource(id = R.drawable.my_location_24px),
+                            contentDescription = "Move to current location"
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+
+                if (uiState.permissionState == LocationPermissionUiState.DENIED) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors()
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)
+                        ) {
+                            Text(text = "Location permission is off")
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(text = "Current location and path recording stay hidden until fine location is granted.")
+                        }
                     }
                 }
             }
