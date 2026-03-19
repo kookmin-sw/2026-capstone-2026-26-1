@@ -44,12 +44,30 @@ fun MainRoute(
     }
 
     LaunchedEffect(uiState.permissionState, uiState.currentLocation) {
-        val canFetchCurrentLocation =
+        val canReceiveLocationUpdates =
             uiState.permissionState == LocationPermissionUiState.ALWAYS ||
                 uiState.permissionState == LocationPermissionUiState.FOREGROUND_ONLY
 
-        if (canFetchCurrentLocation && uiState.currentLocation == null) {
+        if (canReceiveLocationUpdates && uiState.currentLocation == null) {
             currentLocationProvider.getCurrentLocation()?.let(viewModel::updateCurrentLocation)
+        }
+    }
+
+    DisposableEffect(uiState.permissionState, currentLocationProvider) {
+        val canReceiveLocationUpdates =
+            uiState.permissionState == LocationPermissionUiState.ALWAYS ||
+                uiState.permissionState == LocationPermissionUiState.FOREGROUND_ONLY
+
+        if (!canReceiveLocationUpdates) {
+            onDispose { }
+        } else {
+            val locationCallback = currentLocationProvider.startLocationUpdates(
+                onLocationUpdated = viewModel::updateCurrentLocation
+            )
+
+            onDispose {
+                currentLocationProvider.stopLocationUpdates(locationCallback)
+            }
         }
     }
 
