@@ -37,12 +37,24 @@ class MainViewModel(
             else -> LocationPermissionUiState.DENIED
         }
 
-        _uiState.value = _uiState.value.copy(permissionState = permissionState)
+        _uiState.value = if (permissionState == LocationPermissionUiState.DENIED) {
+            _uiState.value.copy(
+                permissionState = permissionState,
+                currentLocation = null,
+                hasCenteredOnCurrentLocation = false
+            )
+        } else {
+            _uiState.value.copy(permissionState = permissionState)
+        }
     }
 
     fun updateCurrentLocation(location: MainCoordinateUiState) {
         val currentState = _uiState.value
-        val updatedPoints = currentState.todayPath.points + location
+        val updatedPoints = if (currentState.todayPath.points.isEmpty()) {
+            listOf(location)
+        } else {
+            currentState.todayPath.points
+        }
 
         _uiState.value = currentState.copy(
             currentLocation = location,

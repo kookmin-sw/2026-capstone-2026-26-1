@@ -64,37 +64,18 @@ android {
 }
 
 dependencies {
-    // 지도용 aps-compose 라이브러리 추가
+    implementation("com.google.android.gms:play-services-location:21.3.0")
     implementation("com.google.maps.android:maps-compose:6.0.0")
-
-    // Jetpack 네비게이션 라이브러리 중 컴포즈 전용 모듈 추가
     implementation("androidx.navigation:navigation-compose:2.7.7")
-
-    // 컴포즈 의존성 추가
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.4")
-
-    // datastore 의존성 추가
     implementation("androidx.datastore:datastore-preferences:1.1.1")
-
-    // Retrofit, okhttp
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
     implementation("com.squareup.retrofit2:converter-scalars:2.9.0")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
-
-    // JSON Converter
-    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
-
-    // OkHttp
-    implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
-
-    // 카카오 로그인 API 모듈
     implementation("com.kakao.sdk:v2-user:2.20.0")
-
-    // 카카오 로그인 인증 및 토큰 관리 모듈
     implementation("com.kakao.sdk:v2-auth:2.20.0")
-
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.core.splashscreen)

@@ -14,6 +14,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -24,6 +25,7 @@ import com.example.passedpath.feature.main.presentation.state.DailyPathUiState
 import com.example.passedpath.feature.main.presentation.state.LocationPermissionUiState
 import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiState
 import com.example.passedpath.feature.main.presentation.state.MainUiState
+import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.GoogleMap
@@ -34,12 +36,27 @@ import com.google.maps.android.compose.rememberCameraPositionState
 
 @Composable
 fun MainScreen(
-    uiState: MainUiState
+    uiState: MainUiState,
+    onInitialCameraCentered: () -> Unit
 ) {
     val fallbackPosition = LatLng(37.5662952, 126.9779451)
-    val initialCameraTarget = uiState.currentLocation?.toLatLng() ?: fallbackPosition
+    val currentLocation = if (uiState.permissionState == LocationPermissionUiState.DENIED) {
+        null
+    } else {
+        uiState.currentLocation
+    }
+    val initialCameraTarget = currentLocation?.toLatLng() ?: fallbackPosition
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(initialCameraTarget, 15f)
+    }
+
+    LaunchedEffect(currentLocation, uiState.hasCenteredOnCurrentLocation) {
+        if (currentLocation != null && !uiState.hasCenteredOnCurrentLocation) {
+            cameraPositionState.move(
+                CameraUpdateFactory.newLatLngZoom(currentLocation.toLatLng(), 17f)
+            )
+            onInitialCameraCentered()
+        }
     }
 
     Box(
@@ -52,9 +69,9 @@ fun MainScreen(
             cameraPositionState = cameraPositionState,
             properties = MapProperties(isMyLocationEnabled = false)
         ) {
-            uiState.currentLocation?.let { currentLocation ->
+            currentLocation?.let {
                 Marker(
-                    state = MarkerState(position = currentLocation.toLatLng()),
+                    state = MarkerState(position = it.toLatLng()),
                     title = stringResource(R.string.main_map_marker_title)
                 )
             }
@@ -82,6 +99,21 @@ fun MainScreen(
                         Text(text = permissionText(uiState.permissionState))
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(text = "Today path points: ${uiState.todayPath.points.size}")
+                    }
+                }
+            }
+
+            if (uiState.permissionState == LocationPermissionUiState.DENIED) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)
+                    ) {
+                        Text(text = "Location permission is off")
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(text = "Current location and path recording stay hidden until fine location is granted.")
                     }
                 }
             }
@@ -120,6 +152,7 @@ fun MainScreenPreview() {
                     )
                 )
             )
-        )
+        ),
+        onInitialCameraCentered = {}
     )
 }
