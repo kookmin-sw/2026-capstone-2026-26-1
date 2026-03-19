@@ -20,7 +20,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.passedpath.R
+import com.example.passedpath.feature.main.presentation.state.DailyPathUiState
 import com.example.passedpath.feature.main.presentation.state.LocationPermissionUiState
+import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiState
+import com.example.passedpath.feature.main.presentation.state.MainUiState
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.GoogleMap
@@ -31,11 +34,12 @@ import com.google.maps.android.compose.rememberCameraPositionState
 
 @Composable
 fun MainScreen(
-    permissionState: LocationPermissionUiState
+    uiState: MainUiState
 ) {
-    val seoulCityHall = LatLng(37.5662952, 126.9779451)
+    val fallbackPosition = LatLng(37.5662952, 126.9779451)
+    val initialCameraTarget = uiState.currentLocation?.toLatLng() ?: fallbackPosition
     val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(seoulCityHall, 15f)
+        position = CameraPosition.fromLatLngZoom(initialCameraTarget, 15f)
     }
 
     Box(
@@ -48,10 +52,12 @@ fun MainScreen(
             cameraPositionState = cameraPositionState,
             properties = MapProperties(isMyLocationEnabled = false)
         ) {
-            Marker(
-                state = MarkerState(position = seoulCityHall),
-                title = stringResource(R.string.main_map_marker_title)
-            )
+            uiState.currentLocation?.let { currentLocation ->
+                Marker(
+                    state = MarkerState(position = currentLocation.toLatLng()),
+                    title = stringResource(R.string.main_map_marker_title)
+                )
+            }
         }
 
         Column(
@@ -73,13 +79,9 @@ fun MainScreen(
                     Column {
                         Text(text = stringResource(R.string.main_title))
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = if (permissionState == LocationPermissionUiState.FULL) {
-                                stringResource(R.string.main_permission_full)
-                            } else {
-                                stringResource(R.string.main_permission_limited)
-                            }
-                        )
+                        Text(text = permissionText(uiState.permissionState))
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(text = "Today path points: ${uiState.todayPath.points.size}")
                     }
                 }
             }
@@ -87,10 +89,37 @@ fun MainScreen(
     }
 }
 
+private fun permissionText(permissionState: LocationPermissionUiState): String {
+    return when (permissionState) {
+        LocationPermissionUiState.ALWAYS -> "Background location is enabled"
+        LocationPermissionUiState.FOREGROUND_ONLY -> "Foreground location is enabled"
+        LocationPermissionUiState.DENIED -> "Location permission is not granted"
+    }
+}
+
+private fun MainCoordinateUiState.toLatLng(): LatLng {
+    return LatLng(latitude, longitude)
+}
+
 @Preview(showBackground = true)
 @Composable
 fun MainScreenPreview() {
     MainScreen(
-        permissionState = LocationPermissionUiState.FULL
+        uiState = MainUiState(
+            permissionState = LocationPermissionUiState.ALWAYS,
+            currentLocation = MainCoordinateUiState(
+                latitude = 37.5662952,
+                longitude = 126.9779451
+            ),
+            todayPath = DailyPathUiState(
+                dateKey = "2026-03-19",
+                points = listOf(
+                    MainCoordinateUiState(
+                        latitude = 37.5662952,
+                        longitude = 126.9779451
+                    )
+                )
+            )
+        )
     )
 }

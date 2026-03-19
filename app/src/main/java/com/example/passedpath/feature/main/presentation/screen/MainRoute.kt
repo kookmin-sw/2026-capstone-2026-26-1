@@ -15,9 +15,9 @@ fun MainRoute(
         factory = MainViewModelFactory(LocalContext.current.appContainer)
     )
 ) {
-    val permissionState by viewModel.permissionUiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
 
     MainScreen(
-        permissionState = permissionState
+        uiState = uiState
     )
 }
