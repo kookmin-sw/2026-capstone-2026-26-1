@@ -1,6 +1,7 @@
 package backend.capstone.domain.place.entity;
 
 import backend.capstone.domain.dayroute.entity.DayRoute;
+import backend.capstone.global.entity.BaseTimeEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -25,7 +26,7 @@ import lombok.NoArgsConstructor;
             "order_index"})
     }
 )
-public class Place {
+public class Place extends BaseTimeEntity {
 
     @Id
     @Column(name = "place_id")
