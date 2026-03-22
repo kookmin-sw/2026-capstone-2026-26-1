@@ -13,6 +13,8 @@ import com.example.passedpath.feature.locationtracking.data.repository.RoomLocat
 import com.example.passedpath.feature.locationtracking.domain.repository.DayRouteRepository
 import com.example.passedpath.feature.locationtracking.domain.repository.LocationTrackingRepository
 import com.example.passedpath.feature.locationtracking.domain.tracker.LocationTracker
+import com.example.passedpath.feature.locationtracking.domain.usecase.StartLocationTrackingUseCase
+import com.example.passedpath.feature.locationtracking.domain.usecase.StopLocationTrackingUseCase
 import com.example.passedpath.feature.main.data.manager.CurrentLocationProvider
 import com.example.passedpath.feature.main.data.repository.TestRepository
 import com.example.passedpath.feature.permission.data.manager.LocationPermissionChecker
@@ -54,6 +56,14 @@ class AppContainer(
             dayRouteDao = trackingDatabase.dayRouteDao(),
             gpsPointDao = trackingDatabase.gpsPointDao()
         )
+    }
+
+    val startLocationTrackingUseCase: StartLocationTrackingUseCase by lazy {
+        StartLocationTrackingUseCase(appContext)
+    }
+
+    val stopLocationTrackingUseCase: StopLocationTrackingUseCase by lazy {
+        StopLocationTrackingUseCase(appContext)
     }
 
     private val retrofit by lazy {
