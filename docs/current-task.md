@@ -79,10 +79,9 @@ Project: PassedPath Android app
 - TODO:
   - Document the tracking session policy
   - Define:
-    - Sampling interval, for example 5s or 10s
+    - Request interval, for example 25s
     - Minimum movement distance, for example 10m+
     - Accuracy filter threshold
-    - Duplicate coordinate removal rule
     - Stationary-state handling rule
     - Date-boundary split rule based on `recordedAt -> yyyy-MM-dd`
   - Define storage units:
@@ -98,11 +97,11 @@ Project: PassedPath Android app
 - Done criteria:
   - Store/drop/upload/date-split rules are documented and implementation-ready
 - Initial policy snapshot for implementation:
-  - Location request interval: `5000ms`
-  - Minimum location callback interval: `2000ms`
+  - Location request interval: `25000ms`
+  - Minimum location callback interval: `10000ms`
+  - Minimum update distance: request updates only after about `10m` movement
   - Raw-point save threshold: `10m+` movement from the last saved point
   - Accuracy filter: discard points worse than `50m` accuracy
-  - Duplicate filter: treat points within `3m` and `10s` of the last saved point as duplicates
   - Stationary handling: do not persist repeated stationary points; UI may still show the latest foreground fix
   - Date split: derive `yyyy-MM-dd` from each point's `recordedAt` using device local time
   - Upload strategy baseline: batch upload, trigger candidate is `20` pending points or `60s`
@@ -340,6 +339,8 @@ Project: PassedPath Android app
 - Do not weaken app entry from background permission gating to foreground-only gating.
 - Keep implementation incremental; do not mix background service work into the current foreground-finished state unless working on the background branch.
 - Preserve the `MainUiState`-based structure unless there is a clear reason to refactor it.
+
+
 
 
 

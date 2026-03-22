@@ -21,10 +21,11 @@ class CurrentLocationProvider(
 ) : LocationTracker {
     private val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
     private val locationRequest = LocationRequest.Builder(
-        Priority.PRIORITY_HIGH_ACCURACY,
+        Priority.PRIORITY_BALANCED_POWER_ACCURACY,
         LocationTrackingPolicy.LOCATION_UPDATE_INTERVAL_MS
     )
         .setMinUpdateIntervalMillis(LocationTrackingPolicy.LOCATION_MIN_UPDATE_INTERVAL_MS)
+        .setMinUpdateDistanceMeters(LocationTrackingPolicy.LOCATION_MIN_UPDATE_DISTANCE_METERS)
         .build()
 
     @SuppressLint("MissingPermission")
@@ -33,7 +34,7 @@ class CurrentLocationProvider(
 
         fusedLocationClient
             .getCurrentLocation(
-                Priority.PRIORITY_HIGH_ACCURACY,
+                Priority.PRIORITY_BALANCED_POWER_ACCURACY,
                 cancellationTokenSource.token
             )
             .addOnSuccessListener { location ->
