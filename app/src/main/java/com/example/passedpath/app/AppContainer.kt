@@ -1,11 +1,17 @@
 package com.example.passedpath.app
 
 import android.content.Context
+import androidx.room.Room
 import com.example.passedpath.data.datastore.AuthSessionStorage
 import com.example.passedpath.data.network.RetrofitClient
 import com.example.passedpath.feature.auth.data.manager.AuthTokenManager
 import com.example.passedpath.feature.auth.data.remote.api.AuthApi
 import com.example.passedpath.feature.auth.data.repository.AuthRepository
+import com.example.passedpath.feature.locationtracking.data.local.PassedPathDatabase
+import com.example.passedpath.feature.locationtracking.data.repository.RoomDayRouteRepository
+import com.example.passedpath.feature.locationtracking.data.repository.RoomLocationTrackingRepository
+import com.example.passedpath.feature.locationtracking.domain.repository.DayRouteRepository
+import com.example.passedpath.feature.locationtracking.domain.repository.LocationTrackingRepository
 import com.example.passedpath.feature.locationtracking.domain.tracker.LocationTracker
 import com.example.passedpath.feature.main.data.manager.CurrentLocationProvider
 import com.example.passedpath.feature.main.data.repository.TestRepository
@@ -26,6 +32,28 @@ class AppContainer(
 
     val locationTracker: LocationTracker by lazy {
         CurrentLocationProvider(appContext)
+    }
+
+    private val trackingDatabase: PassedPathDatabase by lazy {
+        Room.databaseBuilder(
+            appContext,
+            PassedPathDatabase::class.java,
+            "passed-path.db"
+        ).build()
+    }
+
+    val locationTrackingRepository: LocationTrackingRepository by lazy {
+        RoomLocationTrackingRepository(
+            gpsPointDao = trackingDatabase.gpsPointDao(),
+            dayRouteDao = trackingDatabase.dayRouteDao()
+        )
+    }
+
+    val dayRouteRepository: DayRouteRepository by lazy {
+        RoomDayRouteRepository(
+            dayRouteDao = trackingDatabase.dayRouteDao(),
+            gpsPointDao = trackingDatabase.gpsPointDao()
+        )
     }
 
     private val retrofit by lazy {
