@@ -6,6 +6,8 @@ import com.example.passedpath.data.network.RetrofitClient
 import com.example.passedpath.feature.auth.data.manager.AuthTokenManager
 import com.example.passedpath.feature.auth.data.remote.api.AuthApi
 import com.example.passedpath.feature.auth.data.repository.AuthRepository
+import com.example.passedpath.feature.locationtracking.domain.tracker.LocationTracker
+import com.example.passedpath.feature.main.data.manager.CurrentLocationProvider
 import com.example.passedpath.feature.main.data.repository.TestRepository
 import com.example.passedpath.feature.permission.data.manager.LocationPermissionChecker
 
@@ -20,6 +22,10 @@ class AppContainer(
 
     val permissionChecker: LocationPermissionChecker by lazy {
         LocationPermissionChecker(appContext)
+    }
+
+    val locationTracker: LocationTracker by lazy {
+        CurrentLocationProvider(appContext)
     }
 
     private val retrofit by lazy {

@@ -5,15 +5,15 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.ui.platform.LocalContext
 import com.example.passedpath.app.appContainer
-import com.example.passedpath.feature.main.data.manager.CurrentLocationProvider
+import com.example.passedpath.feature.locationtracking.domain.model.TrackedLocation
 import com.example.passedpath.feature.main.presentation.state.LocationPermissionUiState
+import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiState
 import com.example.passedpath.feature.main.presentation.viewmodel.MainViewModel
 import com.example.passedpath.feature.main.presentation.viewmodel.MainViewModelFactory
 
@@ -23,11 +23,9 @@ fun MainRoute(
         factory = MainViewModelFactory(LocalContext.current.appContainer)
     )
 ) {
-    val context = LocalContext.current
+    val appContainer = LocalContext.current.appContainer
     val lifecycleOwner = LocalLifecycleOwner.current
-    val currentLocationProvider = remember(context) {
-        CurrentLocationProvider(context)
-    }
+    val locationTracker = appContainer.locationTracker
     val uiState by viewModel.uiState.collectAsState()
 
     DisposableEffect(lifecycleOwner, viewModel) {
@@ -49,11 +47,13 @@ fun MainRoute(
                 uiState.permissionState == LocationPermissionUiState.FOREGROUND_ONLY
 
         if (canReceiveLocationUpdates && uiState.currentLocation == null) {
-            currentLocationProvider.getCurrentLocation()?.let(viewModel::updateCurrentLocation)
+            locationTracker.getCurrentLocation()?.let { trackedLocation ->
+                viewModel.updateCurrentLocation(trackedLocation.toMainCoordinateUiState())
+            }
         }
     }
 
-    DisposableEffect(uiState.permissionState, currentLocationProvider) {
+    DisposableEffect(uiState.permissionState, locationTracker) {
         val canReceiveLocationUpdates =
             uiState.permissionState == LocationPermissionUiState.ALWAYS ||
                 uiState.permissionState == LocationPermissionUiState.FOREGROUND_ONLY
@@ -61,12 +61,12 @@ fun MainRoute(
         if (!canReceiveLocationUpdates) {
             onDispose { }
         } else {
-            val locationCallback = currentLocationProvider.startLocationUpdates(
-                onLocationUpdated = viewModel::updateCurrentLocation
-            )
+            val trackingSession = locationTracker.startLocationUpdates { trackedLocation ->
+                viewModel.updateCurrentLocation(trackedLocation.toMainCoordinateUiState())
+            }
 
             onDispose {
-                currentLocationProvider.stopLocationUpdates(locationCallback)
+                trackingSession.stop()
             }
         }
     }
@@ -74,5 +74,12 @@ fun MainRoute(
     MainScreen(
         uiState = uiState,
         onInitialCameraCentered = viewModel::markInitialCameraCentered
+    )
+}
+
+private fun TrackedLocation.toMainCoordinateUiState(): MainCoordinateUiState {
+    return MainCoordinateUiState(
+        latitude = latitude,
+        longitude = longitude
     )
 }
