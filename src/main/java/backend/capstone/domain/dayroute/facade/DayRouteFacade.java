@@ -1,6 +1,11 @@
 package backend.capstone.domain.dayroute.facade;
 
+import backend.capstone.domain.dayroute.dto.DayRouteBookmarkResponse;
 import backend.capstone.domain.dayroute.dto.DayRouteDetailResponse;
+import backend.capstone.domain.dayroute.dto.DayRouteMemoRequest;
+import backend.capstone.domain.dayroute.dto.DayRouteMemoResponse;
+import backend.capstone.domain.dayroute.dto.DayRouteTitleRequest;
+import backend.capstone.domain.dayroute.dto.DayRouteTitleResponse;
 import backend.capstone.domain.dayroute.dto.GpsPointBatchUploadRequest;
 import backend.capstone.domain.dayroute.dto.GpsPointBatchUploadResponse;
 import backend.capstone.domain.dayroute.dto.GpsPointsResponse;
@@ -53,7 +58,11 @@ public class DayRouteFacade {
 
         // 업로드된 좌표의 시간 범위로 DayRoute 시간 업데이트
         GpsPointRecordedAtRange gpsPointRange = gpsPointService.getGpsPointRange(dayRoute);
-        dayRoute.updateTime(gpsPointRange.getStartTime(), gpsPointRange.getEndTime());
+        dayRouteService.updateTime(dayRoute, gpsPointRange.startTime(),
+            gpsPointRange.endTime());
+
+        // 이동거리 업데이트
+        dayRouteService.updateDistance(dayRoute, request.distance());
 
         return new GpsPointBatchUploadResponse("좌표 업로드에 성공했습니다.");
     }
@@ -109,6 +118,31 @@ public class DayRouteFacade {
         DayRoute dayRoute = dayRouteService.getDayRouteByDateAndUserId(date, userId);
 
         placeService.reorderPlace(dayRoute, request);
+    }
+
+    @Transactional
+    public DayRouteMemoResponse saveMemo(LocalDate date, Long userId, DayRouteMemoRequest request) {
+        DayRoute dayRoute = dayRouteService.getOrCreate(userId, date);
+        dayRouteService.updateMemo(dayRoute, request.memo());
+
+        return new DayRouteMemoResponse(dayRoute.getMemo());
+    }
+
+    @Transactional
+    public DayRouteTitleResponse saveTitle(LocalDate date, Long userId,
+        DayRouteTitleRequest request) {
+        DayRoute dayRoute = dayRouteService.getOrCreate(userId, date);
+        dayRouteService.updateTitle(dayRoute, request.title());
+
+        return new DayRouteTitleResponse(dayRoute.getTitle());
+    }
+
+    @Transactional
+    public DayRouteBookmarkResponse toggleBookmark(LocalDate date, Long userId) {
+        DayRoute dayRoute = dayRouteService.getOrCreate(userId, date);
+        boolean isBookmarked = dayRouteService.toggleBookmark(dayRoute);
+
+        return new DayRouteBookmarkResponse(isBookmarked);
     }
 
     @Recover

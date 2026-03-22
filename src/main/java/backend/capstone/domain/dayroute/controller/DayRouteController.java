@@ -1,7 +1,12 @@
 package backend.capstone.domain.dayroute.controller;
 
 import backend.capstone.auth.dto.UserPrincipal;
+import backend.capstone.domain.dayroute.dto.DayRouteBookmarkResponse;
 import backend.capstone.domain.dayroute.dto.DayRouteDetailResponse;
+import backend.capstone.domain.dayroute.dto.DayRouteMemoRequest;
+import backend.capstone.domain.dayroute.dto.DayRouteMemoResponse;
+import backend.capstone.domain.dayroute.dto.DayRouteTitleRequest;
+import backend.capstone.domain.dayroute.dto.DayRouteTitleResponse;
 import backend.capstone.domain.dayroute.dto.GpsPointBatchUploadRequest;
 import backend.capstone.domain.dayroute.dto.GpsPointBatchUploadResponse;
 import backend.capstone.domain.dayroute.facade.DayRouteFacade;
@@ -101,5 +106,34 @@ public class DayRouteController implements DayRouteControllerSpec {
         @Valid @RequestBody PlaceReorderRequest request
     ) {
         dayRouteFacade.reorderPlace(date, principal.userId(), request);
+    }
+
+    @Override
+    @PostMapping("/{date}/memo")
+    public DayRouteMemoResponse saveMemo(
+        @PathVariable LocalDate date,
+        @AuthenticationPrincipal UserPrincipal principal,
+        @RequestBody DayRouteMemoRequest request
+    ) {
+        return dayRouteFacade.saveMemo(date, principal.userId(), request);
+    }
+
+    @Override
+    @PostMapping("/{date}/title")
+    public DayRouteTitleResponse saveTitle(
+        @PathVariable LocalDate date,
+        @AuthenticationPrincipal UserPrincipal principal,
+        @RequestBody DayRouteTitleRequest request
+    ) {
+        return dayRouteFacade.saveTitle(date, principal.userId(), request);
+    }
+
+    @Override
+    @PostMapping("/{date}/bookmark")
+    public DayRouteBookmarkResponse toggleBookmark(
+        @PathVariable LocalDate date,
+        @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        return dayRouteFacade.toggleBookmark(date, principal.userId());
     }
 }

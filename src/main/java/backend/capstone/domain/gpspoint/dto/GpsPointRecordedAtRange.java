@@ -1,13 +1,10 @@
 package backend.capstone.domain.gpspoint.dto;
 
 import java.time.LocalDateTime;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
 
-@Getter
-@AllArgsConstructor
-public class GpsPointRecordedAtRange {
+public record GpsPointRecordedAtRange(
+    LocalDateTime startTime,
+    LocalDateTime endTime
+) {
 
-    private LocalDateTime startTime;
-    private LocalDateTime endTime;
 }

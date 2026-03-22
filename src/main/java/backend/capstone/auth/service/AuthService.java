@@ -34,6 +34,7 @@ public class AuthService {
         refreshTokenService.save(user.getId(), refreshToken);
 
         return new LoginResponse(user.getId(), user.getNickname(), user.getProfileImageUrl(),
+            user.getDayStartTime(), user.getDayEndTime(),
             accessToken, refreshToken);
     }
 

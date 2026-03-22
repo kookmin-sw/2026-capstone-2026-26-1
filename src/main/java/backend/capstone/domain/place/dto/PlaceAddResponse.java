@@ -7,6 +7,8 @@ public record PlaceAddResponse(
     Long placeId,
     String placeName,
     String roadAddress,
+    double latitude,
+    double longitude,
     int orderIndex
 ) {
 

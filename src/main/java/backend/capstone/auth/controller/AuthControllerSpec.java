@@ -13,8 +13,8 @@ public interface AuthControllerSpec {
     @Operation(
         summary = "카카오 로그인",
         description = """
-            카카오 엑세스 토큰을 받아서 카카오 유저를 조회하고 db에 존재하는 유저면 로그인, 존재하지 않는 유저면 회원가입 후 로그인합니다.
-            응답받은 엑세스 토큰과 리프레시 토큰을 사용해주세요.
+            카카오 엑세스 토큰을 받아서 카카오 유저를 조회하고 db에 존재하는 유저면 로그인, 존재하지 않는 유저면 회원가입 후 로그인합니다.<br>
+            응답으로 받은 dayStartTime은 지나온길을 초기화하는 시작 시간이고, dayEndTime은 종료시간입니다.
             """
     )
     LoginResponse kakaoLogin(KakaoLoginRequest request);
@@ -30,7 +30,7 @@ public interface AuthControllerSpec {
             }
             ```
             X-Refresh-Token 헤더에 리프레시 토큰을 넣어주세요. 엑세스토큰은 넣지 않아도 됩니다.
-            이 API의 응답으로 받은 엑세스 토큰과 리프레시 토큰을 사용해주세요. (그전에 저장한 엑세스 토큰과 리프레시 토큰은 폐지) 
+            이 API의 응답으로 받은 엑세스 토큰과 리프레시 토큰을 사용해주세요. (그전에 저장한 엑세스 토큰과 리프레시 토큰은 폐지)
             """
     )
     TokenPair refresh(HttpServletRequest request, String refreshToken);
