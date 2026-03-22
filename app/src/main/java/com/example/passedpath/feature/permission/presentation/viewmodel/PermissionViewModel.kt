@@ -1,4 +1,4 @@
-﻿package com.example.passedpath.feature.permission.presentation.viewmodel
+package com.example.passedpath.feature.permission.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider

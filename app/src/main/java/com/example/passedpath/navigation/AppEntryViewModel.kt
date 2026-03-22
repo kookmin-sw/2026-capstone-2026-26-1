@@ -23,12 +23,12 @@ class AppEntryViewModel(
 
     init {
         viewModelScope.launch {
-            if (BuildConfig.DEV_SKIP_LOGIN) {
-                _state.value = AppEntryState.Ready(NavRoute.MAIN)
-                return@launch
+            val shouldSkipLogin = BuildConfig.DEV_SKIP_LOGIN
+            val token = if (shouldSkipLogin) {
+                "debug-skip-login"
+            } else {
+                appContainer.authSessionStorage.getAccessToken()
             }
-
-            val token = appContainer.authSessionStorage.getAccessToken()
 
             val destination = when {
                 token == null -> NavRoute.LOGIN
