@@ -7,6 +7,7 @@ import java.util.List;
 
 public record GpsPointBatchUploadRequest(
 //    String deviceId,
+    double distance,
     List<GpsPointRequest> gpsPoints
 ) {
 

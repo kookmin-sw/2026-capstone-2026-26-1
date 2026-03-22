@@ -38,7 +38,7 @@ public class DayRouteController implements DayRouteControllerSpec {
     private final DayRouteFacade dayRouteFacade;
 
     @Override
-    @PostMapping("/{date}/gps-points")
+    @PostMapping("/{date}/gps-points:batch")
     public GpsPointBatchUploadResponse uploadGpsPoints(
         @PathVariable LocalDate date,
         @Valid @RequestBody GpsPointBatchUploadRequest request,

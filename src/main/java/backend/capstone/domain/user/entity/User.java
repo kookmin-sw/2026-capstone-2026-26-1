@@ -9,6 +9,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.time.LocalTime;
 import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -35,14 +36,21 @@ public class User extends BaseTimeEntity {
 
     private String profileImageUrl;
 
+    private LocalTime dayStartTime;
+
+    private LocalTime dayEndTime;
+
     @Builder
     public User(ProviderType provider, String providerId, String nickname, String profileImageUrl) {
         this.provider = provider;
         this.providerId = providerId;
         this.nickname = nickname;
         this.profileImageUrl = profileImageUrl;
+        this.dayStartTime = LocalTime.MIDNIGHT;
+        this.dayEndTime = LocalTime.of(23, 59);
     }
 
+    //TODO: 프로필 변경 기능에서 사용
     public void updateProfile(String nickname, String profileImageUrl) {
         if (!Objects.equals(this.nickname, nickname)) {
             this.nickname = nickname;

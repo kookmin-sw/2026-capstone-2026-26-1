@@ -7,6 +7,7 @@ import backend.capstone.domain.dayroute.repository.DayRouteRepository;
 import backend.capstone.domain.user.service.UserService;
 import backend.capstone.global.exception.BusinessException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -56,4 +57,13 @@ public class DayRouteService {
         return dayRoute.toggleBookmarked();
     }
 
+    @Transactional
+    public void updateTime(DayRoute dayRoute, LocalDateTime startTime, LocalDateTime endTime) {
+        dayRoute.updateTime(startTime, endTime);
+    }
+
+    @Transactional
+    public void updateDistance(DayRoute dayRoute, double distance) {
+        dayRoute.updateDistance(distance);
+    }
 }

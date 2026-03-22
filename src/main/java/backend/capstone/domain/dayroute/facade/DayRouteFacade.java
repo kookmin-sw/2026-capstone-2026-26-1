@@ -1,7 +1,7 @@
 package backend.capstone.domain.dayroute.facade;
 
-import backend.capstone.domain.dayroute.dto.DayRouteDetailResponse;
 import backend.capstone.domain.dayroute.dto.DayRouteBookmarkResponse;
+import backend.capstone.domain.dayroute.dto.DayRouteDetailResponse;
 import backend.capstone.domain.dayroute.dto.DayRouteMemoRequest;
 import backend.capstone.domain.dayroute.dto.DayRouteMemoResponse;
 import backend.capstone.domain.dayroute.dto.DayRouteTitleRequest;
@@ -58,7 +58,11 @@ public class DayRouteFacade {
 
         // 업로드된 좌표의 시간 범위로 DayRoute 시간 업데이트
         GpsPointRecordedAtRange gpsPointRange = gpsPointService.getGpsPointRange(dayRoute);
-        dayRoute.updateTime(gpsPointRange.getStartTime(), gpsPointRange.getEndTime());
+        dayRouteService.updateTime(dayRoute, gpsPointRange.startTime(),
+            gpsPointRange.endTime());
+
+        // 이동거리 업데이트
+        dayRouteService.updateDistance(dayRoute, request.distance());
 
         return new GpsPointBatchUploadResponse("좌표 업로드에 성공했습니다.");
     }

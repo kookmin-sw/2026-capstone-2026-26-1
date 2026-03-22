@@ -23,15 +23,16 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.time.LocalDate;
 
-@Tag(name = "지나온길 API")
+@Tag(name = "나의 지나온길 API")
 public interface DayRouteControllerSpec {
 
     @Operation(
-        summary = "좌표 업로드 API",
+        summary = "좌표, 이동거리 업로드 API",
         description = """
             경로 변수로 들어오는 date는 2026-03-08 같은 형식으로 넣어주세요.<br>
-            좌표는 10초 간격으로 모아서 업로드해주세요. (최대한 실시간성을 유지하기 위함)<br>
-            만약 좌표가 들어오지 않았다면 업로드하지 않아도 됩니다.
+            최대한 실시간성을 유지하기 위해 주기적으로 좌표를 업로드해주세요.<br>
+            이동거리는 km 단위이며 해당 날짜 기준 가장 마지막으로 들어온 값이 최종 이동거리가 됩니다.<br>
+            만약 새롭게 업로드할 좌표가 들어오지 않았다면 api를 호출하지 않아도 됩니다.
             """
     )
     GpsPointBatchUploadResponse uploadGpsPoints(
@@ -43,7 +44,7 @@ public interface DayRouteControllerSpec {
     @Operation(
         summary = "나의 지나온길 조회 API",
         description = """
-            해당 날짜의 좌표, 수기 장소, 메모, 제목 등 지나온길의 모든 데이터들이 반환됩니다.<br> 
+            해당 날짜의 좌표, 수기 장소, 메모, 제목 등 지나온길의 모든 데이터들이 반환됩니다.<br>
             encodedPath는 해당 날짜의 지나온길 좌표들을 인코딩한 값입니다.<br>
             pathPointCount는 좌표 개수를 의미합니다. <br>
             place는 orderIndex를 기준으로 오름차순 정렬되어 반환됩니다.

@@ -96,4 +96,8 @@ public class DayRoute {
         isBookmarked = !isBookmarked;
         return isBookmarked;
     }
+
+    public void updateDistance(double distance) {
+        this.totalDistance = distance;
+    }
 }
