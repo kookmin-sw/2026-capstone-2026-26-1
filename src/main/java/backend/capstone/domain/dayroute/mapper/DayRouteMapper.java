@@ -48,6 +48,8 @@ public class DayRouteMapper {
                     .placeId(p.getId())
                     .placeName(p.getName())
                     .roadAddress(p.getRoadAddress())
+                    .latitude(p.getLatitude())
+                    .longitude(p.getLongitude())
                     .orderIndex(p.getOrderIndex())
                     .build())
                 .toList())

@@ -15,6 +15,8 @@ public class PlaceMapper {
             .dayRoute(dayRoute)
             .roadAddress(request.roadAddress())
             .name(request.placeName())
+            .latitude(request.latitude())
+            .longitude(request.longitude())
             .orderIndex(orderIndex)
             .build();
     }
@@ -24,6 +26,8 @@ public class PlaceMapper {
             .placeId(place.getId())
             .placeName(place.getName())
             .roadAddress(place.getRoadAddress())
+            .latitude(place.getLatitude())
+            .longitude(place.getLongitude())
             .orderIndex(place.getOrderIndex())
             .build();
     }
@@ -32,6 +36,8 @@ public class PlaceMapper {
         return PlaceUpdateResponse.builder()
             .roadAddress(place.getRoadAddress())
             .placeName(place.getName())
+            .latitude(place.getLatitude())
+            .longitude(place.getLongitude())
             .build();
     }
 
