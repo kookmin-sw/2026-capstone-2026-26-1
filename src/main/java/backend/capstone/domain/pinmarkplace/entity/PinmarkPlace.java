@@ -14,6 +14,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -41,5 +42,16 @@ public class PinmarkPlace extends BaseTimeEntity {
     private double latitude;
 
     private double longitude;
+
+    @Builder
+    public PinmarkPlace(User user, PinmarkPlaceType type, String name, String roadAddress,
+        double latitude, double longitude) {
+        this.user = user;
+        this.type = type;
+        this.name = name;
+        this.roadAddress = roadAddress;
+        this.latitude = latitude;
+        this.longitude = longitude;
+    }
 
 }
