@@ -17,6 +17,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    // 1. 비지니스 예외
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ErrorResponse> handleBusinessException(BusinessException e) {
         log.warn("BusinessException 발생: {}", e.getErrorCode());
@@ -28,6 +29,7 @@ public class GlobalExceptionHandler {
             .body(ErrorResponse.of(errorCode));
     }
 
+    // 2. 입력값 검증
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleHttpMessageNotReadableException(
         HttpMessageNotReadableException e) {
@@ -102,5 +104,15 @@ public class GlobalExceptionHandler {
             .body(ErrorResponse.of(CommonErrorCode.INVALID_TYPE,
                 List.of(FieldErrorDetail.of(field, message))
             ));
+    }
+
+    // 3. 서버 예외
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> handleException(Exception e) {
+        log.error("Unhandled Exception 발생", e);
+
+        return ResponseEntity
+            .status(CommonErrorCode.INTERNAL_SERVER_ERROR.getStatus())
+            .body(ErrorResponse.of(CommonErrorCode.INTERNAL_SERVER_ERROR));
     }
 }
