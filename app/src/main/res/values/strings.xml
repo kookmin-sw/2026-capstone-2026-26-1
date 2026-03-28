@@ -35,4 +35,9 @@
     <string name="permission_dialog_step_3_suffix">.</string>
     <string name="permission_dialog_open_settings">Open settings</string>
     <string name="permission_dialog_not_now">Not now</string>
+    <string name="tracking_notification_channel_name">Path tracking</string>
+    <string name="tracking_notification_channel_description">Shows background location tracking status.</string>
+    <string name="tracking_notification_title">Tracking your path</string>
+    <string name="tracking_notification_text">PassedPath is recording your movement in background.</string>
+    <string name="tracking_notification_stop">Stop tracking</string>
 </resources>
