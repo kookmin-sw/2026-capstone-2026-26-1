@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="PassedPath">
+  <trk>
+    <name>passedpath-seoul-test-route</name>
+    <trkseg>
+      <trkpt lat="37.566500" lon="126.978000"></trkpt>
+      <trkpt lat="37.566620" lon="126.978180"></trkpt>
+      <trkpt lat="37.566740" lon="126.978360"></trkpt>
+      <trkpt lat="37.566860" lon="126.978540"></trkpt>
+      <trkpt lat="37.566980" lon="126.978720"></trkpt>
+      <trkpt lat="37.567100" lon="126.978900"></trkpt>
+      <trkpt lat="37.567220" lon="126.979080"></trkpt>
+      <trkpt lat="37.567340" lon="126.979260"></trkpt>
+      <trkpt lat="37.567460" lon="126.979440"></trkpt>
+      <trkpt lat="37.567580" lon="126.979620"></trkpt>
+      <trkpt lat="37.567700" lon="126.979800"></trkpt>
+      <trkpt lat="37.567820" lon="126.979980"></trkpt>
+      <trkpt lat="37.567940" lon="126.980160"></trkpt>
+      <trkpt lat="37.568060" lon="126.980340"></trkpt>
+      <trkpt lat="37.568180" lon="126.980520"></trkpt>
+      <trkpt lat="37.568300" lon="126.980700"></trkpt>
+      <trkpt lat="37.568420" lon="126.980880"></trkpt>
+      <trkpt lat="37.568540" lon="126.981060"></trkpt>
+      <trkpt lat="37.568660" lon="126.981240"></trkpt>
+      <trkpt lat="37.568780" lon="126.981420"></trkpt>
+      <trkpt lat="37.568900" lon="126.981600"></trkpt>
+      <trkpt lat="37.569020" lon="126.981780"></trkpt>
+      <trkpt lat="37.569140" lon="126.981960"></trkpt>
+      <trkpt lat="37.569260" lon="126.982140"></trkpt>
+    </trkseg>
+  </trk>
+</gpx>
