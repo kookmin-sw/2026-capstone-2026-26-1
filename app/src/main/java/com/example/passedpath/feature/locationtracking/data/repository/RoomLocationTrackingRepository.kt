@@ -69,6 +69,10 @@ class RoomLocationTrackingRepository(
             }
     }
 
+    override suspend fun getPendingUploadLocationCount(dateKey: String): Int {
+        return gpsPointDao.getPendingUploadPointCount(dateKey)
+    }
+
     override suspend fun getPendingUploadLocations(
         dateKey: String,
         limit: Int
