@@ -67,7 +67,7 @@ class LocationTrackingService : Service() {
         val appContainer = applicationContext.appContainer
         startPeriodicUploadLoop()
         startPreBoundaryUploadLoop()
-        trackingSession = appContainer.locationTracker.startLocationUpdates { trackedLocation ->
+        trackingSession = appContainer.trackingLocationTracker.startLocationUpdates { trackedLocation ->
             serviceScope.launch {
                 val dateKey = dateKeyResolver.resolveDateKey(trackedLocation.recordedAtEpochMillis)
                 appContainer.locationTrackingRepository.saveRawLocation(trackedLocation)

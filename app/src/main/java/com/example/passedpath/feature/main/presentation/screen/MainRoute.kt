@@ -5,11 +5,11 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.compose.ui.platform.LocalContext
 import com.example.passedpath.app.appContainer
 import com.example.passedpath.feature.locationtracking.domain.model.TrackedLocation
 import com.example.passedpath.feature.main.presentation.state.LocationPermissionUiState
@@ -25,7 +25,7 @@ fun MainRoute(
 ) {
     val appContainer = LocalContext.current.appContainer
     val lifecycleOwner = LocalLifecycleOwner.current
-    val locationTracker = appContainer.locationTracker
+    val locationTracker = appContainer.currentLocationTracker
     val uiState by viewModel.uiState.collectAsState()
 
     DisposableEffect(lifecycleOwner, viewModel) {
