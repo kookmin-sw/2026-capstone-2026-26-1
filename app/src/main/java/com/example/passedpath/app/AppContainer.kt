@@ -8,6 +8,7 @@ import com.example.passedpath.feature.auth.data.manager.AuthTokenManager
 import com.example.passedpath.feature.auth.data.remote.api.AuthApi
 import com.example.passedpath.feature.auth.data.repository.AuthRepository
 import com.example.passedpath.feature.locationtracking.data.local.PassedPathDatabase
+import com.example.passedpath.feature.locationtracking.data.remote.api.DayRouteApi
 import com.example.passedpath.feature.locationtracking.data.repository.RoomDayRouteRepository
 import com.example.passedpath.feature.locationtracking.data.repository.RoomLocationTrackingRepository
 import com.example.passedpath.feature.locationtracking.domain.repository.DayRouteRepository
@@ -15,6 +16,7 @@ import com.example.passedpath.feature.locationtracking.domain.repository.Locatio
 import com.example.passedpath.feature.locationtracking.domain.tracker.LocationTracker
 import com.example.passedpath.feature.locationtracking.domain.usecase.StartLocationTrackingUseCase
 import com.example.passedpath.feature.locationtracking.domain.usecase.StopLocationTrackingUseCase
+import com.example.passedpath.feature.locationtracking.domain.usecase.UploadGpsPointsBatchUseCase
 import com.example.passedpath.feature.main.data.manager.CurrentLocationProvider
 import com.example.passedpath.feature.main.data.repository.TestRepository
 import com.example.passedpath.feature.permission.data.manager.LocationPermissionChecker
@@ -95,6 +97,10 @@ class AppContainer(
         retrofit.create(com.example.passedpath.data.network.api.TestApi::class.java)
     }
 
+    private val dayRouteApi by lazy {
+        retrofit.create(DayRouteApi::class.java)
+    }
+
     // 액세스 토큰 재발급 같은 인증 토큰 관리 책임을 분리한다.
     private val authTokenManager by lazy {
         AuthTokenManager(
@@ -115,5 +121,13 @@ class AppContainer(
     // 메인 화면의 테스트 API 호출에 사용하는 Repository다.
     val testRepository: TestRepository by lazy {
         TestRepository(testApi)
+    }
+
+    val uploadGpsPointsBatchUseCase: UploadGpsPointsBatchUseCase by lazy {
+        UploadGpsPointsBatchUseCase(
+            dayRouteApi = dayRouteApi,
+            locationTrackingRepository = locationTrackingRepository,
+            dayRouteRepository = dayRouteRepository
+        )
     }
 }
