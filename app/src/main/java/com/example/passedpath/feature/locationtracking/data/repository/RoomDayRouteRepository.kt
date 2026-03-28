@@ -22,6 +22,13 @@ class RoomDayRouteRepository(
         )
     }
 
+    override suspend fun markLocalDayRouteSynced(dateKey: String, syncedAtEpochMillis: Long) {
+        dayRouteDao.updateLastSyncedAt(
+            dateKey = dateKey,
+            syncedAtEpochMillis = syncedAtEpochMillis
+        )
+    }
+
     override suspend fun refreshRemoteDayRoute(dateKey: String): DailyPath {
         error("Remote day-route refresh is planned for Issue 7. Requested dateKey=$dateKey")
     }

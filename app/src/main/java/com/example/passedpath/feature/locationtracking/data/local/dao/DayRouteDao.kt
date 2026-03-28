@@ -26,6 +26,15 @@ interface DayRouteDao {
     )
     suspend fun getByDate(dateKey: String): DayRouteEntity?
 
+    @Query(
+        """
+        UPDATE day_routes
+        SET lastSyncedAtEpochMillis = :syncedAtEpochMillis
+        WHERE dateKey = :dateKey
+        """
+    )
+    suspend fun updateLastSyncedAt(dateKey: String, syncedAtEpochMillis: Long)
+
     @Upsert
     suspend fun upsert(route: DayRouteEntity)
 }
