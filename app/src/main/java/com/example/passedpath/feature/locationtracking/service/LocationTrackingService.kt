@@ -4,10 +4,11 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.os.IBinder
+import android.util.Log
 import androidx.core.content.ContextCompat
 import com.example.passedpath.app.appContainer
-import com.example.passedpath.feature.locationtracking.data.local.mapper.epochMillisToDateKey
 import com.example.passedpath.feature.locationtracking.domain.policy.LocationTrackingPolicy
+import com.example.passedpath.feature.locationtracking.domain.policy.TrackingDateKeyResolver
 import com.example.passedpath.feature.locationtracking.domain.tracker.LocationTrackingSession
 import com.example.passedpath.feature.locationtracking.presentation.notification.TrackingNotificationFactory
 import kotlinx.coroutines.CoroutineScope
@@ -25,12 +26,15 @@ class LocationTrackingService : Service() {
     private val uploadMutex = Mutex()
 
     private lateinit var notificationFactory: TrackingNotificationFactory
+    private lateinit var dateKeyResolver: TrackingDateKeyResolver
     private var trackingSession: LocationTrackingSession? = null
     private var periodicUploadJob: Job? = null
+    private var preBoundaryUploadJob: Job? = null
 
     override fun onCreate() {
         super.onCreate()
         notificationFactory = TrackingNotificationFactory(this)
+        dateKeyResolver = applicationContext.appContainer.trackingDateKeyResolver
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -53,6 +57,7 @@ class LocationTrackingService : Service() {
     private fun startTrackingIfNeeded() {
         if (trackingSession != null) return
 
+        Log.i(TAG, "Starting location tracking service")
         notificationFactory.ensureTrackingChannel()
         startForeground(
             TrackingNotificationFactory.NOTIFICATION_ID,
@@ -61,16 +66,20 @@ class LocationTrackingService : Service() {
 
         val appContainer = applicationContext.appContainer
         startPeriodicUploadLoop()
+        startPreBoundaryUploadLoop()
         trackingSession = appContainer.locationTracker.startLocationUpdates { trackedLocation ->
             serviceScope.launch {
-                val dateKey = epochMillisToDateKey(trackedLocation.recordedAtEpochMillis)
+                val dateKey = dateKeyResolver.resolveDateKey(trackedLocation.recordedAtEpochMillis)
                 appContainer.locationTrackingRepository.saveRawLocation(trackedLocation)
+                Log.d(TAG, "Saved location for dateKey=$dateKey recordedAt=${trackedLocation.recordedAtEpochMillis}")
 
                 val pendingCount = appContainer.locationTrackingRepository
                     .getPendingUploadLocationCount(dateKey)
+                Log.d(TAG, "Pending upload count for dateKey=$dateKey is $pendingCount")
                 if (pendingCount >= LocationTrackingPolicy.UPLOAD_BATCH_SIZE) {
                     val didUpload = uploadPendingPoints(dateKey)
                     if (didUpload) {
+                        Log.i(TAG, "Immediate upload succeeded for dateKey=$dateKey after reaching batch size")
                         resetPeriodicUploadLoop()
                     }
                 }
@@ -89,17 +98,48 @@ class LocationTrackingService : Service() {
         trackingSession = null
         periodicUploadJob?.cancel()
         periodicUploadJob = null
+        preBoundaryUploadJob?.cancel()
+        preBoundaryUploadJob = null
+        Log.i(TAG, "Stopped location tracking service")
     }
 
     private fun startPeriodicUploadLoop() {
         periodicUploadJob?.cancel()
         periodicUploadJob = serviceScope.launch {
             while (true) {
-                delay(PERIODIC_UPLOAD_INTERVAL_MS)
-                val didUpload = uploadPendingPoints(todayDateKey())
-                if (didUpload) {
+                delay(LocationTrackingPolicy.UPLOAD_INTERVAL_MS)
+                val currentDateKey = dateKeyResolver.resolveCurrentDateKey()
+                val previousDateKey = dateKeyResolver.resolvePreviousDateKey()
+                Log.d(TAG, "Periodic upload tick currentDateKey=$currentDateKey previousDateKey=$previousDateKey")
+
+                val didUploadPrevious = uploadPendingPoints(previousDateKey)
+                val didUploadCurrent = uploadPendingPoints(currentDateKey)
+                if (didUploadPrevious || didUploadCurrent) {
+                    Log.i(TAG, "Periodic upload succeeded previous=$didUploadPrevious current=$didUploadCurrent")
                     resetPeriodicUploadLoop()
                     return@launch
+                }
+            }
+        }
+    }
+
+    private fun startPreBoundaryUploadLoop() {
+        preBoundaryUploadJob?.cancel()
+        preBoundaryUploadJob = serviceScope.launch {
+            while (true) {
+                val delayMillis = dateKeyResolver.millisUntilPreBoundaryFlush(
+                    leadTimeMillis = LocationTrackingPolicy.PRE_BOUNDARY_UPLOAD_LEAD_TIME_MS
+                )
+                Log.d(TAG, "Scheduling pre-boundary upload in ${delayMillis}ms")
+                delay(delayMillis)
+
+                val activeDateKey = dateKeyResolver.resolveCurrentDateKey()
+                val didUpload = uploadPendingPoints(activeDateKey)
+                if (didUpload) {
+                    Log.i(TAG, "Pre-boundary upload succeeded for dateKey=$activeDateKey")
+                    resetPeriodicUploadLoop()
+                } else {
+                    Log.d(TAG, "Pre-boundary upload skipped for dateKey=$activeDateKey because there were no pending points")
                 }
             }
         }
@@ -111,16 +151,21 @@ class LocationTrackingService : Service() {
 
     private suspend fun uploadPendingPoints(dateKey: String): Boolean {
         return uploadMutex.withLock {
-            applicationContext.appContainer.uploadGpsPointsBatchUseCase(dateKey)
+            try {
+                val didUpload = applicationContext.appContainer.uploadGpsPointsBatchUseCase(dateKey)
+                if (!didUpload) {
+                    Log.d(TAG, "No pending points to upload for dateKey=$dateKey")
+                }
+                didUpload
+            } catch (throwable: Throwable) {
+                Log.e(TAG, "Upload failed for dateKey=$dateKey", throwable)
+                false
+            }
         }
     }
 
-    private fun todayDateKey(): String {
-        return epochMillisToDateKey(System.currentTimeMillis())
-    }
-
     companion object {
-        private const val PERIODIC_UPLOAD_INTERVAL_MS = 3 * 60 * 1000L
+        private const val TAG = "LocationTracking"
         private const val ACTION_START =
             "com.example.passedpath.feature.locationtracking.action.START"
         private const val ACTION_STOP =
