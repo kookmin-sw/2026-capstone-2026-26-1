@@ -9,5 +9,6 @@ object LocationTrackingPolicy {
     const val MAX_ACCEPTABLE_ACCURACY_METERS = 50f
 
     const val UPLOAD_BATCH_SIZE = 20
-    const val UPLOAD_INTERVAL_MS = 60_000L
+    const val UPLOAD_INTERVAL_MS = 3 * 60_000L
+    const val PRE_BOUNDARY_UPLOAD_LEAD_TIME_MS = 60_000L
 }
