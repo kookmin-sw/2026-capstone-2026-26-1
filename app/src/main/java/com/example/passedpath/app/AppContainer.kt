@@ -1,4 +1,4 @@
-package com.example.passedpath.app
+﻿package com.example.passedpath.app
 
 import android.content.Context
 import androidx.room.Room
@@ -66,29 +66,6 @@ class AppContainer(
         )
     }
 
-    val locationTrackingRepository: LocationTrackingRepository by lazy {
-        RoomLocationTrackingRepository(
-            gpsPointDao = trackingDatabase.gpsPointDao(),
-            dayRouteDao = trackingDatabase.dayRouteDao(),
-            dateKeyResolver = trackingDateKeyResolver
-        )
-    }
-
-    val dayRouteRepository: DayRouteRepository by lazy {
-        RoomDayRouteRepository(
-            dayRouteDao = trackingDatabase.dayRouteDao(),
-            gpsPointDao = trackingDatabase.gpsPointDao()
-        )
-    }
-
-    val startLocationTrackingUseCase: StartLocationTrackingUseCase by lazy {
-        StartLocationTrackingUseCase(appContext)
-    }
-
-    val stopLocationTrackingUseCase: StopLocationTrackingUseCase by lazy {
-        StopLocationTrackingUseCase(appContext)
-    }
-
     private val retrofit by lazy {
         RetrofitClient.provideRetrofit(authSessionStorage)
     }
@@ -103,6 +80,30 @@ class AppContainer(
 
     private val dayRouteApi by lazy {
         retrofit.create(DayRouteApi::class.java)
+    }
+
+    val locationTrackingRepository: LocationTrackingRepository by lazy {
+        RoomLocationTrackingRepository(
+            gpsPointDao = trackingDatabase.gpsPointDao(),
+            dayRouteDao = trackingDatabase.dayRouteDao(),
+            dateKeyResolver = trackingDateKeyResolver
+        )
+    }
+
+    val dayRouteRepository: DayRouteRepository by lazy {
+        RoomDayRouteRepository(
+            dayRouteDao = trackingDatabase.dayRouteDao(),
+            gpsPointDao = trackingDatabase.gpsPointDao(),
+            dayRouteApi = dayRouteApi
+        )
+    }
+
+    val startLocationTrackingUseCase: StartLocationTrackingUseCase by lazy {
+        StartLocationTrackingUseCase(appContext)
+    }
+
+    val stopLocationTrackingUseCase: StopLocationTrackingUseCase by lazy {
+        StopLocationTrackingUseCase(appContext)
     }
 
     private val authTokenManager by lazy {

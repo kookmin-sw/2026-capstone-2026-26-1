@@ -1,14 +1,18 @@
-package com.example.passedpath.feature.locationtracking.data.repository
+﻿package com.example.passedpath.feature.locationtracking.data.repository
 
 import com.example.passedpath.feature.locationtracking.data.local.dao.DayRouteDao
 import com.example.passedpath.feature.locationtracking.data.local.dao.GpsPointDao
 import com.example.passedpath.feature.locationtracking.data.local.mapper.toDailyPath
+import com.example.passedpath.feature.locationtracking.data.remote.api.DayRouteApi
+import com.example.passedpath.feature.locationtracking.data.remote.mapper.toDayRouteDetail
 import com.example.passedpath.feature.locationtracking.domain.model.DailyPath
+import com.example.passedpath.feature.locationtracking.domain.model.DayRouteDetail
 import com.example.passedpath.feature.locationtracking.domain.repository.DayRouteRepository
 
 class RoomDayRouteRepository(
     private val dayRouteDao: DayRouteDao,
-    private val gpsPointDao: GpsPointDao
+    private val gpsPointDao: GpsPointDao,
+    private val dayRouteApi: DayRouteApi
 ) : DayRouteRepository {
 
     override suspend fun getLocalDayRoute(dateKey: String): DailyPath? {
@@ -29,7 +33,7 @@ class RoomDayRouteRepository(
         )
     }
 
-    override suspend fun refreshRemoteDayRoute(dateKey: String): DailyPath {
-        error("Remote day-route refresh is planned for Issue 7. Requested dateKey=$dateKey")
+    override suspend fun refreshRemoteDayRoute(dateKey: String): DayRouteDetail {
+        return dayRouteApi.getDayRoute(dateKey).toDayRouteDetail(requestedDateKey = dateKey)
     }
 }
