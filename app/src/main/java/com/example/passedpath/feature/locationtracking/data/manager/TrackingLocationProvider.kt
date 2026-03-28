@@ -1,9 +1,10 @@
-package com.example.passedpath.feature.main.data.manager
+package com.example.passedpath.feature.locationtracking.data.manager
 
 import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Looper
 import com.example.passedpath.feature.locationtracking.domain.model.TrackedLocation
+import com.example.passedpath.feature.locationtracking.domain.policy.LocationTrackingPolicy
 import com.example.passedpath.feature.locationtracking.domain.tracker.LocationTracker
 import com.example.passedpath.feature.locationtracking.domain.tracker.LocationTrackingSession
 import com.google.android.gms.location.LocationCallback
@@ -15,16 +16,16 @@ import com.google.android.gms.tasks.CancellationTokenSource
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
-class CurrentLocationProvider(
+class TrackingLocationProvider(
     context: Context
 ) : LocationTracker {
     private val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
     private val locationRequest = LocationRequest.Builder(
-        Priority.PRIORITY_HIGH_ACCURACY,
-        3_000L
+        Priority.PRIORITY_BALANCED_POWER_ACCURACY,
+        LocationTrackingPolicy.LOCATION_UPDATE_INTERVAL_MS
     )
-        .setMinUpdateIntervalMillis(1_000L)
-        .setMinUpdateDistanceMeters(0f)
+        .setMinUpdateIntervalMillis(LocationTrackingPolicy.LOCATION_MIN_UPDATE_INTERVAL_MS)
+        .setMinUpdateDistanceMeters(LocationTrackingPolicy.LOCATION_MIN_UPDATE_DISTANCE_METERS)
         .setWaitForAccurateLocation(false)
         .build()
 
@@ -32,37 +33,16 @@ class CurrentLocationProvider(
     override suspend fun getCurrentLocation(): TrackedLocation? = suspendCoroutine { continuation ->
         val cancellationTokenSource = CancellationTokenSource()
 
-        fusedLocationClient.lastLocation
-            .addOnSuccessListener { lastLocation ->
-                if (lastLocation != null) {
-                    continuation.resume(lastLocation.toTrackedLocation())
-                    return@addOnSuccessListener
-                }
-
-                fusedLocationClient
-                    .getCurrentLocation(
-                        Priority.PRIORITY_HIGH_ACCURACY,
-                        cancellationTokenSource.token
-                    )
-                    .addOnSuccessListener { location ->
-                        continuation.resume(location?.toTrackedLocation())
-                    }
-                    .addOnFailureListener {
-                        continuation.resume(null)
-                    }
+        fusedLocationClient
+            .getCurrentLocation(
+                Priority.PRIORITY_BALANCED_POWER_ACCURACY,
+                cancellationTokenSource.token
+            )
+            .addOnSuccessListener { location ->
+                continuation.resume(location?.toTrackedLocation())
             }
             .addOnFailureListener {
-                fusedLocationClient
-                    .getCurrentLocation(
-                        Priority.PRIORITY_HIGH_ACCURACY,
-                        cancellationTokenSource.token
-                    )
-                    .addOnSuccessListener { location ->
-                        continuation.resume(location?.toTrackedLocation())
-                    }
-                    .addOnFailureListener {
-                        continuation.resume(null)
-                    }
+                continuation.resume(null)
             }
     }
 
@@ -82,7 +62,7 @@ class CurrentLocationProvider(
             Looper.getMainLooper()
         )
 
-        return GoogleLocationTrackingSession(
+        return GoogleTrackingLocationSession(
             fusedLocationClient = fusedLocationClient,
             locationCallback = locationCallback
         )
@@ -98,7 +78,7 @@ class CurrentLocationProvider(
     }
 }
 
-private class GoogleLocationTrackingSession(
+private class GoogleTrackingLocationSession(
     private val fusedLocationClient: com.google.android.gms.location.FusedLocationProviderClient,
     private val locationCallback: LocationCallback
 ) : LocationTrackingSession {
