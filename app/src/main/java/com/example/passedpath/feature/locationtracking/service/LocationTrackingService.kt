@@ -1,4 +1,4 @@
-package com.example.passedpath.feature.locationtracking.service
+﻿package com.example.passedpath.feature.locationtracking.service
 
 import android.app.Service
 import android.content.Context
@@ -18,6 +18,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -88,6 +89,7 @@ class LocationTrackingService : Service() {
     }
 
     private fun stopTrackingAndSelf() {
+        flushPendingPointsOnStop()
         stopTracking()
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
@@ -149,6 +151,24 @@ class LocationTrackingService : Service() {
         startPeriodicUploadLoop()
     }
 
+    private fun flushPendingPointsOnStop() {
+        runBlocking {
+            val currentDateKey = dateKeyResolver.resolveCurrentDateKey()
+            val previousDateKey = dateKeyResolver.resolvePreviousDateKey()
+            Log.i(
+                TAG,
+                "Flushing pending points on stop currentDateKey=$currentDateKey previousDateKey=$previousDateKey"
+            )
+
+            val didUploadPrevious = uploadPendingPoints(previousDateKey)
+            val didUploadCurrent = uploadPendingPoints(currentDateKey)
+            Log.i(
+                TAG,
+                "Stop flush completed previous=$didUploadPrevious current=$didUploadCurrent"
+            )
+        }
+    }
+
     private suspend fun uploadPendingPoints(dateKey: String): Boolean {
         return uploadMutex.withLock {
             try {
@@ -192,3 +212,5 @@ class LocationTrackingService : Service() {
         }
     }
 }
+
+

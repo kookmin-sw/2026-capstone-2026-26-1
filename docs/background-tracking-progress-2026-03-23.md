@@ -1,17 +1,17 @@
-# Background Tracking Progress
+﻿# Background Tracking Progress
 
 Date: 2026-03-23
 Project: PassedPath Android app
 
 ## Summary
-- Background tracking work has progressed through Issue 5.
+- Background tracking work has progressed through Issue 6.
 - The current baseline now includes:
   - shared location-tracking domain structure
   - tracking policy constants and documented policy decisions
   - Room-based local persistence for raw GPS points and day-route summary
   - foreground service for background location collection
   - save-time filtering and incremental distance accumulation
-- Network upload, server route fetch, date-based source split, and UX hardening are still pending.
+- Server route fetch, date-based source split, and UX hardening are still pending.
 
 ## Architecture snapshot
 - Collection layer:
@@ -60,7 +60,7 @@ Project: PassedPath Android app
   - save only when moved at least `10m` from the last saved point
   - discard points with accuracy worse than `50m`
   - date split uses each point's `recordedAt` and device local time
-  - upload baseline remains `20` pending points or `60s`
+  - upload baseline remains `20` pending points or `3min`
 - Where it lives:
   - `feature/locationtracking/domain/policy/LocationTrackingPolicy.kt`
   - `docs/current-task.md`
@@ -151,8 +151,6 @@ Project: PassedPath Android app
 - `app/src/main/java/com/example/passedpath/app/AppContainer.kt`
 
 ## Remaining major work
-- Issue 6:
-  - batch upload pipeline for pending GPS points
 - Issue 7:
   - server day-route fetch and polyline rendering
 - Issue 8:
@@ -165,4 +163,7 @@ Project: PassedPath Android app
 ## Notes for the next session
 - `current-task.md` should remain the planning document.
 - This file is the implementation progress snapshot as of 2026-03-23.
-- The next logical implementation target is Issue 6.
+- The next logical implementation target is Issue 7.
+
+
+
