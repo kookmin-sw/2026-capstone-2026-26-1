@@ -11,8 +11,10 @@ import com.example.passedpath.feature.locationtracking.data.local.PassedPathData
 import com.example.passedpath.feature.locationtracking.data.remote.api.DayRouteApi
 import com.example.passedpath.feature.locationtracking.data.repository.RoomDayRouteRepository
 import com.example.passedpath.feature.locationtracking.data.repository.RoomLocationTrackingRepository
+import com.example.passedpath.feature.locationtracking.domain.policy.FixedTrackingDayBoundaryTimeProvider
 import com.example.passedpath.feature.locationtracking.domain.repository.DayRouteRepository
 import com.example.passedpath.feature.locationtracking.domain.repository.LocationTrackingRepository
+import com.example.passedpath.feature.locationtracking.domain.policy.TrackingDateKeyResolver
 import com.example.passedpath.feature.locationtracking.domain.tracker.LocationTracker
 import com.example.passedpath.feature.locationtracking.domain.usecase.StartLocationTrackingUseCase
 import com.example.passedpath.feature.locationtracking.domain.usecase.StopLocationTrackingUseCase
@@ -20,6 +22,7 @@ import com.example.passedpath.feature.locationtracking.domain.usecase.UploadGpsP
 import com.example.passedpath.feature.main.data.manager.CurrentLocationProvider
 import com.example.passedpath.feature.main.data.repository.TestRepository
 import com.example.passedpath.feature.permission.data.manager.LocationPermissionChecker
+import java.time.LocalTime
 
 // 앱의 의존성 생성 책임을 한 곳에 모은 클래스
 // 수동 DI(Dependency Injection) Container
@@ -55,11 +58,24 @@ class AppContainer(
         ).build()
     }
 
+    val trackingDayBoundaryTimeProvider by lazy {
+        FixedTrackingDayBoundaryTimeProvider(
+            boundaryLocalTime = LocalTime.MIDNIGHT
+        )
+    }
+
+    val trackingDateKeyResolver by lazy {
+        TrackingDateKeyResolver(
+            boundaryTimeProvider = trackingDayBoundaryTimeProvider
+        )
+    }
+
     // raw GPS 포인트 저장, 업로드 대기 조회, 일자별 경로 Flow 제공을 담당한다.
     val locationTrackingRepository: LocationTrackingRepository by lazy {
         RoomLocationTrackingRepository(
             gpsPointDao = trackingDatabase.gpsPointDao(),
-            dayRouteDao = trackingDatabase.dayRouteDao()
+            dayRouteDao = trackingDatabase.dayRouteDao(),
+            dateKeyResolver = trackingDateKeyResolver
         )
     }
 
