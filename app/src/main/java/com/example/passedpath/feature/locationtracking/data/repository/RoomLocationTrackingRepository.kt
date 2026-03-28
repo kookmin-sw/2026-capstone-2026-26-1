@@ -3,7 +3,6 @@ package com.example.passedpath.feature.locationtracking.data.repository
 import com.example.passedpath.feature.locationtracking.data.local.dao.DayRouteDao
 import com.example.passedpath.feature.locationtracking.data.local.dao.GpsPointDao
 import com.example.passedpath.feature.locationtracking.data.local.mapper.distanceBetweenMeters
-import com.example.passedpath.feature.locationtracking.data.local.mapper.epochMillisToDateKey
 import com.example.passedpath.feature.locationtracking.data.local.mapper.toDailyPath
 import com.example.passedpath.feature.locationtracking.data.local.mapper.toGpsPointEntity
 import com.example.passedpath.feature.locationtracking.data.local.mapper.toTrackedLocation
@@ -11,24 +10,21 @@ import com.example.passedpath.feature.locationtracking.data.local.mapper.toUpdat
 import com.example.passedpath.feature.locationtracking.domain.model.DailyPath
 import com.example.passedpath.feature.locationtracking.domain.model.TrackedLocation
 import com.example.passedpath.feature.locationtracking.domain.policy.LocationTrackingPolicy
+import com.example.passedpath.feature.locationtracking.domain.policy.TrackingDateKeyResolver
 import com.example.passedpath.feature.locationtracking.domain.repository.LocationTrackingRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
-import java.time.ZoneId
 
 class RoomLocationTrackingRepository(
     private val gpsPointDao: GpsPointDao,
     private val dayRouteDao: DayRouteDao,
-    private val zoneId: ZoneId = ZoneId.systemDefault()
+    private val dateKeyResolver: TrackingDateKeyResolver
 ) : LocationTrackingRepository {
 
     override suspend fun saveRawLocation(location: TrackedLocation) {
 
         // "2026-03-28"
-        val dateKey = epochMillisToDateKey(
-            epochMillis = location.recordedAtEpochMillis,
-            zoneId = zoneId
-        )
+        val dateKey = dateKeyResolver.resolveDateKey(location.recordedAtEpochMillis)
 
         // 정책에 맞게 저장 전 필터링: 정확도가 낮으면 저장 안함
         // 현재, 정확도가 null일 때도 저장하는 구조
@@ -67,6 +63,10 @@ class RoomLocationTrackingRepository(
             .combine(dayRouteDao.observeByDate(dateKey)) { points, route ->
                 points.toDailyPath(dateKey = dateKey, existingRoute = route)
             }
+    }
+
+    override suspend fun getPendingUploadLocationCount(dateKey: String): Int {
+        return gpsPointDao.getPendingUploadPointCount(dateKey)
     }
 
     override suspend fun getPendingUploadLocations(

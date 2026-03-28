@@ -52,6 +52,14 @@ interface GpsPointDao {
 
     @Query(
         """
+        SELECT COUNT(*) FROM gps_points
+        WHERE dateKey = :dateKey AND isUploaded = 0
+        """
+    )
+    suspend fun getPendingUploadPointCount(dateKey: String): Int
+
+    @Query(
+        """
         UPDATE gps_points
         SET isUploaded = 1
         WHERE recordedAtEpochMillis IN (:recordedAtEpochMillis)

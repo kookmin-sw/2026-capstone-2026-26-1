@@ -1,4 +1,4 @@
-# Current Task
+﻿# Current Task
 
 Date: 2026-03-20
 Project: PassedPath Android app
@@ -104,7 +104,7 @@ Project: PassedPath Android app
   - Accuracy filter: discard points worse than `50m` accuracy
   - Stationary handling: do not persist repeated stationary points; UI may still show the latest foreground fix
   - Date split: derive `yyyy-MM-dd` from each point's `recordedAt` using device local time
-  - Upload strategy baseline: batch upload, trigger candidate is `20` pending points or `60s`
+  - Upload strategy baseline: batch upload, trigger candidate is `20` pending points or `3min`
   - Offline/failure baseline: keep points locally and retry on the next upload trigger
 
 ### Issue 3. Build the local persistence layer with Room
@@ -223,7 +223,7 @@ Project: PassedPath Android app
   - Define upload trigger points:
     - When enough points accumulate
     - On time-based interval
-    - Flush on service stop if appropriate
+    - Flush on service stop
   - Define retry policy:
     - Simple retry first
     - Decide whether `WorkManager` is needed
@@ -339,6 +339,7 @@ Project: PassedPath Android app
 - Do not weaken app entry from background permission gating to foreground-only gating.
 - Keep implementation incremental; do not mix background service work into the current foreground-finished state unless working on the background branch.
 - Preserve the `MainUiState`-based structure unless there is a clear reason to refactor it.
+
 
 
 

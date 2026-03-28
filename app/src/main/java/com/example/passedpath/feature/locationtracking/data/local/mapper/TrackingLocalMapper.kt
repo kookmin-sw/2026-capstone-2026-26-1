@@ -3,6 +3,7 @@ package com.example.passedpath.feature.locationtracking.data.local.mapper
 import android.location.Location
 import com.example.passedpath.feature.locationtracking.data.local.entity.DayRouteEntity
 import com.example.passedpath.feature.locationtracking.data.local.entity.GpsPointEntity
+import com.example.passedpath.feature.locationtracking.data.remote.dto.GpsPointRequestDto
 import com.example.passedpath.feature.locationtracking.domain.model.DailyPath
 import com.example.passedpath.feature.locationtracking.domain.model.TrackedLocation
 import java.time.Instant
@@ -30,6 +31,15 @@ fun GpsPointEntity.toTrackedLocation(): TrackedLocation {
         longitude = longitude,
         accuracyMeters = accuracyMeters,
         recordedAtEpochMillis = recordedAtEpochMillis
+    )
+}
+
+// TrackedLocation 도메인 모델을 업로드용 GpsPointRequestDto로 변환한다.
+fun TrackedLocation.toGpsPointRequestDto(): GpsPointRequestDto {
+    return GpsPointRequestDto(
+        recordedAt = Instant.ofEpochMilli(recordedAtEpochMillis).toString(),
+        latitude = latitude,
+        longitude = longitude
     )
 }
 
@@ -130,4 +140,9 @@ fun distanceBetweenMeters(
         results
     )
     return results.first().toDouble()
+}
+
+// 미터 단위 거리를 서버 업로드용 킬로미터 값으로 변환한다.
+fun Double.metersToKilometers(): Double {
+    return this / 1000.0
 }
