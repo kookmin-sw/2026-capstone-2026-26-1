@@ -1,33 +1,45 @@
-package com.example.passedpath.feature.main.presentation.viewmodel
+﻿package com.example.passedpath.feature.main.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
 import com.example.passedpath.app.AppContainer
-import com.example.passedpath.feature.main.presentation.state.DailyPathUiState
+import com.example.passedpath.feature.locationtracking.domain.model.DayRouteDetail
+import com.example.passedpath.feature.locationtracking.domain.model.DayRoutePlace
+import com.example.passedpath.feature.locationtracking.domain.model.RoutePoint
+import com.example.passedpath.feature.locationtracking.domain.repository.DayRouteRepository
 import com.example.passedpath.feature.main.presentation.state.LocationPermissionUiState
 import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiState
 import com.example.passedpath.feature.main.presentation.state.MainUiState
+import com.example.passedpath.feature.main.presentation.state.PlaceMarkerUiState
+import com.example.passedpath.feature.main.presentation.state.SelectedDayRouteUiState
 import com.example.passedpath.feature.permission.data.manager.LocationPermissionChecker
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 class MainViewModel(
-    private val permissionChecker: LocationPermissionChecker
+    private val permissionChecker: LocationPermissionChecker,
+    private val dayRouteRepository: DayRouteRepository
 ) : ViewModel() {
 
+    private val initialDateKey = todayDateKey()
     private val _uiState = MutableStateFlow(
         MainUiState(
-            todayPath = DailyPathUiState(dateKey = todayDateKey())
+            selectedDateKey = initialDateKey,
+            selectedRoute = SelectedDayRouteUiState(dateKey = initialDateKey)
         )
     )
     val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
 
     init {
         refreshPermissionState()
+        loadDayRoute(initialDateKey)
     }
 
     fun refreshPermissionState() {
@@ -37,45 +49,101 @@ class MainViewModel(
             else -> LocationPermissionUiState.DENIED
         }
 
-        _uiState.value = if (permissionState == LocationPermissionUiState.DENIED) {
-            _uiState.value.copy(
-                permissionState = permissionState,
-                currentLocation = null,
-                hasCenteredOnCurrentLocation = false
-            )
-        } else {
-            _uiState.value.copy(permissionState = permissionState)
+        _uiState.update { currentState ->
+            if (permissionState == LocationPermissionUiState.DENIED) {
+                currentState.copy(
+                    permissionState = permissionState,
+                    currentLocation = null,
+                    hasCenteredOnCurrentLocation = false
+                )
+            } else {
+                currentState.copy(permissionState = permissionState)
+            }
         }
     }
 
     fun updateCurrentLocation(location: MainCoordinateUiState) {
-        val currentState = _uiState.value
-        val updatedPoints = if (currentState.todayPath.points.isEmpty()) {
-            listOf(location)
-        } else {
-            currentState.todayPath.points
+        _uiState.update { currentState ->
+            currentState.copy(currentLocation = location)
         }
-
-        _uiState.value = currentState.copy(
-            currentLocation = location,
-            todayPath = currentState.todayPath.copy(points = updatedPoints)
-        )
     }
 
     fun markInitialCameraCentered() {
-        _uiState.value = _uiState.value.copy(hasCenteredOnCurrentLocation = true)
+        _uiState.update { currentState ->
+            currentState.copy(hasCenteredOnCurrentLocation = true)
+        }
     }
 
-    fun resetTodayPath(dateKey: String = todayDateKey()) {
-        _uiState.value = _uiState.value.copy(
-            todayPath = DailyPathUiState(dateKey = dateKey),
-            hasCenteredOnCurrentLocation = false
-        )
+    fun selectDate(dateKey: String) {
+        loadDayRoute(dateKey)
+    }
+
+    private fun loadDayRoute(dateKey: String) {
+        viewModelScope.launch {
+            _uiState.update { currentState ->
+                currentState.copy(
+                    selectedDateKey = dateKey,
+                    selectedRoute = SelectedDayRouteUiState(dateKey = dateKey),
+                    isRouteLoading = true,
+                    routeErrorMessage = null,
+                    hasCenteredOnCurrentLocation = false
+                )
+            }
+
+            runCatching {
+                dayRouteRepository.refreshRemoteDayRoute(dateKey)
+            }.onSuccess { routeDetail ->
+                _uiState.update { currentState ->
+                    currentState.copy(
+                        selectedDateKey = routeDetail.dateKey,
+                        selectedRoute = routeDetail.toUiState(),
+                        isRouteLoading = false,
+                        routeErrorMessage = null
+                    )
+                }
+            }.onFailure {
+                _uiState.update { currentState ->
+                    currentState.copy(
+                        selectedDateKey = dateKey,
+                        selectedRoute = SelectedDayRouteUiState(dateKey = dateKey),
+                        isRouteLoading = false,
+                        routeErrorMessage = "Failed to load the selected route."
+                    )
+                }
+            }
+        }
     }
 
     private fun todayDateKey(): String {
         return SimpleDateFormat("yyyy-MM-dd", Locale.KOREA).format(Date())
     }
+}
+
+private fun DayRouteDetail.toUiState(): SelectedDayRouteUiState {
+    return SelectedDayRouteUiState(
+        dateKey = dateKey,
+        polylinePoints = polylinePoints.map(RoutePoint::toUiState),
+        totalDistanceKm = totalDistanceKm,
+        pathPointCount = pathPointCount,
+        places = places.map(DayRoutePlace::toUiState)
+    )
+}
+
+private fun RoutePoint.toUiState(): MainCoordinateUiState {
+    return MainCoordinateUiState(
+        latitude = latitude,
+        longitude = longitude
+    )
+}
+
+private fun DayRoutePlace.toUiState(): PlaceMarkerUiState {
+    return PlaceMarkerUiState(
+        placeId = placeId,
+        placeName = placeName,
+        latitude = latitude,
+        longitude = longitude,
+        orderIndex = orderIndex
+    )
 }
 
 class MainViewModelFactory(
@@ -85,7 +153,8 @@ class MainViewModelFactory(
         if (modelClass.isAssignableFrom(MainViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
             return MainViewModel(
-                permissionChecker = appContainer.permissionChecker
+                permissionChecker = appContainer.permissionChecker,
+                dayRouteRepository = appContainer.dayRouteRepository
             ) as T
         }
 
