@@ -3,10 +3,12 @@ package com.example.passedpath.feature.locationtracking.data.repository
 import com.example.passedpath.feature.locationtracking.data.local.dao.DayRouteDao
 import com.example.passedpath.feature.locationtracking.data.local.dao.GpsPointDao
 import com.example.passedpath.feature.locationtracking.data.local.mapper.epochMillisToDateKey
+import com.example.passedpath.feature.locationtracking.data.local.mapper.distanceBetweenMeters
 import com.example.passedpath.feature.locationtracking.data.local.mapper.toDailyPath
 import com.example.passedpath.feature.locationtracking.data.local.mapper.toDayRouteEntity
 import com.example.passedpath.feature.locationtracking.data.local.mapper.toGpsPointEntity
 import com.example.passedpath.feature.locationtracking.data.local.mapper.toTrackedLocation
+import com.example.passedpath.feature.locationtracking.domain.policy.LocationTrackingPolicy
 import com.example.passedpath.feature.locationtracking.domain.model.DailyPath
 import com.example.passedpath.feature.locationtracking.domain.model.TrackedLocation
 import com.example.passedpath.feature.locationtracking.domain.repository.LocationTrackingRepository
@@ -26,6 +28,21 @@ class RoomLocationTrackingRepository(
             epochMillis = location.recordedAtEpochMillis,
             zoneId = zoneId
         )
+
+        if (
+            location.accuracyMeters != null &&
+            location.accuracyMeters > LocationTrackingPolicy.MAX_ACCEPTABLE_ACCURACY_METERS
+        ) {
+            return
+        }
+
+        val latestSavedPoint = gpsPointDao.getLatestPointByDate(dateKey)?.toTrackedLocation()
+        if (latestSavedPoint != null) {
+            val movedDistanceMeters = distanceBetweenMeters(latestSavedPoint, location)
+            if (movedDistanceMeters < LocationTrackingPolicy.MIN_SAVE_DISTANCE_METERS) {
+                return
+            }
+        }
 
         gpsPointDao.insert(location.toGpsPointEntity(dateKey))
         refreshDayRouteSummary(dateKey)

@@ -85,7 +85,7 @@ private fun List<TrackedLocation>.calculateTotalDistanceMeters(): Double {
     return distanceMeters
 }
 
-private fun distanceBetweenMeters(
+fun distanceBetweenMeters(
     start: TrackedLocation,
     end: TrackedLocation
 ): Double {

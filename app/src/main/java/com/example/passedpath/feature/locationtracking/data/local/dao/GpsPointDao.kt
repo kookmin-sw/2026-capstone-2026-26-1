@@ -33,6 +33,16 @@ interface GpsPointDao {
     @Query(
         """
         SELECT * FROM gps_points
+        WHERE dateKey = :dateKey
+        ORDER BY recordedAtEpochMillis DESC
+        LIMIT 1
+        """
+    )
+    suspend fun getLatestPointByDate(dateKey: String): GpsPointEntity?
+
+    @Query(
+        """
+        SELECT * FROM gps_points
         WHERE dateKey = :dateKey AND isUploaded = 0
         ORDER BY recordedAtEpochMillis ASC
         LIMIT :limit
