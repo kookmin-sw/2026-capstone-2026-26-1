@@ -15,9 +15,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -34,6 +36,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.passedpath.R
 import com.example.passedpath.feature.main.presentation.state.LocationPermissionUiState
@@ -61,7 +64,8 @@ private val DateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy
 fun MainScreen(
     uiState: MainUiState,
     onInitialCameraCentered: () -> Unit,
-    onDateSelected: (String) -> Unit
+    onDateSelected: (String) -> Unit,
+    onRetryRoute: () -> Unit
 ) {
     val context = LocalContext.current
     val fallbackPosition = LatLng(37.5662952, 126.9779451)
@@ -161,6 +165,13 @@ fun MainScreen(
             }
         }
 
+        RouteStatusOverlay(
+            isLoading = uiState.isRouteLoading,
+            emptyMessage = uiState.routeEmptyMessage,
+            errorMessage = uiState.routeErrorMessage,
+            onRetryRoute = onRetryRoute
+        )
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -204,18 +215,6 @@ fun MainScreen(
                     Text(text = "Distance: ${uiState.selectedRoute.totalDistanceKm.formatDistanceKm()}")
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(text = "Path points: ${uiState.selectedRoute.pathPointCount}")
-                    if (uiState.isRouteLoading) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(text = "Loading route...")
-                    }
-                    uiState.routeEmptyMessage?.let { emptyMessage ->
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(text = emptyMessage, color = Color(0xFF4B5563))
-                    }
-                    uiState.routeErrorMessage?.let { errorMessage ->
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(text = errorMessage, color = Color(0xFF9D1C1C))
-                    }
                 }
             }
 
@@ -256,6 +255,73 @@ fun MainScreen(
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(text = "Current location stays hidden until fine location is granted.")
                         }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RouteStatusOverlay(
+    isLoading: Boolean,
+    emptyMessage: String?,
+    errorMessage: String?,
+    onRetryRoute: () -> Unit
+) {
+    if (!isLoading && emptyMessage == null && errorMessage == null) return
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.18f))
+            .padding(horizontal = 28.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Card(
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 10.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                when {
+                    isLoading -> {
+                        CircularProgressIndicator(color = RouteLineColor)
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(text = "Loading route", fontWeight = FontWeight.SemiBold)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Fetching the selected day's path and places.",
+                            color = Color(0xFF4B5563),
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                    errorMessage != null -> {
+                        Text(text = "Route Load Failed", fontWeight = FontWeight.SemiBold)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = errorMessage,
+                            color = Color(0xFF9D1C1C),
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(onClick = onRetryRoute) {
+                            Text(text = "Retry")
+                        }
+                    }
+                    emptyMessage != null -> {
+                        Text(text = "No Route For This Day", fontWeight = FontWeight.SemiBold)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = emptyMessage,
+                            color = Color(0xFF4B5563),
+                            textAlign = TextAlign.Center
+                        )
                     }
                 }
             }

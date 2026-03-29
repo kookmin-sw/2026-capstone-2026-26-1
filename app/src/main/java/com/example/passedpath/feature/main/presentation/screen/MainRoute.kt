@@ -95,7 +95,8 @@ fun MainRoute(
     MainScreen(
         uiState = uiState,
         onInitialCameraCentered = viewModel::markInitialCameraCentered,
-        onDateSelected = viewModel::selectDate
+        onDateSelected = viewModel::selectDate,
+        onRetryRoute = viewModel::retrySelectedDate
     )
 }
 

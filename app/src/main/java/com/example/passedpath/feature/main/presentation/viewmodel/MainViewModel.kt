@@ -79,6 +79,10 @@ class MainViewModel(
         loadDayRoute(dateKey)
     }
 
+    fun retrySelectedDate() {
+        loadDayRoute(_uiState.value.selectedDateKey)
+    }
+
     private fun loadDayRoute(dateKey: String) {
         viewModelScope.launch {
             _uiState.update { currentState ->
