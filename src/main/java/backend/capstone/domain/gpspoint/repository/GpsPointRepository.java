@@ -28,4 +28,5 @@ public interface GpsPointRepository extends
             order by gp.recordedAt asc
         """)
     List<GpsPoint> findByDayRouteIdOrderByRecordedAt(@Param("dayRoute") DayRoute dayRoute);
+
 }

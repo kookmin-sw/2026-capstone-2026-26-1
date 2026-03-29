@@ -20,6 +20,8 @@ public interface PlaceRepository extends JpaRepository<Place, Long> {
 
     List<Place> findByDayRouteOrderByOrderIndex(DayRoute dayRoute);
 
+    boolean existsByDayRoute(DayRoute dayRoute);
+
     Optional<Place> findByIdAndDayRoute(Long placeId, DayRoute dayRoute);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)

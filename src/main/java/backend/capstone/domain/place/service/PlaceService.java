@@ -1,6 +1,7 @@
 package backend.capstone.domain.place.service;
 
 import backend.capstone.domain.dayroute.entity.DayRoute;
+import backend.capstone.domain.dayroute.service.DayRouteService;
 import backend.capstone.domain.place.dto.PlaceAddRequest;
 import backend.capstone.domain.place.dto.PlaceAddResponse;
 import backend.capstone.domain.place.dto.PlaceReorderRequest;
@@ -23,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class PlaceService {
 
+    private final DayRouteService dayRouteService;
     private final PlaceRepository placeRepository;
 
     @Transactional
@@ -31,6 +33,7 @@ public class PlaceService {
         int newOrder = maxOrder + 1;
 
         Place savedPlace = placeRepository.save(PlaceMapper.toEntity(dayRoute, request, newOrder));
+        dayRouteService.refreshHasManualData(dayRoute);
         return PlaceMapper.toPlaceAddResponse(savedPlace);
     }
 
@@ -59,6 +62,7 @@ public class PlaceService {
         int deletedOrderIdx = place.getOrderIndex();
         placeRepository.delete(place);
         placeRepository.decrementOrderIndexesGreaterThan(dayRoute, deletedOrderIdx);
+        dayRouteService.refreshHasManualData(dayRoute);
     }
 
     @Transactional

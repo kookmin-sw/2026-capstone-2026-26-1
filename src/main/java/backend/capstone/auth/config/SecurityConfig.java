@@ -32,7 +32,8 @@ public class SecurityConfig {
                 .requestMatchers(
                     "/swagger-ui/**",
                     "/swagger-ui.html",
-                    "/v3/api-docs/**", "/webjars/**", "/swagger-resources/**", "/favicon.ico")
+                    "/v3/api-docs/**", "/webjars/**", "/swagger-resources/**", "/favicon.ico",
+                    "/error")
                 .permitAll()
                 .anyRequest().authenticated()
             )

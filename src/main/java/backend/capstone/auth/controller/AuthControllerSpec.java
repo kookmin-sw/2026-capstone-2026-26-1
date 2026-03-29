@@ -7,7 +7,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 
-@Tag(name = "인증관련 API")
+@Tag(name = "인증 API")
 public interface AuthControllerSpec {
 
     @Operation(
