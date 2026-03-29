@@ -4,6 +4,7 @@ import backend.capstone.global.exception.ErrorResponse.FieldErrorDetail;
 import com.fasterxml.jackson.databind.JsonMappingException.Reference;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
+import jakarta.validation.ConstraintViolationException;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -91,8 +92,8 @@ public class GlobalExceptionHandler {
             .map(FieldErrorDetail::new)
             .toList();
 
-        return ResponseEntity.status(CommonErrorCode.VALIDATION_ERROR.getStatus())
-            .body(ErrorResponse.of(CommonErrorCode.VALIDATION_ERROR, fieldErrors));
+        return ResponseEntity.status(CommonErrorCode.VALIDATION_DTO_ERROR.getStatus())
+            .body(ErrorResponse.of(CommonErrorCode.VALIDATION_DTO_ERROR, fieldErrors));
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
@@ -104,6 +105,22 @@ public class GlobalExceptionHandler {
             .body(ErrorResponse.of(CommonErrorCode.INVALID_TYPE,
                 List.of(FieldErrorDetail.of(field, message))
             ));
+    }
+
+    // 메서드 파라미터 검증 실패(@RequestParam, @PathVariable)
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ErrorResponse> handleConstraintViolation(ConstraintViolationException e) {
+        List<FieldErrorDetail> fieldErrors = e.getConstraintViolations()
+            .stream()
+            .map(v ->
+                FieldErrorDetail.of(
+                    v.getPropertyPath().toString(),
+                    v.getMessage()
+                ))
+            .toList();
+
+        return ResponseEntity.status(CommonErrorCode.VALIDATION_PATH_VARIABLE_ERROR.getStatus())
+            .body(ErrorResponse.of(CommonErrorCode.VALIDATION_PATH_VARIABLE_ERROR, fieldErrors));
     }
 
     // 3. 서버 예외
