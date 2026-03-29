@@ -30,7 +30,7 @@ public class GlobalExceptionHandler {
             .body(ErrorResponse.of(errorCode));
     }
 
-    // 2. 입력값 검증
+    // 2. json 파싱 에러
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleHttpMessageNotReadableException(
         HttpMessageNotReadableException e) {
@@ -83,6 +83,7 @@ public class GlobalExceptionHandler {
         return fieldName;
     }
 
+    // 3. DTO 검증 실패
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleMethodArgumentNotValid(
         MethodArgumentNotValidException e) {
@@ -96,6 +97,7 @@ public class GlobalExceptionHandler {
             .body(ErrorResponse.of(CommonErrorCode.VALIDATION_DTO_ERROR, fieldErrors));
     }
 
+    // 4. 메서드 파라미터 타입 변환 실패(@RequestParam, @PathVariable)
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException e) {
         String field = e.getName(); // 파라미터 이름
@@ -107,7 +109,7 @@ public class GlobalExceptionHandler {
             ));
     }
 
-    // 메서드 파라미터 검증 실패(@RequestParam, @PathVariable)
+    // 5. 메서드 파라미터 검증 실패(@RequestParam, @PathVariable)
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ErrorResponse> handleConstraintViolation(ConstraintViolationException e) {
         List<FieldErrorDetail> fieldErrors = e.getConstraintViolations()
@@ -124,7 +126,7 @@ public class GlobalExceptionHandler {
                 ErrorResponse.of(CommonErrorCode.VALIDATION_REQUEST_PARAMETER_ERROR, fieldErrors));
     }
 
-    // 3. 서버 예외
+    // 6. 서버 예외
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleException(Exception e) {
         log.error("Unhandled Exception 발생", e);
