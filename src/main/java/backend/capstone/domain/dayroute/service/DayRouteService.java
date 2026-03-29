@@ -4,6 +4,7 @@ import backend.capstone.domain.dayroute.entity.DayRoute;
 import backend.capstone.domain.dayroute.exception.DayRouteErrorCode;
 import backend.capstone.domain.dayroute.mapper.DayRouteMapper;
 import backend.capstone.domain.dayroute.repository.DayRouteRepository;
+import backend.capstone.domain.place.repository.PlaceRepository;
 import backend.capstone.domain.user.service.UserService;
 import backend.capstone.global.exception.BusinessException;
 import java.time.LocalDate;
@@ -18,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class DayRouteService {
 
     private final DayRouteRepository dayRouteRepository;
+    private final PlaceRepository placeRepository;
     private final UserService userService;
 
     @Transactional
@@ -45,11 +47,13 @@ public class DayRouteService {
     @Transactional
     public void updateTitle(DayRoute dayRoute, String title) {
         dayRoute.updateTitle(title);
+        refreshHasManualData(dayRoute);
     }
 
     @Transactional
     public void updateMemo(DayRoute dayRoute, String memo) {
         dayRoute.updateMemo(memo);
+        refreshHasManualData(dayRoute);
     }
 
     @Transactional
@@ -65,5 +69,25 @@ public class DayRouteService {
     @Transactional
     public void updateDistance(DayRoute dayRoute, double distance) {
         dayRoute.updateDistance(distance);
+    }
+
+    @Transactional
+    public void markHasGpsPoints(DayRoute dayRoute) {
+        dayRoute.markHasGpsPoints();
+    }
+
+    @Transactional
+    public void refreshHasManualData(DayRoute dayRoute) {
+        dayRoute.updateHasManualData(hasManualData(dayRoute));
+    }
+
+    private boolean hasManualData(DayRoute dayRoute) {
+        return hasText(dayRoute.getTitle())
+            || hasText(dayRoute.getMemo())
+            || placeRepository.existsByDayRoute(dayRoute);
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.isBlank();
     }
 }

@@ -67,6 +67,10 @@ public class DayRoute {
 
     private Integer pathPointCount;
 
+    private boolean hasGpsPoints;
+
+    private boolean hasManualData;
+
     @Builder
     public DayRoute(User user, LocalDate date) {
         this.user = user;
@@ -92,6 +96,14 @@ public class DayRoute {
         this.memo = memo;
     }
 
+    public void markHasGpsPoints() {
+        this.hasGpsPoints = true;
+    }
+
+    public void updateHasManualData(boolean hasManualData) {
+        this.hasManualData = hasManualData;
+    }
+
     public boolean toggleBookmarked() {
         isBookmarked = !isBookmarked;
         return isBookmarked;
@@ -100,4 +112,5 @@ public class DayRoute {
     public void updateDistance(double distance) {
         this.totalDistance = distance;
     }
+
 }

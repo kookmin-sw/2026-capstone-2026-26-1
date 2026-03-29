@@ -54,12 +54,16 @@ public class DayRouteFacade {
     public GpsPointBatchUploadResponse uploadGpsPoint(LocalDate date, Long userId,
         GpsPointBatchUploadRequest request) {
         DayRoute dayRoute = dayRouteService.getOrCreate(userId, date);
-        gpsPointService.batchInsert(dayRoute.getId(), request);
 
-        // 업로드된 좌표의 시간 범위로 DayRoute 시간 업데이트
-        GpsPointRecordedAtRange gpsPointRange = gpsPointService.getGpsPointRange(dayRoute);
-        dayRouteService.updateTime(dayRoute, gpsPointRange.startTime(),
-            gpsPointRange.endTime());
+        if (!request.gpsPoints().isEmpty()) {
+            gpsPointService.batchInsert(dayRoute.getId(), request);
+            dayRouteService.markHasGpsPoints(dayRoute);
+
+            // 업로드된 좌표의 시간 범위로 DayRoute 시간 업데이트
+            GpsPointRecordedAtRange gpsPointRange = gpsPointService.getGpsPointRange(dayRoute);
+            dayRouteService.updateTime(dayRoute, gpsPointRange.startTime(),
+                gpsPointRange.endTime());
+        }
 
         // 이동거리 업데이트
         dayRouteService.updateDistance(dayRoute, request.distance());
