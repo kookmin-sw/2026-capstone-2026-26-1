@@ -12,7 +12,10 @@ public interface BookmarkPlaceControllerSpec {
 
     @Operation(
         summary = "즐겨찾기 장소 목록 조회 API",
-        description = "사용자의 즐겨찾기 장소 목록과 전체 개수를 조회합니다."
+        description = """
+            사용자의 즐겨찾기 장소 목록과 전체 개수를 조회합니다.<br>
+            즐겨찾기 장소가 없는 경우, placeCount는 0, bookmarkPlaces는 빈 배열이 반환됩니다.
+            """
     )
     BookmarkPlaceListResponse getBookmarkPlaces(UserPrincipal principal);
 
