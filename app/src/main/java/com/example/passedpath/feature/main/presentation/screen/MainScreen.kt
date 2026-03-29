@@ -119,15 +119,17 @@ fun MainScreen(
                 )
             }
 
-            routePlaces.forEach { place ->
-                MarkerComposable(
-                    state = com.google.maps.android.compose.MarkerState(
-                        position = LatLng(place.latitude, place.longitude)
-                    ),
-                    title = place.placeName.ifBlank { "Place ${place.orderIndex}" },
-                    anchor = androidx.compose.ui.geometry.Offset(0.5f, 0.5f)
-                ) {
-                    PlaceOrderMarker(place = place)
+            if (uiState.selectedRoute.hasLocationData) {
+                routePlaces.forEach { place ->
+                    MarkerComposable(
+                        state = com.google.maps.android.compose.MarkerState(
+                            position = LatLng(place.latitude, place.longitude)
+                        ),
+                        title = place.placeName.ifBlank { "Place ${place.orderIndex}" },
+                        anchor = androidx.compose.ui.geometry.Offset(0.5f, 0.5f)
+                    ) {
+                        PlaceOrderMarker(place = place)
+                    }
                 }
             }
 
@@ -384,5 +386,3 @@ private fun MainCoordinateUiState.toLatLng(): LatLng {
 private fun Double.formatDistanceKm(): String {
     return String.format(Locale.US, "%.2f km", this)
 }
-
-
