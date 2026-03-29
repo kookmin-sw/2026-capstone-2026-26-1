@@ -25,7 +25,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,6 +50,7 @@ import com.example.passedpath.feature.main.presentation.state.PlaceMarkerUiState
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.LatLngBounds
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.MarkerComposable
@@ -59,6 +64,7 @@ import java.util.Locale
 private val CurrentLocationGlowBase = Color(0xFF006B5F)
 private val RouteLineColor = Color(0xFF0A7A6C)
 private val DateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+private const val RouteBoundsPaddingPx = 180
 
 @Composable
 fun MainScreen(
@@ -82,17 +88,18 @@ fun MainScreen(
         position = CameraPosition.fromLatLngZoom(initialCameraTarget, 15f)
     }
     val coroutineScope = rememberCoroutineScope()
+    var isMapLoaded by remember { mutableStateOf(false) }
 
-    LaunchedEffect(uiState.selectedDateKey, routePoints) {
+    LaunchedEffect(isMapLoaded, uiState.selectedDateKey, routePoints) {
+        if (!isMapLoaded) return@LaunchedEffect
         if (routePoints.isNotEmpty()) {
-            cameraPositionState.move(
-                CameraUpdateFactory.newLatLngZoom(routePoints.first(), 14f)
-            )
+            cameraPositionState.move(buildRouteCameraUpdate(routePoints))
             onInitialCameraCentered()
         }
     }
 
-    LaunchedEffect(currentLocation, uiState.hasCenteredOnCurrentLocation, routePoints) {
+    LaunchedEffect(isMapLoaded, currentLocation, uiState.hasCenteredOnCurrentLocation, routePoints) {
+        if (!isMapLoaded) return@LaunchedEffect
         if (routePoints.isEmpty() && currentLocation != null && !uiState.hasCenteredOnCurrentLocation) {
             cameraPositionState.move(
                 CameraUpdateFactory.newLatLngZoom(currentLocation.toLatLng(), 17f)
@@ -109,7 +116,8 @@ fun MainScreen(
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState,
-            properties = MapProperties(isMyLocationEnabled = false)
+            properties = MapProperties(isMyLocationEnabled = false),
+            onMapLoaded = { isMapLoaded = true }
         ) {
             if (routePoints.size >= 2) {
                 Polyline(
@@ -381,6 +389,16 @@ private fun permissionText(permissionState: LocationPermissionUiState): String {
 
 private fun MainCoordinateUiState.toLatLng(): LatLng {
     return LatLng(latitude, longitude)
+}
+
+private fun buildRouteCameraUpdate(routePoints: List<LatLng>) = when {
+    routePoints.isEmpty() -> CameraUpdateFactory.zoomTo(15f)
+    routePoints.size == 1 -> CameraUpdateFactory.newLatLngZoom(routePoints.first(), 14f)
+    else -> {
+        val boundsBuilder = LatLngBounds.builder()
+        routePoints.forEach(boundsBuilder::include)
+        CameraUpdateFactory.newLatLngBounds(boundsBuilder.build(), RouteBoundsPaddingPx)
+    }
 }
 
 private fun Double.formatDistanceKm(): String {
