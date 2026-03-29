@@ -76,6 +76,7 @@ fun MainScreen(
     }
     val routePoints = uiState.selectedRoute.polylinePoints.map(MainCoordinateUiState::toLatLng)
     val routePlaces = uiState.selectedRoute.places
+    val hasRouteLocationData = uiState.selectedRoute.hasLocationData
     val initialCameraTarget = routePoints.firstOrNull() ?: currentLocation?.toLatLng() ?: fallbackPosition
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(initialCameraTarget, 15f)
@@ -167,7 +168,7 @@ fun MainScreen(
 
         RouteStatusOverlay(
             isLoading = uiState.isRouteLoading,
-            emptyMessage = uiState.routeEmptyMessage,
+            hasRouteLocationData = hasRouteLocationData,
             errorMessage = uiState.routeErrorMessage,
             onRetryRoute = onRetryRoute
         )
@@ -265,11 +266,12 @@ fun MainScreen(
 @Composable
 private fun RouteStatusOverlay(
     isLoading: Boolean,
-    emptyMessage: String?,
+    hasRouteLocationData: Boolean,
     errorMessage: String?,
     onRetryRoute: () -> Unit
 ) {
-    if (!isLoading && emptyMessage == null && errorMessage == null) return
+    val shouldShowNoLocationData = !isLoading && errorMessage == null && !hasRouteLocationData
+    if (!isLoading && errorMessage == null && !shouldShowNoLocationData) return
 
     Box(
         modifier = Modifier
@@ -314,11 +316,11 @@ private fun RouteStatusOverlay(
                             Text(text = "Retry")
                         }
                     }
-                    emptyMessage != null -> {
-                        Text(text = "No Route For This Day", fontWeight = FontWeight.SemiBold)
+                    else -> {
+                        Text(text = "No Location Data", fontWeight = FontWeight.SemiBold)
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = emptyMessage,
+                            text = "There is no route path data to show on the map for this day.",
                             color = Color(0xFF4B5563),
                             textAlign = TextAlign.Center
                         )
@@ -382,3 +384,5 @@ private fun MainCoordinateUiState.toLatLng(): LatLng {
 private fun Double.formatDistanceKm(): String {
     return String.format(Locale.US, "%.2f km", this)
 }
+
+

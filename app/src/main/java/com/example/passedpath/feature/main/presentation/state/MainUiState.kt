@@ -19,7 +19,10 @@ data class SelectedDayRouteUiState(
     val totalDistanceKm: Double = 0.0,
     val pathPointCount: Int = 0,
     val places: List<PlaceMarkerUiState> = emptyList()
-)
+) {
+    val hasLocationData: Boolean
+        get() = polylinePoints.isNotEmpty()
+}
 
 data class MainUiState(
     val permissionState: LocationPermissionUiState = LocationPermissionUiState.DENIED,
