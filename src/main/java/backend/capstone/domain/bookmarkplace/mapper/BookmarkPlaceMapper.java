@@ -4,6 +4,7 @@ import backend.capstone.domain.bookmarkplace.dto.BookmarkPlaceCreateRequest;
 import backend.capstone.domain.bookmarkplace.dto.BookmarkPlaceCreateResponse;
 import backend.capstone.domain.bookmarkplace.dto.BookmarkPlaceListResponse;
 import backend.capstone.domain.bookmarkplace.dto.BookmarkPlaceSummaryResponse;
+import backend.capstone.domain.bookmarkplace.dto.BookmarkPlaceUpdateResponse;
 import backend.capstone.domain.bookmarkplace.entity.BookmarkPlace;
 import backend.capstone.domain.user.entity.User;
 import java.util.List;
@@ -35,6 +36,16 @@ public class BookmarkPlaceMapper {
             .build();
     }
 
+    public static BookmarkPlaceUpdateResponse toUpdateResponse(BookmarkPlace bookmarkPlace) {
+        return BookmarkPlaceUpdateResponse.builder()
+            .type(bookmarkPlace.getType())
+            .placeName(bookmarkPlace.getName())
+            .roadAddress(bookmarkPlace.getRoadAddress())
+            .latitude(bookmarkPlace.getLatitude())
+            .longitude(bookmarkPlace.getLongitude())
+            .build();
+    }
+
     public static BookmarkPlaceListResponse toListResponse(List<BookmarkPlace> bookmarkPlaces) {
         return BookmarkPlaceListResponse.builder()
             .placeCount(bookmarkPlaces.size())
@@ -46,6 +57,7 @@ public class BookmarkPlaceMapper {
 
     public static BookmarkPlaceSummaryResponse toSummaryResponse(BookmarkPlace bookmarkPlace) {
         return BookmarkPlaceSummaryResponse.builder()
+            .placeId(bookmarkPlace.getId())
             .placeName(bookmarkPlace.getName())
             .type(bookmarkPlace.getType())
             .roadAddress(bookmarkPlace.getRoadAddress())

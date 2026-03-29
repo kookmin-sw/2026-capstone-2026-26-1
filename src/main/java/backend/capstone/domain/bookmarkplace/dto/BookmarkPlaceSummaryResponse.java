@@ -6,6 +6,10 @@ import lombok.Builder;
 
 @Builder
 public record BookmarkPlaceSummaryResponse(
+
+    @Schema(example = "1", description = "즐겨찾기 장소 ID")
+    Long placeId,
+
     @Schema(example = "집", description = "즐겨찾기 장소명")
     String placeName,
 
