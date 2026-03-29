@@ -8,6 +8,7 @@ import com.example.passedpath.feature.locationtracking.domain.model.DayRouteDeta
 import com.example.passedpath.feature.locationtracking.domain.model.DayRoutePlace
 import com.example.passedpath.feature.locationtracking.domain.model.RoutePoint
 import com.example.passedpath.feature.locationtracking.domain.repository.DayRouteRepository
+import com.example.passedpath.feature.locationtracking.domain.repository.RemoteDayRouteResult
 import com.example.passedpath.feature.main.presentation.state.LocationPermissionUiState
 import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiState
 import com.example.passedpath.feature.main.presentation.state.MainUiState
@@ -85,30 +86,50 @@ class MainViewModel(
                     selectedDateKey = dateKey,
                     selectedRoute = SelectedDayRouteUiState(dateKey = dateKey),
                     isRouteLoading = true,
+                    isRouteEmpty = false,
+                    routeEmptyMessage = null,
                     routeErrorMessage = null,
                     hasCenteredOnCurrentLocation = false
                 )
             }
 
-            runCatching {
-                dayRouteRepository.refreshRemoteDayRoute(dateKey)
-            }.onSuccess { routeDetail ->
-                _uiState.update { currentState ->
-                    currentState.copy(
-                        selectedDateKey = routeDetail.dateKey,
-                        selectedRoute = routeDetail.toUiState(),
-                        isRouteLoading = false,
-                        routeErrorMessage = null
-                    )
+            when (val result = dayRouteRepository.fetchRemoteDayRoute(dateKey)) {
+                is RemoteDayRouteResult.Success -> {
+                    val routeDetail = result.routeDetail
+                    _uiState.update { currentState ->
+                        currentState.copy(
+                            selectedDateKey = routeDetail.dateKey,
+                            selectedRoute = routeDetail.toUiState(),
+                            isRouteLoading = false,
+                            isRouteEmpty = false,
+                            routeEmptyMessage = null,
+                            routeErrorMessage = null
+                        )
+                    }
                 }
-            }.onFailure {
-                _uiState.update { currentState ->
-                    currentState.copy(
-                        selectedDateKey = dateKey,
-                        selectedRoute = SelectedDayRouteUiState(dateKey = dateKey),
-                        isRouteLoading = false,
-                        routeErrorMessage = "Failed to load the selected route."
-                    )
+                RemoteDayRouteResult.Empty -> {
+                    _uiState.update { currentState ->
+                        currentState.copy(
+                            selectedDateKey = dateKey,
+                            selectedRoute = SelectedDayRouteUiState(dateKey = dateKey),
+                            isRouteLoading = false,
+                            isRouteEmpty = true,
+                            routeEmptyMessage = "No route data exists for this day.",
+                            routeErrorMessage = null
+                        )
+                    }
+                }
+                is RemoteDayRouteResult.Error -> {
+                    _uiState.update { currentState ->
+                        currentState.copy(
+                            selectedDateKey = dateKey,
+                            selectedRoute = SelectedDayRouteUiState(dateKey = dateKey),
+                            isRouteLoading = false,
+                            isRouteEmpty = false,
+                            routeEmptyMessage = null,
+                            routeErrorMessage = "Failed to load the selected route."
+                        )
+                    }
                 }
             }
         }

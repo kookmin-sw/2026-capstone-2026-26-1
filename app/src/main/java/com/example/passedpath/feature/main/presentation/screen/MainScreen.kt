@@ -208,6 +208,10 @@ fun MainScreen(
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(text = "Loading route...")
                     }
+                    uiState.routeEmptyMessage?.let { emptyMessage ->
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(text = emptyMessage, color = Color(0xFF4B5563))
+                    }
                     uiState.routeErrorMessage?.let { errorMessage ->
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(text = errorMessage, color = Color(0xFF9D1C1C))

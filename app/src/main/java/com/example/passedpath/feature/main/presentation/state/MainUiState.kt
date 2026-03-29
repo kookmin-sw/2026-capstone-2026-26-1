@@ -28,5 +28,7 @@ data class MainUiState(
     val selectedDateKey: String = "",
     val selectedRoute: SelectedDayRouteUiState = SelectedDayRouteUiState(dateKey = ""),
     val isRouteLoading: Boolean = false,
+    val isRouteEmpty: Boolean = false,
+    val routeEmptyMessage: String? = null,
     val routeErrorMessage: String? = null
 )
