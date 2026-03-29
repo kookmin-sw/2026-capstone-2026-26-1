@@ -1,13 +1,18 @@
 package backend.capstone.domain.dayroute.mapper;
 
 import backend.capstone.domain.dayroute.dto.DayRouteDetailResponse;
+import backend.capstone.domain.dayroute.dto.DayRouteMonthlyResponse;
 import backend.capstone.domain.dayroute.dto.GpsPointsResponse;
 import backend.capstone.domain.dayroute.entity.DayRoute;
 import backend.capstone.domain.gpspoint.entity.GpsPoint;
 import backend.capstone.domain.place.entity.Place;
 import backend.capstone.domain.user.entity.User;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
@@ -52,6 +57,34 @@ public class DayRouteMapper {
                     .longitude(p.getLongitude())
                     .orderIndex(p.getOrderIndex())
                     .build())
+                .toList())
+            .build();
+    }
+
+    public static DayRouteMonthlyResponse toDayRouteMonthlyResponse(int year, int month,
+        List<DayRoute> dayRoutes) {
+        YearMonth yearMonth = YearMonth.of(year, month);
+        // DayRoute 목록을 날짜 기준 map으로 변경
+        Map<LocalDate, DayRoute> dayRouteMap = dayRoutes.stream()
+            .collect(Collectors.toMap(DayRoute::getDate, Function.identity()));
+
+        return DayRouteMonthlyResponse.builder()
+            .year(year)
+            .month(month)
+            .days(yearMonth.atDay(1).datesUntil(yearMonth.atEndOfMonth().plusDays(1))
+                .map(date -> {
+                    DayRoute dayRoute = dayRouteMap.get(date);
+                    return DayRouteMonthlyResponse.DayItem.builder()
+                        .date(date)
+                        .dayRouteExists(dayRoute != null)
+                        .dayRoute(dayRoute == null ? null
+                            : DayRouteMonthlyResponse.DayRouteItem.builder()
+                                .hasLocationData(dayRoute.isHasGpsPoints())
+                                .hasManualData(dayRoute.isHasManualData())
+                                .isBookmarked(dayRoute.isBookmarked())
+                                .build())
+                        .build();
+                })
                 .toList())
             .build();
     }

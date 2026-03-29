@@ -4,10 +4,14 @@ import backend.capstone.domain.dayroute.entity.DayRoute;
 import backend.capstone.domain.dayroute.exception.DayRouteErrorCode;
 import backend.capstone.domain.dayroute.mapper.DayRouteMapper;
 import backend.capstone.domain.dayroute.repository.DayRouteRepository;
+import backend.capstone.domain.gpspoint.repository.GpsPointRepository;
+import backend.capstone.domain.place.repository.PlaceRepository;
 import backend.capstone.domain.user.service.UserService;
 import backend.capstone.global.exception.BusinessException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.YearMonth;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -18,6 +22,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class DayRouteService {
 
     private final DayRouteRepository dayRouteRepository;
+    private final GpsPointRepository gpsPointRepository;
+    private final PlaceRepository placeRepository;
     private final UserService userService;
 
     @Transactional
@@ -42,14 +48,23 @@ public class DayRouteService {
             });
     }
 
-    @Transactional
-    public void updateTitle(DayRoute dayRoute, String title) {
-        dayRoute.updateTitle(title);
+    @Transactional(readOnly = true)
+    public List<DayRoute> getDayRoutesByMonth(Long userId, int year, int month) {
+        YearMonth yearMonth = YearMonth.of(year, month);
+        return dayRouteRepository.findByUserIdAndDateBetweenOrderByDate(userId,
+            yearMonth.atDay(1), yearMonth.atEndOfMonth());
     }
 
     @Transactional
-    public void updateMemo(DayRoute dayRoute, String memo) {
-        dayRoute.updateMemo(memo);
+    public void replaceTitle(DayRoute dayRoute, String title) {
+        dayRoute.updateTitle(normalizeNullableText(title));
+        refreshHasManualData(dayRoute);
+    }
+
+    @Transactional
+    public void replaceMemo(DayRoute dayRoute, String memo) {
+        dayRoute.updateMemo(normalizeNullableText(memo));
+        refreshHasManualData(dayRoute);
     }
 
     @Transactional
@@ -65,5 +80,29 @@ public class DayRouteService {
     @Transactional
     public void updateDistance(DayRoute dayRoute, double distance) {
         dayRoute.updateDistance(distance);
+    }
+
+    @Transactional
+    public void markHasGpsPoints(DayRoute dayRoute) {
+        dayRoute.markHasGpsPoints();
+    }
+
+    @Transactional
+    public void refreshHasManualData(DayRoute dayRoute) {
+        dayRoute.updateHasManualData(hasManualData(dayRoute));
+    }
+
+    private boolean hasManualData(DayRoute dayRoute) {
+        return hasText(dayRoute.getTitle())
+            || hasText(dayRoute.getMemo())
+            || placeRepository.existsByDayRoute(dayRoute);
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.isBlank();
+    }
+
+    private String normalizeNullableText(String value) {
+        return hasText(value) ? value : null;
     }
 }

@@ -2,6 +2,7 @@ package backend.capstone.domain.dayroute.repository;
 
 import backend.capstone.domain.dayroute.entity.DayRoute;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -17,4 +18,14 @@ public interface DayRouteRepository extends JpaRepository<DayRoute, Long> {
         """)
     Optional<DayRoute> findByUserIdAndDate(@Param("userId") Long userId,
         @Param("date") LocalDate date);
+
+    @Query("""
+            select dr
+            from DayRoute dr
+            where dr.user.id = :userId
+              and dr.date between :startDate and :endDate
+            order by dr.date asc
+        """)
+    List<DayRoute> findByUserIdAndDateBetweenOrderByDate(@Param("userId") Long userId,
+        @Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
 }

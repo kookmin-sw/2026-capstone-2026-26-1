@@ -4,6 +4,7 @@ import backend.capstone.domain.dayroute.dto.DayRouteBookmarkResponse;
 import backend.capstone.domain.dayroute.dto.DayRouteDetailResponse;
 import backend.capstone.domain.dayroute.dto.DayRouteMemoRequest;
 import backend.capstone.domain.dayroute.dto.DayRouteMemoResponse;
+import backend.capstone.domain.dayroute.dto.DayRouteMonthlyResponse;
 import backend.capstone.domain.dayroute.dto.DayRouteTitleRequest;
 import backend.capstone.domain.dayroute.dto.DayRouteTitleResponse;
 import backend.capstone.domain.dayroute.dto.GpsPointBatchUploadRequest;
@@ -54,12 +55,16 @@ public class DayRouteFacade {
     public GpsPointBatchUploadResponse uploadGpsPoint(LocalDate date, Long userId,
         GpsPointBatchUploadRequest request) {
         DayRoute dayRoute = dayRouteService.getOrCreate(userId, date);
-        gpsPointService.batchInsert(dayRoute.getId(), request);
 
-        // 업로드된 좌표의 시간 범위로 DayRoute 시간 업데이트
-        GpsPointRecordedAtRange gpsPointRange = gpsPointService.getGpsPointRange(dayRoute);
-        dayRouteService.updateTime(dayRoute, gpsPointRange.startTime(),
-            gpsPointRange.endTime());
+        if (!request.gpsPoints().isEmpty()) {
+            gpsPointService.batchInsert(dayRoute.getId(), request);
+            dayRouteService.markHasGpsPoints(dayRoute);
+
+            // 업로드된 좌표의 시간 범위로 DayRoute 시간 업데이트
+            GpsPointRecordedAtRange gpsPointRange = gpsPointService.getGpsPointRange(dayRoute);
+            dayRouteService.updateTime(dayRoute, gpsPointRange.startTime(),
+                gpsPointRange.endTime());
+        }
 
         // 이동거리 업데이트
         dayRouteService.updateDistance(dayRoute, request.distance());
@@ -80,13 +85,19 @@ public class DayRouteFacade {
         DayRoute dayRoute = dayRouteService.getDayRouteByDateAndUserId(date, userId);
         List<Place> places = placeService.getPlacesByDayRoute(dayRoute);
 
-        if (dayRoute.getEncodedPath() == null) {
+        if (dayRoute.isHasGpsPoints() && dayRoute.getEncodedPath() == null) {
             List<GpsPoint> gpsPoints = gpsPointService.getGpsPointsByDayRouteId(dayRoute);
             String encodePath = PolylineUtil.encode(gpsPoints);
             dayRoute.updateEncodedPath(encodePath, gpsPoints.size());
         }
 
         return DayRouteMapper.toDayRouteDetailResponse(dayRoute, places);
+    }
+
+    @Transactional(readOnly = true)
+    public DayRouteMonthlyResponse getDayRoutesByMonth(int year, int month, Long userId) {
+        List<DayRoute> dayRoutes = dayRouteService.getDayRoutesByMonth(userId, year, month);
+        return DayRouteMapper.toDayRouteMonthlyResponse(year, month, dayRoutes);
     }
 
     @Transactional
@@ -121,18 +132,19 @@ public class DayRouteFacade {
     }
 
     @Transactional
-    public DayRouteMemoResponse saveMemo(LocalDate date, Long userId, DayRouteMemoRequest request) {
+    public DayRouteMemoResponse replaceMemo(LocalDate date, Long userId,
+        DayRouteMemoRequest request) {
         DayRoute dayRoute = dayRouteService.getOrCreate(userId, date);
-        dayRouteService.updateMemo(dayRoute, request.memo());
+        dayRouteService.replaceMemo(dayRoute, request.memo());
 
         return new DayRouteMemoResponse(dayRoute.getMemo());
     }
 
     @Transactional
-    public DayRouteTitleResponse saveTitle(LocalDate date, Long userId,
+    public DayRouteTitleResponse replaceTitle(LocalDate date, Long userId,
         DayRouteTitleRequest request) {
         DayRoute dayRoute = dayRouteService.getOrCreate(userId, date);
-        dayRouteService.updateTitle(dayRoute, request.title());
+        dayRouteService.replaceTitle(dayRoute, request.title());
 
         return new DayRouteTitleResponse(dayRoute.getTitle());
     }
