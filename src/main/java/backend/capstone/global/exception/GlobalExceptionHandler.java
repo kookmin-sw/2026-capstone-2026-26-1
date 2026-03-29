@@ -119,8 +119,9 @@ public class GlobalExceptionHandler {
                 ))
             .toList();
 
-        return ResponseEntity.status(CommonErrorCode.VALIDATION_PATH_VARIABLE_ERROR.getStatus())
-            .body(ErrorResponse.of(CommonErrorCode.VALIDATION_PATH_VARIABLE_ERROR, fieldErrors));
+        return ResponseEntity.status(CommonErrorCode.VALIDATION_REQUEST_PARAMETER_ERROR.getStatus())
+            .body(
+                ErrorResponse.of(CommonErrorCode.VALIDATION_REQUEST_PARAMETER_ERROR, fieldErrors));
     }
 
     // 3. 서버 예외
