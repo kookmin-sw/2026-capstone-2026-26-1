@@ -1,4 +1,4 @@
-﻿package com.example.passedpath.feature.auth.presentation.viewmodel
+package com.example.passedpath.feature.auth.presentation.viewmodel
 
 import android.content.Context
 import android.util.Log
@@ -9,7 +9,7 @@ import com.example.passedpath.R
 import com.example.passedpath.app.AppContainer
 import com.example.passedpath.feature.auth.data.manager.KakaoAuthManager
 import com.example.passedpath.feature.auth.data.repository.AuthRepository
-import com.example.passedpath.feature.permission.data.manager.LocationPermissionChecker
+import com.example.passedpath.feature.permission.data.manager.LocationPermissionStatusReader
 import kotlinx.coroutines.launch
 
 enum class LoginDestination {
@@ -19,7 +19,7 @@ enum class LoginDestination {
 
 class LoginViewModel(
     private val authRepository: AuthRepository,
-    private val permissionChecker: LocationPermissionChecker
+    private val locationPermissionStatusReader: LocationPermissionStatusReader
 ) : ViewModel() {
 
     fun kakaoLogin(
@@ -39,7 +39,7 @@ class LoginViewModel(
                         )
 
                         val destination =
-                            if (permissionChecker.isBackgroundAlwaysGranted()) {
+                            if (locationPermissionStatusReader.isBackgroundAlwaysGranted()) {
                                 LoginDestination.MAIN
                             } else {
                                 LoginDestination.PERMISSION_INTRO
@@ -68,7 +68,7 @@ class LoginViewModelFactory(
             @Suppress("UNCHECKED_CAST")
             return LoginViewModel(
                 authRepository = appContainer.authRepository,
-                permissionChecker = appContainer.permissionChecker
+                locationPermissionStatusReader = appContainer.locationPermissionStatusReader
             ) as T
         }
 

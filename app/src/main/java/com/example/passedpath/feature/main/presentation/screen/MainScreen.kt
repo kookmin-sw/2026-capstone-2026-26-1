@@ -1,5 +1,6 @@
-package com.example.passedpath.feature.main.presentation.screen
+﻿package com.example.passedpath.feature.main.presentation.screen
 
+import android.app.DatePickerDialog
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -14,59 +15,92 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.passedpath.R
-import com.example.passedpath.feature.main.presentation.state.DailyPathUiState
 import com.example.passedpath.feature.main.presentation.state.LocationPermissionUiState
 import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiState
 import com.example.passedpath.feature.main.presentation.state.MainUiState
+import com.example.passedpath.feature.main.presentation.state.PlaceMarkerUiState
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.LatLngBounds
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.MarkerComposable
+import com.google.maps.android.compose.Polyline
 import com.google.maps.android.compose.rememberCameraPositionState
 import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 private val CurrentLocationGlowBase = Color(0xFF006B5F)
+private val RouteLineColor = Color(0xFF0A7A6C)
+private val DateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+private const val RouteBoundsPaddingPx = 180
 
 @Composable
 fun MainScreen(
     uiState: MainUiState,
-    onInitialCameraCentered: () -> Unit
+    onInitialCameraCentered: () -> Unit,
+    onDateSelected: (String) -> Unit,
+    onRetryRoute: () -> Unit
 ) {
+    val context = LocalContext.current
     val fallbackPosition = LatLng(37.5662952, 126.9779451)
     val currentLocation = if (uiState.permissionState == LocationPermissionUiState.DENIED) {
         null
     } else {
         uiState.currentLocation
     }
-    val initialCameraTarget = currentLocation?.toLatLng() ?: fallbackPosition
+    val routePoints = uiState.selectedRoute.polylinePoints.map(MainCoordinateUiState::toLatLng)
+    val routePlaces = uiState.selectedRoute.places
+    val hasRouteLocationData = uiState.selectedRoute.hasLocationData
+    val initialCameraTarget = routePoints.firstOrNull() ?: currentLocation?.toLatLng() ?: fallbackPosition
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(initialCameraTarget, 15f)
     }
     val coroutineScope = rememberCoroutineScope()
+    var isMapLoaded by remember { mutableStateOf(false) }
 
-    LaunchedEffect(currentLocation, uiState.hasCenteredOnCurrentLocation) {
-        if (currentLocation != null && !uiState.hasCenteredOnCurrentLocation) {
+    LaunchedEffect(isMapLoaded, uiState.selectedDateKey, routePoints) {
+        if (!isMapLoaded) return@LaunchedEffect
+        if (routePoints.isNotEmpty()) {
+            cameraPositionState.move(buildRouteCameraUpdate(routePoints))
+            onInitialCameraCentered()
+        }
+    }
+
+    LaunchedEffect(isMapLoaded, currentLocation, uiState.hasCenteredOnCurrentLocation, routePoints) {
+        if (!isMapLoaded) return@LaunchedEffect
+        if (routePoints.isEmpty() && currentLocation != null && !uiState.hasCenteredOnCurrentLocation) {
             cameraPositionState.move(
                 CameraUpdateFactory.newLatLngZoom(currentLocation.toLatLng(), 17f)
             )
@@ -82,8 +116,31 @@ fun MainScreen(
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState,
-            properties = MapProperties(isMyLocationEnabled = false)
+            properties = MapProperties(isMyLocationEnabled = false),
+            onMapLoaded = { isMapLoaded = true }
         ) {
+            if (routePoints.size >= 2) {
+                Polyline(
+                    points = routePoints,
+                    color = RouteLineColor,
+                    width = 14f
+                )
+            }
+
+            if (uiState.selectedRoute.hasLocationData) {
+                routePlaces.forEach { place ->
+                    MarkerComposable(
+                        state = com.google.maps.android.compose.MarkerState(
+                            position = LatLng(place.latitude, place.longitude)
+                        ),
+                        title = place.placeName.ifBlank { "Place ${place.orderIndex}" },
+                        anchor = androidx.compose.ui.geometry.Offset(0.5f, 0.5f)
+                    ) {
+                        PlaceOrderMarker(place = place)
+                    }
+                }
+            }
+
             currentLocation?.let {
                 MarkerComposable(
                     state = com.google.maps.android.compose.MarkerState(position = it.toLatLng()),
@@ -119,6 +176,13 @@ fun MainScreen(
             }
         }
 
+        RouteStatusOverlay(
+            isLoading = uiState.isRouteLoading,
+            hasRouteLocationData = hasRouteLocationData,
+            errorMessage = uiState.routeErrorMessage,
+            onRetryRoute = onRetryRoute
+        )
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -129,19 +193,39 @@ fun MainScreen(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors()
             ) {
-                Row(
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 14.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                        .padding(horizontal = 16.dp, vertical = 14.dp)
                 ) {
-                    Column {
-                        Text(text = stringResource(R.string.main_title))
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(text = permissionText(uiState.permissionState))
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(text = "Today path points: ${uiState.todayPath.points.size}")
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(text = stringResource(R.string.main_title), fontWeight = FontWeight.SemiBold)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(text = permissionText(uiState.permissionState))
+                        }
+                        Button(
+                            onClick = {
+                                showDatePicker(
+                                    context = context,
+                                    initialDateKey = uiState.selectedDateKey,
+                                    onDateSelected = onDateSelected
+                                )
+                            }
+                        ) {
+                            Text(text = "Pick date")
+                        }
                     }
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(text = "Selected date: ${uiState.selectedRoute.dateKey}")
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(text = "Distance: ${uiState.selectedRoute.totalDistanceKm.formatDistanceKm()}")
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(text = "Path points: ${uiState.selectedRoute.pathPointCount}")
                 }
             }
 
@@ -180,13 +264,119 @@ fun MainScreen(
                         ) {
                             Text(text = "Location permission is off")
                             Spacer(modifier = Modifier.height(4.dp))
-                            Text(text = "Current location and path recording stay hidden until fine location is granted.")
+                            Text(text = "Current location stays hidden until fine location is granted.")
                         }
                     }
                 }
             }
         }
     }
+}
+
+@Composable
+private fun RouteStatusOverlay(
+    isLoading: Boolean,
+    hasRouteLocationData: Boolean,
+    errorMessage: String?,
+    onRetryRoute: () -> Unit
+) {
+    val shouldShowNoLocationData = !isLoading && errorMessage == null && !hasRouteLocationData
+    if (!isLoading && errorMessage == null && !shouldShowNoLocationData) return
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.18f))
+            .padding(horizontal = 28.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Card(
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 10.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                when {
+                    isLoading -> {
+                        CircularProgressIndicator(color = RouteLineColor)
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(text = "Loading route", fontWeight = FontWeight.SemiBold)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Fetching the selected day's path and places.",
+                            color = Color(0xFF4B5563),
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                    errorMessage != null -> {
+                        Text(text = "Route Load Failed", fontWeight = FontWeight.SemiBold)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = errorMessage,
+                            color = Color(0xFF9D1C1C),
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(onClick = onRetryRoute) {
+                            Text(text = "Retry")
+                        }
+                    }
+                    else -> {
+                        Text(text = "No Location Data", fontWeight = FontWeight.SemiBold)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "There is no route path data to show on the map for this day.",
+                            color = Color(0xFF4B5563),
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PlaceOrderMarker(place: PlaceMarkerUiState) {
+    Box(
+        modifier = Modifier
+            .size(34.dp)
+            .clip(CircleShape)
+            .background(Color.White),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = place.orderIndex.toString(),
+            color = RouteLineColor,
+            fontWeight = FontWeight.Bold
+        )
+    }
+}
+
+private fun showDatePicker(
+    context: android.content.Context,
+    initialDateKey: String,
+    onDateSelected: (String) -> Unit
+) {
+    val initialDate = runCatching { LocalDate.parse(initialDateKey, DateFormatter) }
+        .getOrDefault(LocalDate.now())
+
+    DatePickerDialog(
+        context,
+        { _, year, month, dayOfMonth ->
+            onDateSelected(
+                LocalDate.of(year, month + 1, dayOfMonth).format(DateFormatter)
+            )
+        },
+        initialDate.year,
+        initialDate.monthValue - 1,
+        initialDate.dayOfMonth
+    ).show()
 }
 
 private fun permissionText(permissionState: LocationPermissionUiState): String {
@@ -201,26 +391,16 @@ private fun MainCoordinateUiState.toLatLng(): LatLng {
     return LatLng(latitude, longitude)
 }
 
-@Preview(showBackground = true)
-@Composable
-fun MainScreenPreview() {
-    MainScreen(
-        uiState = MainUiState(
-            permissionState = LocationPermissionUiState.ALWAYS,
-            currentLocation = MainCoordinateUiState(
-                latitude = 37.5662952,
-                longitude = 126.9779451
-            ),
-            todayPath = DailyPathUiState(
-                dateKey = "2026-03-19",
-                points = listOf(
-                    MainCoordinateUiState(
-                        latitude = 37.5662952,
-                        longitude = 126.9779451
-                    )
-                )
-            )
-        ),
-        onInitialCameraCentered = {}
-    )
+private fun buildRouteCameraUpdate(routePoints: List<LatLng>) = when {
+    routePoints.isEmpty() -> CameraUpdateFactory.zoomTo(15f)
+    routePoints.size == 1 -> CameraUpdateFactory.newLatLngZoom(routePoints.first(), 14f)
+    else -> {
+        val boundsBuilder = LatLngBounds.builder()
+        routePoints.forEach(boundsBuilder::include)
+        CameraUpdateFactory.newLatLngBounds(boundsBuilder.build(), RouteBoundsPaddingPx)
+    }
+}
+
+private fun Double.formatDistanceKm(): String {
+    return String.format(Locale.US, "%.2f km", this)
 }

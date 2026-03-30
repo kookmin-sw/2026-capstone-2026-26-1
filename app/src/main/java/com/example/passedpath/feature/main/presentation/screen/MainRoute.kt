@@ -1,4 +1,4 @@
-package com.example.passedpath.feature.main.presentation.screen
+﻿package com.example.passedpath.feature.main.presentation.screen
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -19,26 +19,31 @@ import com.example.passedpath.feature.main.presentation.viewmodel.MainViewModelF
 
 @Composable
 fun MainRoute(
+    // 1. Route가 ViewModel을 생성
+    // viewModel을 전달하지 않으면, MainViewModelFactory를 사용하는 ViewModel을 생성
     viewModel: MainViewModel = viewModel(
         factory = MainViewModelFactory(LocalContext.current.appContainer)
     )
 ) {
+    // AppContainer에서 필요한 의존성을 변수에 저장
     val appContainer = LocalContext.current.appContainer
     val lifecycleOwner = LocalLifecycleOwner.current
     val locationTracker = appContainer.currentLocationTracker
     val startLocationTracking = appContainer.startLocationTrackingUseCase
     val stopLocationTracking = appContainer.stopLocationTrackingUseCase
+
+    // ViewModel의 상태를 구독하는 uiState 변수
     val uiState by viewModel.uiState.collectAsState()
 
-    // 화면이 다시 활성화될 때마다 최신 권한 상태를 확인한다.
+    // 화면이 다시 활성화될 때마다(ON_RESUME) 권한 상태 재확인
     DisposableEffect(lifecycleOwner, viewModel) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
                 viewModel.refreshPermissionState()
             }
         }
-
         lifecycleOwner.lifecycle.addObserver(observer)
+
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
         }
@@ -48,7 +53,7 @@ fun MainRoute(
     LaunchedEffect(uiState.permissionState, uiState.currentLocation) {
         val canReceiveLocationUpdates =
             uiState.permissionState == LocationPermissionUiState.ALWAYS ||
-                uiState.permissionState == LocationPermissionUiState.FOREGROUND_ONLY
+                    uiState.permissionState == LocationPermissionUiState.FOREGROUND_ONLY
 
         if (canReceiveLocationUpdates && uiState.currentLocation == null) {
             locationTracker.getCurrentLocation()?.let { trackedLocation ->
@@ -70,7 +75,7 @@ fun MainRoute(
     DisposableEffect(uiState.permissionState, locationTracker) {
         val canReceiveLocationUpdates =
             uiState.permissionState == LocationPermissionUiState.ALWAYS ||
-                uiState.permissionState == LocationPermissionUiState.FOREGROUND_ONLY
+                    uiState.permissionState == LocationPermissionUiState.FOREGROUND_ONLY
 
         if (!canReceiveLocationUpdates) {
             onDispose { }
@@ -85,9 +90,13 @@ fun MainRoute(
         }
     }
 
+    // 상위 composable 함수(route)에서
+    // 하위 composable 함수(screen) 을 호출 => UI tree 구성됨
     MainScreen(
         uiState = uiState,
-        onInitialCameraCentered = viewModel::markInitialCameraCentered
+        onInitialCameraCentered = viewModel::markInitialCameraCentered,
+        onDateSelected = viewModel::selectDate,
+        onRetryRoute = viewModel::retrySelectedDate
     )
 }
 

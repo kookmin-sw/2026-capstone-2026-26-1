@@ -32,7 +32,7 @@ class AppEntryViewModel(
 
             val destination = when {
                 token == null -> NavRoute.LOGIN
-                appContainer.permissionChecker.isBackgroundAlwaysGranted() -> NavRoute.MAIN
+                appContainer.locationPermissionStatusReader.isBackgroundAlwaysGranted() -> NavRoute.MAIN
                 else -> NavRoute.PERMISSION_INTRO
             }
 

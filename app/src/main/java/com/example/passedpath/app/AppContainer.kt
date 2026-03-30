@@ -22,7 +22,8 @@ import com.example.passedpath.feature.locationtracking.domain.usecase.StopLocati
 import com.example.passedpath.feature.locationtracking.domain.usecase.UploadGpsPointsBatchUseCase
 import com.example.passedpath.feature.main.data.manager.CurrentLocationProvider
 import com.example.passedpath.feature.main.data.repository.TestRepository
-import com.example.passedpath.feature.permission.data.manager.LocationPermissionChecker
+import com.example.passedpath.feature.permission.data.manager.AndroidLocationPermissionStatusReader
+import com.example.passedpath.feature.permission.data.manager.LocationPermissionStatusReader
 import java.time.LocalTime
 
 class AppContainer(
@@ -34,8 +35,8 @@ class AppContainer(
         AuthSessionStorage(appContext)
     }
 
-    val permissionChecker: LocationPermissionChecker by lazy {
-        LocationPermissionChecker(appContext)
+    val locationPermissionStatusReader: LocationPermissionStatusReader by lazy {
+        AndroidLocationPermissionStatusReader(appContext)
     }
 
     val currentLocationTracker: LocationTracker by lazy {
@@ -66,29 +67,6 @@ class AppContainer(
         )
     }
 
-    val locationTrackingRepository: LocationTrackingRepository by lazy {
-        RoomLocationTrackingRepository(
-            gpsPointDao = trackingDatabase.gpsPointDao(),
-            dayRouteDao = trackingDatabase.dayRouteDao(),
-            dateKeyResolver = trackingDateKeyResolver
-        )
-    }
-
-    val dayRouteRepository: DayRouteRepository by lazy {
-        RoomDayRouteRepository(
-            dayRouteDao = trackingDatabase.dayRouteDao(),
-            gpsPointDao = trackingDatabase.gpsPointDao()
-        )
-    }
-
-    val startLocationTrackingUseCase: StartLocationTrackingUseCase by lazy {
-        StartLocationTrackingUseCase(appContext)
-    }
-
-    val stopLocationTrackingUseCase: StopLocationTrackingUseCase by lazy {
-        StopLocationTrackingUseCase(appContext)
-    }
-
     private val retrofit by lazy {
         RetrofitClient.provideRetrofit(authSessionStorage)
     }
@@ -103,6 +81,30 @@ class AppContainer(
 
     private val dayRouteApi by lazy {
         retrofit.create(DayRouteApi::class.java)
+    }
+
+    val locationTrackingRepository: LocationTrackingRepository by lazy {
+        RoomLocationTrackingRepository(
+            gpsPointDao = trackingDatabase.gpsPointDao(),
+            dayRouteDao = trackingDatabase.dayRouteDao(),
+            dateKeyResolver = trackingDateKeyResolver
+        )
+    }
+
+    val dayRouteRepository: DayRouteRepository by lazy {
+        RoomDayRouteRepository(
+            dayRouteDao = trackingDatabase.dayRouteDao(),
+            gpsPointDao = trackingDatabase.gpsPointDao(),
+            dayRouteApi = dayRouteApi
+        )
+    }
+
+    val startLocationTrackingUseCase: StartLocationTrackingUseCase by lazy {
+        StartLocationTrackingUseCase(appContext)
+    }
+
+    val stopLocationTrackingUseCase: StopLocationTrackingUseCase by lazy {
+        StopLocationTrackingUseCase(appContext)
     }
 
     private val authTokenManager by lazy {
