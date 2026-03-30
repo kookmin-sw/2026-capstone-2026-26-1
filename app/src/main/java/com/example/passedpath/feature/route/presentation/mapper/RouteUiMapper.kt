@@ -1,4 +1,4 @@
-package com.example.passedpath.feature.main.presentation.viewmodel
+package com.example.passedpath.feature.route.presentation.mapper
 
 import com.example.passedpath.feature.locationtracking.domain.model.DailyPath
 import com.example.passedpath.feature.locationtracking.domain.model.DayRouteDetail
@@ -6,9 +6,9 @@ import com.example.passedpath.feature.locationtracking.domain.model.DayRoutePlac
 import com.example.passedpath.feature.locationtracking.domain.model.RoutePoint
 import com.example.passedpath.feature.locationtracking.domain.model.TrackedLocation
 import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiState
-import com.example.passedpath.feature.main.presentation.state.MainRouteModeUiState
-import com.example.passedpath.feature.main.presentation.state.PlaceMarkerUiState
-import com.example.passedpath.feature.main.presentation.state.SelectedDayRouteUiState
+import com.example.passedpath.feature.route.presentation.state.MainRouteModeUiState
+import com.example.passedpath.feature.route.presentation.state.PlaceMarkerUiState
+import com.example.passedpath.feature.route.presentation.state.SelectedDayRouteUiState
 
 internal fun createInitialRouteMode(dateKey: String, isToday: Boolean): MainRouteModeUiState {
     val route = SelectedDayRouteUiState(dateKey = dateKey)

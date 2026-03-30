@@ -1,4 +1,4 @@
-package com.example.passedpath.feature.main.presentation.screen
+package com.example.passedpath.feature.route.presentation.screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -21,7 +21,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.example.passedpath.feature.main.presentation.state.MainRouteModeUiState
+import com.example.passedpath.feature.route.presentation.state.MainRouteModeUiState
 import java.util.Locale
 
 @Composable

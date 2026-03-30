@@ -44,7 +44,9 @@ import com.example.passedpath.R
 import com.example.passedpath.feature.main.presentation.state.LocationPermissionUiState
 import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiState
 import com.example.passedpath.feature.main.presentation.state.MainUiState
-import com.example.passedpath.feature.main.presentation.state.PlaceMarkerUiState
+import com.example.passedpath.feature.route.presentation.screen.MainRouteSection
+import com.example.passedpath.feature.route.presentation.screen.RouteStatusOverlay
+import com.example.passedpath.feature.route.presentation.state.PlaceMarkerUiState
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
