@@ -1,13 +1,18 @@
 package com.example.passedpath.feature.main.presentation.viewmodel
 
+import com.example.passedpath.feature.locationtracking.domain.model.DailyPath
 import com.example.passedpath.feature.locationtracking.domain.model.DayRouteDetail
 import com.example.passedpath.feature.locationtracking.domain.model.DayRoutePlace
 import com.example.passedpath.feature.locationtracking.domain.model.RoutePoint
+import com.example.passedpath.feature.locationtracking.domain.model.TrackedLocation
 import com.example.passedpath.feature.locationtracking.domain.repository.DayRouteRepository
 import com.example.passedpath.feature.locationtracking.domain.repository.RemoteDayRouteResult
 import com.example.passedpath.feature.permission.data.manager.LocationPermissionStatusReader
 import com.example.passedpath.testutil.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -24,9 +29,7 @@ class MainViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     @Test
-    fun `init loads remote day route into ui state`() = runTest {
-
-        // 가짜 레포지토리 -> 가짜 데이터
+    fun `init loads remote day route into ui state for past date`() = runTest {
         val repository = FakeDayRouteRepository(
             resultByDate = mutableMapOf(
                 "2026-03-29" to RemoteDayRouteResult.Success(
@@ -50,7 +53,8 @@ class MainViewModelTest {
         val viewModel = MainViewModel(
             locationPermissionStatusReader = FakeLocationPermissionStatusReader(backgroundGranted = true),
             dayRouteRepository = repository,
-            initialDateKeyProvider = { "2026-03-29" }
+            initialDateKeyProvider = { "2026-03-29" },
+            todayDateKeyProvider = { "2026-03-31" }
         )
 
         advanceUntilIdle()
@@ -63,11 +67,86 @@ class MainViewModelTest {
         assertTrue(state.selectedRoute.hasLocationData)
         assertEquals(3, state.selectedRoute.polylinePoints.size)
         assertEquals(1, state.selectedRoute.places.size)
-        assertEquals(listOf("2026-03-29"), repository.requestedDates)
+        assertEquals(listOf("2026-03-29"), repository.requestedRemoteDates)
+        assertTrue(repository.observedLocalDates.isEmpty())
     }
 
     @Test
-    fun `selectDate with empty result shows no location data state without error`() = runTest {
+    fun `init observes local day route for today date`() = runTest {
+        val repository = FakeDayRouteRepository(
+            localRouteByDate = mutableMapOf(
+                "2026-03-31" to MutableStateFlow(
+                    DailyPath(
+                        dateKey = "2026-03-31",
+                        points = listOf(
+                            TrackedLocation(37.1, 127.1, 5f, 1L),
+                            TrackedLocation(37.2, 127.2, 5f, 2L)
+                        ),
+                        totalDistanceMeters = 1500.0,
+                        pathPointCount = 2
+                    )
+                )
+            )
+        )
+
+        val viewModel = MainViewModel(
+            locationPermissionStatusReader = FakeLocationPermissionStatusReader(backgroundGranted = true),
+            dayRouteRepository = repository,
+            initialDateKeyProvider = { "2026-03-31" },
+            todayDateKeyProvider = { "2026-03-31" }
+        )
+
+        advanceUntilIdle()
+        val state = viewModel.uiState.value
+
+        assertEquals("2026-03-31", state.selectedDateKey)
+        assertFalse(state.isRouteLoading)
+        assertFalse(state.isRouteEmpty)
+        assertNull(state.routeErrorMessage)
+        assertEquals(2, state.selectedRoute.polylinePoints.size)
+        assertEquals(1.5, state.selectedRoute.totalDistanceKm, 0.0)
+        assertEquals(listOf("2026-03-31"), repository.observedLocalDates)
+        assertTrue(repository.requestedRemoteDates.isEmpty())
+    }
+
+    @Test
+    fun `today route updates when local flow emits new data`() = runTest {
+        val localFlow = MutableStateFlow<DailyPath?>(null)
+        val repository = FakeDayRouteRepository(
+            localRouteByDate = mutableMapOf("2026-03-31" to localFlow)
+        )
+
+        val viewModel = MainViewModel(
+            locationPermissionStatusReader = FakeLocationPermissionStatusReader(),
+            dayRouteRepository = repository,
+            initialDateKeyProvider = { "2026-03-31" },
+            todayDateKeyProvider = { "2026-03-31" }
+        )
+        advanceUntilIdle()
+
+        assertTrue(viewModel.uiState.value.isRouteEmpty)
+
+        localFlow.value = DailyPath(
+            dateKey = "2026-03-31",
+            points = listOf(
+                TrackedLocation(37.1, 127.1, 5f, 1L),
+                TrackedLocation(37.2, 127.2, 5f, 2L),
+                TrackedLocation(37.3, 127.3, 5f, 3L)
+            ),
+            totalDistanceMeters = 2300.0,
+            pathPointCount = 3
+        )
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertFalse(state.isRouteEmpty)
+        assertNull(state.routeErrorMessage)
+        assertEquals(3, state.selectedRoute.polylinePoints.size)
+        assertEquals(2.3, state.selectedRoute.totalDistanceKm, 0.0)
+    }
+
+    @Test
+    fun `selectDate with empty remote result shows no location data state without error`() = runTest {
         val repository = FakeDayRouteRepository(
             resultByDate = mutableMapOf(
                 "2026-03-29" to RemoteDayRouteResult.Empty,
@@ -78,7 +157,8 @@ class MainViewModelTest {
         val viewModel = MainViewModel(
             locationPermissionStatusReader = FakeLocationPermissionStatusReader(),
             dayRouteRepository = repository,
-            initialDateKeyProvider = { "2026-03-29" }
+            initialDateKeyProvider = { "2026-03-29" },
+            todayDateKeyProvider = { "2026-03-31" }
         )
         advanceUntilIdle()
 
@@ -94,7 +174,7 @@ class MainViewModelTest {
     }
 
     @Test
-    fun `selectDate with error result exposes retryable error state`() = runTest {
+    fun `selectDate with error remote result exposes retryable error state`() = runTest {
         val repository = FakeDayRouteRepository(
             resultByDate = mutableMapOf(
                 "2026-03-29" to RemoteDayRouteResult.Empty,
@@ -105,7 +185,8 @@ class MainViewModelTest {
         val viewModel = MainViewModel(
             locationPermissionStatusReader = FakeLocationPermissionStatusReader(),
             dayRouteRepository = repository,
-            initialDateKeyProvider = { "2026-03-29" }
+            initialDateKeyProvider = { "2026-03-29" },
+            todayDateKeyProvider = { "2026-04-01" }
         )
         advanceUntilIdle()
 
@@ -119,6 +200,43 @@ class MainViewModelTest {
         assertFalse(state.selectedRoute.hasLocationData)
     }
 
+    @Test
+    fun `switching from past error date to today clears stale error and starts local observation`() = runTest {
+        val localFlow = MutableStateFlow<DailyPath?>(
+            DailyPath(
+                dateKey = "2026-03-31",
+                points = listOf(TrackedLocation(37.1, 127.1, 5f, 1L)),
+                totalDistanceMeters = 0.0,
+                pathPointCount = 1
+            )
+        )
+        val repository = FakeDayRouteRepository(
+            resultByDate = mutableMapOf(
+                "2026-03-30" to RemoteDayRouteResult.Error(IllegalStateException("boom"))
+            ),
+            localRouteByDate = mutableMapOf("2026-03-31" to localFlow)
+        )
+
+        val viewModel = MainViewModel(
+            locationPermissionStatusReader = FakeLocationPermissionStatusReader(),
+            dayRouteRepository = repository,
+            initialDateKeyProvider = { "2026-03-30" },
+            todayDateKeyProvider = { "2026-03-31" }
+        )
+        advanceUntilIdle()
+        assertEquals("Failed to load the selected route.", viewModel.uiState.value.routeErrorMessage)
+
+        viewModel.selectDate("2026-03-31")
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertEquals("2026-03-31", state.selectedDateKey)
+        assertNull(state.routeErrorMessage)
+        assertFalse(state.isRouteEmpty)
+        assertEquals(1, state.selectedRoute.polylinePoints.size)
+        assertEquals(listOf("2026-03-31"), repository.observedLocalDates)
+    }
+
     private class FakeLocationPermissionStatusReader(
         private val foregroundGranted: Boolean = false,
         private val backgroundGranted: Boolean = false
@@ -128,17 +246,25 @@ class MainViewModelTest {
     }
 
     private class FakeDayRouteRepository(
-        private val resultByDate: MutableMap<String, RemoteDayRouteResult>
+        private val resultByDate: MutableMap<String, RemoteDayRouteResult> = mutableMapOf(),
+        private val localRouteByDate: MutableMap<String, MutableStateFlow<DailyPath?>> = mutableMapOf()
     ) : DayRouteRepository {
-        val requestedDates = mutableListOf<String>()
+        val requestedRemoteDates = mutableListOf<String>()
+        val observedLocalDates = mutableListOf<String>()
 
-        override suspend fun getLocalDayRoute(dateKey: String) = null
+        override fun observeLocalDayRoute(dateKey: String): Flow<DailyPath?> {
+            observedLocalDates += dateKey
+            return localRouteByDate.getOrPut(dateKey) { MutableStateFlow(null) }.asStateFlow()
+        }
 
-        override suspend fun markLocalDayRouteSynced(dateKey: String, syncedAtEpochMillis: Long) =
-            Unit
+        override suspend fun getLocalDayRoute(dateKey: String): DailyPath? {
+            return localRouteByDate[dateKey]?.value
+        }
+
+        override suspend fun markLocalDayRouteSynced(dateKey: String, syncedAtEpochMillis: Long) = Unit
 
         override suspend fun fetchRemoteDayRoute(dateKey: String): RemoteDayRouteResult {
-            requestedDates += dateKey
+            requestedRemoteDates += dateKey
             return resultByDate[dateKey]
                 ?: error("No fake result prepared for $dateKey")
         }
