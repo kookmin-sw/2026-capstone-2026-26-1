@@ -1,7 +1,6 @@
 package backend.capstone.domain.dayroute.controller;
 
 import backend.capstone.auth.dto.UserPrincipal;
-import backend.capstone.domain.dayroute.dto.DayRouteBookmarkResponse;
 import backend.capstone.domain.dayroute.dto.DayRouteDetailResponse;
 import backend.capstone.domain.dayroute.dto.DayRouteMemoRequest;
 import backend.capstone.domain.dayroute.dto.DayRouteMemoResponse;
@@ -87,15 +86,7 @@ public interface DayRouteControllerSpec {
     );
 
     @Operation(
-        summary = "즐겨찾기 토글 API"
-    )
-    DayRouteBookmarkResponse toggleBookmark(
-        @Parameter(example = "2026-01-01") LocalDate date,
-        UserPrincipal principal
-    );
-
-    @Operation(
-        summary = "장소 등록 API"
+        summary = "방문 장소 등록 API"
     )
     PlaceAddResponse addPlaceToDayRoute(
         @Parameter(example = "2026-01-01") LocalDate date,
@@ -104,7 +95,7 @@ public interface DayRouteControllerSpec {
     );
 
     @Operation(
-        summary = "장소 수정 API",
+        summary = "방문 장소 수정 API",
         description = """
             수정하지 않은 필드도 그대로 넣어주세요. 요청 필드 값으로 DB 값이 그대로 덮어써집니다.(put mapping임)
             """
@@ -117,7 +108,7 @@ public interface DayRouteControllerSpec {
     );
 
     @Operation(
-        summary = "장소 삭제 API"
+        summary = "방문 장소 삭제 API"
     )
     void deletePlace(
         @Parameter(example = "2026-01-01") LocalDate date,
@@ -141,7 +132,7 @@ public interface DayRouteControllerSpec {
         @AuthenticationPrincipal UserPrincipal principal);
 
     @Operation(
-        summary = "장소 순서 변경 API",
+        summary = "방문 장소 순서 변경 API",
         description = """
             정렬된 placeId 배열 전체를 받아 해당 날짜의 장소 순서를 일괄 변경합니다.
             """

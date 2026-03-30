@@ -53,4 +53,13 @@ public class BookmarkPlace extends BaseTimeEntity {
         this.longitude = longitude;
     }
 
+    public void update(BookmarkPlaceType type, String name, String roadAddress, double latitude,
+        double longitude) {
+        this.type = type;
+        this.name = name;
+        this.roadAddress = roadAddress;
+        this.latitude = latitude;
+        this.longitude = longitude;
+    }
+
 }

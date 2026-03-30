@@ -1,7 +1,6 @@
 package backend.capstone.domain.dayroute.controller;
 
 import backend.capstone.auth.dto.UserPrincipal;
-import backend.capstone.domain.dayroute.dto.DayRouteBookmarkResponse;
 import backend.capstone.domain.dayroute.dto.DayRouteDetailResponse;
 import backend.capstone.domain.dayroute.dto.DayRouteMemoRequest;
 import backend.capstone.domain.dayroute.dto.DayRouteMemoResponse;
@@ -26,6 +25,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -125,7 +125,7 @@ public class DayRouteController implements DayRouteControllerSpec {
     }
 
     @Override
-    @PutMapping("/{date}/memo")
+    @PatchMapping("/{date}/memo")
     public DayRouteMemoResponse replaceMemo(
         @PathVariable LocalDate date,
         @AuthenticationPrincipal UserPrincipal principal,
@@ -135,21 +135,12 @@ public class DayRouteController implements DayRouteControllerSpec {
     }
 
     @Override
-    @PutMapping("/{date}/title")
+    @PatchMapping("/{date}/title")
     public DayRouteTitleResponse replaceTitle(
         @PathVariable LocalDate date,
         @AuthenticationPrincipal UserPrincipal principal,
         @RequestBody DayRouteTitleRequest request
     ) {
         return dayRouteFacade.replaceTitle(date, principal.userId(), request);
-    }
-
-    @Override
-    @PostMapping("/{date}/bookmark")
-    public DayRouteBookmarkResponse toggleBookmark(
-        @PathVariable LocalDate date,
-        @AuthenticationPrincipal UserPrincipal principal
-    ) {
-        return dayRouteFacade.toggleBookmark(date, principal.userId());
     }
 }
