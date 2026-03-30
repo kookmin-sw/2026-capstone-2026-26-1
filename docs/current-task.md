@@ -5,16 +5,26 @@ Project: PassedPath Android app
 
 ## Current status
 - Issue 1 through Issue 7 are closed for ongoing work.
-- Issue 8 has started and its first core step is done:
-  - today date now observes local Room-backed route data
-  - past date still fetches remote day-route data
-  - `MainViewModel` cancels stale route jobs when the selected date changes
+- Issue 8 is complete for its intended scope:
+  - today date observes local Room-backed route data
+  - past date fetches remote day-route data
+  - date changes cancel stale route work
   - unit tests cover today-vs-past branching and stale-state clearing
-- The next work is the large `MainScreen` / `MainViewModel` architecture refactor agreed on 2026-03-31.
+- The follow-up route-first architecture refactor is in progress.
+- `feature/route` now exists and owns route presentation state, route UI mapping, and route section UI.
+
+## Completed route-first refactor work
+- `MainScreen` remains the record-screen container.
+- `MainScreen` now delegates route-specific UI to `feature/route`.
+- `MainViewModel` still orchestrates date selection and route loading, but route mode creation and route UI mapping moved out of Main-specific files.
+- Route-specific code extracted so far:
+  - `feature/route/presentation/state/RouteUiState.kt`
+  - `feature/route/presentation/mapper/RouteUiMapper.kt`
+  - `feature/route/presentation/screen/MainRouteSection.kt`
 
 ## Issue 8 agreed scope
-- Issue 8 is a route-focused separation task.
-- The primary goal is to separate route behavior by date mode without prematurely splitting every Main feature.
+- Issue 8 was a route-focused separation task.
+- Its completed goal was to separate route behavior by date mode without prematurely splitting every Main feature.
 - Today route policy:
   - route data comes from local Room observation
   - route and distance update in real time
@@ -28,18 +38,15 @@ Project: PassedPath Android app
 
 ## Main screen architecture decision
 - `MainScreen` remains the user-facing record screen container.
-- `MainScreen` will be split internally into mode-based screen content:
-  - `TodayContent`
-  - `PastContent`
-- This screen split is explicitly adopted.
-- The split is for presentation clarity and maintainability, because today and past route behavior are meaningfully different.
-- However, feature ownership is not the same thing as screen ownership.
+- `MainScreen` is split internally into mode-based route content.
+- This split is explicitly adopted for presentation clarity and maintainability.
+- Feature ownership is not the same thing as screen ownership.
 
 ## Feature ownership decision
 - `feature/main`
   - orchestrates selected date, mode decision, and screen composition
 - `feature/route`
-  - owns today local route, past remote route, and playback entry/state
+  - owns today local route, past remote route, route UI state, route UI mapping, and route section rendering
 - `feature/place`
   - owns manual places and major places
 - `feature/daynote`
@@ -48,43 +55,26 @@ Project: PassedPath Android app
   - not split out yet as an independent feature
   - keep it near the closest existing owner until the policy and volume justify extraction
 
-## Explicitly adopted principles
-- Main is a coordinator/orchestrator, not the long-term owner of every record-screen responsibility.
-- Feature split is based on responsibility, not on whether something is shown on the same screen.
-- Screen split is based on date mode.
-- Today and past are the only required mode split for now.
-- Do not over-commit the architecture around future dates yet.
-- Do not over-split features too early.
-- Route separation comes first.
-- Place/daynote are expected follow-up feature separations.
-- Favorite stays deferred until the product policy is stable enough.
+## Next refactor tasks
+- Split `feature/route` screen content more explicitly into `TodayRouteSection` and `PastRouteSection` files.
+- Move route overlay / marker rendering ownership further toward `feature/route` when the map composition boundary is clearer.
+- Introduce route-specific action/event structure for today refresh, tracking toggle, retry, and playback entry.
+- Keep Main focused on orchestration while place/daynote remain minimal until their follow-up issues start.
 
-## What is not part of Issue 8 right now
+## What is not part of the current route refactor
 - Full favorite-feature extraction
 - Future-date-centered architecture work
 - Detailed playback implementation
 - Final place-edit interaction design
 - Final memo/title save policy
 
-## Recommended next implementation step
-- The next step is a refactor with architectural preparation, not a pure new feature and not a cosmetic cleanup.
-- Concretely:
-  - refactor `MainScreen` into common shell plus `TodayContent` / `PastContent`
-  - refactor `MainViewModel` state toward mode-aware route state
-  - extract route-oriented state handling so Main stops accumulating route-specific branching
-  - keep place/daynote/favorite functional scope minimal until their dedicated follow-up issues
-
-## Why this is the next step
-- The current code already started route source separation, but the presentation and state structure still assume a flatter Main-centric model.
-- Without this refactor, new today/past differences will keep increasing conditionals and state coupling.
-- Doing the structure work now reduces the cost of later place/daynote/playback expansion.
-
 ## Files worth reading first in future sessions
 - `docs/main-screen-architecture-decision-2026-03-31.md`
 - `app/src/main/java/com/example/passedpath/feature/main/presentation/viewmodel/MainViewModel.kt`
 - `app/src/main/java/com/example/passedpath/feature/main/presentation/screen/MainScreen.kt`
-- `app/src/main/java/com/example/passedpath/feature/locationtracking/domain/repository/DayRouteRepository.kt`
-- `app/src/main/java/com/example/passedpath/feature/locationtracking/data/repository/RoomDayRouteRepository.kt`
+- `app/src/main/java/com/example/passedpath/feature/route/presentation/state/RouteUiState.kt`
+- `app/src/main/java/com/example/passedpath/feature/route/presentation/mapper/RouteUiMapper.kt`
+- `app/src/main/java/com/example/passedpath/feature/route/presentation/screen/MainRouteSection.kt`
 - `app/src/test/java/com/example/passedpath/feature/main/presentation/viewmodel/MainViewModelTest.kt`
 
 ## Guardrails

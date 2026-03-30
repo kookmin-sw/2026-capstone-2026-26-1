@@ -9,8 +9,8 @@ The record screen keeps a single user-facing `MainScreen`, but its internal pres
 
 Adopted screen split:
 - `MainScreen`
-- `TodayContent`
-- `PastContent`
+- route content is split by date mode
+- route split currently exists inside `feature/route`
 
 Adopted ownership split:
 - `feature/main` owns orchestration and screen composition.
@@ -18,6 +18,12 @@ Adopted ownership split:
 - `feature/place` owns manual places and major places.
 - `feature/daynote` owns title and memo.
 - `feature/favorite` is deferred as an independent feature until policy and volume justify extraction.
+
+## What has already been applied in code
+- `feature/route` package was created.
+- Route presentation state moved out of Main-specific state files.
+- Route UI mapping/factory logic moved out of `MainViewModel` into route-owned mapping code.
+- Route section rendering moved out of `feature/main` screen files into route-owned screen code.
 
 ## Why this decision was made
 The same record screen contains different kinds of responsibilities:
@@ -53,10 +59,9 @@ Past route behavior:
 
 ### 3. Screen split by mode
 Presentation split is explicitly accepted.
-`MainScreen` should be refactored toward:
+`MainScreen` should continue moving toward:
 - common shell / shared top-level layout
-- `TodayContent`
-- `PastContent`
+- route-specific mode sections owned by `feature/route`
 
 This split exists because today and past route experiences are materially different.
 
@@ -90,16 +95,11 @@ The chosen tradeoff is:
 - prepare place/daynote separation next
 - defer favorite extraction until it is justified
 
-## Immediate engineering consequence
-The next implementation step should be treated as an architectural refactor with scoped follow-up feature work.
-It is not just cosmetic cleanup.
-It is also not a full feature explosion.
-
-Recommended order:
-1. Refactor `MainScreen` into common shell plus `TodayContent` / `PastContent`
-2. Refactor `MainViewModel` into mode-aware route state
-3. Move route-specific branching away from generic Main state
-4. Keep place/daynote/favorite scope minimal until their follow-up issues start
+## Current follow-up tasks
+1. Split `feature/route` screen content into clearer today/past files.
+2. Move route overlay and map-specific route rendering ownership further toward `feature/route` when the map boundary is ready.
+3. Introduce route-specific actions for refresh, retry, tracking toggle, and playback entry.
+4. Keep place/daynote/favorite scope minimal until their follow-up issues start.
 
 ## Guidance for future sessions
 When adding new behavior, decide first:
