@@ -1,7 +1,8 @@
-﻿package com.example.passedpath.feature.locationtracking.domain.repository
+package com.example.passedpath.feature.locationtracking.domain.repository
 
 import com.example.passedpath.feature.locationtracking.domain.model.DailyPath
 import com.example.passedpath.feature.locationtracking.domain.model.DayRouteDetail
+import kotlinx.coroutines.flow.Flow
 
 sealed interface RemoteDayRouteResult {
     data class Success(val routeDetail: DayRouteDetail) : RemoteDayRouteResult
@@ -10,6 +11,8 @@ sealed interface RemoteDayRouteResult {
 }
 
 interface DayRouteRepository {
+    fun observeLocalDayRoute(dateKey: String): Flow<DailyPath?>
+
     suspend fun getLocalDayRoute(dateKey: String): DailyPath?
 
     suspend fun markLocalDayRouteSynced(dateKey: String, syncedAtEpochMillis: Long)
