@@ -4,19 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.passedpath.app.AppContainer
-import com.example.passedpath.feature.locationtracking.domain.model.DailyPath
-import com.example.passedpath.feature.locationtracking.domain.model.DayRouteDetail
-import com.example.passedpath.feature.locationtracking.domain.model.DayRoutePlace
-import com.example.passedpath.feature.locationtracking.domain.model.RoutePoint
-import com.example.passedpath.feature.locationtracking.domain.model.TrackedLocation
 import com.example.passedpath.feature.locationtracking.domain.repository.DayRouteRepository
 import com.example.passedpath.feature.locationtracking.domain.repository.RemoteDayRouteResult
 import com.example.passedpath.feature.main.presentation.state.LocationPermissionUiState
 import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiState
-import com.example.passedpath.feature.main.presentation.state.MainRouteModeUiState
 import com.example.passedpath.feature.main.presentation.state.MainUiState
-import com.example.passedpath.feature.main.presentation.state.PlaceMarkerUiState
-import com.example.passedpath.feature.main.presentation.state.SelectedDayRouteUiState
 import com.example.passedpath.feature.permission.data.manager.LocationPermissionStatusReader
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -41,7 +33,10 @@ class MainViewModel(
     private val _uiState = MutableStateFlow(
         MainUiState(
             selectedDateKey = initialDateKey,
-            routeModeUiState = createInitialRouteMode(initialDateKey)
+            routeModeUiState = createInitialRouteMode(
+                dateKey = initialDateKey,
+                isToday = isToday(initialDateKey)
+            )
         )
     )
     val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
@@ -110,13 +105,9 @@ class MainViewModel(
                 currentState.copy(
                     selectedDateKey = dateKey,
                     routeModeUiState = if (dailyPath == null) {
-                        createTodayRouteMode(
-                            route = SelectedDayRouteUiState(dateKey = dateKey),
-                            isRouteEmpty = true,
-                            routeEmptyMessage = "No route data exists for this day."
-                        )
+                        createTodayEmptyRouteMode(dateKey)
                     } else {
-                        createTodayRouteMode(route = dailyPath.toUiState())
+                        createTodayRouteMode(route = dailyPath.toSelectedDayRouteUiState())
                     }
                 )
             }
@@ -130,7 +121,9 @@ class MainViewModel(
                 _uiState.update { currentState ->
                     currentState.copy(
                         selectedDateKey = routeDetail.dateKey,
-                        routeModeUiState = createPastRouteMode(route = routeDetail.toUiState())
+                        routeModeUiState = createPastRouteMode(
+                            route = routeDetail.toSelectedDayRouteUiState()
+                        )
                     )
                 }
             }
@@ -138,11 +131,7 @@ class MainViewModel(
                 _uiState.update { currentState ->
                     currentState.copy(
                         selectedDateKey = dateKey,
-                        routeModeUiState = createPastRouteMode(
-                            route = SelectedDayRouteUiState(dateKey = dateKey),
-                            isRouteEmpty = true,
-                            routeEmptyMessage = "No route data exists for this day."
-                        )
+                        routeModeUiState = createPastEmptyRouteMode(dateKey)
                     )
                 }
             }
@@ -150,10 +139,7 @@ class MainViewModel(
                 _uiState.update { currentState ->
                     currentState.copy(
                         selectedDateKey = dateKey,
-                        routeModeUiState = createPastRouteMode(
-                            route = SelectedDayRouteUiState(dateKey = dateKey),
-                            routeErrorMessage = "Failed to load the selected route."
-                        )
+                        routeModeUiState = createPastErrorRouteMode(dateKey)
                     )
                 }
             }
@@ -164,110 +150,18 @@ class MainViewModel(
         _uiState.update { currentState ->
             currentState.copy(
                 selectedDateKey = dateKey,
-                routeModeUiState = if (isToday(dateKey)) {
-                    createTodayRouteMode(
-                        route = SelectedDayRouteUiState(dateKey = dateKey),
-                        isRouteLoading = true
-                    )
-                } else {
-                    createPastRouteMode(
-                        route = SelectedDayRouteUiState(dateKey = dateKey),
-                        isRouteLoading = true
-                    )
-                },
+                routeModeUiState = createLoadingRouteMode(
+                    dateKey = dateKey,
+                    isToday = isToday(dateKey)
+                ),
                 hasCenteredOnCurrentLocation = false
             )
         }
     }
 
-    private fun createInitialRouteMode(dateKey: String): MainRouteModeUiState {
-        val route = SelectedDayRouteUiState(dateKey = dateKey)
-        return if (isToday(dateKey)) {
-            createTodayRouteMode(route = route)
-        } else {
-            createPastRouteMode(route = route)
-        }
-    }
-
-    private fun createTodayRouteMode(
-        route: SelectedDayRouteUiState,
-        isRouteLoading: Boolean = false,
-        isRouteEmpty: Boolean = false,
-        routeEmptyMessage: String? = null,
-        routeErrorMessage: String? = null
-    ): MainRouteModeUiState.Today {
-        return MainRouteModeUiState.Today(
-            route = route,
-            isRouteLoading = isRouteLoading,
-            isRouteEmpty = isRouteEmpty,
-            routeEmptyMessage = routeEmptyMessage,
-            routeErrorMessage = routeErrorMessage
-        )
-    }
-
-    private fun createPastRouteMode(
-        route: SelectedDayRouteUiState,
-        isRouteLoading: Boolean = false,
-        isRouteEmpty: Boolean = false,
-        routeEmptyMessage: String? = null,
-        routeErrorMessage: String? = null
-    ): MainRouteModeUiState.Past {
-        return MainRouteModeUiState.Past(
-            route = route,
-            isRouteLoading = isRouteLoading,
-            isRouteEmpty = isRouteEmpty,
-            routeEmptyMessage = routeEmptyMessage,
-            routeErrorMessage = routeErrorMessage
-        )
-    }
-
     private fun isToday(dateKey: String): Boolean {
         return dateKey == todayDateKeyProvider()
     }
-}
-
-private fun DailyPath.toUiState(): SelectedDayRouteUiState {
-    return SelectedDayRouteUiState(
-        dateKey = dateKey,
-        polylinePoints = points.map(TrackedLocation::toUiState),
-        totalDistanceKm = totalDistanceMeters / 1000.0,
-        pathPointCount = pathPointCount,
-        places = emptyList()
-    )
-}
-
-private fun DayRouteDetail.toUiState(): SelectedDayRouteUiState {
-    return SelectedDayRouteUiState(
-        dateKey = dateKey,
-        polylinePoints = polylinePoints.map(RoutePoint::toUiState),
-        totalDistanceKm = totalDistanceKm,
-        pathPointCount = pathPointCount,
-        places = places.map(DayRoutePlace::toUiState)
-    )
-}
-
-private fun TrackedLocation.toUiState(): MainCoordinateUiState {
-    return MainCoordinateUiState(
-        latitude = latitude,
-        longitude = longitude
-    )
-}
-
-private fun RoutePoint.toUiState(): MainCoordinateUiState {
-    return MainCoordinateUiState(
-        latitude = latitude,
-        longitude = longitude
-    )
-}
-
-private fun DayRoutePlace.toUiState(): PlaceMarkerUiState {
-    return PlaceMarkerUiState(
-        placeId = placeId,
-        placeName = placeName,
-        latitude = latitude,
-        longitude = longitude,
-        orderIndex = orderIndex
-    )
 }
 
 private fun todayDateKey(): String {
