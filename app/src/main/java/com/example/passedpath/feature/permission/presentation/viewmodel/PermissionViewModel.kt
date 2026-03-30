@@ -3,7 +3,7 @@ package com.example.passedpath.feature.permission.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.example.passedpath.app.AppContainer
-import com.example.passedpath.feature.permission.data.manager.LocationPermissionChecker
+import com.example.passedpath.feature.permission.data.manager.LocationPermissionStatusReader
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -21,7 +21,7 @@ sealed interface PermissionEffect {
 }
 
 class PermissionViewModel(
-    private val permissionChecker: LocationPermissionChecker
+    private val locationPermissionStatusReader: LocationPermissionStatusReader
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PermissionUiState())
@@ -32,11 +32,11 @@ class PermissionViewModel(
 
     suspend fun onContinueClick() {
         when {
-            permissionChecker.isBackgroundAlwaysGranted() -> {
+            locationPermissionStatusReader.isBackgroundAlwaysGranted() -> {
                 _effect.emit(PermissionEffect.NavigateNext)
             }
 
-            !permissionChecker.isForegroundGranted() -> {
+            !locationPermissionStatusReader.isForegroundGranted() -> {
                 _effect.emit(PermissionEffect.RequestForegroundPermission)
             }
 
@@ -47,7 +47,7 @@ class PermissionViewModel(
     }
 
     suspend fun onForegroundPermissionResult() {
-        if (permissionChecker.isBackgroundAlwaysGranted()) {
+        if (locationPermissionStatusReader.isBackgroundAlwaysGranted()) {
             _effect.emit(PermissionEffect.NavigateNext)
         } else {
             _uiState.update { it.copy(showSettingsDialog = true) }
@@ -76,7 +76,7 @@ class PermissionViewModelFactory(
         if (modelClass.isAssignableFrom(PermissionViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
             return PermissionViewModel(
-                permissionChecker = appContainer.permissionChecker
+                locationPermissionStatusReader = appContainer.locationPermissionStatusReader
             ) as T
         }
 

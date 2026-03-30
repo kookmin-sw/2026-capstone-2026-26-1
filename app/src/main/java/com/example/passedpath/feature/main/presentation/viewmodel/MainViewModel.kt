@@ -1,4 +1,4 @@
-﻿package com.example.passedpath.feature.main.presentation.viewmodel
+package com.example.passedpath.feature.main.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -14,7 +14,7 @@ import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiSt
 import com.example.passedpath.feature.main.presentation.state.MainUiState
 import com.example.passedpath.feature.main.presentation.state.PlaceMarkerUiState
 import com.example.passedpath.feature.main.presentation.state.SelectedDayRouteUiState
-import com.example.passedpath.feature.permission.data.manager.LocationPermissionChecker
+import com.example.passedpath.feature.permission.data.manager.LocationPermissionStatusReader
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,11 +25,12 @@ import java.util.Date
 import java.util.Locale
 
 class MainViewModel(
-    private val permissionChecker: LocationPermissionChecker,
-    private val dayRouteRepository: DayRouteRepository
+    private val locationPermissionStatusReader: LocationPermissionStatusReader,
+    private val dayRouteRepository: DayRouteRepository,
+    initialDateKeyProvider: () -> String = ::todayDateKey
 ) : ViewModel() {
 
-    private val initialDateKey = todayDateKey()
+    private val initialDateKey = initialDateKeyProvider()
     private val _uiState = MutableStateFlow(
         MainUiState(
             selectedDateKey = initialDateKey,
@@ -45,8 +46,8 @@ class MainViewModel(
 
     fun refreshPermissionState() {
         val permissionState = when {
-            permissionChecker.isBackgroundAlwaysGranted() -> LocationPermissionUiState.ALWAYS
-            permissionChecker.isForegroundGranted() -> LocationPermissionUiState.FOREGROUND_ONLY
+            locationPermissionStatusReader.isBackgroundAlwaysGranted() -> LocationPermissionUiState.ALWAYS
+            locationPermissionStatusReader.isForegroundGranted() -> LocationPermissionUiState.FOREGROUND_ONLY
             else -> LocationPermissionUiState.DENIED
         }
 
@@ -138,10 +139,6 @@ class MainViewModel(
             }
         }
     }
-
-    private fun todayDateKey(): String {
-        return SimpleDateFormat("yyyy-MM-dd", Locale.KOREA).format(Date())
-    }
 }
 
 private fun DayRouteDetail.toUiState(): SelectedDayRouteUiState {
@@ -171,6 +168,10 @@ private fun DayRoutePlace.toUiState(): PlaceMarkerUiState {
     )
 }
 
+private fun todayDateKey(): String {
+    return SimpleDateFormat("yyyy-MM-dd", Locale.KOREA).format(Date())
+}
+
 class MainViewModelFactory(
     private val appContainer: AppContainer
 ) : ViewModelProvider.Factory {
@@ -178,7 +179,7 @@ class MainViewModelFactory(
         if (modelClass.isAssignableFrom(MainViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
             return MainViewModel(
-                permissionChecker = appContainer.permissionChecker,
+                locationPermissionStatusReader = appContainer.locationPermissionStatusReader,
                 dayRouteRepository = appContainer.dayRouteRepository
             ) as T
         }
