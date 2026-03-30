@@ -1,4 +1,4 @@
-﻿package com.example.passedpath.feature.main.presentation.screen
+package com.example.passedpath.feature.main.presentation.screen
 
 import android.app.DatePickerDialog
 import androidx.compose.foundation.Image
@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import com.example.passedpath.R
 import com.example.passedpath.feature.main.presentation.state.LocationPermissionUiState
 import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiState
+import com.example.passedpath.feature.main.presentation.state.MainRouteModeUiState
 import com.example.passedpath.feature.main.presentation.state.MainUiState
 import com.example.passedpath.feature.main.presentation.state.PlaceMarkerUiState
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -177,9 +178,8 @@ fun MainScreen(
         }
 
         RouteStatusOverlay(
-            isLoading = uiState.isRouteLoading,
+            routeModeUiState = uiState.routeModeUiState,
             hasRouteLocationData = hasRouteLocationData,
-            errorMessage = uiState.routeErrorMessage,
             onRetryRoute = onRetryRoute
         )
 
@@ -198,34 +198,22 @@ fun MainScreen(
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 14.dp)
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
-                            Text(text = stringResource(R.string.main_title), fontWeight = FontWeight.SemiBold)
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(text = permissionText(uiState.permissionState))
+                    MainHeader(
+                        permissionState = uiState.permissionState,
+                        selectedDateKey = uiState.selectedDateKey,
+                        onPickDate = {
+                            showDatePicker(
+                                context = context,
+                                initialDateKey = uiState.selectedDateKey,
+                                onDateSelected = onDateSelected
+                            )
                         }
-                        Button(
-                            onClick = {
-                                showDatePicker(
-                                    context = context,
-                                    initialDateKey = uiState.selectedDateKey,
-                                    onDateSelected = onDateSelected
-                                )
-                            }
-                        ) {
-                            Text(text = "Pick date")
-                        }
-                    }
+                    )
                     Spacer(modifier = Modifier.height(12.dp))
-                    Text(text = "Selected date: ${uiState.selectedRoute.dateKey}")
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(text = "Distance: ${uiState.selectedRoute.totalDistanceKm.formatDistanceKm()}")
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(text = "Path points: ${uiState.selectedRoute.pathPointCount}")
+                    when (val routeMode = uiState.routeModeUiState) {
+                        is MainRouteModeUiState.Today -> TodayContent(routeMode = routeMode)
+                        is MainRouteModeUiState.Past -> PastContent(routeMode = routeMode)
+                    }
                 }
             }
 
@@ -274,14 +262,72 @@ fun MainScreen(
 }
 
 @Composable
+private fun MainHeader(
+    permissionState: LocationPermissionUiState,
+    selectedDateKey: String,
+    onPickDate: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column {
+            Text(text = stringResource(R.string.main_title), fontWeight = FontWeight.SemiBold)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(text = permissionText(permissionState))
+        }
+        Button(onClick = onPickDate) {
+            Text(text = "Pick date")
+        }
+    }
+    Spacer(modifier = Modifier.height(12.dp))
+    Text(text = "Selected date: $selectedDateKey")
+}
+
+@Composable
+private fun TodayContent(routeMode: MainRouteModeUiState.Today) {
+    Text(text = "Today route", fontWeight = FontWeight.SemiBold, color = RouteLineColor)
+    Spacer(modifier = Modifier.height(8.dp))
+    Text(text = "Distance: ${routeMode.route.totalDistanceKm.formatDistanceKm()}")
+    Spacer(modifier = Modifier.height(4.dp))
+    Text(text = "Path points: ${routeMode.route.pathPointCount}")
+    if (routeMode.isTrackingToggleVisible) {
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(text = "Tracking controls stay in the today route mode.")
+    }
+    if (routeMode.canRefreshDistance) {
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(text = "Distance can refresh in real time for today.")
+    }
+}
+
+@Composable
+private fun PastContent(routeMode: MainRouteModeUiState.Past) {
+    Text(text = "Past route", fontWeight = FontWeight.SemiBold, color = RouteLineColor)
+    Spacer(modifier = Modifier.height(8.dp))
+    Text(text = "Distance: ${routeMode.route.totalDistanceKm.formatDistanceKm()}")
+    Spacer(modifier = Modifier.height(4.dp))
+    Text(text = "Path points: ${routeMode.route.pathPointCount}")
+    if (routeMode.isPlaybackEntryVisible) {
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(text = "Playback entry belongs to past route mode.")
+    }
+}
+
+@Composable
 private fun RouteStatusOverlay(
-    isLoading: Boolean,
+    routeModeUiState: MainRouteModeUiState,
     hasRouteLocationData: Boolean,
-    errorMessage: String?,
     onRetryRoute: () -> Unit
 ) {
-    val shouldShowNoLocationData = !isLoading && errorMessage == null && !hasRouteLocationData
-    if (!isLoading && errorMessage == null && !shouldShowNoLocationData) return
+    val routeErrorMessage = routeModeUiState.routeErrorMessage
+    val routeEmptyMessage = routeModeUiState.routeEmptyMessage
+    val shouldShowNoLocationData =
+        !routeModeUiState.isRouteLoading && routeErrorMessage == null && !hasRouteLocationData
+    if (!routeModeUiState.isRouteLoading && routeErrorMessage == null && !shouldShowNoLocationData) {
+        return
+    }
 
     Box(
         modifier = Modifier
@@ -302,35 +348,37 @@ private fun RouteStatusOverlay(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 when {
-                    isLoading -> {
+                    routeModeUiState.isRouteLoading -> {
                         CircularProgressIndicator(color = RouteLineColor)
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text(text = "Loading route", fontWeight = FontWeight.SemiBold)
+                        Text(text = loadingTitle(routeModeUiState), fontWeight = FontWeight.SemiBold)
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "Fetching the selected day's path and places.",
+                            text = loadingMessage(routeModeUiState),
                             color = Color(0xFF4B5563),
                             textAlign = TextAlign.Center
                         )
                     }
-                    errorMessage != null -> {
+                    routeErrorMessage != null -> {
                         Text(text = "Route Load Failed", fontWeight = FontWeight.SemiBold)
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = errorMessage,
+                            text = routeErrorMessage,
                             color = Color(0xFF9D1C1C),
                             textAlign = TextAlign.Center
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Button(onClick = onRetryRoute) {
-                            Text(text = "Retry")
+                        if (routeModeUiState is MainRouteModeUiState.Past) {
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Button(onClick = onRetryRoute) {
+                                Text(text = "Retry")
+                            }
                         }
                     }
                     else -> {
-                        Text(text = "No Location Data", fontWeight = FontWeight.SemiBold)
+                        Text(text = emptyTitle(routeModeUiState), fontWeight = FontWeight.SemiBold)
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "There is no route path data to show on the map for this day.",
+                            text = routeEmptyMessage ?: emptyMessage(routeModeUiState),
                             color = Color(0xFF4B5563),
                             textAlign = TextAlign.Center
                         )
@@ -338,6 +386,34 @@ private fun RouteStatusOverlay(
                 }
             }
         }
+    }
+}
+
+private fun loadingTitle(routeModeUiState: MainRouteModeUiState): String {
+    return when (routeModeUiState) {
+        is MainRouteModeUiState.Today -> "Loading today's route"
+        is MainRouteModeUiState.Past -> "Loading past route"
+    }
+}
+
+private fun loadingMessage(routeModeUiState: MainRouteModeUiState): String {
+    return when (routeModeUiState) {
+        is MainRouteModeUiState.Today -> "Observing today's local path updates."
+        is MainRouteModeUiState.Past -> "Fetching the selected day's path and places."
+    }
+}
+
+private fun emptyTitle(routeModeUiState: MainRouteModeUiState): String {
+    return when (routeModeUiState) {
+        is MainRouteModeUiState.Today -> "No Route Yet"
+        is MainRouteModeUiState.Past -> "No Location Data"
+    }
+}
+
+private fun emptyMessage(routeModeUiState: MainRouteModeUiState): String {
+    return when (routeModeUiState) {
+        is MainRouteModeUiState.Today -> "Today's route will appear here once local tracking data is recorded."
+        is MainRouteModeUiState.Past -> "There is no route path data to show on the map for this day."
     }
 }
 
