@@ -1,4 +1,4 @@
-﻿package com.example.passedpath.feature.locationtracking.data.repository
+package com.example.passedpath.feature.locationtracking.data.repository
 
 import com.example.passedpath.feature.locationtracking.data.local.dao.DayRouteDao
 import com.example.passedpath.feature.locationtracking.data.local.dao.GpsPointDao
@@ -10,6 +10,8 @@ import com.example.passedpath.feature.locationtracking.domain.model.DailyPath
 import com.example.passedpath.feature.locationtracking.domain.repository.DayRouteRepository
 import com.example.passedpath.feature.locationtracking.domain.repository.RemoteDayRouteResult
 import com.google.gson.Gson
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import retrofit2.HttpException
 
 class RoomDayRouteRepository(
@@ -17,6 +19,20 @@ class RoomDayRouteRepository(
     private val gpsPointDao: GpsPointDao,
     private val dayRouteApi: DayRouteApi
 ) : DayRouteRepository {
+
+    override fun observeLocalDayRoute(dateKey: String): Flow<DailyPath?> {
+        return gpsPointDao.observePointsByDate(dateKey)
+            .combine(dayRouteDao.observeByDate(dateKey)) { points, route ->
+                if (route == null && points.isEmpty()) {
+                    null
+                } else {
+                    points.toDailyPath(
+                        dateKey = dateKey,
+                        existingRoute = route
+                    )
+                }
+            }
+    }
 
     override suspend fun getLocalDayRoute(dateKey: String): DailyPath? {
         val route = dayRouteDao.getByDate(dateKey)
