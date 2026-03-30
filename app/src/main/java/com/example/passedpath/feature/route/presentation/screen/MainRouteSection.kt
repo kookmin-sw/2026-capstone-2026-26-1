@@ -22,13 +22,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.passedpath.feature.route.presentation.state.MainRouteModeUiState
-import java.util.Locale
 
 @Composable
 fun MainRouteSection(routeMode: MainRouteModeUiState) {
     when (routeMode) {
-        is MainRouteModeUiState.Today -> TodayContent(routeMode = routeMode)
-        is MainRouteModeUiState.Past -> PastContent(routeMode = routeMode)
+        is MainRouteModeUiState.Today -> TodayRouteSection(routeMode = routeMode)
+        is MainRouteModeUiState.Past -> PastRouteSection(routeMode = routeMode)
     }
 }
 
@@ -106,38 +105,6 @@ fun RouteStatusOverlay(
     }
 }
 
-@Composable
-private fun TodayContent(routeMode: MainRouteModeUiState.Today) {
-    val routeAccentColor = MaterialTheme.colorScheme.primary
-    Text(text = "Today route", fontWeight = FontWeight.SemiBold, color = routeAccentColor)
-    Spacer(modifier = Modifier.height(8.dp))
-    Text(text = "Distance: ${routeMode.route.totalDistanceKm.formatDistanceKm()}")
-    Spacer(modifier = Modifier.height(4.dp))
-    Text(text = "Path points: ${routeMode.route.pathPointCount}")
-    if (routeMode.isTrackingToggleVisible) {
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(text = "Tracking controls stay in the today route mode.")
-    }
-    if (routeMode.canRefreshDistance) {
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(text = "Distance can refresh in real time for today.")
-    }
-}
-
-@Composable
-private fun PastContent(routeMode: MainRouteModeUiState.Past) {
-    val routeAccentColor = MaterialTheme.colorScheme.primary
-    Text(text = "Past route", fontWeight = FontWeight.SemiBold, color = routeAccentColor)
-    Spacer(modifier = Modifier.height(8.dp))
-    Text(text = "Distance: ${routeMode.route.totalDistanceKm.formatDistanceKm()}")
-    Spacer(modifier = Modifier.height(4.dp))
-    Text(text = "Path points: ${routeMode.route.pathPointCount}")
-    if (routeMode.isPlaybackEntryVisible) {
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(text = "Playback entry belongs to past route mode.")
-    }
-}
-
 private fun loadingTitle(routeModeUiState: MainRouteModeUiState): String {
     return when (routeModeUiState) {
         is MainRouteModeUiState.Today -> "Loading today's route"
@@ -164,8 +131,4 @@ private fun emptyMessage(routeModeUiState: MainRouteModeUiState): String {
         is MainRouteModeUiState.Today -> "Today's route will appear here once local tracking data is recorded."
         is MainRouteModeUiState.Past -> "There is no route path data to show on the map for this day."
     }
-}
-
-private fun Double.formatDistanceKm(): String {
-    return String.format(Locale.US, "%.2f km", this)
 }
