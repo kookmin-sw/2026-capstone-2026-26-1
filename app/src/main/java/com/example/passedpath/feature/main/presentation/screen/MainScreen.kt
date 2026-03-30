@@ -15,13 +15,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -40,12 +39,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.passedpath.R
 import com.example.passedpath.feature.main.presentation.state.LocationPermissionUiState
 import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiState
-import com.example.passedpath.feature.main.presentation.state.MainRouteModeUiState
 import com.example.passedpath.feature.main.presentation.state.MainUiState
 import com.example.passedpath.feature.main.presentation.state.PlaceMarkerUiState
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -60,10 +57,8 @@ import com.google.maps.android.compose.rememberCameraPositionState
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 private val CurrentLocationGlowBase = Color(0xFF006B5F)
-private val RouteLineColor = Color(0xFF0A7A6C)
 private val DateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 private const val RouteBoundsPaddingPx = 180
 
@@ -75,6 +70,7 @@ fun MainScreen(
     onRetryRoute: () -> Unit
 ) {
     val context = LocalContext.current
+    val routeAccentColor = MaterialTheme.colorScheme.primary
     val fallbackPosition = LatLng(37.5662952, 126.9779451)
     val currentLocation = if (uiState.permissionState == LocationPermissionUiState.DENIED) {
         null
@@ -123,7 +119,7 @@ fun MainScreen(
             if (routePoints.size >= 2) {
                 Polyline(
                     points = routePoints,
-                    color = RouteLineColor,
+                    color = routeAccentColor,
                     width = 14f
                 )
             }
@@ -137,7 +133,7 @@ fun MainScreen(
                         title = place.placeName.ifBlank { "Place ${place.orderIndex}" },
                         anchor = androidx.compose.ui.geometry.Offset(0.5f, 0.5f)
                     ) {
-                        PlaceOrderMarker(place = place)
+                        PlaceOrderMarker(place = place, routeAccentColor = routeAccentColor)
                     }
                 }
             }
@@ -210,10 +206,7 @@ fun MainScreen(
                         }
                     )
                     Spacer(modifier = Modifier.height(12.dp))
-                    when (val routeMode = uiState.routeModeUiState) {
-                        is MainRouteModeUiState.Today -> TodayContent(routeMode = routeMode)
-                        is MainRouteModeUiState.Past -> PastContent(routeMode = routeMode)
-                    }
+                    MainRouteSection(routeMode = uiState.routeModeUiState)
                 }
             }
 
@@ -286,139 +279,10 @@ private fun MainHeader(
 }
 
 @Composable
-private fun TodayContent(routeMode: MainRouteModeUiState.Today) {
-    Text(text = "Today route", fontWeight = FontWeight.SemiBold, color = RouteLineColor)
-    Spacer(modifier = Modifier.height(8.dp))
-    Text(text = "Distance: ${routeMode.route.totalDistanceKm.formatDistanceKm()}")
-    Spacer(modifier = Modifier.height(4.dp))
-    Text(text = "Path points: ${routeMode.route.pathPointCount}")
-    if (routeMode.isTrackingToggleVisible) {
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(text = "Tracking controls stay in the today route mode.")
-    }
-    if (routeMode.canRefreshDistance) {
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(text = "Distance can refresh in real time for today.")
-    }
-}
-
-@Composable
-private fun PastContent(routeMode: MainRouteModeUiState.Past) {
-    Text(text = "Past route", fontWeight = FontWeight.SemiBold, color = RouteLineColor)
-    Spacer(modifier = Modifier.height(8.dp))
-    Text(text = "Distance: ${routeMode.route.totalDistanceKm.formatDistanceKm()}")
-    Spacer(modifier = Modifier.height(4.dp))
-    Text(text = "Path points: ${routeMode.route.pathPointCount}")
-    if (routeMode.isPlaybackEntryVisible) {
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(text = "Playback entry belongs to past route mode.")
-    }
-}
-
-@Composable
-private fun RouteStatusOverlay(
-    routeModeUiState: MainRouteModeUiState,
-    hasRouteLocationData: Boolean,
-    onRetryRoute: () -> Unit
+private fun PlaceOrderMarker(
+    place: PlaceMarkerUiState,
+    routeAccentColor: Color
 ) {
-    val routeErrorMessage = routeModeUiState.routeErrorMessage
-    val routeEmptyMessage = routeModeUiState.routeEmptyMessage
-    val shouldShowNoLocationData =
-        !routeModeUiState.isRouteLoading && routeErrorMessage == null && !hasRouteLocationData
-    if (!routeModeUiState.isRouteLoading && routeErrorMessage == null && !shouldShowNoLocationData) {
-        return
-    }
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.18f))
-            .padding(horizontal = 28.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Card(
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(defaultElevation = 10.dp)
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                when {
-                    routeModeUiState.isRouteLoading -> {
-                        CircularProgressIndicator(color = RouteLineColor)
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(text = loadingTitle(routeModeUiState), fontWeight = FontWeight.SemiBold)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = loadingMessage(routeModeUiState),
-                            color = Color(0xFF4B5563),
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                    routeErrorMessage != null -> {
-                        Text(text = "Route Load Failed", fontWeight = FontWeight.SemiBold)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = routeErrorMessage,
-                            color = Color(0xFF9D1C1C),
-                            textAlign = TextAlign.Center
-                        )
-                        if (routeModeUiState is MainRouteModeUiState.Past) {
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Button(onClick = onRetryRoute) {
-                                Text(text = "Retry")
-                            }
-                        }
-                    }
-                    else -> {
-                        Text(text = emptyTitle(routeModeUiState), fontWeight = FontWeight.SemiBold)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = routeEmptyMessage ?: emptyMessage(routeModeUiState),
-                            color = Color(0xFF4B5563),
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-private fun loadingTitle(routeModeUiState: MainRouteModeUiState): String {
-    return when (routeModeUiState) {
-        is MainRouteModeUiState.Today -> "Loading today's route"
-        is MainRouteModeUiState.Past -> "Loading past route"
-    }
-}
-
-private fun loadingMessage(routeModeUiState: MainRouteModeUiState): String {
-    return when (routeModeUiState) {
-        is MainRouteModeUiState.Today -> "Observing today's local path updates."
-        is MainRouteModeUiState.Past -> "Fetching the selected day's path and places."
-    }
-}
-
-private fun emptyTitle(routeModeUiState: MainRouteModeUiState): String {
-    return when (routeModeUiState) {
-        is MainRouteModeUiState.Today -> "No Route Yet"
-        is MainRouteModeUiState.Past -> "No Location Data"
-    }
-}
-
-private fun emptyMessage(routeModeUiState: MainRouteModeUiState): String {
-    return when (routeModeUiState) {
-        is MainRouteModeUiState.Today -> "Today's route will appear here once local tracking data is recorded."
-        is MainRouteModeUiState.Past -> "There is no route path data to show on the map for this day."
-    }
-}
-
-@Composable
-private fun PlaceOrderMarker(place: PlaceMarkerUiState) {
     Box(
         modifier = Modifier
             .size(34.dp)
@@ -428,7 +292,7 @@ private fun PlaceOrderMarker(place: PlaceMarkerUiState) {
     ) {
         Text(
             text = place.orderIndex.toString(),
-            color = RouteLineColor,
+            color = routeAccentColor,
             fontWeight = FontWeight.Bold
         )
     }
@@ -475,8 +339,4 @@ private fun buildRouteCameraUpdate(routePoints: List<LatLng>) = when {
         routePoints.forEach(boundsBuilder::include)
         CameraUpdateFactory.newLatLngBounds(boundsBuilder.build(), RouteBoundsPaddingPx)
     }
-}
-
-private fun Double.formatDistanceKm(): String {
-    return String.format(Locale.US, "%.2f km", this)
 }
