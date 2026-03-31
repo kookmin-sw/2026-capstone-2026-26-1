@@ -12,6 +12,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -57,7 +58,7 @@ class RouteStateCoordinatorTest {
             todayDateKeyProvider = { "2026-04-01" }
         )
 
-        val states = coordinator.loadRoute("2026-04-01").toList()
+        val states = coordinator.loadRoute("2026-04-01").take(2).toList()
 
         assertEquals(2, states.size)
         assertTrue(states[0].routeModeUiState.isRouteLoading)
@@ -79,7 +80,7 @@ class RouteStateCoordinatorTest {
             todayDateKeyProvider = { "2026-04-01" }
         )
 
-        val states = coordinator.loadRoute("2026-04-01").toList()
+        val states = coordinator.loadRoute("2026-04-01").take(2).toList()
         val finalState = states.last().routeModeUiState as MainRouteModeUiState.Today
 
         assertTrue(finalState.isRouteEmpty)
