@@ -187,6 +187,7 @@ class MainViewModelTest {
 
         assertEquals(1, startCalls)
         assertEquals(0, stopCalls)
+        assertFalse(viewModel.uiState.value.showTrackingPermissionDialog)
     }
 
     @Test
@@ -209,6 +210,49 @@ class MainViewModelTest {
 
         assertEquals(0, startCalls)
         assertEquals(1, stopCalls)
+        assertFalse(viewModel.uiState.value.showTrackingPermissionDialog)
+    }
+
+    @Test
+    fun `toggle tracking without always permission keeps off state and opens settings dialog`() = runTest {
+        var startCalls = 0
+        var stopCalls = 0
+        val trackingState = MutableStateFlow(false)
+        val viewModel = createViewModel(
+            repository = FakeDayRouteRepository(),
+            initialDateKey = "2026-03-31",
+            todayDateKey = "2026-03-31",
+            trackingState = trackingState,
+            onStartTracking = { startCalls += 1 },
+            onStopTracking = { stopCalls += 1 }
+        )
+        advanceUntilIdle()
+
+        viewModel.handleRouteAction(RouteUiAction.ToggleTracking)
+        advanceUntilIdle()
+
+        assertEquals(0, startCalls)
+        assertEquals(0, stopCalls)
+        assertFalse((viewModel.uiState.value.routeModeUiState as MainRouteModeUiState.Today).isTrackingEnabled)
+        assertTrue(viewModel.uiState.value.showTrackingPermissionDialog)
+    }
+
+    @Test
+    fun `dismiss tracking permission dialog clears dialog state`() = runTest {
+        val viewModel = createViewModel(
+            repository = FakeDayRouteRepository(),
+            initialDateKey = "2026-03-31",
+            todayDateKey = "2026-03-31"
+        )
+        advanceUntilIdle()
+
+        viewModel.handleRouteAction(RouteUiAction.ToggleTracking)
+        advanceUntilIdle()
+        assertTrue(viewModel.uiState.value.showTrackingPermissionDialog)
+
+        viewModel.dismissTrackingPermissionDialog()
+
+        assertFalse(viewModel.uiState.value.showTrackingPermissionDialog)
     }
 
     @Test
@@ -380,5 +424,3 @@ class MainViewModelTest {
         }
     }
 }
-
-

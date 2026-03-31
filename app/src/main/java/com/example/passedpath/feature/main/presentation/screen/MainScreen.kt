@@ -1,4 +1,4 @@
-﻿package com.example.passedpath.feature.main.presentation.screen
+package com.example.passedpath.feature.main.presentation.screen
 
 import android.app.DatePickerDialog
 import androidx.compose.foundation.Image
@@ -48,6 +48,7 @@ import com.example.passedpath.feature.route.presentation.screen.MainRouteSection
 import com.example.passedpath.feature.route.presentation.screen.RouteMapContent
 import com.example.passedpath.feature.route.presentation.screen.RouteStatusOverlay
 import com.example.passedpath.feature.route.presentation.state.RouteUiAction
+import com.example.passedpath.ui.PermissionSettingDialog
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -69,7 +70,9 @@ fun MainScreen(
     uiState: MainUiState,
     onInitialCameraCentered: () -> Unit,
     onDateSelected: (String) -> Unit,
-    onRouteAction: (RouteUiAction) -> Unit
+    onRouteAction: (RouteUiAction) -> Unit,
+    onTrackingPermissionDialogConfirm: () -> Unit,
+    onTrackingPermissionDialogDismiss: () -> Unit
 ) {
     val context = LocalContext.current
     val routeAccentColor = MaterialTheme.colorScheme.primary
@@ -238,6 +241,13 @@ fun MainScreen(
                 }
             }
         }
+    }
+
+    if (uiState.showTrackingPermissionDialog) {
+        PermissionSettingDialog(
+            onConfirm = onTrackingPermissionDialogConfirm,
+            onDismiss = onTrackingPermissionDialogDismiss
+        )
     }
 }
 

@@ -16,6 +16,7 @@ import com.example.passedpath.feature.main.presentation.state.LocationPermission
 import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiState
 import com.example.passedpath.feature.main.presentation.viewmodel.MainViewModel
 import com.example.passedpath.feature.main.presentation.viewmodel.MainViewModelFactory
+import com.example.passedpath.util.AppSettingsNavigator
 
 @Composable
 fun MainRoute(
@@ -23,7 +24,8 @@ fun MainRoute(
         factory = MainViewModelFactory(LocalContext.current.appContainer)
     )
 ) {
-    val appContainer = LocalContext.current.appContainer
+    val context = LocalContext.current
+    val appContainer = context.appContainer
     val lifecycleOwner = LocalLifecycleOwner.current
     val locationTracker = appContainer.currentLocationTracker
     val startLocationTracking = appContainer.startLocationTrackingUseCase
@@ -85,7 +87,12 @@ fun MainRoute(
         uiState = uiState,
         onInitialCameraCentered = viewModel::markInitialCameraCentered,
         onDateSelected = viewModel::selectDate,
-        onRouteAction = viewModel::handleRouteAction
+        onRouteAction = viewModel::handleRouteAction,
+        onTrackingPermissionDialogConfirm = {
+            viewModel.dismissTrackingPermissionDialog()
+            AppSettingsNavigator.openAppSettings(context)
+        },
+        onTrackingPermissionDialogDismiss = viewModel::dismissTrackingPermissionDialog
     )
 }
 

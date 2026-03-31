@@ -96,6 +96,12 @@ class MainViewModel(
         }
     }
 
+    fun dismissTrackingPermissionDialog() {
+        _uiState.update { currentState ->
+            currentState.copy(showTrackingPermissionDialog = false)
+        }
+    }
+
     private fun loadDayRoute(dateKey: String) {
         routeLoadJob?.cancel()
         routeLoadJob = viewModelScope.launch {
@@ -125,7 +131,12 @@ class MainViewModel(
     }
 
     private fun toggleTracking() {
-        if (_uiState.value.permissionState != LocationPermissionUiState.ALWAYS) return
+        if (_uiState.value.permissionState != LocationPermissionUiState.ALWAYS) {
+            _uiState.update { currentState ->
+                currentState.copy(showTrackingPermissionDialog = true)
+            }
+            return
+        }
 
         when (val routeMode = _uiState.value.routeModeUiState) {
             is MainRouteModeUiState.Today -> {

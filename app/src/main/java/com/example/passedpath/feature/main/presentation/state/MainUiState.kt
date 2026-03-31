@@ -12,6 +12,7 @@ data class MainUiState(
     val permissionState: LocationPermissionUiState = LocationPermissionUiState.DENIED,
     val currentLocation: MainCoordinateUiState? = null,
     val hasCenteredOnCurrentLocation: Boolean = false,
+    val showTrackingPermissionDialog: Boolean = false,
     val selectedDateKey: String = "",
     val routeModeUiState: MainRouteModeUiState = MainRouteModeUiState.Today(
         route = SelectedDayRouteUiState(dateKey = "")

@@ -2,6 +2,7 @@ package com.example.passedpath.feature.route.presentation.screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
@@ -21,8 +22,8 @@ import com.example.passedpath.R
 import com.example.passedpath.feature.route.presentation.state.MainRouteModeUiState
 import com.example.passedpath.feature.route.presentation.state.RouteUiAction
 import com.example.passedpath.ui.component.RoundedWhiteButton
-import com.example.passedpath.ui.theme.Gray400
-import com.example.passedpath.ui.theme.Gray600
+import com.example.passedpath.ui.theme.Gray500
+import com.example.passedpath.ui.theme.Gray700
 import com.example.passedpath.ui.theme.Primary
 import java.util.Locale
 
@@ -68,12 +69,15 @@ internal fun TrackingToggleButton(
 ) {
     RoundedWhiteButton(
         onClick = onClick,
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
+        contentSpacing = 8.dp,
+        shadowElevation = 4.dp
     ) {
         Box(
             modifier = Modifier
                 .size(8.dp)
                 .clip(CircleShape)
-                .background(if (isTracking) Primary else Gray400)
+                .background(if (isTracking) Primary else Gray500)
         )
 
         Text(
@@ -84,14 +88,14 @@ internal fun TrackingToggleButton(
                     R.string.route_tracking_start
                 }
             ),
-            color = if (isTracking) Gray600 else Gray400
+            color = Gray700
         )
 
         Icon(
             painter = painterResource(id = R.drawable.ic_swap),
             contentDescription = null,
-            tint = Gray400
-
+            tint = Gray500,
+            modifier = Modifier.size(16.dp)
         )
     }
 }
