@@ -28,6 +28,7 @@ fun MainRoute(
     val appContainer = context.appContainer
     val lifecycleOwner = LocalLifecycleOwner.current
     val locationTracker = appContainer.currentLocationTracker
+    val trackingServiceStateReader = appContainer.locationTrackingServiceStateReader
     val startLocationTracking = appContainer.startLocationTrackingUseCase
     val stopLocationTracking = appContainer.stopLocationTrackingUseCase
     val uiState by viewModel.uiState.collectAsState()
@@ -59,9 +60,13 @@ fun MainRoute(
 
     LaunchedEffect(uiState.permissionState) {
         if (uiState.permissionState == LocationPermissionUiState.ALWAYS) {
-            startLocationTracking()
+            if (trackingServiceStateReader.isTrackingEnabledByUser()) {
+                startLocationTracking(persistUserPreference = false)
+            } else {
+                stopLocationTracking(persistUserPreference = false)
+            }
         } else {
-            stopLocationTracking()
+            stopLocationTracking(persistUserPreference = false)
         }
     }
 

@@ -397,7 +397,9 @@ class MainViewModelTest {
 
     private class FakeLocationTrackingServiceStateReader(
         override val isTracking: StateFlow<Boolean>
-    ) : LocationTrackingServiceStateReader
+    ) : LocationTrackingServiceStateReader {
+        override fun isTrackingEnabledByUser(): Boolean = true
+    }
 
     private class FakeDayRouteRepository(
         private val resultByDate: MutableMap<String, RemoteDayRouteResult> = mutableMapOf(),

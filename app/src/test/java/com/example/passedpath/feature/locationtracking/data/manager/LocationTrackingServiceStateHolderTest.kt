@@ -18,4 +18,17 @@ class LocationTrackingServiceStateHolderTest {
         holder.update(isTracking = false)
         assertFalse(holder.isTracking.value)
     }
+
+    @Test
+    fun `holder remembers whether tracking is enabled by user`() {
+        val holder = InMemoryLocationTrackingServiceStateHolder()
+
+        assertTrue(holder.isTrackingEnabledByUser())
+
+        holder.setTrackingEnabledByUser(false)
+        assertFalse(holder.isTrackingEnabledByUser())
+
+        holder.setTrackingEnabledByUser(true)
+        assertTrue(holder.isTrackingEnabledByUser())
+    }
 }

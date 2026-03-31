@@ -8,9 +8,9 @@ import com.example.passedpath.feature.auth.data.manager.AuthTokenManager
 import com.example.passedpath.feature.auth.data.remote.api.AuthApi
 import com.example.passedpath.feature.auth.data.repository.AuthRepository
 import com.example.passedpath.feature.locationtracking.data.local.PassedPathDatabase
-import com.example.passedpath.feature.locationtracking.data.manager.InMemoryLocationTrackingServiceStateHolder
 import com.example.passedpath.feature.locationtracking.data.manager.LocationTrackingServiceStateReader
 import com.example.passedpath.feature.locationtracking.data.manager.LocationTrackingServiceStateWriter
+import com.example.passedpath.feature.locationtracking.data.manager.PersistentLocationTrackingServiceStateHolder
 import com.example.passedpath.feature.locationtracking.data.manager.TrackingLocationProvider
 import com.example.passedpath.feature.locationtracking.data.remote.api.DayRouteApi
 import com.example.passedpath.feature.locationtracking.data.repository.RoomDayRouteRepository
@@ -51,7 +51,7 @@ class AppContainer(
     }
 
     private val locationTrackingServiceStateHolder by lazy {
-        InMemoryLocationTrackingServiceStateHolder()
+        PersistentLocationTrackingServiceStateHolder(appContext)
     }
 
     val locationTrackingServiceStateReader: LocationTrackingServiceStateReader by lazy {
@@ -115,11 +115,17 @@ class AppContainer(
     }
 
     val startLocationTrackingUseCase: StartLocationTrackingUseCase by lazy {
-        StartLocationTrackingUseCase(appContext)
+        StartLocationTrackingUseCase(
+            context = appContext,
+            trackingServiceStateWriter = locationTrackingServiceStateWriter
+        )
     }
 
     val stopLocationTrackingUseCase: StopLocationTrackingUseCase by lazy {
-        StopLocationTrackingUseCase(appContext)
+        StopLocationTrackingUseCase(
+            context = appContext,
+            trackingServiceStateWriter = locationTrackingServiceStateWriter
+        )
     }
 
     private val authTokenManager by lazy {
