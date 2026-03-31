@@ -45,8 +45,8 @@ import com.example.passedpath.feature.main.presentation.state.LocationPermission
 import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiState
 import com.example.passedpath.feature.main.presentation.state.MainUiState
 import com.example.passedpath.feature.route.presentation.screen.MainRouteSection
+import com.example.passedpath.feature.route.presentation.screen.RouteMapContent
 import com.example.passedpath.feature.route.presentation.screen.RouteStatusOverlay
-import com.example.passedpath.feature.route.presentation.state.PlaceMarkerUiState
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -54,7 +54,6 @@ import com.google.android.gms.maps.model.LatLngBounds
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.MarkerComposable
-import com.google.maps.android.compose.Polyline
 import com.google.maps.android.compose.rememberCameraPositionState
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -80,7 +79,6 @@ fun MainScreen(
         uiState.currentLocation
     }
     val routePoints = uiState.selectedRoute.polylinePoints.map(MainCoordinateUiState::toLatLng)
-    val routePlaces = uiState.selectedRoute.places
     val hasRouteLocationData = uiState.selectedRoute.hasLocationData
     val initialCameraTarget = routePoints.firstOrNull() ?: currentLocation?.toLatLng() ?: fallbackPosition
     val cameraPositionState = rememberCameraPositionState {
@@ -118,27 +116,10 @@ fun MainScreen(
             properties = MapProperties(isMyLocationEnabled = false),
             onMapLoaded = { isMapLoaded = true }
         ) {
-            if (routePoints.size >= 2) {
-                Polyline(
-                    points = routePoints,
-                    color = routeAccentColor,
-                    width = 14f
-                )
-            }
-
-            if (uiState.selectedRoute.hasLocationData) {
-                routePlaces.forEach { place ->
-                    MarkerComposable(
-                        state = com.google.maps.android.compose.MarkerState(
-                            position = LatLng(place.latitude, place.longitude)
-                        ),
-                        title = place.placeName.ifBlank { "Place ${place.orderIndex}" },
-                        anchor = androidx.compose.ui.geometry.Offset(0.5f, 0.5f)
-                    ) {
-                        PlaceOrderMarker(place = place, routeAccentColor = routeAccentColor)
-                    }
-                }
-            }
+            RouteMapContent(
+                routeModeUiState = uiState.routeModeUiState,
+                routeAccentColor = routeAccentColor
+            )
 
             currentLocation?.let {
                 MarkerComposable(
@@ -278,26 +259,6 @@ private fun MainHeader(
     }
     Spacer(modifier = Modifier.height(12.dp))
     Text(text = "Selected date: $selectedDateKey")
-}
-
-@Composable
-private fun PlaceOrderMarker(
-    place: PlaceMarkerUiState,
-    routeAccentColor: Color
-) {
-    Box(
-        modifier = Modifier
-            .size(34.dp)
-            .clip(CircleShape)
-            .background(Color.White),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = place.orderIndex.toString(),
-            color = routeAccentColor,
-            fontWeight = FontWeight.Bold
-        )
-    }
 }
 
 private fun showDatePicker(

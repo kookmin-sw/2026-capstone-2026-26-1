@@ -21,6 +21,8 @@ Project: PassedPath Android app
   - `feature/route/presentation/state/RouteUiState.kt`
   - `feature/route/presentation/mapper/RouteUiMapper.kt`
   - `feature/route/presentation/screen/MainRouteSection.kt`
+  - `feature/route/presentation/screen/TodayRouteSection.kt`
+  - `feature/route/presentation/screen/PastRouteSection.kt`
 
 ## Issue 8 agreed scope
 - Issue 8 was a route-focused separation task.
@@ -55,11 +57,17 @@ Project: PassedPath Android app
   - not split out yet as an independent feature
   - keep it near the closest existing owner until the policy and volume justify extraction
 
-## Next refactor tasks
-- Split `feature/route` screen content more explicitly into `TodayRouteSection` and `PastRouteSection` files.
-- Move route overlay / marker rendering ownership further toward `feature/route` when the map composition boundary is clearer.
-- Introduce route-specific action/event structure for today refresh, tracking toggle, retry, and playback entry.
-- Keep Main focused on orchestration while place/daynote remain minimal until their follow-up issues start.
+## Remaining refactor tasks
+- Decide how far route overlay, polyline rendering, and route marker rendering should move into `feature/route`.
+- Introduce route-specific action/event structure.
+  - today: refresh, tracking toggle
+  - past: retry, playback entry
+- Reduce route orchestration burden inside `MainViewModel` further if a route-focused coordinator or use-case layer becomes justified.
+- Define the extraction boundary for `feature/place`.
+- Define the extraction boundary for `feature/daynote`.
+- Revisit future-date mode only after product policy is finalized.
+- Replace temporary route placeholder copy with policy-accurate UI slots.
+- Expand route tests beyond current ViewModel-centered coverage.
 
 ## What is not part of the current route refactor
 - Full favorite-feature extraction
@@ -75,6 +83,8 @@ Project: PassedPath Android app
 - `app/src/main/java/com/example/passedpath/feature/route/presentation/state/RouteUiState.kt`
 - `app/src/main/java/com/example/passedpath/feature/route/presentation/mapper/RouteUiMapper.kt`
 - `app/src/main/java/com/example/passedpath/feature/route/presentation/screen/MainRouteSection.kt`
+- `app/src/main/java/com/example/passedpath/feature/route/presentation/screen/TodayRouteSection.kt`
+- `app/src/main/java/com/example/passedpath/feature/route/presentation/screen/PastRouteSection.kt`
 - `app/src/test/java/com/example/passedpath/feature/main/presentation/viewmodel/MainViewModelTest.kt`
 
 ## Guardrails
