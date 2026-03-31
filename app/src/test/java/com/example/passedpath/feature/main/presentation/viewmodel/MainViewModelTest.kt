@@ -1,4 +1,4 @@
-package com.example.passedpath.feature.main.presentation.viewmodel
+﻿package com.example.passedpath.feature.main.presentation.viewmodel
 
 import com.example.passedpath.feature.locationtracking.domain.model.DailyPath
 import com.example.passedpath.feature.locationtracking.domain.model.DayRouteDetail
@@ -8,6 +8,7 @@ import com.example.passedpath.feature.locationtracking.domain.model.TrackedLocat
 import com.example.passedpath.feature.locationtracking.domain.repository.DayRouteRepository
 import com.example.passedpath.feature.locationtracking.domain.repository.RemoteDayRouteResult
 import com.example.passedpath.feature.permission.data.manager.LocationPermissionStatusReader
+import com.example.passedpath.feature.route.presentation.coordinator.RouteStateCoordinator
 import com.example.passedpath.feature.route.presentation.state.RouteUiAction
 import com.example.passedpath.testutil.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -51,11 +52,11 @@ class MainViewModelTest {
             )
         )
 
-        val viewModel = MainViewModel(
-            locationPermissionStatusReader = FakeLocationPermissionStatusReader(backgroundGranted = true),
-            dayRouteRepository = repository,
-            initialDateKeyProvider = { "2026-03-29" },
-            todayDateKeyProvider = { "2026-03-31" }
+        val viewModel = createViewModel(
+            repository = repository,
+            initialDateKey = "2026-03-29",
+            todayDateKey = "2026-03-31",
+            backgroundGranted = true
         )
 
         advanceUntilIdle()
@@ -90,11 +91,11 @@ class MainViewModelTest {
             )
         )
 
-        val viewModel = MainViewModel(
-            locationPermissionStatusReader = FakeLocationPermissionStatusReader(backgroundGranted = true),
-            dayRouteRepository = repository,
-            initialDateKeyProvider = { "2026-03-31" },
-            todayDateKeyProvider = { "2026-03-31" }
+        val viewModel = createViewModel(
+            repository = repository,
+            initialDateKey = "2026-03-31",
+            todayDateKey = "2026-03-31",
+            backgroundGranted = true
         )
 
         advanceUntilIdle()
@@ -117,11 +118,10 @@ class MainViewModelTest {
             localRouteByDate = mutableMapOf("2026-03-31" to localFlow)
         )
 
-        val viewModel = MainViewModel(
-            locationPermissionStatusReader = FakeLocationPermissionStatusReader(),
-            dayRouteRepository = repository,
-            initialDateKeyProvider = { "2026-03-31" },
-            todayDateKeyProvider = { "2026-03-31" }
+        val viewModel = createViewModel(
+            repository = repository,
+            initialDateKey = "2026-03-31",
+            todayDateKey = "2026-03-31"
         )
         advanceUntilIdle()
 
@@ -155,11 +155,10 @@ class MainViewModelTest {
             )
         )
 
-        val viewModel = MainViewModel(
-            locationPermissionStatusReader = FakeLocationPermissionStatusReader(),
-            dayRouteRepository = repository,
-            initialDateKeyProvider = { "2026-03-29" },
-            todayDateKeyProvider = { "2026-03-31" }
+        val viewModel = createViewModel(
+            repository = repository,
+            initialDateKey = "2026-03-29",
+            todayDateKey = "2026-03-31"
         )
         advanceUntilIdle()
 
@@ -183,11 +182,10 @@ class MainViewModelTest {
             )
         )
 
-        val viewModel = MainViewModel(
-            locationPermissionStatusReader = FakeLocationPermissionStatusReader(),
-            dayRouteRepository = repository,
-            initialDateKeyProvider = { "2026-03-29" },
-            todayDateKeyProvider = { "2026-04-01" }
+        val viewModel = createViewModel(
+            repository = repository,
+            initialDateKey = "2026-03-29",
+            todayDateKey = "2026-04-01"
         )
         advanceUntilIdle()
 
@@ -209,11 +207,10 @@ class MainViewModelTest {
             )
         )
 
-        val viewModel = MainViewModel(
-            locationPermissionStatusReader = FakeLocationPermissionStatusReader(),
-            dayRouteRepository = repository,
-            initialDateKeyProvider = { "2026-03-30" },
-            todayDateKeyProvider = { "2026-03-31" }
+        val viewModel = createViewModel(
+            repository = repository,
+            initialDateKey = "2026-03-30",
+            todayDateKey = "2026-03-31"
         )
         advanceUntilIdle()
 
@@ -240,11 +237,10 @@ class MainViewModelTest {
             localRouteByDate = mutableMapOf("2026-03-31" to localFlow)
         )
 
-        val viewModel = MainViewModel(
-            locationPermissionStatusReader = FakeLocationPermissionStatusReader(),
-            dayRouteRepository = repository,
-            initialDateKeyProvider = { "2026-03-30" },
-            todayDateKeyProvider = { "2026-03-31" }
+        val viewModel = createViewModel(
+            repository = repository,
+            initialDateKey = "2026-03-30",
+            todayDateKey = "2026-03-31"
         )
         advanceUntilIdle()
         assertEquals("선택한 날짜의 경로를 불러오지 못했습니다.", viewModel.uiState.value.routeErrorMessage)
@@ -258,6 +254,22 @@ class MainViewModelTest {
         assertFalse(state.isRouteEmpty)
         assertEquals(1, state.selectedRoute.polylinePoints.size)
         assertEquals(listOf("2026-03-31"), repository.observedLocalDates)
+    }
+
+    private fun createViewModel(
+        repository: FakeDayRouteRepository,
+        initialDateKey: String,
+        todayDateKey: String,
+        backgroundGranted: Boolean = false
+    ): MainViewModel {
+        return MainViewModel(
+            locationPermissionStatusReader = FakeLocationPermissionStatusReader(backgroundGranted = backgroundGranted),
+            initialDateKeyProvider = { initialDateKey },
+            routeStateCoordinator = RouteStateCoordinator(
+                dayRouteRepository = repository,
+                todayDateKeyProvider = { todayDateKey }
+            )
+        )
     }
 
     private class FakeLocationPermissionStatusReader(

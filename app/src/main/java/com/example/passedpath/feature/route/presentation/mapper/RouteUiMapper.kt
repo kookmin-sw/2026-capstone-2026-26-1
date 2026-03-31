@@ -1,4 +1,4 @@
-package com.example.passedpath.feature.route.presentation.mapper
+﻿package com.example.passedpath.feature.route.presentation.mapper
 
 import com.example.passedpath.feature.locationtracking.domain.model.DailyPath
 import com.example.passedpath.feature.locationtracking.domain.model.DayRouteDetail
