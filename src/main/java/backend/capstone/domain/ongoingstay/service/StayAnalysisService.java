@@ -5,7 +5,6 @@ import backend.capstone.domain.dayroute.entity.DayRoute;
 import backend.capstone.domain.gpspoint.entity.GpsPoint;
 import backend.capstone.domain.gpspoint.service.GpsPointService;
 import backend.capstone.domain.ongoingstay.entity.OngoingStay;
-import backend.capstone.domain.ongoingstay.entity.OngoingStayStatus;
 import backend.capstone.domain.ongoingstay.repository.OngoingStayRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -29,15 +28,14 @@ public class StayAnalysisService {
         dayRoute.markInProgressAnalysis();
 
         //이 dayRoute에 현재 진행 중인 stay가 있는지 조회
-        OngoingStay stay = ongoingStayRepository.findByDayRouteAndStatus(dayRoute,
-                OngoingStayStatus.IN_PROGRESS)
+        OngoingStay stay = ongoingStayRepository.findByDayRoute(dayRoute)
             .orElse(null);
 
         Long lastAnalyzedPointId = dayRoute.getLastAnalyzedPointId();
         List<GpsPoint> newPoints = gpsPointService.getNewPoints(dayRoute,
             lastAnalyzedPointId == null ? 0L : lastAnalyzedPointId);
 
-        if (newPoints.isEmpty()) { //새로 분석한 gpsPoint가 없으면 바로 종료
+        if (newPoints.isEmpty()) { //새로 분석할 gpsPoint가 없으면 바로 종료
             dayRoute.markIdleAnalysis();
             return;
         }
