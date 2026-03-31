@@ -15,13 +15,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -40,13 +39,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.passedpath.R
 import com.example.passedpath.feature.main.presentation.state.LocationPermissionUiState
 import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiState
 import com.example.passedpath.feature.main.presentation.state.MainUiState
-import com.example.passedpath.feature.main.presentation.state.PlaceMarkerUiState
+import com.example.passedpath.feature.route.presentation.screen.MainRouteSection
+import com.example.passedpath.feature.route.presentation.screen.RouteMapContent
+import com.example.passedpath.feature.route.presentation.screen.RouteStatusOverlay
+import com.example.passedpath.feature.route.presentation.state.RouteUiAction
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -54,15 +55,12 @@ import com.google.android.gms.maps.model.LatLngBounds
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.MarkerComposable
-import com.google.maps.android.compose.Polyline
 import com.google.maps.android.compose.rememberCameraPositionState
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 private val CurrentLocationGlowBase = Color(0xFF006B5F)
-private val RouteLineColor = Color(0xFF0A7A6C)
 private val DateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 private const val RouteBoundsPaddingPx = 180
 
@@ -71,9 +69,10 @@ fun MainScreen(
     uiState: MainUiState,
     onInitialCameraCentered: () -> Unit,
     onDateSelected: (String) -> Unit,
-    onRetryRoute: () -> Unit
+    onRouteAction: (RouteUiAction) -> Unit
 ) {
     val context = LocalContext.current
+    val routeAccentColor = MaterialTheme.colorScheme.primary
     val fallbackPosition = LatLng(37.5662952, 126.9779451)
     val currentLocation = if (uiState.permissionState == LocationPermissionUiState.DENIED) {
         null
@@ -81,7 +80,6 @@ fun MainScreen(
         uiState.currentLocation
     }
     val routePoints = uiState.selectedRoute.polylinePoints.map(MainCoordinateUiState::toLatLng)
-    val routePlaces = uiState.selectedRoute.places
     val hasRouteLocationData = uiState.selectedRoute.hasLocationData
     val initialCameraTarget = routePoints.firstOrNull() ?: currentLocation?.toLatLng() ?: fallbackPosition
     val cameraPositionState = rememberCameraPositionState {
@@ -119,27 +117,10 @@ fun MainScreen(
             properties = MapProperties(isMyLocationEnabled = false),
             onMapLoaded = { isMapLoaded = true }
         ) {
-            if (routePoints.size >= 2) {
-                Polyline(
-                    points = routePoints,
-                    color = RouteLineColor,
-                    width = 14f
-                )
-            }
-
-            if (uiState.selectedRoute.hasLocationData) {
-                routePlaces.forEach { place ->
-                    MarkerComposable(
-                        state = com.google.maps.android.compose.MarkerState(
-                            position = LatLng(place.latitude, place.longitude)
-                        ),
-                        title = place.placeName.ifBlank { "Place ${place.orderIndex}" },
-                        anchor = androidx.compose.ui.geometry.Offset(0.5f, 0.5f)
-                    ) {
-                        PlaceOrderMarker(place = place)
-                    }
-                }
-            }
+            RouteMapContent(
+                routeModeUiState = uiState.routeModeUiState,
+                routeAccentColor = routeAccentColor
+            )
 
             currentLocation?.let {
                 MarkerComposable(
@@ -177,10 +158,9 @@ fun MainScreen(
         }
 
         RouteStatusOverlay(
-            isLoading = uiState.isRouteLoading,
+            routeModeUiState = uiState.routeModeUiState,
             hasRouteLocationData = hasRouteLocationData,
-            errorMessage = uiState.routeErrorMessage,
-            onRetryRoute = onRetryRoute
+            onRouteAction = onRouteAction
         )
 
         Column(
@@ -198,34 +178,22 @@ fun MainScreen(
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 14.dp)
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
-                            Text(text = stringResource(R.string.main_title), fontWeight = FontWeight.SemiBold)
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(text = permissionText(uiState.permissionState))
+                    MainHeader(
+                        permissionState = uiState.permissionState,
+                        selectedDateKey = uiState.selectedDateKey,
+                        onPickDate = {
+                            showDatePicker(
+                                context = context,
+                                initialDateKey = uiState.selectedDateKey,
+                                onDateSelected = onDateSelected
+                            )
                         }
-                        Button(
-                            onClick = {
-                                showDatePicker(
-                                    context = context,
-                                    initialDateKey = uiState.selectedDateKey,
-                                    onDateSelected = onDateSelected
-                                )
-                            }
-                        ) {
-                            Text(text = "Pick date")
-                        }
-                    }
+                    )
                     Spacer(modifier = Modifier.height(12.dp))
-                    Text(text = "Selected date: ${uiState.selectedRoute.dateKey}")
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(text = "Distance: ${uiState.selectedRoute.totalDistanceKm.formatDistanceKm()}")
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(text = "Path points: ${uiState.selectedRoute.pathPointCount}")
+                    MainRouteSection(
+                        routeMode = uiState.routeModeUiState,
+                        onRouteAction = onRouteAction
+                    )
                 }
             }
 
@@ -248,7 +216,7 @@ fun MainScreen(
                     ) {
                         Icon(
                             painter = painterResource(id = R.drawable.my_location_24px),
-                            contentDescription = "Move to current location"
+                            contentDescription = stringResource(R.string.main_move_to_current_location)
                         )
                     }
                     Spacer(modifier = Modifier.height(12.dp))
@@ -262,9 +230,9 @@ fun MainScreen(
                         Column(
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)
                         ) {
-                            Text(text = "Location permission is off")
+                            Text(text = stringResource(R.string.main_permission_off_title))
                             Spacer(modifier = Modifier.height(4.dp))
-                            Text(text = "Current location stays hidden until fine location is granted.")
+                            Text(text = stringResource(R.string.main_permission_off_message))
                         }
                     }
                 }
@@ -274,88 +242,27 @@ fun MainScreen(
 }
 
 @Composable
-private fun RouteStatusOverlay(
-    isLoading: Boolean,
-    hasRouteLocationData: Boolean,
-    errorMessage: String?,
-    onRetryRoute: () -> Unit
+private fun MainHeader(
+    permissionState: LocationPermissionUiState,
+    selectedDateKey: String,
+    onPickDate: () -> Unit
 ) {
-    val shouldShowNoLocationData = !isLoading && errorMessage == null && !hasRouteLocationData
-    if (!isLoading && errorMessage == null && !shouldShowNoLocationData) return
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.18f))
-            .padding(horizontal = 28.dp),
-        contentAlignment = Alignment.Center
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Card(
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(defaultElevation = 10.dp)
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                when {
-                    isLoading -> {
-                        CircularProgressIndicator(color = RouteLineColor)
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(text = "Loading route", fontWeight = FontWeight.SemiBold)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "Fetching the selected day's path and places.",
-                            color = Color(0xFF4B5563),
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                    errorMessage != null -> {
-                        Text(text = "Route Load Failed", fontWeight = FontWeight.SemiBold)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = errorMessage,
-                            color = Color(0xFF9D1C1C),
-                            textAlign = TextAlign.Center
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Button(onClick = onRetryRoute) {
-                            Text(text = "Retry")
-                        }
-                    }
-                    else -> {
-                        Text(text = "No Location Data", fontWeight = FontWeight.SemiBold)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "There is no route path data to show on the map for this day.",
-                            color = Color(0xFF4B5563),
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                }
-            }
+        Column {
+            Text(text = stringResource(R.string.main_title), fontWeight = FontWeight.SemiBold)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(text = permissionText(permissionState))
+        }
+        Button(onClick = onPickDate) {
+            Text(text = stringResource(R.string.main_pick_date))
         }
     }
-}
-
-@Composable
-private fun PlaceOrderMarker(place: PlaceMarkerUiState) {
-    Box(
-        modifier = Modifier
-            .size(34.dp)
-            .clip(CircleShape)
-            .background(Color.White),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = place.orderIndex.toString(),
-            color = RouteLineColor,
-            fontWeight = FontWeight.Bold
-        )
-    }
+    Spacer(modifier = Modifier.height(12.dp))
+    Text(text = stringResource(R.string.main_selected_date, selectedDateKey))
 }
 
 private fun showDatePicker(
@@ -379,11 +286,12 @@ private fun showDatePicker(
     ).show()
 }
 
+@Composable
 private fun permissionText(permissionState: LocationPermissionUiState): String {
     return when (permissionState) {
-        LocationPermissionUiState.ALWAYS -> "Background location is enabled"
-        LocationPermissionUiState.FOREGROUND_ONLY -> "Foreground location is enabled"
-        LocationPermissionUiState.DENIED -> "Location permission is not granted"
+        LocationPermissionUiState.ALWAYS -> stringResource(R.string.main_permission_enabled_background)
+        LocationPermissionUiState.FOREGROUND_ONLY -> stringResource(R.string.main_permission_enabled_foreground)
+        LocationPermissionUiState.DENIED -> stringResource(R.string.main_permission_denied)
     }
 }
 
@@ -399,8 +307,4 @@ private fun buildRouteCameraUpdate(routePoints: List<LatLng>) = when {
         routePoints.forEach(boundsBuilder::include)
         CameraUpdateFactory.newLatLngBounds(boundsBuilder.build(), RouteBoundsPaddingPx)
     }
-}
-
-private fun Double.formatDistanceKm(): String {
-    return String.format(Locale.US, "%.2f km", this)
 }

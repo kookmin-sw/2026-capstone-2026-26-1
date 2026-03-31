@@ -1,22 +1,15 @@
-package com.example.passedpath.feature.main.presentation.viewmodel
+﻿package com.example.passedpath.feature.main.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.passedpath.app.AppContainer
-import com.example.passedpath.feature.locationtracking.domain.model.DailyPath
-import com.example.passedpath.feature.locationtracking.domain.model.DayRouteDetail
-import com.example.passedpath.feature.locationtracking.domain.model.DayRoutePlace
-import com.example.passedpath.feature.locationtracking.domain.model.RoutePoint
-import com.example.passedpath.feature.locationtracking.domain.model.TrackedLocation
-import com.example.passedpath.feature.locationtracking.domain.repository.DayRouteRepository
-import com.example.passedpath.feature.locationtracking.domain.repository.RemoteDayRouteResult
 import com.example.passedpath.feature.main.presentation.state.LocationPermissionUiState
 import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiState
 import com.example.passedpath.feature.main.presentation.state.MainUiState
-import com.example.passedpath.feature.main.presentation.state.PlaceMarkerUiState
-import com.example.passedpath.feature.main.presentation.state.SelectedDayRouteUiState
 import com.example.passedpath.feature.permission.data.manager.LocationPermissionStatusReader
+import com.example.passedpath.feature.route.presentation.coordinator.RouteStateCoordinator
+import com.example.passedpath.feature.route.presentation.state.RouteUiAction
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -29,9 +22,8 @@ import java.util.Locale
 
 class MainViewModel(
     private val locationPermissionStatusReader: LocationPermissionStatusReader,
-    private val dayRouteRepository: DayRouteRepository,
     initialDateKeyProvider: () -> String = ::todayDateKey,
-    private val todayDateKeyProvider: () -> String = ::todayDateKey
+    private val routeStateCoordinator: RouteStateCoordinator
 ) : ViewModel() {
 
     private val initialDateKey = initialDateKeyProvider()
@@ -40,7 +32,7 @@ class MainViewModel(
     private val _uiState = MutableStateFlow(
         MainUiState(
             selectedDateKey = initialDateKey,
-            selectedRoute = SelectedDayRouteUiState(dateKey = initialDateKey)
+            routeModeUiState = routeStateCoordinator.createInitialState(initialDateKey)
         )
     )
     val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
@@ -86,152 +78,29 @@ class MainViewModel(
         loadDayRoute(dateKey)
     }
 
-    fun retrySelectedDate() {
-        loadDayRoute(_uiState.value.selectedDateKey)
+    fun handleRouteAction(action: RouteUiAction) {
+        when (action) {
+            RouteUiAction.RefreshTodayRoute -> loadDayRoute(_uiState.value.selectedDateKey)
+            RouteUiAction.RetryPastRoute -> loadDayRoute(_uiState.value.selectedDateKey)
+            RouteUiAction.ToggleTracking -> Unit
+            RouteUiAction.EnterPastPlayback -> Unit
+        }
     }
 
     private fun loadDayRoute(dateKey: String) {
         routeLoadJob?.cancel()
         routeLoadJob = viewModelScope.launch {
-            setRouteLoadingState(dateKey)
-
-            if (isToday(dateKey)) {
-                observeTodayRoute(dateKey)
-            } else {
-                loadPastRoute(dateKey)
-            }
-        }
-    }
-
-    private suspend fun observeTodayRoute(dateKey: String) {
-        dayRouteRepository.observeLocalDayRoute(dateKey).collect { dailyPath ->
-            _uiState.update { currentState ->
-                if (dailyPath == null) {
-                    currentState.copy(
-                        selectedDateKey = dateKey,
-                        selectedRoute = SelectedDayRouteUiState(dateKey = dateKey),
-                        isRouteLoading = false,
-                        isRouteEmpty = true,
-                        routeEmptyMessage = "No route data exists for this day.",
-                        routeErrorMessage = null
-                    )
-                } else {
-                    currentState.copy(
-                        selectedDateKey = dateKey,
-                        selectedRoute = dailyPath.toUiState(),
-                        isRouteLoading = false,
-                        isRouteEmpty = false,
-                        routeEmptyMessage = null,
-                        routeErrorMessage = null
-                    )
-                }
-            }
-        }
-    }
-
-    private suspend fun loadPastRoute(dateKey: String) {
-        when (val result = dayRouteRepository.fetchRemoteDayRoute(dateKey)) {
-            is RemoteDayRouteResult.Success -> {
-                val routeDetail = result.routeDetail
+            routeStateCoordinator.loadRoute(dateKey).collect { routeState ->
                 _uiState.update { currentState ->
                     currentState.copy(
-                        selectedDateKey = routeDetail.dateKey,
-                        selectedRoute = routeDetail.toUiState(),
-                        isRouteLoading = false,
-                        isRouteEmpty = false,
-                        routeEmptyMessage = null,
-                        routeErrorMessage = null
-                    )
-                }
-            }
-            RemoteDayRouteResult.Empty -> {
-                _uiState.update { currentState ->
-                    currentState.copy(
-                        selectedDateKey = dateKey,
-                        selectedRoute = SelectedDayRouteUiState(dateKey = dateKey),
-                        isRouteLoading = false,
-                        isRouteEmpty = true,
-                        routeEmptyMessage = "No route data exists for this day.",
-                        routeErrorMessage = null
-                    )
-                }
-            }
-            is RemoteDayRouteResult.Error -> {
-                _uiState.update { currentState ->
-                    currentState.copy(
-                        selectedDateKey = dateKey,
-                        selectedRoute = SelectedDayRouteUiState(dateKey = dateKey),
-                        isRouteLoading = false,
-                        isRouteEmpty = false,
-                        routeEmptyMessage = null,
-                        routeErrorMessage = "Failed to load the selected route."
+                        selectedDateKey = routeState.selectedDateKey,
+                        routeModeUiState = routeState.routeModeUiState,
+                        hasCenteredOnCurrentLocation = false
                     )
                 }
             }
         }
     }
-
-    private fun setRouteLoadingState(dateKey: String) {
-        _uiState.update { currentState ->
-            currentState.copy(
-                selectedDateKey = dateKey,
-                selectedRoute = SelectedDayRouteUiState(dateKey = dateKey),
-                isRouteLoading = true,
-                isRouteEmpty = false,
-                routeEmptyMessage = null,
-                routeErrorMessage = null,
-                hasCenteredOnCurrentLocation = false
-            )
-        }
-    }
-
-    private fun isToday(dateKey: String): Boolean {
-        return dateKey == todayDateKeyProvider()
-    }
-}
-
-private fun DailyPath.toUiState(): SelectedDayRouteUiState {
-    return SelectedDayRouteUiState(
-        dateKey = dateKey,
-        polylinePoints = points.map(TrackedLocation::toUiState),
-        totalDistanceKm = totalDistanceMeters / 1000.0,
-        pathPointCount = pathPointCount,
-        places = emptyList()
-    )
-}
-
-private fun DayRouteDetail.toUiState(): SelectedDayRouteUiState {
-    return SelectedDayRouteUiState(
-        dateKey = dateKey,
-        polylinePoints = polylinePoints.map(RoutePoint::toUiState),
-        totalDistanceKm = totalDistanceKm,
-        pathPointCount = pathPointCount,
-        places = places.map(DayRoutePlace::toUiState)
-    )
-}
-
-private fun TrackedLocation.toUiState(): MainCoordinateUiState {
-    return MainCoordinateUiState(
-        latitude = latitude,
-        longitude = longitude
-    )
-}
-
-private fun RoutePoint.toUiState(): MainCoordinateUiState {
-    return MainCoordinateUiState(
-        latitude = latitude,
-        longitude = longitude
-    )
-}
-
-private fun DayRoutePlace.toUiState(): PlaceMarkerUiState {
-    return PlaceMarkerUiState(
-        placeId = placeId,
-        placeName = placeName,
-        latitude = latitude,
-        longitude = longitude,
-        orderIndex = orderIndex
-    )
 }
 
 private fun todayDateKey(): String {
@@ -246,7 +115,10 @@ class MainViewModelFactory(
             @Suppress("UNCHECKED_CAST")
             return MainViewModel(
                 locationPermissionStatusReader = appContainer.locationPermissionStatusReader,
-                dayRouteRepository = appContainer.dayRouteRepository
+                routeStateCoordinator = RouteStateCoordinator(
+                    dayRouteRepository = appContainer.dayRouteRepository,
+                    todayDateKeyProvider = ::todayDateKey
+                )
             ) as T
         }
 

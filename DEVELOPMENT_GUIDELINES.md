@@ -14,6 +14,8 @@
 - Use `app/src/main/res/values/strings.xml`
 - In composables, use `stringResource(...)`
 - If a ViewModel needs an error message, use a string resource id or a typed effect instead of a raw string
+- Default all user-facing UI copy to Korean unless a requirement explicitly says otherwise
+- When adding new buttons, labels, empty states, errors, helper text, or content descriptions, write the source text in Korean first
 
 ## UI State Pattern
 
