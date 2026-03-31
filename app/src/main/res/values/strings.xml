@@ -71,6 +71,12 @@
     <string name="foreground_permission_banner_title">위치 권한이 거부되어 기록이 남지 않고 있어요</string>
     <string name="foreground_permission_banner_action">권한 설정하기</string>
     <string name="common_dismiss">닫기</string>
+    <string name="record_sheet_tab_place">방문한 장소</string>
+    <string name="record_sheet_tab_daynote">지나온 길 메모</string>
+    <string name="place_sheet_title">방문한 장소</string>
+    <string name="place_sheet_placeholder_body">이 날짜에 저장한 장소 목록이 이곳에 표시됩니다. 다음 단계에서 장소 추가와 편집을 연결합니다.</string>
+    <string name="daynote_sheet_title">지나온 길 메모</string>
+    <string name="daynote_sheet_placeholder_body">이 날짜에 남긴 메모와 요약이 이곳에 표시됩니다. 다음 단계에서 입력과 저장 정책을 붙입니다.</string>
 </resources>
 
 

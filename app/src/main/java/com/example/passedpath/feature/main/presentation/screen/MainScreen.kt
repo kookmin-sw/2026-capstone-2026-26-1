@@ -1,4 +1,4 @@
-﻿package com.example.passedpath.feature.main.presentation.screen
+package com.example.passedpath.feature.main.presentation.screen
 
 import android.app.DatePickerDialog
 import androidx.compose.foundation.Image
@@ -19,9 +19,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -30,6 +33,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,15 +42,17 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.passedpath.R
+import com.example.passedpath.feature.daynote.presentation.screen.DayNoteBottomSheetContent
 import com.example.passedpath.feature.main.presentation.state.LocationPermissionUiState
 import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiState
 import com.example.passedpath.feature.main.presentation.state.MainUiState
+import com.example.passedpath.feature.place.presentation.screen.PlaceBottomSheetContent
 import com.example.passedpath.feature.route.presentation.screen.MainRouteSection
 import com.example.passedpath.feature.route.presentation.screen.RouteMapContent
 import com.example.passedpath.feature.route.presentation.screen.RouteStatusOverlay
@@ -60,9 +66,9 @@ import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.MarkerComposable
 import com.google.maps.android.compose.rememberCameraPositionState
-import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import kotlinx.coroutines.launch
 
 private val CurrentLocationGlowBase = Color(0xFF006B5F)
 private val DateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
@@ -82,6 +88,7 @@ fun MainScreen(
     val context = LocalContext.current
     val routeAccentColor = MaterialTheme.colorScheme.primary
     val fallbackPosition = LatLng(37.5662952, 126.9779451)
+    var selectedBottomSheetTab by rememberSaveable { mutableStateOf(MainBottomSheetTab.PLACE) }
     val currentLocation = if (uiState.permissionState == LocationPermissionUiState.DENIED) {
         null
     } else {
@@ -210,7 +217,7 @@ fun MainScreen(
                 horizontalAlignment = Alignment.End
             ) {
                 if (currentLocation != null) {
-                    androidx.compose.material3.FloatingActionButton(
+                    FloatingActionButton(
                         onClick = {
                             coroutineScope.launch {
                                 cameraPositionState.animate(
@@ -256,6 +263,12 @@ fun MainScreen(
                 onDismiss = onForegroundPermissionBannerDismiss
             )
         }
+
+        MainBottomSheet(
+            modifier = Modifier.align(Alignment.BottomCenter),
+            selectedTab = selectedBottomSheetTab,
+            onTabSelected = { selectedBottomSheetTab = it }
+        )
     }
 
     if (uiState.showTrackingPermissionDialog) {
@@ -263,6 +276,59 @@ fun MainScreen(
             onConfirm = onTrackingPermissionDialogConfirm,
             onDismiss = onTrackingPermissionDialogDismiss
         )
+    }
+}
+
+@Composable
+private fun MainBottomSheet(
+    selectedTab: MainBottomSheetTab,
+    onTabSelected: (MainBottomSheetTab) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+        color = Color.White,
+        tonalElevation = 8.dp,
+        shadowElevation = 14.dp
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 10.dp, bottom = 22.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .size(width = 44.dp, height = 4.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.outlineVariant)
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            TabRow(selectedTabIndex = selectedTab.ordinal) {
+                MainBottomSheetTab.entries.forEach { tab ->
+                    Tab(
+                        selected = tab == selectedTab,
+                        onClick = { onTabSelected(tab) },
+                        text = {
+                            Text(
+                                text = stringResource(tab.titleResId),
+                                fontWeight = if (tab == selectedTab) FontWeight.SemiBold else FontWeight.Normal
+                            )
+                        }
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(18.dp))
+            when (selectedTab) {
+                MainBottomSheetTab.PLACE -> PlaceBottomSheetContent(
+                    modifier = Modifier.padding(horizontal = 20.dp)
+                )
+                MainBottomSheetTab.DAYNOTE -> DayNoteBottomSheetContent(
+                    modifier = Modifier.padding(horizontal = 20.dp)
+                )
+            }
+        }
     }
 }
 
@@ -376,6 +442,11 @@ private fun buildRouteCameraUpdate(routePoints: List<LatLng>) = when {
     }
 }
 
+private enum class MainBottomSheetTab(val titleResId: Int) {
+    PLACE(R.string.record_sheet_tab_place),
+    DAYNOTE(R.string.record_sheet_tab_daynote)
+}
+
 @Preview(showBackground = true, name = "Foreground Permission Banner")
 @Composable
 private fun ForegroundPermissionBannerPreview() {
@@ -393,4 +464,3 @@ private fun ForegroundPermissionBannerPreview() {
         }
     }
 }
-
