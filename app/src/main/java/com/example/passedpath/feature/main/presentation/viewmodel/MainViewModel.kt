@@ -1,4 +1,4 @@
-package com.example.passedpath.feature.main.presentation.viewmodel
+﻿package com.example.passedpath.feature.main.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -62,14 +62,14 @@ class MainViewModel(
             when (permissionState) {
                 LocationPermissionUiState.ALWAYS -> currentState.copy(
                     permissionState = permissionState,
-                    isForegroundPermissionBannerDismissed = false
+                    isPermissionBannerDismissed = false
                 )
 
                 LocationPermissionUiState.FOREGROUND_ONLY -> currentState.copy(
                     permissionState = permissionState,
-                    isForegroundPermissionBannerDismissed =
+                    isPermissionBannerDismissed =
                         if (currentState.permissionState == LocationPermissionUiState.FOREGROUND_ONLY) {
-                            currentState.isForegroundPermissionBannerDismissed
+                            currentState.isPermissionBannerDismissed
                         } else {
                             false
                         }
@@ -79,7 +79,12 @@ class MainViewModel(
                     permissionState = permissionState,
                     currentLocation = null,
                     hasCenteredOnCurrentLocation = false,
-                    isForegroundPermissionBannerDismissed = false
+                    isPermissionBannerDismissed =
+                        if (currentState.permissionState == LocationPermissionUiState.DENIED) {
+                            currentState.isPermissionBannerDismissed
+                        } else {
+                            false
+                        }
                 )
             }
         }
@@ -116,9 +121,9 @@ class MainViewModel(
         }
     }
 
-    fun dismissForegroundPermissionBanner() {
+    fun dismissPermissionBanner() {
         _uiState.update { currentState ->
-            currentState.copy(isForegroundPermissionBannerDismissed = true)
+            currentState.copy(isPermissionBannerDismissed = true)
         }
     }
 

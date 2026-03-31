@@ -60,7 +60,7 @@ private fun PermissionSettingDialogContent(
             color = Color.White,
             tonalElevation = 2.dp,
             shadowElevation = 8.dp,
-            modifier = Modifier.fillMaxWidth(0.8f)
+            modifier = Modifier.fillMaxWidth(0.95f)
         ) {
             Column(
                 modifier = Modifier.padding(horizontal = 24.dp, vertical = 28.dp),

@@ -1,4 +1,4 @@
-package com.example.passedpath.feature.main.presentation.viewmodel
+﻿package com.example.passedpath.feature.main.presentation.viewmodel
 
 import com.example.passedpath.feature.locationtracking.data.manager.LocationTrackingServiceStateReader
 import com.example.passedpath.feature.locationtracking.domain.model.DailyPath
@@ -185,7 +185,7 @@ class MainViewModelTest {
         advanceUntilIdle()
 
         assertEquals(LocationPermissionUiState.FOREGROUND_ONLY, viewModel.uiState.value.permissionState)
-        assertTrue(viewModel.uiState.value.showForegroundPermissionBanner)
+        assertTrue(viewModel.uiState.value.showPermissionBanner)
     }
 
     @Test
@@ -202,13 +202,31 @@ class MainViewModelTest {
         )
         advanceUntilIdle()
 
-        viewModel.dismissForegroundPermissionBanner()
-        assertFalse(viewModel.uiState.value.showForegroundPermissionBanner)
+        viewModel.dismissPermissionBanner()
+        assertFalse(viewModel.uiState.value.showPermissionBanner)
 
         viewModel.refreshPermissionState()
-        assertFalse(viewModel.uiState.value.showForegroundPermissionBanner)
+        assertFalse(viewModel.uiState.value.showPermissionBanner)
     }
 
+    @Test
+    fun `denied permission shows banner and clears current location`() = runTest {
+        val permissionReader = MutableLocationPermissionStatusReader(
+            foregroundGranted = false,
+            backgroundGranted = false
+        )
+        val viewModel = createViewModel(
+            repository = FakeDayRouteRepository(),
+            initialDateKey = "2026-03-31",
+            todayDateKey = "2026-03-31",
+            permissionReader = permissionReader
+        )
+        advanceUntilIdle()
+
+        assertEquals(LocationPermissionUiState.DENIED, viewModel.uiState.value.permissionState)
+        assertTrue(viewModel.uiState.value.showPermissionBanner)
+        assertNull(viewModel.uiState.value.currentLocation)
+    }
     @Test
     fun `foreground permission banner resets when permission becomes always`() = runTest {
         val permissionReader = MutableLocationPermissionStatusReader(
@@ -222,20 +240,20 @@ class MainViewModelTest {
             permissionReader = permissionReader
         )
         advanceUntilIdle()
-        viewModel.dismissForegroundPermissionBanner()
+        viewModel.dismissPermissionBanner()
 
         permissionReader.foregroundGranted = true
         permissionReader.backgroundGranted = true
         viewModel.refreshPermissionState()
 
         assertEquals(LocationPermissionUiState.ALWAYS, viewModel.uiState.value.permissionState)
-        assertFalse(viewModel.uiState.value.showForegroundPermissionBanner)
+        assertFalse(viewModel.uiState.value.showPermissionBanner)
 
         permissionReader.foregroundGranted = true
         permissionReader.backgroundGranted = false
         viewModel.refreshPermissionState()
 
-        assertTrue(viewModel.uiState.value.showForegroundPermissionBanner)
+        assertTrue(viewModel.uiState.value.showPermissionBanner)
     }
 
     @Test
@@ -505,3 +523,4 @@ class MainViewModelTest {
         }
     }
 }
+

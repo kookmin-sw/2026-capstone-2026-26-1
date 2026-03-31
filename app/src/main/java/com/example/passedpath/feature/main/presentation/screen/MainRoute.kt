@@ -1,4 +1,4 @@
-package com.example.passedpath.feature.main.presentation.screen
+﻿package com.example.passedpath.feature.main.presentation.screen
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -98,10 +98,9 @@ fun MainRoute(
             AppSettingsNavigator.openAppSettings(context)
         },
         onTrackingPermissionDialogDismiss = viewModel::dismissTrackingPermissionDialog,
-        onForegroundPermissionBannerConfirm = {
+        onPermissionBannerConfirm = {
             AppSettingsNavigator.openAppSettings(context)
-        },
-        onForegroundPermissionBannerDismiss = viewModel::dismissForegroundPermissionBanner
+        }
     )
 }
 

@@ -1,4 +1,4 @@
-package com.example.passedpath.feature.main.presentation.screen
+﻿package com.example.passedpath.feature.main.presentation.screen
 
 import android.app.DatePickerDialog
 import androidx.compose.foundation.Image
@@ -16,9 +16,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -26,7 +23,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -53,11 +49,14 @@ import com.example.passedpath.feature.main.presentation.state.LocationPermission
 import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiState
 import com.example.passedpath.feature.main.presentation.state.MainUiState
 import com.example.passedpath.feature.place.presentation.screen.PlaceBottomSheetContent
-import com.example.passedpath.feature.route.presentation.screen.MainRouteSection
-import com.example.passedpath.feature.route.presentation.screen.RouteMapContent
-import com.example.passedpath.feature.route.presentation.screen.RouteStatusOverlay
+import com.example.passedpath.feature.route.presentation.state.MainRouteModeUiState
 import com.example.passedpath.feature.route.presentation.state.RouteUiAction
 import com.example.passedpath.ui.PermissionSettingDialog
+import com.example.passedpath.ui.component.RoundedWhiteButton
+import com.example.passedpath.ui.component.overlay.PermissionOverlay
+import com.example.passedpath.ui.theme.Gray500
+import com.example.passedpath.ui.theme.Gray700
+import com.example.passedpath.ui.theme.Primary
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -68,10 +67,12 @@ import com.google.maps.android.compose.MarkerComposable
 import com.google.maps.android.compose.rememberCameraPositionState
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 import kotlinx.coroutines.launch
 
 private val CurrentLocationGlowBase = Color(0xFF006B5F)
 private val DateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+private val TopBarDateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy.MM.dd. EEE", Locale.KOREAN)
 private const val RouteBoundsPaddingPx = 180
 
 @Composable
@@ -82,8 +83,7 @@ fun MainScreen(
     onRouteAction: (RouteUiAction) -> Unit,
     onTrackingPermissionDialogConfirm: () -> Unit,
     onTrackingPermissionDialogDismiss: () -> Unit,
-    onForegroundPermissionBannerConfirm: () -> Unit,
-    onForegroundPermissionBannerDismiss: () -> Unit
+    onPermissionBannerConfirm: () -> Unit
 ) {
     val context = LocalContext.current
     val routeAccentColor = MaterialTheme.colorScheme.primary
@@ -132,7 +132,7 @@ fun MainScreen(
             properties = MapProperties(isMyLocationEnabled = false),
             onMapLoaded = { isMapLoaded = true }
         ) {
-            RouteMapContent(
+            com.example.passedpath.feature.route.presentation.screen.RouteMapContent(
                 routeModeUiState = uiState.routeModeUiState,
                 routeAccentColor = routeAccentColor
             )
@@ -172,7 +172,7 @@ fun MainScreen(
             }
         }
 
-        RouteStatusOverlay(
+        com.example.passedpath.feature.route.presentation.screen.RouteStatusOverlay(
             routeModeUiState = uiState.routeModeUiState,
             hasRouteLocationData = hasRouteLocationData,
             onRouteAction = onRouteAction
@@ -181,35 +181,34 @@ fun MainScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
+                .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Card(
+            Column(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors()
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 14.dp)
-                ) {
-                    MainHeader(
-                        permissionState = uiState.permissionState,
-                        selectedDateKey = uiState.selectedDateKey,
-                        onPickDate = {
-                            showDatePicker(
-                                context = context,
-                                initialDateKey = uiState.selectedDateKey,
-                                onDateSelected = onDateSelected
-                            )
-                        }
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    MainRouteSection(
-                        routeMode = uiState.routeModeUiState,
-                        onRouteAction = onRouteAction
-                    )
-                }
+                DateTopBar(
+                    selectedDateKey = uiState.selectedDateKey,
+                    onPreviousDate = {
+                        onDateSelected(shiftDate(uiState.selectedDateKey, -1))
+                    },
+                    onNextDate = {
+                        onDateSelected(shiftDate(uiState.selectedDateKey, 1))
+                    },
+                    onOpenDatePicker = {
+                        showDatePicker(
+                            context = context,
+                            initialDateKey = uiState.selectedDateKey,
+                            onDateSelected = onDateSelected
+                        )
+                    }
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+                RouteFloatingControls(
+                    routeMode = uiState.routeModeUiState,
+                    onRouteAction = onRouteAction
+                )
             }
 
             Column(
@@ -236,31 +235,17 @@ fun MainScreen(
                     }
                     Spacer(modifier = Modifier.height(12.dp))
                 }
-
-                if (uiState.permissionState == LocationPermissionUiState.DENIED) {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors()
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)
-                        ) {
-                            Text(text = stringResource(R.string.main_permission_off_title))
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(text = stringResource(R.string.main_permission_off_message))
-                        }
-                    }
-                }
             }
         }
 
-        if (uiState.showForegroundPermissionBanner) {
-            ForegroundPermissionBanner(
+        if (uiState.showPermissionBanner) {
+            PermissionOverlay(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(horizontal = 16.dp, vertical = 24.dp),
-                onConfirm = onForegroundPermissionBannerConfirm,
-                onDismiss = onForegroundPermissionBannerDismiss
+                message = permissionOverlayMessage(uiState.permissionState),
+                actionText = stringResource(R.string.permission_banner_action),
+                onClickAction = onPermissionBannerConfirm
             )
         }
 
@@ -275,6 +260,152 @@ fun MainScreen(
         PermissionSettingDialog(
             onConfirm = onTrackingPermissionDialogConfirm,
             onDismiss = onTrackingPermissionDialogDismiss
+        )
+    }
+}
+
+@Composable
+private fun DateTopBar(
+    selectedDateKey: String,
+    onPreviousDate: () -> Unit,
+    onNextDate: () -> Unit,
+    onOpenDatePicker: () -> Unit
+) {
+    val selectedDate = parseDateOrToday(selectedDateKey)
+
+    Surface(
+        shape = RoundedCornerShape(24.dp),
+        color = Color.White.copy(alpha = 0.96f),
+        tonalElevation = 4.dp,
+        shadowElevation = 8.dp
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            androidx.compose.material3.TextButton(onClick = onPreviousDate) {
+                Text(text = "<")
+            }
+            Text(
+                text = selectedDate.format(TopBarDateFormatter),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(horizontal = 4.dp)
+            )
+            androidx.compose.material3.TextButton(onClick = onOpenDatePicker) {
+                Text(text = stringResource(R.string.main_pick_date))
+            }
+            androidx.compose.material3.TextButton(onClick = onNextDate) {
+                Text(text = ">")
+            }
+        }
+    }
+}
+
+@Composable
+private fun RouteFloatingControls(
+    routeMode: MainRouteModeUiState,
+    onRouteAction: (RouteUiAction) -> Unit
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        RouteDistanceChip(distanceKm = routeMode.route.totalDistanceKm)
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            when (routeMode) {
+                is MainRouteModeUiState.Today -> {
+                    if (routeMode.canRefreshDistance) {
+                        FloatingPillButton(
+                            text = stringResource(R.string.route_refresh),
+                            onClick = { onRouteAction(RouteUiAction.RefreshTodayRoute) }
+                        )
+                    }
+                    if (routeMode.isTrackingToggleVisible) {
+                        TrackingFloatingPill(
+                            isTracking = routeMode.isTrackingEnabled,
+                            onClick = { onRouteAction(RouteUiAction.ToggleTracking) }
+                        )
+                    }
+                }
+
+                is MainRouteModeUiState.Past -> {
+                    if (routeMode.isPlaybackEntryVisible) {
+                        FloatingPillButton(
+                            text = stringResource(R.string.route_open_playback),
+                            onClick = { onRouteAction(RouteUiAction.EnterPastPlayback) }
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RouteDistanceChip(distanceKm: Double) {
+    Surface(
+        shape = RoundedCornerShape(50),
+        color = Color.White.copy(alpha = 0.96f),
+        tonalElevation = 2.dp,
+        shadowElevation = 6.dp
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = stringResource(R.string.route_distance, formatDistanceKm(distanceKm)),
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+    }
+}
+
+@Composable
+private fun FloatingPillButton(
+    text: String,
+    onClick: () -> Unit
+) {
+    RoundedWhiteButton(
+        onClick = onClick,
+        shadowElevation = 6.dp
+    ) {
+        Text(
+            text = text,
+            color = Gray700,
+            fontWeight = FontWeight.Medium
+        )
+    }
+}
+
+@Composable
+private fun TrackingFloatingPill(
+    isTracking: Boolean,
+    onClick: () -> Unit
+) {
+    RoundedWhiteButton(
+        onClick = onClick,
+        shadowElevation = 6.dp
+    ) {
+        Box(
+            modifier = Modifier
+                .size(8.dp)
+                .clip(CircleShape)
+                .background(if (isTracking) Primary else Gray500)
+        )
+        Text(
+            text = stringResource(
+                if (isTracking) R.string.route_tracking_stop else R.string.route_tracking_start
+            ),
+            color = Gray700,
+            fontWeight = FontWeight.Medium
         )
     }
 }
@@ -332,72 +463,6 @@ private fun MainBottomSheet(
     }
 }
 
-@Composable
-private fun ForegroundPermissionBanner(
-    modifier: Modifier = Modifier,
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit
-) {
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        color = Color.White,
-        tonalElevation = 6.dp,
-        shadowElevation = 10.dp
-    ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 18.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = stringResource(R.string.foreground_permission_banner_title),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.weight(1f)
-                )
-                TextButton(onClick = onDismiss) {
-                    Text(text = stringResource(R.string.common_dismiss))
-                }
-            }
-            Spacer(modifier = Modifier.height(14.dp))
-            Button(
-                onClick = onConfirm,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(text = stringResource(R.string.foreground_permission_banner_action))
-            }
-        }
-    }
-}
-
-@Composable
-private fun MainHeader(
-    permissionState: LocationPermissionUiState,
-    selectedDateKey: String,
-    onPickDate: () -> Unit
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column {
-            Text(text = stringResource(R.string.main_title), fontWeight = FontWeight.SemiBold)
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(text = permissionText(permissionState))
-        }
-        Button(onClick = onPickDate) {
-            Text(text = stringResource(R.string.main_pick_date))
-        }
-    }
-    Spacer(modifier = Modifier.height(12.dp))
-    Text(text = stringResource(R.string.main_selected_date, selectedDateKey))
-}
-
 private fun showDatePicker(
     context: android.content.Context,
     initialDateKey: String,
@@ -420,16 +485,31 @@ private fun showDatePicker(
 }
 
 @Composable
-private fun permissionText(permissionState: LocationPermissionUiState): String {
+private fun permissionOverlayMessage(permissionState: LocationPermissionUiState): String {
     return when (permissionState) {
-        LocationPermissionUiState.ALWAYS -> stringResource(R.string.main_permission_enabled_background)
-        LocationPermissionUiState.FOREGROUND_ONLY -> stringResource(R.string.main_permission_enabled_foreground)
-        LocationPermissionUiState.DENIED -> stringResource(R.string.main_permission_denied)
+        LocationPermissionUiState.DENIED -> stringResource(R.string.permission_banner_denied_title)
+        LocationPermissionUiState.FOREGROUND_ONLY -> stringResource(R.string.permission_banner_foreground_title)
+        LocationPermissionUiState.ALWAYS -> ""
     }
+}
+
+private fun parseDateOrToday(dateKey: String): LocalDate {
+    return runCatching { LocalDate.parse(dateKey, DateFormatter) }
+        .getOrDefault(LocalDate.now())
+}
+
+private fun shiftDate(dateKey: String, days: Long): String {
+    return parseDateOrToday(dateKey)
+        .plusDays(days)
+        .format(DateFormatter)
 }
 
 private fun MainCoordinateUiState.toLatLng(): LatLng {
     return LatLng(latitude, longitude)
+}
+
+private fun formatDistanceKm(distanceKm: Double): String {
+    return String.format(Locale.US, "%.2f km", distanceKm)
 }
 
 private fun buildRouteCameraUpdate(routePoints: List<LatLng>) = when {
@@ -447,9 +527,9 @@ private enum class MainBottomSheetTab(val titleResId: Int) {
     DAYNOTE(R.string.record_sheet_tab_daynote)
 }
 
-@Preview(showBackground = true, name = "Foreground Permission Banner")
+@Preview(showBackground = true, name = "Permission Overlay")
 @Composable
-private fun ForegroundPermissionBannerPreview() {
+private fun PermissionOverlayPreview() {
     com.example.passedpath.ui.theme.PassedPathTheme {
         Box(
             modifier = Modifier
@@ -457,9 +537,10 @@ private fun ForegroundPermissionBannerPreview() {
                 .background(Color(0xFFF3F4F6))
                 .padding(16.dp)
         ) {
-            ForegroundPermissionBanner(
-                onConfirm = {},
-                onDismiss = {}
+            PermissionOverlay(
+                message = "위치 권한이 거부되어 기록이 남지 않고 있어요",
+                actionText = "권한 설정하기",
+                onClickAction = {}
             )
         }
     }
