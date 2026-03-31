@@ -1,12 +1,12 @@
-package backend.capstone.domain.staycluster.service;
+package backend.capstone.domain.ongoingstay.service;
 
 import backend.capstone.domain.dayroute.entity.AnalysisStatus;
 import backend.capstone.domain.dayroute.entity.DayRoute;
 import backend.capstone.domain.gpspoint.entity.GpsPoint;
 import backend.capstone.domain.gpspoint.service.GpsPointService;
-import backend.capstone.domain.staycluster.entity.StayCluster;
-import backend.capstone.domain.staycluster.entity.StayClusterStatus;
-import backend.capstone.domain.staycluster.repository.StayClusterRepository;
+import backend.capstone.domain.ongoingstay.entity.OngoingStay;
+import backend.capstone.domain.ongoingstay.entity.OngoingStayStatus;
+import backend.capstone.domain.ongoingstay.repository.OngoingStayRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -16,7 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class StayAnalysisService {
 
-    private final StayClusterRepository stayClusterRepository;
+    private final OngoingStayRepository ongoingStayRepository;
     private final GpsPointService gpsPointService;
 
     @Transactional
@@ -29,8 +29,8 @@ public class StayAnalysisService {
         dayRoute.markInProgressAnalysis();
 
         //이 dayRoute에 현재 진행 중인 stay가 있는지 조회
-        StayCluster stay = stayClusterRepository.findByDayRouteAndStatus(dayRoute,
-                StayClusterStatus.IN_PROGRESS)
+        OngoingStay stay = ongoingStayRepository.findByDayRouteAndStatus(dayRoute,
+                OngoingStayStatus.IN_PROGRESS)
             .orElse(null);
 
         Long lastAnalyzedPointId = dayRoute.getLastAnalyzedPointId();
@@ -44,8 +44,8 @@ public class StayAnalysisService {
 
         for (GpsPoint point : newPoints) {
             if (stay == null) { //현재 진행 중인 stay가 없으면 현재 point로 새 stay를 시작
-                stay = StayCluster.start(dayRoute, point);
-                stayClusterRepository.save(stay);
+                stay = OngoingStay.start(dayRoute, point);
+                ongoingStayRepository.save(stay);
                 continue;
             }
 
@@ -64,9 +64,9 @@ public class StayAnalysisService {
             if (stay.getDurationMinutes() >= 10) {
                 //TODO: place 승격, 장소 조회
             }
-            stayClusterRepository.delete(stay);
-            stay = StayCluster.start(dayRoute, point);
-            stayClusterRepository.save(stay);
+            ongoingStayRepository.delete(stay);
+            stay = OngoingStay.start(dayRoute, point);
+            ongoingStayRepository.save(stay);
 
             GpsPoint lastPoint = newPoints.get(newPoints.size() - 1);
             dayRoute.completeAnalysis(lastPoint.getId());

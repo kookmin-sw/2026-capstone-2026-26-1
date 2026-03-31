@@ -1,9 +1,9 @@
-package backend.capstone.domain.staycluster.scheduler;
+package backend.capstone.domain.ongoingstay.scheduler;
 
 import backend.capstone.domain.dayroute.entity.AnalysisStatus;
 import backend.capstone.domain.dayroute.entity.DayRoute;
 import backend.capstone.domain.dayroute.service.DayRouteService;
-import backend.capstone.domain.staycluster.service.StayAnalysisService;
+import backend.capstone.domain.ongoingstay.service.StayAnalysisService;
 import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;

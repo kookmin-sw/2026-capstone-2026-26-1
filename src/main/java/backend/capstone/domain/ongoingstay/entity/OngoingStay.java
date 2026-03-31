@@ -1,4 +1,4 @@
-package backend.capstone.domain.staycluster.entity;
+package backend.capstone.domain.ongoingstay.entity;
 
 import backend.capstone.domain.dayroute.entity.DayRoute;
 import backend.capstone.domain.gpspoint.entity.GpsPoint;
@@ -22,7 +22,7 @@ import lombok.NoArgsConstructor;
 @Entity
 @NoArgsConstructor(access = lombok.AccessLevel.PROTECTED)
 @Getter
-public class StayCluster extends BaseTimeEntity {
+public class OngoingStay extends BaseTimeEntity {
 
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Id
@@ -50,12 +50,12 @@ public class StayCluster extends BaseTimeEntity {
     private double centerLongitude;
 
     @Enumerated(EnumType.STRING)
-    private StayClusterStatus status;
+    private OngoingStayStatus status;
 
     private int pointCount;
 
-    public static StayCluster start(DayRoute dayRoute, GpsPoint point) {
-        StayCluster stay = new StayCluster();
+    public static OngoingStay start(DayRoute dayRoute, GpsPoint point) {
+        OngoingStay stay = new OngoingStay();
         stay.dayRoute = dayRoute;
         stay.centerLatitude = point.getLatitude();
         stay.centerLongitude = point.getLongitude();
@@ -64,7 +64,7 @@ public class StayCluster extends BaseTimeEntity {
         stay.startTime = point.getRecordedAt();
         stay.endTime = point.getRecordedAt();
         stay.pointCount = 1;
-        stay.status = StayClusterStatus.IN_PROGRESS;
+        stay.status = OngoingStayStatus.IN_PROGRESS;
         return stay;
     }
 
