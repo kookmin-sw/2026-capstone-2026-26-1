@@ -1,4 +1,4 @@
-# Current Task
+﻿# Current Task
 
 Date: 2026-03-31
 Project: PassedPath Android app
@@ -10,66 +10,46 @@ Project: PassedPath Android app
   - past date fetches remote day-route data
   - date changes cancel stale route work
   - unit tests cover today-vs-past branching and stale-state clearing
-- The follow-up route-first architecture refactor is in progress.
-- `feature/route` now exists and owns route presentation state, route UI mapping, and route section UI.
+- The follow-up route-first architecture refactor is complete for the agreed scope.
+- `feature/route` now owns route presentation state, route UI mapping, route load coordination, route map rendering, and route-specific actions.
 
-## Completed route-first refactor work
-- `MainScreen` remains the record-screen container.
-- `MainScreen` now delegates route-specific UI to `feature/route`.
-- `MainViewModel` still orchestrates date selection and route loading, but route mode creation and route UI mapping moved out of Main-specific files.
-- Route-specific code extracted so far:
-  - `feature/route/presentation/state/RouteUiState.kt`
-  - `feature/route/presentation/mapper/RouteUiMapper.kt`
-  - `feature/route/presentation/screen/MainRouteSection.kt`
-  - `feature/route/presentation/screen/TodayRouteSection.kt`
-  - `feature/route/presentation/screen/PastRouteSection.kt`
-
-## Issue 8 agreed scope
-- Issue 8 was a route-focused separation task.
-- Its completed goal was to separate route behavior by date mode without prematurely splitting every Main feature.
-- Today route policy:
-  - route data comes from local Room observation
-  - route and distance update in real time
-  - tracking control entry belongs to the today route experience
-- Past route policy:
-  - route data comes from backend `GET /api/day-routes/{date}`
-  - route playback belongs to the past route experience
-- Future date policy:
-  - do not make it the architectural center yet
-  - future-specific route behavior can be added later when the product policy is finalized
-
-## Main screen architecture decision
-- `MainScreen` remains the user-facing record screen container.
-- `MainScreen` is split internally into mode-based route content.
-- This split is explicitly adopted for presentation clarity and maintainability.
-- Feature ownership is not the same thing as screen ownership.
+## Final route-first refactor result
+- `MainScreen` remains the record-screen container and shared screen shell.
+- `feature/route` owns:
+  - route mode state
+  - today-vs-past route mapping
+  - route polyline and place marker rendering
+  - route overlay state UI
+  - route action model
+  - route load coordination through `RouteStateCoordinator`
+- `MainViewModel` now keeps screen-level orchestration only:
+  - selected date
+  - permission state
+  - current location
+  - route action delegation
 
 ## Feature ownership decision
 - `feature/main`
-  - orchestrates selected date, mode decision, and screen composition
+  - selected date, screen composition, shared screen shell
 - `feature/route`
-  - owns today local route, past remote route, route UI state, route UI mapping, and route section rendering
+  - today local route, past remote route, route state, route UI, route load coordination, route actions
 - `feature/place`
-  - owns manual places and major places
+  - manual places and major places
 - `feature/daynote`
-  - owns title and memo
+  - title and memo
 - `feature/favorite`
-  - not split out yet as an independent feature
-  - keep it near the closest existing owner until the policy and volume justify extraction
+  - still deferred until policy and volume justify extraction
 
-## Remaining refactor tasks
-- Decide how far route overlay, polyline rendering, and route marker rendering should move into `feature/route`.
-- Introduce route-specific action/event structure.
-  - today: refresh, tracking toggle
-  - past: retry, playback entry
-- Reduce route orchestration burden inside `MainViewModel` further if a route-focused coordinator or use-case layer becomes justified.
-- Define the extraction boundary for `feature/place`.
-- Define the extraction boundary for `feature/daynote`.
-- Revisit future-date mode only after product policy is finalized.
-- Replace temporary route placeholder copy with policy-accurate UI slots.
+## Next product-facing work
+- Implement the real behavior behind route actions.
+  - today: tracking toggle
+  - past: playback entry
+- Define the extraction boundary for `feature/place` when place work resumes.
+- Define the extraction boundary for `feature/daynote` when note work resumes.
 - Expand route tests beyond current ViewModel-centered coverage.
+- Revisit future-date mode only after product policy is finalized.
 
-## What is not part of the current route refactor
+## Not part of the finished route refactor
 - Full favorite-feature extraction
 - Future-date-centered architecture work
 - Detailed playback implementation
@@ -82,9 +62,8 @@ Project: PassedPath Android app
 - `app/src/main/java/com/example/passedpath/feature/main/presentation/screen/MainScreen.kt`
 - `app/src/main/java/com/example/passedpath/feature/route/presentation/state/RouteUiState.kt`
 - `app/src/main/java/com/example/passedpath/feature/route/presentation/mapper/RouteUiMapper.kt`
-- `app/src/main/java/com/example/passedpath/feature/route/presentation/screen/MainRouteSection.kt`
-- `app/src/main/java/com/example/passedpath/feature/route/presentation/screen/TodayRouteSection.kt`
-- `app/src/main/java/com/example/passedpath/feature/route/presentation/screen/PastRouteSection.kt`
+- `app/src/main/java/com/example/passedpath/feature/route/presentation/coordinator/RouteStateCoordinator.kt`
+- `app/src/main/java/com/example/passedpath/feature/route/presentation/screen/RouteMapContent.kt`
 - `app/src/test/java/com/example/passedpath/feature/main/presentation/viewmodel/MainViewModelTest.kt`
 
 ## Guardrails

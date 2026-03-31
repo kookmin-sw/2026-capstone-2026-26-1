@@ -1,20 +1,20 @@
-# Main Screen Architecture Decision
+﻿# Main Screen Architecture Decision
 
 Date: 2026-03-31
 Project: PassedPath Android app
-Status: Accepted
+Status: Accepted and applied in code
 
 ## Decision summary
-The record screen keeps a single user-facing `MainScreen`, but its internal presentation is split by date mode.
+The record screen keeps a single user-facing `MainScreen`, but its internal presentation is split by date mode and route ownership is separated from the shared screen shell.
 
 Adopted screen split:
 - `MainScreen`
-- route content is split by date mode
-- route split currently exists inside `feature/route`
+- shared shell remains in `feature/main`
+- route-specific content lives in `feature/route`
 
 Adopted ownership split:
-- `feature/main` owns orchestration and screen composition.
-- `feature/route` owns route-source differences and route-specific behavior.
+- `feature/main` owns screen-level orchestration and composition.
+- `feature/route` owns route-source differences, route state, route rendering, route actions, and route load coordination.
 - `feature/place` owns manual places and major places.
 - `feature/daynote` owns title and memo.
 - `feature/favorite` is deferred as an independent feature until policy and volume justify extraction.
@@ -24,6 +24,9 @@ Adopted ownership split:
 - Route presentation state moved out of Main-specific state files.
 - Route UI mapping/factory logic moved out of `MainViewModel` into route-owned mapping code.
 - Route section rendering moved out of `feature/main` screen files into route-owned screen code.
+- Route polyline, place marker rendering, and route overlay moved under route-owned screen code.
+- Route-specific actions were introduced for refresh, retry, tracking toggle, and playback entry.
+- Route loading policy moved behind `RouteStateCoordinator`, so `MainViewModel` no longer directly owns today-vs-past loading branches.
 
 ## Why this decision was made
 The same record screen contains different kinds of responsibilities:
@@ -40,12 +43,12 @@ This decision keeps one screen entry point for the product while separating:
 ## Explicit policy
 ### 1. Main as coordinator
 `feature/main` is the coordinator.
-It decides selected date, decides current mode, and assembles the screen.
-It should not permanently own every business rule for route/place/daynote/favorite.
+It decides selected date, assembles the screen, and keeps shared screen-level state.
+It should not permanently own business rules for route/place/daynote/favorite.
 
 ### 2. Route-first split
-The current architecture change is route-first.
-Issue 8 is primarily about separating route behavior between today and past.
+The current architecture change was route-first.
+Issue 8 primarily separated route behavior between today and past.
 
 Today route behavior:
 - local Room-backed route observation
@@ -59,19 +62,18 @@ Past route behavior:
 
 ### 3. Screen split by mode
 Presentation split is explicitly accepted.
-`MainScreen` should continue moving toward:
-- common shell / shared top-level layout
-- route-specific mode sections owned by `feature/route`
-
-This split exists because today and past route experiences are materially different.
+`MainScreen` should remain:
+- common shell
+- shared map and top-level layout coordinator
+- host for route-owned content
 
 ### 4. Feature split by responsibility
 Feature boundaries should follow responsibility, not screen membership.
 A feature can appear on Main without being owned by Main.
 
 Recommended boundaries:
-- `feature/main`: coordinator, date-mode decision, screen assembly
-- `feature/route`: route state and route behaviors
+- `feature/main`: coordinator, selected date, shared shell, screen assembly
+- `feature/route`: route state, route rendering, route actions, route load coordination
 - `feature/place`: manual places and major places
 - `feature/daynote`: title and memo
 
@@ -91,15 +93,15 @@ The project should avoid both extremes:
 - over-splitting too early before product policy is stable
 
 The chosen tradeoff is:
-- split route architecture now
-- prepare place/daynote separation next
+- finish route architecture first
+- prepare place/daynote separation next when those features resume
 - defer favorite extraction until it is justified
 
 ## Current follow-up tasks
-1. Split `feature/route` screen content into clearer today/past files.
-2. Move route overlay and map-specific route rendering ownership further toward `feature/route` when the map boundary is ready.
-3. Introduce route-specific actions for refresh, retry, tracking toggle, and playback entry.
-4. Keep place/daynote/favorite scope minimal until their follow-up issues start.
+1. Implement the actual behavior behind route actions that are already exposed in UI.
+2. Expand route tests beyond the current ViewModel-centered coverage.
+3. Define the extraction boundary for place and daynote when those follow-up issues start.
+4. Keep future-date mode out of the architectural center until product policy is fixed.
 
 ## Guidance for future sessions
 When adding new behavior, decide first:
