@@ -1,4 +1,4 @@
-<resources>
+﻿<resources>
     <string name="app_name">PassedPath</string>
     <string name="login_logo_content_description">Logo for login screen</string>
     <string name="login_tagline">Track the paths you walked</string>
@@ -26,13 +26,13 @@
     <string name="permission_intro_image_content_description">Onboarding illustration for location permission</string>
     <string name="permission_intro_continue">Continue</string>
     <string name="permission_dialog_title">이렇게 설정해 주세요</string>
-    <string name="permission_dialog_subtitle"> 앱이 종료되어도 지나온 길을 기록할 수 있어요</string>
+    <string name="permission_dialog_subtitle">앱이 종료되어도 지나온 길을 기록할 수 있어요</string>
     <string name="permission_dialog_image_content_description">Location permission setting guide</string>
-    <string name="permission_dialog_step_1">아래에서 \'설정 열기\'를 눌러 주세요</string>
-    <string name="permission_dialog_step_2">어플리케이션 &gt; 앱 권한 &gt; 위치에서</string>
-    <string name="permission_dialog_step_3_prefix">위치 접근을 \‘항상 허용\’으로 바꿔 주세요</string>
+    <string name="permission_dialog_step_1">아래에서 설정 열기를 눌러 주세요</string>
+    <string name="permission_dialog_step_2">애플리케이션 &gt; 앱 권한 &gt; 위치에서</string>
+    <string name="permission_dialog_step_3_prefix">위치 접근을 항상 허용으로 바꿔 주세요</string>
     <string name="permission_dialog_step_3_highlight">항상 허용</string>
-    <string name="permission_dialog_step_3_suffix">\'으로 바꿔 주세요</string>
+    <string name="permission_dialog_step_3_suffix"></string>
     <string name="permission_dialog_open_settings">설정 열기</string>
     <string name="permission_dialog_not_now">나중에 할게요</string>
     <string name="tracking_notification_channel_name">Path tracking</string>
@@ -68,4 +68,9 @@
     <string name="route_empty_today_message">오늘의 이동 경로가 기록되면 이곳에 표시됩니다.</string>
     <string name="route_empty_past_message">선택한 날짜에는 지도에 표시할 경로 데이터가 없습니다.</string>
     <string name="route_place_fallback_title">장소 %1$d</string>
+    <string name="foreground_permission_banner_title">위치 권한이 거부되어 기록이 남지 않고 있어요</string>
+    <string name="foreground_permission_banner_action">권한 설정하기</string>
+    <string name="common_dismiss">닫기</string>
 </resources>
+
+

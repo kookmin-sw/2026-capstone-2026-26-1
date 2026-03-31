@@ -59,14 +59,28 @@ class MainViewModel(
         }
 
         _uiState.update { currentState ->
-            if (permissionState == LocationPermissionUiState.DENIED) {
-                currentState.copy(
+            when (permissionState) {
+                LocationPermissionUiState.ALWAYS -> currentState.copy(
+                    permissionState = permissionState,
+                    isForegroundPermissionBannerDismissed = false
+                )
+
+                LocationPermissionUiState.FOREGROUND_ONLY -> currentState.copy(
+                    permissionState = permissionState,
+                    isForegroundPermissionBannerDismissed =
+                        if (currentState.permissionState == LocationPermissionUiState.FOREGROUND_ONLY) {
+                            currentState.isForegroundPermissionBannerDismissed
+                        } else {
+                            false
+                        }
+                )
+
+                LocationPermissionUiState.DENIED -> currentState.copy(
                     permissionState = permissionState,
                     currentLocation = null,
-                    hasCenteredOnCurrentLocation = false
+                    hasCenteredOnCurrentLocation = false,
+                    isForegroundPermissionBannerDismissed = false
                 )
-            } else {
-                currentState.copy(permissionState = permissionState)
             }
         }
     }
@@ -99,6 +113,12 @@ class MainViewModel(
     fun dismissTrackingPermissionDialog() {
         _uiState.update { currentState ->
             currentState.copy(showTrackingPermissionDialog = false)
+        }
+    }
+
+    fun dismissForegroundPermissionBanner() {
+        _uiState.update { currentState ->
+            currentState.copy(isForegroundPermissionBannerDismissed = true)
         }
     }
 

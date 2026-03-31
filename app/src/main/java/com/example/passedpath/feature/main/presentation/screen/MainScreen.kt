@@ -1,8 +1,8 @@
-package com.example.passedpath.feature.main.presentation.screen
+﻿package com.example.passedpath.feature.main.presentation.screen
 
+import android.app.DatePickerDialog
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,14 +15,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -36,10 +37,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.passedpath.R
 import com.example.passedpath.feature.main.presentation.state.LocationPermissionUiState
@@ -58,14 +60,12 @@ import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.MarkerComposable
 import com.google.maps.android.compose.rememberCameraPositionState
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-import java.util.Locale
-import kotlinx.coroutines.launch
 
 private val CurrentLocationGlowBase = Color(0xFF006B5F)
 private val DateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-private val TopBarDateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy.MM.dd. EEE", Locale.KOREAN)
 private const val RouteBoundsPaddingPx = 180
 
 @Composable
@@ -73,11 +73,13 @@ fun MainScreen(
     uiState: MainUiState,
     onInitialCameraCentered: () -> Unit,
     onDateSelected: (String) -> Unit,
-    onOpenCalendar: () -> Unit,
     onRouteAction: (RouteUiAction) -> Unit,
     onTrackingPermissionDialogConfirm: () -> Unit,
-    onTrackingPermissionDialogDismiss: () -> Unit
+    onTrackingPermissionDialogDismiss: () -> Unit,
+    onForegroundPermissionBannerConfirm: () -> Unit,
+    onForegroundPermissionBannerDismiss: () -> Unit
 ) {
+    val context = LocalContext.current
     val routeAccentColor = MaterialTheme.colorScheme.primary
     val fallbackPosition = LatLng(37.5662952, 126.9779451)
     val currentLocation = if (uiState.permissionState == LocationPermissionUiState.DENIED) {
@@ -175,32 +177,31 @@ fun MainScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Column {
-                MainDateTopBar(
-                    selectedDateKey = uiState.selectedDateKey,
-                    onPreviousDate = {
-                        onDateSelected(shiftDate(uiState.selectedDateKey, -1))
-                    },
-                    onNextDate = {
-                        onDateSelected(shiftDate(uiState.selectedDateKey, 1))
-                    },
-                    onOpenCalendar = onOpenCalendar
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors()
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors()
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 14.dp)
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 14.dp)
-                    ) {
-                        MainRouteSection(
-                            routeMode = uiState.routeModeUiState,
-                            onRouteAction = onRouteAction
-                        )
-                    }
+                    MainHeader(
+                        permissionState = uiState.permissionState,
+                        selectedDateKey = uiState.selectedDateKey,
+                        onPickDate = {
+                            showDatePicker(
+                                context = context,
+                                initialDateKey = uiState.selectedDateKey,
+                                onDateSelected = onDateSelected
+                            )
+                        }
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    MainRouteSection(
+                        routeMode = uiState.routeModeUiState,
+                        onRouteAction = onRouteAction
+                    )
                 }
             }
 
@@ -209,7 +210,7 @@ fun MainScreen(
                 horizontalAlignment = Alignment.End
             ) {
                 if (currentLocation != null) {
-                    FloatingActionButton(
+                    androidx.compose.material3.FloatingActionButton(
                         onClick = {
                             coroutineScope.launch {
                                 cameraPositionState.animate(
@@ -245,6 +246,16 @@ fun MainScreen(
                 }
             }
         }
+
+        if (uiState.showForegroundPermissionBanner) {
+            ForegroundPermissionBanner(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(horizontal = 16.dp, vertical = 24.dp),
+                onConfirm = onForegroundPermissionBannerConfirm,
+                onDismiss = onForegroundPermissionBannerDismiss
+            )
+        }
     }
 
     if (uiState.showTrackingPermissionDialog) {
@@ -256,77 +267,99 @@ fun MainScreen(
 }
 
 @Composable
-private fun MainDateTopBar(
-    selectedDateKey: String,
-    onPreviousDate: () -> Unit,
-    onNextDate: () -> Unit,
-    onOpenCalendar: () -> Unit
+private fun ForegroundPermissionBanner(
+    modifier: Modifier = Modifier,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
 ) {
-    val selectedDate = parseDateOrToday(selectedDateKey)
-
     Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.extraLarge,
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        color = Color.White,
         tonalElevation = 6.dp,
-        shadowElevation = 4.dp
+        shadowElevation = 10.dp
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 6.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 18.dp)
         ) {
-            DateArrowButton(
-                symbol = "<",
-                onClick = onPreviousDate
-            )
-            Text(
-                text = selectedDate.format(TopBarDateFormatter),
-                modifier = Modifier
-                    .weight(1f)
-                    .clickable(onClick = onOpenCalendar)
-                    .padding(horizontal = 12.dp, vertical = 10.dp),
-                textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
-            )
-            DateArrowButton(
-                symbol = ">",
-                onClick = onNextDate
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.foreground_permission_banner_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.weight(1f)
+                )
+                TextButton(onClick = onDismiss) {
+                    Text(text = stringResource(R.string.common_dismiss))
+                }
+            }
+            Spacer(modifier = Modifier.height(14.dp))
+            Button(
+                onClick = onConfirm,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(text = stringResource(R.string.foreground_permission_banner_action))
+            }
         }
     }
 }
 
 @Composable
-private fun DateArrowButton(
-    symbol: String,
-    onClick: () -> Unit
+private fun MainHeader(
+    permissionState: LocationPermissionUiState,
+    selectedDateKey: String,
+    onPickDate: () -> Unit
 ) {
-    Surface(
-        shape = CircleShape,
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.92f)
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(onClick = onClick) {
-            Text(
-                text = symbol,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.SemiBold
-            )
+        Column {
+            Text(text = stringResource(R.string.main_title), fontWeight = FontWeight.SemiBold)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(text = permissionText(permissionState))
+        }
+        Button(onClick = onPickDate) {
+            Text(text = stringResource(R.string.main_pick_date))
         }
     }
+    Spacer(modifier = Modifier.height(12.dp))
+    Text(text = stringResource(R.string.main_selected_date, selectedDateKey))
 }
 
-private fun parseDateOrToday(dateKey: String): LocalDate {
-    return runCatching { LocalDate.parse(dateKey, DateFormatter) }
+private fun showDatePicker(
+    context: android.content.Context,
+    initialDateKey: String,
+    onDateSelected: (String) -> Unit
+) {
+    val initialDate = runCatching { LocalDate.parse(initialDateKey, DateFormatter) }
         .getOrDefault(LocalDate.now())
+
+    DatePickerDialog(
+        context,
+        { _, year, month, dayOfMonth ->
+            onDateSelected(
+                LocalDate.of(year, month + 1, dayOfMonth).format(DateFormatter)
+            )
+        },
+        initialDate.year,
+        initialDate.monthValue - 1,
+        initialDate.dayOfMonth
+    ).show()
 }
 
-private fun shiftDate(dateKey: String, days: Long): String {
-    return parseDateOrToday(dateKey)
-        .plusDays(days)
-        .format(DateFormatter)
+@Composable
+private fun permissionText(permissionState: LocationPermissionUiState): String {
+    return when (permissionState) {
+        LocationPermissionUiState.ALWAYS -> stringResource(R.string.main_permission_enabled_background)
+        LocationPermissionUiState.FOREGROUND_ONLY -> stringResource(R.string.main_permission_enabled_foreground)
+        LocationPermissionUiState.DENIED -> stringResource(R.string.main_permission_denied)
+    }
 }
 
 private fun MainCoordinateUiState.toLatLng(): LatLng {
@@ -343,4 +376,21 @@ private fun buildRouteCameraUpdate(routePoints: List<LatLng>) = when {
     }
 }
 
+@Preview(showBackground = true, name = "Foreground Permission Banner")
+@Composable
+private fun ForegroundPermissionBannerPreview() {
+    com.example.passedpath.ui.theme.PassedPathTheme {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color(0xFFF3F4F6))
+                .padding(16.dp)
+        ) {
+            ForegroundPermissionBanner(
+                onConfirm = {},
+                onDismiss = {}
+            )
+        }
+    }
+}
 

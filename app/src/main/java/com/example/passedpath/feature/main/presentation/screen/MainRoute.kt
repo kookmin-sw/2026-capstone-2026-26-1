@@ -1,6 +1,5 @@
 package com.example.passedpath.feature.main.presentation.screen
 
-import android.app.DatePickerDialog
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -18,10 +17,6 @@ import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiSt
 import com.example.passedpath.feature.main.presentation.viewmodel.MainViewModel
 import com.example.passedpath.feature.main.presentation.viewmodel.MainViewModelFactory
 import com.example.passedpath.util.AppSettingsNavigator
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-
-private val DateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
 @Composable
 fun MainRoute(
@@ -97,41 +92,17 @@ fun MainRoute(
         uiState = uiState,
         onInitialCameraCentered = viewModel::markInitialCameraCentered,
         onDateSelected = viewModel::selectDate,
-        onOpenCalendar = {
-            showDatePicker(
-                context = context,
-                initialDateKey = uiState.selectedDateKey,
-                onDateSelected = viewModel::selectDate
-            )
-        },
         onRouteAction = viewModel::handleRouteAction,
         onTrackingPermissionDialogConfirm = {
             viewModel.dismissTrackingPermissionDialog()
             AppSettingsNavigator.openAppSettings(context)
         },
-        onTrackingPermissionDialogDismiss = viewModel::dismissTrackingPermissionDialog
-    )
-}
-
-private fun showDatePicker(
-    context: android.content.Context,
-    initialDateKey: String,
-    onDateSelected: (String) -> Unit
-) {
-    val initialDate = runCatching { LocalDate.parse(initialDateKey, DateFormatter) }
-        .getOrDefault(LocalDate.now())
-
-    DatePickerDialog(
-        context,
-        { _, year, month, dayOfMonth ->
-            onDateSelected(
-                LocalDate.of(year, month + 1, dayOfMonth).format(DateFormatter)
-            )
+        onTrackingPermissionDialogDismiss = viewModel::dismissTrackingPermissionDialog,
+        onForegroundPermissionBannerConfirm = {
+            AppSettingsNavigator.openAppSettings(context)
         },
-        initialDate.year,
-        initialDate.monthValue - 1,
-        initialDate.dayOfMonth
-    ).show()
+        onForegroundPermissionBannerDismiss = viewModel::dismissForegroundPermissionBanner
+    )
 }
 
 private fun TrackedLocation.toMainCoordinateUiState(): MainCoordinateUiState {

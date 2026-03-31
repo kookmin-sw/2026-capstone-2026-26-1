@@ -13,6 +13,7 @@ data class MainUiState(
     val currentLocation: MainCoordinateUiState? = null,
     val hasCenteredOnCurrentLocation: Boolean = false,
     val showTrackingPermissionDialog: Boolean = false,
+    val isForegroundPermissionBannerDismissed: Boolean = false,
     val selectedDateKey: String = "",
     val routeModeUiState: MainRouteModeUiState = MainRouteModeUiState.Today(
         route = SelectedDayRouteUiState(dateKey = "")
@@ -32,4 +33,8 @@ data class MainUiState(
 
     val routeErrorMessage: String?
         get() = routeModeUiState.routeErrorMessage
+
+    val showForegroundPermissionBanner: Boolean
+        get() = permissionState == LocationPermissionUiState.FOREGROUND_ONLY &&
+            !isForegroundPermissionBannerDismissed
 }
