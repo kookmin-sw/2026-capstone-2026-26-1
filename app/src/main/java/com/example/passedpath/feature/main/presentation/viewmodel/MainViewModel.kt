@@ -9,6 +9,7 @@ import com.example.passedpath.feature.main.presentation.state.LocationPermission
 import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiState
 import com.example.passedpath.feature.main.presentation.state.MainUiState
 import com.example.passedpath.feature.permission.data.manager.LocationPermissionStatusReader
+import com.example.passedpath.feature.permission.data.manager.LocationServiceStatusReader
 import com.example.passedpath.feature.route.presentation.coordinator.RouteStateCoordinator
 import com.example.passedpath.feature.route.presentation.state.MainRouteModeUiState
 import com.example.passedpath.feature.route.presentation.state.RouteUiAction
@@ -25,6 +26,7 @@ import java.util.Locale
 
 class MainViewModel(
     private val locationPermissionStatusReader: LocationPermissionStatusReader,
+    private val locationServiceStatusReader: LocationServiceStatusReader,
     initialDateKeyProvider: () -> String = ::todayDateKey,
     private val routeStateCoordinator: RouteStateCoordinator,
     private val trackingServiceStateReader: LocationTrackingServiceStateReader,
@@ -37,6 +39,8 @@ class MainViewModel(
 
     private val _uiState = MutableStateFlow(
         MainUiState(
+            isLocationServiceEnabled = locationServiceStatusReader.isLocationServiceEnabled(),
+            isTrackingActive = trackingServiceStateReader.isTracking.value,
             selectedDateKey = initialDateKey,
             routeModeUiState = routeStateCoordinator
                 .createInitialState(initialDateKey)
@@ -47,6 +51,7 @@ class MainViewModel(
 
     init {
         refreshPermissionState()
+        refreshLocationServiceState()
         observeTrackingState()
         loadDayRoute(initialDateKey)
     }
@@ -59,34 +64,22 @@ class MainViewModel(
         }
 
         _uiState.update { currentState ->
-            when (permissionState) {
-                LocationPermissionUiState.ALWAYS -> currentState.copy(
-                    permissionState = permissionState,
-                    isPermissionBannerDismissed = false
-                )
-
-                LocationPermissionUiState.FOREGROUND_ONLY -> currentState.copy(
-                    permissionState = permissionState,
-                    isPermissionBannerDismissed =
-                        if (currentState.permissionState == LocationPermissionUiState.FOREGROUND_ONLY) {
-                            currentState.isPermissionBannerDismissed
-                        } else {
-                            false
-                        }
-                )
-
-                LocationPermissionUiState.DENIED -> currentState.copy(
+            if (permissionState == LocationPermissionUiState.DENIED) {
+                currentState.copy(
                     permissionState = permissionState,
                     currentLocation = null,
-                    hasCenteredOnCurrentLocation = false,
-                    isPermissionBannerDismissed =
-                        if (currentState.permissionState == LocationPermissionUiState.DENIED) {
-                            currentState.isPermissionBannerDismissed
-                        } else {
-                            false
-                        }
+                    hasCenteredOnCurrentLocation = false
                 )
+            } else {
+                currentState.copy(permissionState = permissionState)
             }
+        }
+    }
+
+    fun refreshLocationServiceState() {
+        val isEnabled = locationServiceStatusReader.isLocationServiceEnabled()
+        _uiState.update { currentState ->
+            currentState.copy(isLocationServiceEnabled = isEnabled)
         }
     }
 
@@ -121,12 +114,6 @@ class MainViewModel(
         }
     }
 
-    fun dismissPermissionBanner() {
-        _uiState.update { currentState ->
-            currentState.copy(isPermissionBannerDismissed = true)
-        }
-    }
-
     private fun loadDayRoute(dateKey: String) {
         routeLoadJob?.cancel()
         routeLoadJob = viewModelScope.launch {
@@ -148,6 +135,7 @@ class MainViewModel(
             trackingServiceStateReader.isTracking.collectLatest { isTracking ->
                 _uiState.update { currentState ->
                     currentState.copy(
+                        isTrackingActive = isTracking,
                         routeModeUiState = currentState.routeModeUiState.withTrackingState(isTracking)
                     )
                 }
@@ -196,6 +184,7 @@ class MainViewModelFactory(
             @Suppress("UNCHECKED_CAST")
             return MainViewModel(
                 locationPermissionStatusReader = appContainer.locationPermissionStatusReader,
+                locationServiceStatusReader = appContainer.locationServiceStatusReader,
                 routeStateCoordinator = RouteStateCoordinator(
                     dayRouteRepository = appContainer.dayRouteRepository,
                     todayDateKeyProvider = ::todayDateKey

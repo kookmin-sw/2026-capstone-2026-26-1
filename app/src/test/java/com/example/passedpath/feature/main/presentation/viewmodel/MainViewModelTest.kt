@@ -10,6 +10,7 @@ import com.example.passedpath.feature.locationtracking.domain.repository.DayRout
 import com.example.passedpath.feature.locationtracking.domain.repository.RemoteDayRouteResult
 import com.example.passedpath.feature.main.presentation.state.LocationPermissionUiState
 import com.example.passedpath.feature.permission.data.manager.LocationPermissionStatusReader
+import com.example.passedpath.feature.permission.data.manager.LocationServiceStatusReader
 import com.example.passedpath.feature.route.presentation.coordinator.RouteStateCoordinator
 import com.example.passedpath.feature.route.presentation.state.MainRouteModeUiState
 import com.example.passedpath.feature.route.presentation.state.RouteUiAction
@@ -163,15 +164,17 @@ class MainViewModelTest {
         advanceUntilIdle()
 
         assertFalse((viewModel.uiState.value.routeModeUiState as MainRouteModeUiState.Today).isTrackingEnabled)
+        assertFalse(viewModel.uiState.value.isTrackingActive)
 
         trackingState.value = true
         advanceUntilIdle()
 
         assertTrue((viewModel.uiState.value.routeModeUiState as MainRouteModeUiState.Today).isTrackingEnabled)
+        assertTrue(viewModel.uiState.value.isTrackingActive)
     }
 
     @Test
-    fun `foreground only permission shows banner`() = runTest {
+    fun `foreground only permission shows overlay`() = runTest {
         val permissionReader = MutableLocationPermissionStatusReader(
             foregroundGranted = true,
             backgroundGranted = false
@@ -185,32 +188,11 @@ class MainViewModelTest {
         advanceUntilIdle()
 
         assertEquals(LocationPermissionUiState.FOREGROUND_ONLY, viewModel.uiState.value.permissionState)
-        assertTrue(viewModel.uiState.value.showPermissionBanner)
+        assertTrue(viewModel.uiState.value.showPermissionOverlay)
     }
 
     @Test
-    fun `dismiss foreground permission banner hides it until permission state changes`() = runTest {
-        val permissionReader = MutableLocationPermissionStatusReader(
-            foregroundGranted = true,
-            backgroundGranted = false
-        )
-        val viewModel = createViewModel(
-            repository = FakeDayRouteRepository(),
-            initialDateKey = "2026-03-31",
-            todayDateKey = "2026-03-31",
-            permissionReader = permissionReader
-        )
-        advanceUntilIdle()
-
-        viewModel.dismissPermissionBanner()
-        assertFalse(viewModel.uiState.value.showPermissionBanner)
-
-        viewModel.refreshPermissionState()
-        assertFalse(viewModel.uiState.value.showPermissionBanner)
-    }
-
-    @Test
-    fun `denied permission shows banner and clears current location`() = runTest {
+    fun `denied permission shows overlay and clears current location`() = runTest {
         val permissionReader = MutableLocationPermissionStatusReader(
             foregroundGranted = false,
             backgroundGranted = false
@@ -224,36 +206,45 @@ class MainViewModelTest {
         advanceUntilIdle()
 
         assertEquals(LocationPermissionUiState.DENIED, viewModel.uiState.value.permissionState)
-        assertTrue(viewModel.uiState.value.showPermissionBanner)
+        assertTrue(viewModel.uiState.value.showPermissionOverlay)
         assertNull(viewModel.uiState.value.currentLocation)
     }
+
     @Test
-    fun `foreground permission banner resets when permission becomes always`() = runTest {
-        val permissionReader = MutableLocationPermissionStatusReader(
-            foregroundGranted = true,
-            backgroundGranted = false
-        )
+    fun `gps off shows overlay even with always permission`() = runTest {
         val viewModel = createViewModel(
             repository = FakeDayRouteRepository(),
             initialDateKey = "2026-03-31",
             todayDateKey = "2026-03-31",
-            permissionReader = permissionReader
+            backgroundGranted = true,
+            isLocationServiceEnabled = false
         )
         advanceUntilIdle()
-        viewModel.dismissPermissionBanner()
-
-        permissionReader.foregroundGranted = true
-        permissionReader.backgroundGranted = true
-        viewModel.refreshPermissionState()
 
         assertEquals(LocationPermissionUiState.ALWAYS, viewModel.uiState.value.permissionState)
-        assertFalse(viewModel.uiState.value.showPermissionBanner)
+        assertFalse(viewModel.uiState.value.isLocationServiceEnabled)
+        assertTrue(viewModel.uiState.value.showPermissionOverlay)
+    }
 
-        permissionReader.foregroundGranted = true
-        permissionReader.backgroundGranted = false
-        viewModel.refreshPermissionState()
+    @Test
+    fun `refresh location service state updates gps flag`() = runTest {
+        val locationServiceReader = MutableLocationServiceStatusReader(isEnabled = false)
+        val viewModel = createViewModel(
+            repository = FakeDayRouteRepository(),
+            initialDateKey = "2026-03-31",
+            todayDateKey = "2026-03-31",
+            backgroundGranted = true,
+            locationServiceReader = locationServiceReader
+        )
+        advanceUntilIdle()
 
-        assertTrue(viewModel.uiState.value.showPermissionBanner)
+        assertFalse(viewModel.uiState.value.isLocationServiceEnabled)
+
+        locationServiceReader.isEnabled = true
+        viewModel.refreshLocationServiceState()
+
+        assertTrue(viewModel.uiState.value.isLocationServiceEnabled)
+        assertFalse(viewModel.uiState.value.showPermissionOverlay)
     }
 
     @Test
@@ -457,14 +448,18 @@ class MainViewModelTest {
         initialDateKey: String,
         todayDateKey: String,
         backgroundGranted: Boolean = false,
+        isLocationServiceEnabled: Boolean = true,
         trackingState: MutableStateFlow<Boolean> = MutableStateFlow(false),
         onStartTracking: () -> Unit = {},
         onStopTracking: () -> Unit = {},
         permissionReader: LocationPermissionStatusReader =
-            FakeLocationPermissionStatusReader(backgroundGranted = backgroundGranted)
+            FakeLocationPermissionStatusReader(backgroundGranted = backgroundGranted),
+        locationServiceReader: LocationServiceStatusReader =
+            MutableLocationServiceStatusReader(isEnabled = isLocationServiceEnabled)
     ): MainViewModel {
         return MainViewModel(
             locationPermissionStatusReader = permissionReader,
+            locationServiceStatusReader = locationServiceReader,
             initialDateKeyProvider = { initialDateKey },
             routeStateCoordinator = RouteStateCoordinator(
                 dayRouteRepository = repository,
@@ -490,6 +485,12 @@ class MainViewModelTest {
     ) : LocationPermissionStatusReader {
         override fun isForegroundGranted(): Boolean = foregroundGranted
         override fun isBackgroundAlwaysGranted(): Boolean = backgroundGranted
+    }
+
+    private class MutableLocationServiceStatusReader(
+        var isEnabled: Boolean = true
+    ) : LocationServiceStatusReader {
+        override fun isLocationServiceEnabled(): Boolean = isEnabled
     }
 
     private class FakeLocationTrackingServiceStateReader(
@@ -523,4 +524,3 @@ class MainViewModelTest {
         }
     }
 }
-

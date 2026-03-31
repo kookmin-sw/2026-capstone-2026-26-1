@@ -1,4 +1,4 @@
-package com.example.passedpath.app
+﻿package com.example.passedpath.app
 
 import android.content.Context
 import androidx.room.Room
@@ -26,7 +26,9 @@ import com.example.passedpath.feature.locationtracking.domain.usecase.UploadGpsP
 import com.example.passedpath.feature.main.data.manager.CurrentLocationProvider
 import com.example.passedpath.feature.main.data.repository.TestRepository
 import com.example.passedpath.feature.permission.data.manager.AndroidLocationPermissionStatusReader
+import com.example.passedpath.feature.permission.data.manager.AndroidLocationServiceStatusReader
 import com.example.passedpath.feature.permission.data.manager.LocationPermissionStatusReader
+import com.example.passedpath.feature.permission.data.manager.LocationServiceStatusReader
 import java.time.LocalTime
 
 class AppContainer(
@@ -40,6 +42,10 @@ class AppContainer(
 
     val locationPermissionStatusReader: LocationPermissionStatusReader by lazy {
         AndroidLocationPermissionStatusReader(appContext)
+    }
+
+    val locationServiceStatusReader: LocationServiceStatusReader by lazy {
+        AndroidLocationServiceStatusReader(appContext)
     }
 
     val currentLocationTracker: LocationTracker by lazy {

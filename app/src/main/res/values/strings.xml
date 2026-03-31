@@ -1,4 +1,4 @@
-﻿<resources>
+<resources>
     <string name="app_name">PassedPath</string>
     <string name="login_logo_content_description">Logo for login screen</string>
     <string name="login_tagline">Track the paths you walked</string>
@@ -68,9 +68,6 @@
     <string name="route_empty_today_message">오늘의 이동 경로가 기록되면 이곳에 표시됩니다.</string>
     <string name="route_empty_past_message">선택한 날짜에는 지도에 표시할 경로 데이터가 없습니다.</string>
     <string name="route_place_fallback_title">장소 %1$d</string>
-    <string name="foreground_permission_banner_title">위치 권한이 거부되어 기록이 남지 않고 있어요</string>
-    <string name="foreground_permission_banner_action">권한 설정하기</string>
-    <string name="common_dismiss">닫기</string>
     <string name="record_sheet_tab_place">방문한 장소</string>
     <string name="record_sheet_tab_daynote">지나온 길 메모</string>
     <string name="place_sheet_title">방문한 장소</string>
@@ -79,7 +76,9 @@
     <string name="daynote_sheet_placeholder_body">이 날짜에 남긴 메모와 요약이 이곳에 표시됩니다. 다음 단계에서 입력과 저장 정책을 붙입니다.</string>
     <string name="permission_banner_denied_title">위치 권한이 없어 현재 위치와 기록을 사용할 수 없어요</string>
     <string name="permission_banner_foreground_title">위치 권한이 거부되어 기록이 남지 않고 있어요</string>
-    <string name="permission_banner_action">권한 설정하기</string>
+    <string name="permission_banner_action">[권한 설정하기]</string>
+    <string name="gps_off_overlay_message">위치 서비스가 꺼져 있어 기록이 남지 않고 있어요</string>
+    <string name="gps_off_overlay_action">위치 서비스 켜기</string>
 </resources>
 
 

@@ -1,6 +1,5 @@
 package com.example.passedpath.ui.component.overlay
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -13,6 +12,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -37,7 +37,7 @@ fun PermissionOverlay(
                 text = message,
                 modifier = Modifier.weight(1f),
                 color = Color(0xFF6B7280),
-                fontSize = 13.sp,
+                fontSize = 12.sp,
                 fontWeight = FontWeight.Medium
             )
 
@@ -45,18 +45,15 @@ fun PermissionOverlay(
 
             Box(
                 modifier = Modifier
-                    .background(
-                        color = Color(0xFFD7F2EF),
-                        shape = RoundedCornerShape(16.dp)
-                    )
+                    .clip(RoundedCornerShape(999.dp))
                     .clickable(onClick = onClickAction)
-                    .padding(horizontal = 14.dp, vertical = 8.dp),
+                    .padding(horizontal = 4.dp, vertical = 4.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = actionText,
                     color = Color(0xFF0F8F88),
-                    fontSize = 13.sp,
+                    fontSize = 12.sp,
                     fontWeight = FontWeight.Bold
                 )
             }

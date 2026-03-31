@@ -37,6 +37,7 @@ fun MainRoute(
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
                 viewModel.refreshPermissionState()
+                viewModel.refreshLocationServiceState()
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -46,34 +47,38 @@ fun MainRoute(
         }
     }
 
-    LaunchedEffect(uiState.permissionState, uiState.currentLocation) {
+    LaunchedEffect(uiState.permissionState, uiState.isLocationServiceEnabled, uiState.currentLocation) {
         val canReceiveLocationUpdates =
             uiState.permissionState == LocationPermissionUiState.ALWAYS ||
                 uiState.permissionState == LocationPermissionUiState.FOREGROUND_ONLY
 
-        if (canReceiveLocationUpdates && uiState.currentLocation == null) {
+        if (canReceiveLocationUpdates && uiState.isLocationServiceEnabled && uiState.currentLocation == null) {
             locationTracker.getCurrentLocation()?.let { trackedLocation ->
                 viewModel.updateCurrentLocation(trackedLocation.toMainCoordinateUiState())
             }
         }
     }
 
-    LaunchedEffect(uiState.permissionState) {
-        if (uiState.permissionState == LocationPermissionUiState.ALWAYS) {
-            if (trackingServiceStateReader.isTrackingEnabledByUser()) {
+    LaunchedEffect(uiState.permissionState, uiState.isLocationServiceEnabled, uiState.isTrackingActive) {
+        val canRunTracking =
+            uiState.permissionState == LocationPermissionUiState.ALWAYS && uiState.isLocationServiceEnabled
+
+        if (canRunTracking) {
+            if (trackingServiceStateReader.isTrackingEnabledByUser() && !uiState.isTrackingActive) {
                 startLocationTracking(persistUserPreference = false)
-            } else {
+            } else if (!trackingServiceStateReader.isTrackingEnabledByUser() && uiState.isTrackingActive) {
                 stopLocationTracking(persistUserPreference = false)
             }
-        } else {
+        } else if (uiState.isTrackingActive) {
             stopLocationTracking(persistUserPreference = false)
         }
     }
 
-    DisposableEffect(uiState.permissionState, locationTracker) {
+    DisposableEffect(uiState.permissionState, uiState.isLocationServiceEnabled, locationTracker) {
         val canReceiveLocationUpdates =
-            uiState.permissionState == LocationPermissionUiState.ALWAYS ||
-                uiState.permissionState == LocationPermissionUiState.FOREGROUND_ONLY
+            (uiState.permissionState == LocationPermissionUiState.ALWAYS ||
+                uiState.permissionState == LocationPermissionUiState.FOREGROUND_ONLY) &&
+                uiState.isLocationServiceEnabled
 
         if (!canReceiveLocationUpdates) {
             onDispose { }
@@ -99,7 +104,14 @@ fun MainRoute(
         },
         onTrackingPermissionDialogDismiss = viewModel::dismissTrackingPermissionDialog,
         onPermissionBannerConfirm = {
-            AppSettingsNavigator.openAppSettings(context)
+            when {
+                uiState.permissionState != LocationPermissionUiState.ALWAYS -> {
+                    AppSettingsNavigator.openAppSettings(context)
+                }
+                !uiState.isLocationServiceEnabled -> {
+                    AppSettingsNavigator.openLocationSettings(context)
+                }
+            }
         }
     )
 }

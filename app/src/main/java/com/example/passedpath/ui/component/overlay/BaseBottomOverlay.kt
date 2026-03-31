@@ -29,7 +29,7 @@ fun BaseBottomOverlay(
             shadowElevation = 10.dp
         ) {
             Box(
-                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)
+                modifier = Modifier.padding(horizontal = 18.dp, vertical = 4.dp)
             ) {
                 content()
             }
