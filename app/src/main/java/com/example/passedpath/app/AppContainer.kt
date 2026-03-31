@@ -8,6 +8,9 @@ import com.example.passedpath.feature.auth.data.manager.AuthTokenManager
 import com.example.passedpath.feature.auth.data.remote.api.AuthApi
 import com.example.passedpath.feature.auth.data.repository.AuthRepository
 import com.example.passedpath.feature.locationtracking.data.local.PassedPathDatabase
+import com.example.passedpath.feature.locationtracking.data.manager.InMemoryLocationTrackingServiceStateHolder
+import com.example.passedpath.feature.locationtracking.data.manager.LocationTrackingServiceStateReader
+import com.example.passedpath.feature.locationtracking.data.manager.LocationTrackingServiceStateWriter
 import com.example.passedpath.feature.locationtracking.data.manager.TrackingLocationProvider
 import com.example.passedpath.feature.locationtracking.data.remote.api.DayRouteApi
 import com.example.passedpath.feature.locationtracking.data.repository.RoomDayRouteRepository
@@ -45,6 +48,18 @@ class AppContainer(
 
     val trackingLocationTracker: LocationTracker by lazy {
         TrackingLocationProvider(appContext)
+    }
+
+    private val locationTrackingServiceStateHolder by lazy {
+        InMemoryLocationTrackingServiceStateHolder()
+    }
+
+    val locationTrackingServiceStateReader: LocationTrackingServiceStateReader by lazy {
+        locationTrackingServiceStateHolder
+    }
+
+    val locationTrackingServiceStateWriter: LocationTrackingServiceStateWriter by lazy {
+        locationTrackingServiceStateHolder
     }
 
     private val trackingDatabase: PassedPathDatabase by lazy {
