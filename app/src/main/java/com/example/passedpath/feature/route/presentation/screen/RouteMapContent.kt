@@ -21,12 +21,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.example.passedpath.R
 import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiState
 import com.example.passedpath.feature.route.presentation.state.MainRouteModeUiState
 import com.example.passedpath.feature.route.presentation.state.PlaceMarkerUiState
+import com.example.passedpath.feature.route.presentation.state.RouteUiAction
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.MarkerComposable
 import com.google.maps.android.compose.Polyline
@@ -52,7 +55,9 @@ fun RouteMapContent(
                 state = com.google.maps.android.compose.MarkerState(
                     position = LatLng(place.latitude, place.longitude)
                 ),
-                title = place.placeName.ifBlank { "Place ${place.orderIndex}" },
+                title = place.placeName.ifBlank {
+                    stringResource(R.string.route_place_fallback_title, place.orderIndex)
+                },
                 anchor = androidx.compose.ui.geometry.Offset(0.5f, 0.5f)
             ) {
                 PlaceOrderMarker(place = place, routeAccentColor = routeAccentColor)
@@ -85,7 +90,7 @@ private fun PlaceOrderMarker(
 fun RouteStatusOverlay(
     routeModeUiState: MainRouteModeUiState,
     hasRouteLocationData: Boolean,
-    onRetryRoute: () -> Unit
+    onRouteAction: (RouteUiAction) -> Unit
 ) {
     val routeErrorMessage = routeModeUiState.routeErrorMessage
     val routeEmptyMessage = routeModeUiState.routeEmptyMessage
@@ -117,7 +122,10 @@ fun RouteStatusOverlay(
                     routeModeUiState.isRouteLoading -> {
                         CircularProgressIndicator(color = routeAccentColor)
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text(text = loadingTitle(routeModeUiState), fontWeight = FontWeight.SemiBold)
+                        Text(
+                            text = loadingTitle(routeModeUiState),
+                            fontWeight = FontWeight.SemiBold
+                        )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = loadingMessage(routeModeUiState),
@@ -126,7 +134,10 @@ fun RouteStatusOverlay(
                         )
                     }
                     routeErrorMessage != null -> {
-                        Text(text = "Route Load Failed", fontWeight = FontWeight.SemiBold)
+                        Text(
+                            text = stringResource(R.string.route_error_title),
+                            fontWeight = FontWeight.SemiBold
+                        )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = routeErrorMessage,
@@ -135,13 +146,16 @@ fun RouteStatusOverlay(
                         )
                         if (routeModeUiState is MainRouteModeUiState.Past) {
                             Spacer(modifier = Modifier.height(16.dp))
-                            Button(onClick = onRetryRoute) {
-                                Text(text = "Retry")
+                            Button(onClick = { onRouteAction(RouteUiAction.RetryPastRoute) }) {
+                                Text(text = stringResource(R.string.route_retry))
                             }
                         }
                     }
                     else -> {
-                        Text(text = emptyTitle(routeModeUiState), fontWeight = FontWeight.SemiBold)
+                        Text(
+                            text = emptyTitle(routeModeUiState),
+                            fontWeight = FontWeight.SemiBold
+                        )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = routeEmptyMessage ?: emptyMessage(routeModeUiState),
@@ -155,31 +169,35 @@ fun RouteStatusOverlay(
     }
 }
 
+@Composable
 private fun loadingTitle(routeModeUiState: MainRouteModeUiState): String {
     return when (routeModeUiState) {
-        is MainRouteModeUiState.Today -> "Loading today's route"
-        is MainRouteModeUiState.Past -> "Loading past route"
+        is MainRouteModeUiState.Today -> stringResource(R.string.route_loading_today_title)
+        is MainRouteModeUiState.Past -> stringResource(R.string.route_loading_past_title)
     }
 }
 
+@Composable
 private fun loadingMessage(routeModeUiState: MainRouteModeUiState): String {
     return when (routeModeUiState) {
-        is MainRouteModeUiState.Today -> "Observing today's local path updates."
-        is MainRouteModeUiState.Past -> "Fetching the selected day's path and places."
+        is MainRouteModeUiState.Today -> stringResource(R.string.route_loading_today_message)
+        is MainRouteModeUiState.Past -> stringResource(R.string.route_loading_past_message)
     }
 }
 
+@Composable
 private fun emptyTitle(routeModeUiState: MainRouteModeUiState): String {
     return when (routeModeUiState) {
-        is MainRouteModeUiState.Today -> "No Route Yet"
-        is MainRouteModeUiState.Past -> "No Location Data"
+        is MainRouteModeUiState.Today -> stringResource(R.string.route_empty_today_title)
+        is MainRouteModeUiState.Past -> stringResource(R.string.route_empty_past_title)
     }
 }
 
+@Composable
 private fun emptyMessage(routeModeUiState: MainRouteModeUiState): String {
     return when (routeModeUiState) {
-        is MainRouteModeUiState.Today -> "Today's route will appear here once local tracking data is recorded."
-        is MainRouteModeUiState.Past -> "There is no route path data to show on the map for this day."
+        is MainRouteModeUiState.Today -> stringResource(R.string.route_empty_today_message)
+        is MainRouteModeUiState.Past -> stringResource(R.string.route_empty_past_message)
     }
 }
 

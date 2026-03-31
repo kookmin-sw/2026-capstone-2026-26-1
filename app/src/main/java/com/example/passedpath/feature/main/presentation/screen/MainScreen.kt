@@ -1,4 +1,4 @@
-package com.example.passedpath.feature.main.presentation.screen
+﻿package com.example.passedpath.feature.main.presentation.screen
 
 import android.app.DatePickerDialog
 import androidx.compose.foundation.Image
@@ -47,6 +47,7 @@ import com.example.passedpath.feature.main.presentation.state.MainUiState
 import com.example.passedpath.feature.route.presentation.screen.MainRouteSection
 import com.example.passedpath.feature.route.presentation.screen.RouteMapContent
 import com.example.passedpath.feature.route.presentation.screen.RouteStatusOverlay
+import com.example.passedpath.feature.route.presentation.state.RouteUiAction
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -68,7 +69,7 @@ fun MainScreen(
     uiState: MainUiState,
     onInitialCameraCentered: () -> Unit,
     onDateSelected: (String) -> Unit,
-    onRetryRoute: () -> Unit
+    onRouteAction: (RouteUiAction) -> Unit
 ) {
     val context = LocalContext.current
     val routeAccentColor = MaterialTheme.colorScheme.primary
@@ -159,7 +160,7 @@ fun MainScreen(
         RouteStatusOverlay(
             routeModeUiState = uiState.routeModeUiState,
             hasRouteLocationData = hasRouteLocationData,
-            onRetryRoute = onRetryRoute
+            onRouteAction = onRouteAction
         )
 
         Column(
@@ -189,7 +190,10 @@ fun MainScreen(
                         }
                     )
                     Spacer(modifier = Modifier.height(12.dp))
-                    MainRouteSection(routeMode = uiState.routeModeUiState)
+                    MainRouteSection(
+                        routeMode = uiState.routeModeUiState,
+                        onRouteAction = onRouteAction
+                    )
                 }
             }
 
@@ -212,7 +216,7 @@ fun MainScreen(
                     ) {
                         Icon(
                             painter = painterResource(id = R.drawable.my_location_24px),
-                            contentDescription = "Move to current location"
+                            contentDescription = stringResource(R.string.main_move_to_current_location)
                         )
                     }
                     Spacer(modifier = Modifier.height(12.dp))
@@ -226,9 +230,9 @@ fun MainScreen(
                         Column(
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)
                         ) {
-                            Text(text = "Location permission is off")
+                            Text(text = stringResource(R.string.main_permission_off_title))
                             Spacer(modifier = Modifier.height(4.dp))
-                            Text(text = "Current location stays hidden until fine location is granted.")
+                            Text(text = stringResource(R.string.main_permission_off_message))
                         }
                     }
                 }
@@ -254,11 +258,11 @@ private fun MainHeader(
             Text(text = permissionText(permissionState))
         }
         Button(onClick = onPickDate) {
-            Text(text = "Pick date")
+            Text(text = stringResource(R.string.main_pick_date))
         }
     }
     Spacer(modifier = Modifier.height(12.dp))
-    Text(text = "Selected date: $selectedDateKey")
+    Text(text = stringResource(R.string.main_selected_date, selectedDateKey))
 }
 
 private fun showDatePicker(
@@ -282,11 +286,12 @@ private fun showDatePicker(
     ).show()
 }
 
+@Composable
 private fun permissionText(permissionState: LocationPermissionUiState): String {
     return when (permissionState) {
-        LocationPermissionUiState.ALWAYS -> "Background location is enabled"
-        LocationPermissionUiState.FOREGROUND_ONLY -> "Foreground location is enabled"
-        LocationPermissionUiState.DENIED -> "Location permission is not granted"
+        LocationPermissionUiState.ALWAYS -> stringResource(R.string.main_permission_enabled_background)
+        LocationPermissionUiState.FOREGROUND_ONLY -> stringResource(R.string.main_permission_enabled_foreground)
+        LocationPermissionUiState.DENIED -> stringResource(R.string.main_permission_denied)
     }
 }
 

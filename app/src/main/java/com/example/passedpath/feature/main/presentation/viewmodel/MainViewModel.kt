@@ -18,6 +18,7 @@ import com.example.passedpath.feature.route.presentation.mapper.createPastRouteM
 import com.example.passedpath.feature.route.presentation.mapper.createTodayEmptyRouteMode
 import com.example.passedpath.feature.route.presentation.mapper.createTodayRouteMode
 import com.example.passedpath.feature.route.presentation.mapper.toSelectedDayRouteUiState
+import com.example.passedpath.feature.route.presentation.state.RouteUiAction
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -90,8 +91,13 @@ class MainViewModel(
         loadDayRoute(dateKey)
     }
 
-    fun retrySelectedDate() {
-        loadDayRoute(_uiState.value.selectedDateKey)
+    fun handleRouteAction(action: RouteUiAction) {
+        when (action) {
+            RouteUiAction.RefreshTodayRoute -> loadDayRoute(_uiState.value.selectedDateKey)
+            RouteUiAction.RetryPastRoute -> loadDayRoute(_uiState.value.selectedDateKey)
+            RouteUiAction.ToggleTracking -> Unit
+            RouteUiAction.EnterPastPlayback -> Unit
+        }
     }
 
     private fun loadDayRoute(dateKey: String) {

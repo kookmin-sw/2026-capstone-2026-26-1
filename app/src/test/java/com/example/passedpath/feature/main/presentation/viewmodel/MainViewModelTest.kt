@@ -8,6 +8,7 @@ import com.example.passedpath.feature.locationtracking.domain.model.TrackedLocat
 import com.example.passedpath.feature.locationtracking.domain.repository.DayRouteRepository
 import com.example.passedpath.feature.locationtracking.domain.repository.RemoteDayRouteResult
 import com.example.passedpath.feature.permission.data.manager.LocationPermissionStatusReader
+import com.example.passedpath.feature.route.presentation.state.RouteUiAction
 import com.example.passedpath.testutil.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -169,7 +170,7 @@ class MainViewModelTest {
         assertEquals("2026-03-30", state.selectedDateKey)
         assertTrue(state.isRouteEmpty)
         assertFalse(state.selectedRoute.hasLocationData)
-        assertEquals("No route data exists for this day.", state.routeEmptyMessage)
+        assertEquals("선택한 날짜에는 지도에 표시할 경로 데이터가 없습니다.", state.routeEmptyMessage)
         assertNull(state.routeErrorMessage)
     }
 
@@ -196,8 +197,30 @@ class MainViewModelTest {
 
         assertEquals("2026-03-31", state.selectedDateKey)
         assertFalse(state.isRouteEmpty)
-        assertEquals("Failed to load the selected route.", state.routeErrorMessage)
+        assertEquals("선택한 날짜의 경로를 불러오지 못했습니다.", state.routeErrorMessage)
         assertFalse(state.selectedRoute.hasLocationData)
+    }
+
+    @Test
+    fun `retry past route action reloads selected date`() = runTest {
+        val repository = FakeDayRouteRepository(
+            resultByDate = mutableMapOf(
+                "2026-03-30" to RemoteDayRouteResult.Error(IllegalStateException("boom"))
+            )
+        )
+
+        val viewModel = MainViewModel(
+            locationPermissionStatusReader = FakeLocationPermissionStatusReader(),
+            dayRouteRepository = repository,
+            initialDateKeyProvider = { "2026-03-30" },
+            todayDateKeyProvider = { "2026-03-31" }
+        )
+        advanceUntilIdle()
+
+        viewModel.handleRouteAction(RouteUiAction.RetryPastRoute)
+        advanceUntilIdle()
+
+        assertEquals(listOf("2026-03-30", "2026-03-30"), repository.requestedRemoteDates)
     }
 
     @Test
@@ -224,7 +247,7 @@ class MainViewModelTest {
             todayDateKeyProvider = { "2026-03-31" }
         )
         advanceUntilIdle()
-        assertEquals("Failed to load the selected route.", viewModel.uiState.value.routeErrorMessage)
+        assertEquals("선택한 날짜의 경로를 불러오지 못했습니다.", viewModel.uiState.value.routeErrorMessage)
 
         viewModel.selectDate("2026-03-31")
         advanceUntilIdle()

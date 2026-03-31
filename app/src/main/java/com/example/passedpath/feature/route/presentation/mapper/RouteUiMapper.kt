@@ -38,7 +38,7 @@ internal fun createTodayEmptyRouteMode(dateKey: String): MainRouteModeUiState.To
     return createTodayRouteMode(
         route = SelectedDayRouteUiState(dateKey = dateKey),
         isRouteEmpty = true,
-        routeEmptyMessage = "No route data exists for this day."
+        routeEmptyMessage = "오늘의 이동 경로가 기록되면 이곳에 표시됩니다."
     )
 }
 
@@ -46,14 +46,14 @@ internal fun createPastEmptyRouteMode(dateKey: String): MainRouteModeUiState.Pas
     return createPastRouteMode(
         route = SelectedDayRouteUiState(dateKey = dateKey),
         isRouteEmpty = true,
-        routeEmptyMessage = "No route data exists for this day."
+        routeEmptyMessage = "선택한 날짜에는 지도에 표시할 경로 데이터가 없습니다."
     )
 }
 
 internal fun createPastErrorRouteMode(dateKey: String): MainRouteModeUiState.Past {
     return createPastRouteMode(
         route = SelectedDayRouteUiState(dateKey = dateKey),
-        routeErrorMessage = "Failed to load the selected route."
+        routeErrorMessage = "선택한 날짜의 경로를 불러오지 못했습니다."
     )
 }
 

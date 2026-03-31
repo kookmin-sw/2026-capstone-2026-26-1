@@ -47,3 +47,10 @@ sealed interface MainRouteModeUiState {
         val isPlaybackEntryVisible: Boolean = true
     ) : MainRouteModeUiState
 }
+
+sealed interface RouteUiAction {
+    data object RefreshTodayRoute : RouteUiAction
+    data object ToggleTracking : RouteUiAction
+    data object RetryPastRoute : RouteUiAction
+    data object EnterPastPlayback : RouteUiAction
+}
