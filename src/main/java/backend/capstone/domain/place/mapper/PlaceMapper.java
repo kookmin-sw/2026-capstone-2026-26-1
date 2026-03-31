@@ -5,12 +5,14 @@ import backend.capstone.domain.place.dto.PlaceAddRequest;
 import backend.capstone.domain.place.dto.PlaceAddResponse;
 import backend.capstone.domain.place.dto.PlaceUpdateResponse;
 import backend.capstone.domain.place.entity.Place;
+import backend.capstone.domain.place.entity.PlaceSource;
 import lombok.NoArgsConstructor;
 
 @NoArgsConstructor(access = lombok.AccessLevel.PRIVATE)
 public class PlaceMapper {
 
-    public static Place toEntity(DayRoute dayRoute, PlaceAddRequest request, int orderIndex) {
+    public static Place toEntity(DayRoute dayRoute, PlaceAddRequest request, int orderIndex,
+        PlaceSource source) {
         return Place.builder()
             .dayRoute(dayRoute)
             .roadAddress(request.roadAddress())
@@ -18,6 +20,7 @@ public class PlaceMapper {
             .latitude(request.latitude())
             .longitude(request.longitude())
             .orderIndex(orderIndex)
+            .source(source)
             .build();
     }
 

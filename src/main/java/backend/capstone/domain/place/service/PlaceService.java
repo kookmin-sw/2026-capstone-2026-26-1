@@ -8,6 +8,7 @@ import backend.capstone.domain.place.dto.PlaceReorderRequest;
 import backend.capstone.domain.place.dto.PlaceUpdateRequest;
 import backend.capstone.domain.place.dto.PlaceUpdateResponse;
 import backend.capstone.domain.place.entity.Place;
+import backend.capstone.domain.place.entity.PlaceSource;
 import backend.capstone.domain.place.exception.PlaceErrorCode;
 import backend.capstone.domain.place.mapper.PlaceMapper;
 import backend.capstone.domain.place.repository.PlaceRepository;
@@ -32,7 +33,8 @@ public class PlaceService {
         int maxOrder = placeRepository.findMaxOrderIdxByRoute(dayRoute);
         int newOrder = maxOrder + 1;
 
-        Place savedPlace = placeRepository.save(PlaceMapper.toEntity(dayRoute, request, newOrder));
+        Place savedPlace = placeRepository.save(
+            PlaceMapper.toEntity(dayRoute, request, newOrder, PlaceSource.MANUAL));
         dayRouteService.refreshHasManualData(dayRoute);
         return PlaceMapper.toPlaceAddResponse(savedPlace);
     }
