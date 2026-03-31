@@ -10,6 +10,7 @@ import backend.capstone.domain.user.service.UserService;
 import backend.capstone.global.exception.BusinessException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.YearMonth;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -45,6 +46,20 @@ public class DayRouteService {
                             () -> new BusinessException(DayRouteErrorCode.DAY_ROUTE_CREATE_FAILED));
                 }
             });
+    }
+
+    @Transactional(readOnly = true)
+    public LocalDateTime getDayRouteEndTime(DayRoute dayRoute) {
+        //TODO: fetch join 적용
+        LocalDate routeDate = dayRoute.getDate();
+        LocalTime dayStartTime = dayRoute.getUser().getDayStartTime();
+        LocalTime dayEndTime = dayRoute.getUser().getDayEndTime();
+
+        LocalDate endDate = routeDate;
+        if (dayEndTime.isBefore(dayStartTime) || dayEndTime.equals(dayStartTime)) {
+            endDate = routeDate.plusDays(1);
+        }
+        return LocalDateTime.of(endDate, dayEndTime);
     }
 
     @Transactional(readOnly = true)

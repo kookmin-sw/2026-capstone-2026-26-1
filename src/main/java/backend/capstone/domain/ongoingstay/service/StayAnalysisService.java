@@ -2,6 +2,7 @@ package backend.capstone.domain.ongoingstay.service;
 
 import backend.capstone.domain.dayroute.entity.AnalysisStatus;
 import backend.capstone.domain.dayroute.entity.DayRoute;
+import backend.capstone.domain.dayroute.service.DayRouteService;
 import backend.capstone.domain.gpspoint.entity.GpsPoint;
 import backend.capstone.domain.gpspoint.service.GpsPointService;
 import backend.capstone.domain.ongoingstay.entity.OngoingStay;
@@ -19,6 +20,7 @@ public class StayAnalysisService {
 
     private final OngoingStayRepository ongoingStayRepository;
     private final GpsPointService gpsPointService;
+    private final DayRouteService dayRouteService;
 
     @Transactional
     public void analyzeStay(DayRoute dayRoute) {
@@ -37,13 +39,9 @@ public class StayAnalysisService {
         List<GpsPoint> newPoints = gpsPointService.getNewPoints(dayRoute,
             lastAnalyzedPointId == null ? 0L : lastAnalyzedPointId);
 
+        // 새 점이 없을 때: 마지막 ongoing stay tail 처리
         if (newPoints.isEmpty()) {
-            if (stay != null) { //새로 분석할 gpsPoint가 없지만 ongoing stay는 남아있다
-                if (Duration.between(stay.getStartTime(), LocalDateTime.now()).toMinutes() >= 10) {
-                    //TODO: place 승격, 장소 조회
-                }
-                ongoingStayRepository.delete(stay);
-            }
+            handleLastTailIfDayEnded(dayRoute, stay);
             dayRoute.markIdleAnalysis();
             return;
         }
@@ -74,9 +72,25 @@ public class StayAnalysisService {
             stay = OngoingStay.start(dayRoute, point);
             ongoingStayRepository.save(stay);
 
-            GpsPoint lastPoint = newPoints.get(newPoints.size() - 1);
-            dayRoute.completeAnalysis(lastPoint.getId());
         }
+        dayRoute.completeAnalysis(newPoints.getLast().getId());
+    }
+
+    private void handleLastTailIfDayEnded(DayRoute dayRoute, OngoingStay stay) {
+        if (stay == null) {
+            return;
+        }
+
+        LocalDateTime dayRouteEndTime = dayRouteService.getDayRouteEndTime(dayRoute);
+        // 아직 이 dayRoute의 종료 기준 시각이 지나지 않았으면 아무것도 하지 않음
+        if (LocalDateTime.now().isBefore(dayRouteEndTime)) {
+            return;
+        }
+
+        if (Duration.between(stay.getStartTime(), dayRouteEndTime).toMinutes() >= 10) {
+            //TODO: place 승격
+        }
+        ongoingStayRepository.delete(stay);
     }
 
     //두 좌표간 거리를 m 단위로 계산하는 함수 (하버사인 공식)
