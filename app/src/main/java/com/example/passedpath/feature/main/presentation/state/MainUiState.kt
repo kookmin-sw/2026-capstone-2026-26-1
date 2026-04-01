@@ -35,8 +35,4 @@ data class MainUiState(
 
     val routeErrorMessage: String?
         get() = routeModeUiState.routeErrorMessage
-
-    val showPermissionOverlay: Boolean
-        get() = permissionState != LocationPermissionUiState.ALWAYS || !isLocationServiceEnabled
 }
-

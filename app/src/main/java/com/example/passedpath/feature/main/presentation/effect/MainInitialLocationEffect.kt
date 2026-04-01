@@ -3,6 +3,7 @@
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import com.example.passedpath.feature.locationtracking.domain.tracker.LocationTracker
+import com.example.passedpath.feature.permission.presentation.policy.canReceiveLocationUpdates
 import com.example.passedpath.feature.permission.presentation.state.LocationPermissionUiState
 import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiState
 
@@ -15,15 +16,15 @@ internal fun MainInitialLocationEffect(
     locationTracker: LocationTracker
 ) {
     LaunchedEffect(permissionState, isLocationServiceEnabled, currentLocation) {
-        val canReceiveLocationUpdates =
-            permissionState == LocationPermissionUiState.ALWAYS ||
-                permissionState == LocationPermissionUiState.FOREGROUND_ONLY
-
-        if (canReceiveLocationUpdates && isLocationServiceEnabled && currentLocation == null) {
+        if (
+            canReceiveLocationUpdates(
+                permissionState = permissionState,
+                isLocationServiceEnabled = isLocationServiceEnabled
+            ) && currentLocation == null
+        ) {
             locationTracker.getCurrentLocation()?.let { trackedLocation ->
                 onCurrentLocationUpdated(trackedLocation.toMainCoordinateUiState())
             }
         }
     }
 }
-

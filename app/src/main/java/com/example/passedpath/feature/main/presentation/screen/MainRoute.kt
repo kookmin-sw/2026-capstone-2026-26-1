@@ -6,9 +6,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.passedpath.app.appContainer
-import com.example.passedpath.feature.permission.presentation.state.LocationPermissionUiState
 import com.example.passedpath.feature.main.presentation.viewmodel.MainViewModel
 import com.example.passedpath.feature.main.presentation.viewmodel.MainViewModelFactory
+import com.example.passedpath.feature.permission.presentation.policy.PermissionActionTarget
+import com.example.passedpath.feature.permission.presentation.policy.resolvePermissionActionTarget
 import com.example.passedpath.util.AppSettingsNavigator
 
 @Composable
@@ -50,15 +51,16 @@ fun MainRoute(
         },
         onTrackingPermissionDialogDismiss = viewModel::dismissTrackingPermissionDialog,
         onPermissionBannerConfirm = {
-            when {
-                uiState.permissionState != LocationPermissionUiState.ALWAYS -> {
-                    AppSettingsNavigator.openAppSettings(context)
-                }
-                !uiState.isLocationServiceEnabled -> {
-                    AppSettingsNavigator.openLocationSettings(context)
-                }
+            when (
+                resolvePermissionActionTarget(
+                    permissionState = uiState.permissionState,
+                    isLocationServiceEnabled = uiState.isLocationServiceEnabled
+                )
+            ) {
+                PermissionActionTarget.OpenAppSettings -> AppSettingsNavigator.openAppSettings(context)
+                PermissionActionTarget.OpenLocationSettings -> AppSettingsNavigator.openLocationSettings(context)
+                PermissionActionTarget.None -> Unit
             }
         }
     )
 }
-

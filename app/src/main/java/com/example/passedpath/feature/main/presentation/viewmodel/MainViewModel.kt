@@ -7,6 +7,7 @@ import com.example.passedpath.app.AppContainer
 import com.example.passedpath.feature.locationtracking.data.manager.LocationTrackingServiceStateReader
 import com.example.passedpath.feature.main.presentation.policy.TrackingToggleDecision
 import com.example.passedpath.feature.main.presentation.policy.decideTrackingToggle
+import com.example.passedpath.feature.permission.presentation.policy.resolveLocationPermissionUiState
 import com.example.passedpath.feature.permission.presentation.state.LocationPermissionUiState
 import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiState
 import com.example.passedpath.feature.main.presentation.state.MainUiState
@@ -59,11 +60,10 @@ class MainViewModel(
     }
 
     fun refreshPermissionState() {
-        val permissionState = when {
-            locationPermissionStatusReader.isBackgroundAlwaysGranted() -> LocationPermissionUiState.ALWAYS
-            locationPermissionStatusReader.isForegroundGranted() -> LocationPermissionUiState.FOREGROUND_ONLY
-            else -> LocationPermissionUiState.DENIED
-        }
+        val permissionState = resolveLocationPermissionUiState(
+            isBackgroundAlwaysGranted = locationPermissionStatusReader.isBackgroundAlwaysGranted(),
+            isForegroundGranted = locationPermissionStatusReader.isForegroundGranted()
+        )
 
         _uiState.update { currentState ->
             if (permissionState == LocationPermissionUiState.DENIED) {

@@ -3,6 +3,7 @@
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import com.example.passedpath.feature.locationtracking.domain.tracker.LocationTracker
+import com.example.passedpath.feature.permission.presentation.policy.canReceiveLocationUpdates
 import com.example.passedpath.feature.permission.presentation.state.LocationPermissionUiState
 import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiState
 
@@ -14,12 +15,7 @@ internal fun MainLocationUpdatesEffect(
     onCurrentLocationUpdated: (MainCoordinateUiState) -> Unit
 ) {
     DisposableEffect(permissionState, isLocationServiceEnabled, locationTracker) {
-        val canReceiveLocationUpdates =
-            (permissionState == LocationPermissionUiState.ALWAYS ||
-                permissionState == LocationPermissionUiState.FOREGROUND_ONLY) &&
-                isLocationServiceEnabled
-
-        if (!canReceiveLocationUpdates) {
+        if (!canReceiveLocationUpdates(permissionState, isLocationServiceEnabled)) {
             onDispose { }
         } else {
             val trackingSession = locationTracker.startLocationUpdates { trackedLocation ->
@@ -32,4 +28,3 @@ internal fun MainLocationUpdatesEffect(
         }
     }
 }
-

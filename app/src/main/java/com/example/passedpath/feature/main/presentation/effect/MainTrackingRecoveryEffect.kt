@@ -3,6 +3,7 @@
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import com.example.passedpath.feature.locationtracking.data.manager.LocationTrackingServiceStateReader
+import com.example.passedpath.feature.permission.presentation.policy.canRunTracking
 import com.example.passedpath.feature.permission.presentation.state.LocationPermissionUiState
 
 @Composable
@@ -15,10 +16,7 @@ internal fun MainTrackingRecoveryEffect(
     stopLocationTracking: (Boolean) -> Unit
 ) {
     LaunchedEffect(permissionState, isLocationServiceEnabled, isTrackingActive) {
-        val canRunTracking =
-            permissionState == LocationPermissionUiState.ALWAYS && isLocationServiceEnabled
-
-        if (canRunTracking) {
+        if (canRunTracking(permissionState, isLocationServiceEnabled)) {
             if (trackingServiceStateReader.isTrackingEnabledByUser() && !isTrackingActive) {
                 startLocationTracking(false)
             } else if (!trackingServiceStateReader.isTrackingEnabledByUser() && isTrackingActive) {
@@ -29,4 +27,3 @@ internal fun MainTrackingRecoveryEffect(
         }
     }
 }
-
