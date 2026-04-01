@@ -95,9 +95,12 @@ fun RouteStatusOverlay(
     val routeErrorMessage = routeModeUiState.routeErrorMessage
     val routeEmptyMessage = routeModeUiState.routeEmptyMessage
     val routeAccentColor = MaterialTheme.colorScheme.primary
-    val shouldShowNoLocationData =
-        !routeModeUiState.isRouteLoading && routeErrorMessage == null && !hasRouteLocationData
-    if (!routeModeUiState.isRouteLoading && routeErrorMessage == null && !shouldShowNoLocationData) {
+    val shouldShowEmptyOverlay = when (routeModeUiState) {
+        is MainRouteModeUiState.Today -> false
+        is MainRouteModeUiState.Past ->
+            !routeModeUiState.isRouteLoading && routeErrorMessage == null && !hasRouteLocationData
+    }
+    if (!routeModeUiState.isRouteLoading && routeErrorMessage == null && !shouldShowEmptyOverlay) {
         return
     }
 

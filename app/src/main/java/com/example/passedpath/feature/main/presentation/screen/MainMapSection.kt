@@ -80,7 +80,8 @@ internal fun MainMapSection(
         permissionState = uiState.permissionState,
         isLocationServiceEnabled = uiState.isLocationServiceEnabled
     )
-    val initialCameraTarget = routePoints.firstOrNull() ?: currentLocation?.toLatLng() ?: fallbackPosition
+    val initialCameraTarget =
+        routePoints.firstOrNull() ?: currentLocation?.toLatLng() ?: fallbackPosition
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(initialCameraTarget, 15f)
     }
@@ -94,7 +95,12 @@ internal fun MainMapSection(
         }
     }
 
-    LaunchedEffect(isMapLoaded, currentLocation, uiState.hasCenteredOnCurrentLocation, routePoints) {
+    LaunchedEffect(
+        isMapLoaded,
+        currentLocation,
+        uiState.hasCenteredOnCurrentLocation,
+        routePoints
+    ) {
         if (
             shouldCenterOnCurrentLocation(
                 isMapLoaded = isMapLoaded,
@@ -148,7 +154,7 @@ internal fun MainMapSection(
                                 )
                         )
                         Image(
-                            painter = painterResource(id = R.drawable.current_location_marker),
+                            painter = painterResource(id = R.drawable.pp_location_marker),
                             contentDescription = stringResource(R.string.main_map_marker_title),
                             modifier = Modifier.size(70.dp),
                             contentScale = ContentScale.Fit
@@ -202,14 +208,17 @@ internal fun MainMapSection(
                         onClick = {
                             coroutineScope.launch {
                                 cameraPositionState.animate(
-                                    CameraUpdateFactory.newLatLngZoom(currentLocation.toLatLng(), 17f)
+                                    CameraUpdateFactory.newLatLngZoom(
+                                        currentLocation.toLatLng(),
+                                        17f
+                                    )
                                 )
                             }
                         },
                         modifier = Modifier.padding(bottom = floatingBottomPadding)
                     ) {
                         Icon(
-                            painter = painterResource(id = R.drawable.my_location_24px),
+                            painter = painterResource(id = R.drawable.ic_bottom_my_location),
                             contentDescription = stringResource(R.string.main_move_to_current_location)
                         )
                     }

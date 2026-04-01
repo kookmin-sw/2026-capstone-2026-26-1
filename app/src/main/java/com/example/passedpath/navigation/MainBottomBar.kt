@@ -2,8 +2,8 @@ package com.example.passedpath.navigation
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -59,7 +59,7 @@ private val bottomNavItems = listOf(
     BottomNavItem(
         route = NavRoute.MAIN,
         labelResId = R.string.bottom_nav_main,
-        iconResId = R.drawable.conversion_path_24px
+        iconResId = R.drawable.ic_bottom_conversion_path
     ),
     BottomNavItem(
         route = NavRoute.MYPAGE,
