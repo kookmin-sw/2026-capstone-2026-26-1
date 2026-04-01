@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.passedpath.app.AppContainer
 import com.example.passedpath.feature.place.domain.usecase.AddPlaceUseCase
 import com.example.passedpath.feature.place.domain.usecase.DeletePlaceUseCase
+import com.example.passedpath.feature.place.domain.usecase.ReorderPlacesUseCase
 import com.example.passedpath.feature.place.domain.usecase.UpdatePlaceUseCase
 import com.example.passedpath.feature.place.presentation.state.PlaceUiState
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,6 +24,7 @@ class PlaceViewModel(
     private val addPlaceUseCase: AddPlaceUseCase,
     private val updatePlaceUseCase: UpdatePlaceUseCase,
     private val deletePlaceUseCase: DeletePlaceUseCase,
+    private val reorderPlacesUseCase: ReorderPlacesUseCase,
     initialDateKey: String = todayDateKey()
 ) : ViewModel() {
 
@@ -35,6 +37,10 @@ class PlaceViewModel(
 
     fun updatePlaceId(value: String) {
         updateField { copy(placeId = value, errorMessage = null, successMessage = null) }
+    }
+
+    fun updateReorderPlaceIdsInput(value: String) {
+        updateField { copy(reorderPlaceIdsInput = value, errorMessage = null, successMessage = null) }
     }
 
     fun updatePlaceName(value: String) {
@@ -117,6 +123,48 @@ class PlaceViewModel(
         }
     }
 
+    fun reorderPlaces() {
+        val currentState = _uiState.value
+        val placeIds = currentState.parsedReorderPlaceIds
+        if (!isValidDateKey(currentState.dateKey)) {
+            _uiState.update { it.copy(errorMessage = "날짜는 yyyy-MM-dd 형식이어야 합니다.", successMessage = null) }
+            return
+        }
+        if (placeIds.isEmpty()) {
+            _uiState.update { it.copy(errorMessage = "순서 변경용 placeId 배열을 입력해 주세요.", successMessage = null) }
+            return
+        }
+        if (!isValidReorderInput(currentState.reorderPlaceIdsInput, placeIds)) {
+            _uiState.update { it.copy(errorMessage = "순서 변경 입력은 쉼표로 구분된 숫자 목록이어야 합니다. 예: 2,1", successMessage = null) }
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isSubmitting = true, errorMessage = null, successMessage = null) }
+            try {
+                reorderPlacesUseCase(
+                    dateKey = currentState.dateKey,
+                    placeIds = placeIds
+                )
+                _uiState.update {
+                    it.copy(
+                        isSubmitting = false,
+                        errorMessage = null,
+                        successMessage = "장소 순서가 변경되었습니다. ids=${placeIds.joinToString(",")}" 
+                    )
+                }
+            } catch (throwable: Throwable) {
+                _uiState.update {
+                    it.copy(
+                        isSubmitting = false,
+                        errorMessage = throwable.message ?: "장소 순서 변경에 실패했습니다.",
+                        successMessage = null
+                    )
+                }
+            }
+        }
+    }
+
     fun deletePlace() {
         val currentState = _uiState.value
         val placeId = currentState.parsedPlaceId
@@ -165,6 +213,7 @@ class PlaceViewModel(
         _uiState.update {
             it.copy(
                 placeId = "",
+                reorderPlaceIdsInput = "",
                 placeName = "",
                 roadAddress = "",
                 latitude = "",
@@ -190,6 +239,11 @@ class PlaceViewModel(
             return "모든 필드를 입력해 주세요."
         }
         return null
+    }
+
+    private fun isValidReorderInput(rawInput: String, parsedIds: List<Long>): Boolean {
+        val normalized = rawInput.split(',').map(String::trim).filter(String::isNotBlank)
+        return normalized.isNotEmpty() && normalized.size == parsedIds.size
     }
 
     private fun mutationFailureMessage(isCreate: Boolean): String {
@@ -229,6 +283,7 @@ class PlaceViewModelFactory(
                 addPlaceUseCase = appContainer.addPlaceUseCase,
                 updatePlaceUseCase = appContainer.updatePlaceUseCase,
                 deletePlaceUseCase = appContainer.deletePlaceUseCase,
+                reorderPlacesUseCase = appContainer.reorderPlacesUseCase,
                 initialDateKey = initialDateKey
             ) as T
         }

@@ -1,4 +1,4 @@
-<resources>
+﻿<resources>
     <string name="app_name">PassedPath</string>
     <string name="login_logo_content_description">Logo for login screen</string>
     <string name="login_tagline">Track the paths you walked</string>
@@ -79,8 +79,20 @@
     <string name="permission_banner_action">[권한 설정하기]</string>
     <string name="gps_off_overlay_message">위치 서비스가 꺼져 있어 기록이 남지 않고 있어요</string>
     <string name="gps_off_overlay_action">위치 서비스 켜기</string>
+    <string name="place_sheet_mode_hint">placeId가 비어 있으면 등록, 값이 있으면 수정입니다. 삭제는 placeId만 있어도 가능합니다.</string>
+    <string name="place_sheet_reorder_hint">순서 변경은 현재 drag UI 대신 쉼표 구분 placeId 목록으로 테스트합니다. 예: 2,1</string>
+    <string name="place_sheet_date_hint">main selected date가 아직 연결되지 않아 날짜를 직접 입력합니다.</string>
+    <string name="place_field_date">날짜</string>
+    <string name="place_field_reorder_ids">순서 변경 placeIds</string>
+    <string name="place_action_reorder">장소 순서 변경</string>
+    <string name="place_field_id">placeId</string>
+    <string name="place_field_id_placeholder">비우면 등록</string>
+    <string name="place_field_name">장소명</string>
+    <string name="place_field_road_address">도로명 주소</string>
+    <string name="place_field_latitude">위도</string>
+    <string name="place_field_longitude">경도</string>
+    <string name="place_action_create">장소 등록</string>
+    <string name="place_action_update">장소 수정</string>
+    <string name="place_action_delete">장소 삭제</string>
+    <string name="place_action_reset">입력 초기화</string>
 </resources>
-
-
-
-

@@ -9,5 +9,7 @@ interface PlaceRepository {
 
     suspend fun updatePlace(dateKey: String, placeId: Long, place: PlaceRegistration): UpdatedPlace
 
+    suspend fun reorderPlaces(dateKey: String, placeIds: List<Long>)
+
     suspend fun deletePlace(dateKey: String, placeId: Long)
 }

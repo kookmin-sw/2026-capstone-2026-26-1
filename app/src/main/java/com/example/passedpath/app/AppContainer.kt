@@ -34,6 +34,8 @@ import com.example.passedpath.feature.place.data.repository.PlaceRepositoryImpl
 import com.example.passedpath.feature.place.domain.repository.PlaceRepository
 import com.example.passedpath.feature.place.domain.usecase.AddPlaceUseCase
 import com.example.passedpath.feature.place.domain.usecase.DeletePlaceUseCase
+import com.example.passedpath.feature.place.domain.usecase.ReorderPlacesUseCase
+import com.example.passedpath.feature.place.domain.usecase.UpdatePlaceUseCase
 import java.time.LocalTime
 
 class AppContainer(
@@ -181,7 +183,17 @@ class AppContainer(
     val deletePlaceUseCase: DeletePlaceUseCase by lazy {
         DeletePlaceUseCase(placeRepository = placeRepository)
     }
+
+    val updatePlaceUseCase: UpdatePlaceUseCase by lazy {
+        UpdatePlaceUseCase(placeRepository = placeRepository)
+    }
+
+    val reorderPlacesUseCase: ReorderPlacesUseCase by lazy {
+        ReorderPlacesUseCase(placeRepository = placeRepository)
+    }
 }
+
+
 
 
 

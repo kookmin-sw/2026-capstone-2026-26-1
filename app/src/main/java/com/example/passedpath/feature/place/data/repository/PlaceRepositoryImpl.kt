@@ -1,6 +1,7 @@
 package com.example.passedpath.feature.place.data.repository
 
 import com.example.passedpath.feature.place.data.remote.api.PlaceApi
+import com.example.passedpath.feature.place.data.remote.dto.PlaceReorderRequestDto
 import com.example.passedpath.feature.place.data.remote.mapper.toRegisteredPlace
 import com.example.passedpath.feature.place.data.remote.mapper.toRequestDto
 import com.example.passedpath.feature.place.data.remote.mapper.toUpdateRequestDto
@@ -26,6 +27,13 @@ class PlaceRepositoryImpl(
             placeId = placeId,
             request = place.toUpdateRequestDto()
         ).toUpdatedPlace()
+    }
+
+    override suspend fun reorderPlaces(dateKey: String, placeIds: List<Long>) {
+        placeApi.reorderPlaces(
+            date = dateKey,
+            request = PlaceReorderRequestDto(placeIds = placeIds)
+        )
     }
 
     override suspend fun deletePlace(dateKey: String, placeId: Long) {

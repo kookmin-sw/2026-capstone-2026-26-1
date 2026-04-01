@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -31,24 +32,29 @@ fun PlaceBottomSheetContent(
     )
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val submitLabel = if (uiState.isCreateMode) "장소 등록" else "장소 수정"
+    val submitLabelRes = if (uiState.isCreateMode) R.string.place_action_create else R.string.place_action_update
 
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         Text(
-            text = androidx.compose.ui.res.stringResource(R.string.place_sheet_title),
+            text = stringResource(R.string.place_sheet_title),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.SemiBold
         )
         Text(
-            text = "placeId가 비어 있으면 등록, 값이 있으면 수정입니다. 삭제는 placeId만 있어도 가능합니다.",
+            text = stringResource(R.string.place_sheet_mode_hint),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Text(
-            text = "main selected date가 아직 연결되지 않아 날짜를 직접 입력합니다.",
+            text = stringResource(R.string.place_sheet_reorder_hint),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            text = stringResource(R.string.place_sheet_date_hint),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -56,36 +62,51 @@ fun PlaceBottomSheetContent(
             value = uiState.dateKey,
             onValueChange = viewModel::updateDateKey,
             modifier = Modifier.fillMaxWidth(),
-            label = { Text("날짜") },
+            label = { Text(stringResource(R.string.place_field_date)) },
             placeholder = { Text("yyyy-MM-dd") },
             singleLine = true
         )
         OutlinedTextField(
+            value = uiState.reorderPlaceIdsInput,
+            onValueChange = viewModel::updateReorderPlaceIdsInput,
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text(stringResource(R.string.place_field_reorder_ids)) },
+            placeholder = { Text("2,1") },
+            singleLine = true
+        )
+        Button(
+            onClick = viewModel::reorderPlaces,
+            enabled = uiState.isReorderEnabled,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(stringResource(R.string.place_action_reorder))
+        }
+        OutlinedTextField(
             value = uiState.placeId,
             onValueChange = viewModel::updatePlaceId,
             modifier = Modifier.fillMaxWidth(),
-            label = { Text("placeId") },
-            placeholder = { Text("비우면 등록") },
+            label = { Text(stringResource(R.string.place_field_id)) },
+            placeholder = { Text(stringResource(R.string.place_field_id_placeholder)) },
             singleLine = true
         )
         OutlinedTextField(
             value = uiState.placeName,
             onValueChange = viewModel::updatePlaceName,
             modifier = Modifier.fillMaxWidth(),
-            label = { Text("장소명") },
+            label = { Text(stringResource(R.string.place_field_name)) },
             singleLine = true
         )
         OutlinedTextField(
             value = uiState.roadAddress,
             onValueChange = viewModel::updateRoadAddress,
             modifier = Modifier.fillMaxWidth(),
-            label = { Text("도로명 주소") }
+            label = { Text(stringResource(R.string.place_field_road_address)) }
         )
         OutlinedTextField(
             value = uiState.latitude,
             onValueChange = viewModel::updateLatitude,
             modifier = Modifier.fillMaxWidth(),
-            label = { Text("위도") },
+            label = { Text(stringResource(R.string.place_field_latitude)) },
             placeholder = { Text("37.5665") },
             singleLine = true
         )
@@ -93,7 +114,7 @@ fun PlaceBottomSheetContent(
             value = uiState.longitude,
             onValueChange = viewModel::updateLongitude,
             modifier = Modifier.fillMaxWidth(),
-            label = { Text("경도") },
+            label = { Text(stringResource(R.string.place_field_longitude)) },
             placeholder = { Text("126.9780") },
             singleLine = true
         )
@@ -130,7 +151,7 @@ fun PlaceBottomSheetContent(
                         strokeWidth = 2.dp
                     )
                 } else {
-                    Text(submitLabel)
+                    Text(stringResource(submitLabelRes))
                 }
             }
             Button(
@@ -138,7 +159,7 @@ fun PlaceBottomSheetContent(
                 enabled = uiState.isDeleteEnabled,
                 modifier = Modifier.weight(1f)
             ) {
-                Text("장소 삭제")
+                Text(stringResource(R.string.place_action_delete))
             }
         }
 
@@ -147,7 +168,7 @@ fun PlaceBottomSheetContent(
             enabled = !uiState.isSubmitting,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("입력 초기화")
+            Text(stringResource(R.string.place_action_reset))
         }
     }
 }

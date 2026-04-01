@@ -3,6 +3,7 @@ package com.example.passedpath.feature.place.presentation.state
 data class PlaceUiState(
     val dateKey: String = "",
     val placeId: String = "",
+    val reorderPlaceIdsInput: String = "",
     val placeName: String = "",
     val roadAddress: String = "",
     val latitude: String = "",
@@ -13,6 +14,13 @@ data class PlaceUiState(
 ) {
     val parsedPlaceId: Long?
         get() = placeId.toLongOrNull()
+
+    val parsedReorderPlaceIds: List<Long>
+        get() = reorderPlaceIdsInput
+            .split(',')
+            .map(String::trim)
+            .filter(String::isNotBlank)
+            .mapNotNull(String::toLongOrNull)
 
     val isDateValid: Boolean
         get() = dateKey.isNotBlank()
@@ -31,4 +39,7 @@ data class PlaceUiState(
 
     val isDeleteEnabled: Boolean
         get() = !isSubmitting && isDateValid && parsedPlaceId != null
+
+    val isReorderEnabled: Boolean
+        get() = !isSubmitting && isDateValid && parsedReorderPlaceIds.isNotEmpty()
 }
