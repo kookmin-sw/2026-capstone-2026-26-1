@@ -16,4 +16,11 @@ class PlaceRepositoryImpl(
             request = place.toRequestDto()
         ).toRegisteredPlace()
     }
+
+    override suspend fun deletePlace(dateKey: String, placeId: Long) {
+        placeApi.deletePlace(
+            date = dateKey,
+            placeId = placeId
+        )
+    }
 }

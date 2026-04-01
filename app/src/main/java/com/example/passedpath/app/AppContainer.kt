@@ -33,6 +33,7 @@ import com.example.passedpath.feature.place.data.remote.api.PlaceApi
 import com.example.passedpath.feature.place.data.repository.PlaceRepositoryImpl
 import com.example.passedpath.feature.place.domain.repository.PlaceRepository
 import com.example.passedpath.feature.place.domain.usecase.AddPlaceUseCase
+import com.example.passedpath.feature.place.domain.usecase.DeletePlaceUseCase
 import java.time.LocalTime
 
 class AppContainer(
@@ -176,5 +177,11 @@ class AppContainer(
     val addPlaceUseCase: AddPlaceUseCase by lazy {
         AddPlaceUseCase(placeRepository = placeRepository)
     }
+
+    val deletePlaceUseCase: DeletePlaceUseCase by lazy {
+        DeletePlaceUseCase(placeRepository = placeRepository)
+    }
 }
+
+
 
