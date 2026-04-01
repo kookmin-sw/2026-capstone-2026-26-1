@@ -1,5 +1,7 @@
 package com.example.passedpath.feature.place.data.remote.api
 
+import com.example.passedpath.feature.place.data.remote.dto.BookmarkPlaceUpdateRequestDto
+import com.example.passedpath.feature.place.data.remote.dto.BookmarkPlaceUpdateResponseDto
 import com.example.passedpath.feature.place.data.remote.dto.PlaceAddRequestDto
 import com.example.passedpath.feature.place.data.remote.dto.PlaceAddResponseDto
 import com.example.passedpath.feature.place.data.remote.dto.PlaceReorderRequestDto
@@ -30,6 +32,12 @@ interface PlaceApi {
         @Path("date") date: String,
         @Body request: PlaceReorderRequestDto
     )
+
+    @PUT("/api/bookmark-places/{bookmarkPlaceId}")
+    suspend fun updateBookmarkPlace(
+        @Path("bookmarkPlaceId") bookmarkPlaceId: Long,
+        @Body request: BookmarkPlaceUpdateRequestDto
+    ): BookmarkPlaceUpdateResponseDto
 
     @DELETE("/api/day-routes/{date}/places/{placeId}")
     suspend fun deletePlace(
