@@ -15,7 +15,7 @@ import androidx.compose.ui.unit.dp
 import com.example.passedpath.ui.theme.PassedPathTheme
 
 @Composable
-fun FloatingCircleButton(
+fun BaseCircleButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     size: Dp = 56.dp,
@@ -41,8 +41,8 @@ fun FloatingCircleButton(
 
 @Preview(showBackground = true)
 @Composable
-private fun FloatingCircleButtonPreview() {
+private fun BaseCircleButtonPreview() {
     PassedPathTheme {
-        FloatingCircleButton(onClick = {}) {}
+        BaseCircleButton(onClick = {}) {}
     }
 }

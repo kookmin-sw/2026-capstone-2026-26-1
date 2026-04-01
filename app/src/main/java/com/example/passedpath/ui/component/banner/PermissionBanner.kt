@@ -1,5 +1,6 @@
-package com.example.passedpath.ui.component.overlay
+﻿package com.example.passedpath.ui.component.banner
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -15,17 +16,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun PermissionOverlay(
+fun PermissionBanner(
     modifier: Modifier = Modifier,
     message: String,
     actionText: String,
     onClickAction: () -> Unit
 ) {
-    BaseBottomOverlay(
+    BaseBottomBanner(
         modifier = modifier,
         containerColor = Color(0xFFEAF8F7)
     ) {
@@ -57,6 +59,25 @@ fun PermissionOverlay(
                     fontWeight = FontWeight.Bold
                 )
             }
+        }
+    }
+}
+
+@Preview(showBackground = true, name = "Permission Banner")
+@Composable
+private fun PermissionBannerPreview() {
+    com.example.passedpath.ui.theme.PassedPathTheme {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color(0xFFF3F4F6))
+                .padding(16.dp)
+        ) {
+            PermissionBanner(
+                message = "위치 권한이 필요합니다",
+                actionText = "설정하기",
+                onClickAction = {}
+            )
         }
     }
 }

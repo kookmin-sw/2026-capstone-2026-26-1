@@ -20,24 +20,24 @@ import com.example.passedpath.ui.theme.Gray400
 import com.example.passedpath.ui.theme.PassedPathTheme
 
 @Composable
-fun AppButton(
-    text: String,                    // 버튼에 표시할 텍스트
-    onClick: () -> Unit,            // 버튼 클릭시 동작
-    modifier: Modifier = Modifier,  // 수정자
-    enabled: Boolean = true,        // 비활성 여부
-    variant: ButtonVariant = ButtonVariant.PRIMARY, // 🌟버튼 종류
+fun BaseButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    variant: BaseButtonVariant = BaseButtonVariant.PRIMARY,
 ) {
     when (variant) {
-        ButtonVariant.PRIMARY, ButtonVariant.SECONDARY -> {
+        BaseButtonVariant.PRIMARY, BaseButtonVariant.SECONDARY -> {
             val backgroundColor = when (variant) {
-                ButtonVariant.PRIMARY -> MaterialTheme.colorScheme.primary
-                ButtonVariant.SECONDARY -> MaterialTheme.colorScheme.secondary
-                ButtonVariant.TEXT_ONLY -> Color.Transparent // Should not be reached with this structure, but for exhaustiveness
+                BaseButtonVariant.PRIMARY -> MaterialTheme.colorScheme.primary
+                BaseButtonVariant.SECONDARY -> MaterialTheme.colorScheme.secondary
+                BaseButtonVariant.TEXT_ONLY -> Color.Transparent
             }
             val contentColor = when (variant) {
-                ButtonVariant.PRIMARY -> MaterialTheme.colorScheme.onPrimary
-                ButtonVariant.SECONDARY -> MaterialTheme.colorScheme.onSecondary
-                ButtonVariant.TEXT_ONLY -> Color.Unspecified // Should not be reached with this structure, but for exhaustiveness
+                BaseButtonVariant.PRIMARY -> MaterialTheme.colorScheme.onPrimary
+                BaseButtonVariant.SECONDARY -> MaterialTheme.colorScheme.onSecondary
+                BaseButtonVariant.TEXT_ONLY -> Color.Unspecified
             }
 
             Button(
@@ -45,7 +45,7 @@ fun AppButton(
                 enabled = enabled,
                 modifier = modifier
                     .fillMaxWidth()
-                    .height(56.dp), // 가로 꽉차게, 높이 56dp
+                    .height(56.dp),
                 shape = RoundedCornerShape(20.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = backgroundColor,
@@ -61,14 +61,14 @@ fun AppButton(
             }
         }
 
-        ButtonVariant.TEXT_ONLY -> {
+        BaseButtonVariant.TEXT_ONLY -> {
             TextButton(
                 onClick = onClick,
                 enabled = enabled,
-                modifier = modifier, // Use the passed modifier directly, don't force fillWidth/height
+                modifier = modifier,
                 colors = ButtonDefaults.textButtonColors(
-                    containerColor = Color.Transparent, // Transparent background
-                    contentColor = Gray400, // Text color for TEXT_ONLY
+                    containerColor = Color.Transparent,
+                    contentColor = Gray400,
                     disabledContentColor = Gray200
                 )
             ) {
@@ -83,25 +83,25 @@ fun AppButton(
 
 @Preview(showBackground = true)
 @Composable
-private fun AppButtonPreview() {
+private fun BaseButtonPreview() {
     PassedPathTheme {
-        Column { // Wrap previews in a Column for better display
-            AppButton(
-                text = "PRIMARY 버튼",
+        Column {
+            BaseButton(
+                text = "PRIMARY Button",
                 onClick = {},
-                variant = ButtonVariant.PRIMARY
+                variant = BaseButtonVariant.PRIMARY
             )
             Spacer(Modifier.height(8.dp))
-            AppButton(
-                text = "SECONDARY 버튼",
+            BaseButton(
+                text = "SECONDARY Button",
                 onClick = {},
-                variant = ButtonVariant.SECONDARY
+                variant = BaseButtonVariant.SECONDARY
             )
             Spacer(Modifier.height(8.dp))
-            AppButton(
-                text = "TEXT_ONLY 버튼",
+            BaseButton(
+                text = "TEXT_ONLY Button",
                 onClick = {},
-                variant = ButtonVariant.TEXT_ONLY
+                variant = BaseButtonVariant.TEXT_ONLY
             )
         }
     }

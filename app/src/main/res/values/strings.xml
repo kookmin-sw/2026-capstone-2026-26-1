@@ -79,6 +79,8 @@
     <string name="permission_banner_action">[권한 설정하기]</string>
     <string name="gps_off_overlay_message">위치 서비스가 꺼져 있어 기록이 남지 않고 있어요</string>
     <string name="gps_off_overlay_action">위치 서비스 켜기</string>
+    <string name="reorder_guide_banner_message">리스트를 길게 눌러 순서를 자유롭게 변경할 수 있어요</string>
+    <string name="reorder_guide_banner_close">닫기</string>
     <string name="place_sheet_mode_hint">placeId가 비어 있으면 등록, 값이 있으면 수정입니다. 삭제는 placeId만 있어도 가능합니다.</string>
     <string name="place_sheet_reorder_hint">순서 변경은 현재 drag UI 대신 쉼표 구분 placeId 목록으로 테스트합니다. 예: 2,1</string>
     <string name="place_sheet_date_hint">main selected date가 아직 연결되지 않아 날짜를 직접 입력합니다.</string>
@@ -95,4 +97,12 @@
     <string name="place_action_update">장소 수정</string>
     <string name="place_action_delete">장소 삭제</string>
     <string name="place_action_reset">입력 초기화</string>
+    <string name="debug_panel_title">디버그 상태</string>
+    <string name="debug_panel_date">선택 날짜: %1$s</string>
+    <string name="debug_panel_route">경로 모드: %1$s / 소스: %2$s / 상태: %3$s</string>
+    <string name="debug_panel_permission">권한: %1$s / GPS: %2$s</string>
+    <string name="debug_panel_tracking">서비스: %1$s / 사용자 의도: %2$s</string>
+    <string name="debug_panel_last_event">마지막 경로 정보: %1$s</string>
+    <string name="debug_panel_refresh_system">시스템 새로고침</string>
+    <string name="debug_panel_reload_route">경로 다시 불러오기</string>
 </resources>

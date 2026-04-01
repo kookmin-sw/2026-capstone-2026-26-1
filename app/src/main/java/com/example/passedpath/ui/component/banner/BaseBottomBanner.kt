@@ -1,4 +1,4 @@
-package com.example.passedpath.ui.component.overlay
+﻿package com.example.passedpath.ui.component.banner
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -9,10 +9,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun BaseBottomOverlay(
+fun BaseBottomBanner(
     modifier: Modifier = Modifier,
     containerColor: Color = Color.White,
     content: @Composable () -> Unit
@@ -33,6 +34,16 @@ fun BaseBottomOverlay(
             ) {
                 content()
             }
+        }
+    }
+}
+
+@Preview(showBackground = true, name = "Base Bottom Banner")
+@Composable
+private fun BaseBottomBannerPreview() {
+    com.example.passedpath.ui.theme.PassedPathTheme {
+        BaseBottomBanner(containerColor = Color(0xFFEAF8F7)) {
+            Box(modifier = Modifier.padding(vertical = 12.dp))
         }
     }
 }
