@@ -7,6 +7,10 @@ import com.example.passedpath.data.network.RetrofitClient
 import com.example.passedpath.feature.auth.data.manager.AuthTokenManager
 import com.example.passedpath.feature.auth.data.remote.api.AuthApi
 import com.example.passedpath.feature.auth.data.repository.AuthRepository
+import com.example.passedpath.feature.daynote.data.remote.api.DayRouteTitleApi
+import com.example.passedpath.feature.daynote.data.repository.DayRouteTitleRepositoryImpl
+import com.example.passedpath.feature.daynote.domain.repository.DayRouteTitleRepository
+import com.example.passedpath.feature.daynote.domain.usecase.PatchDayRouteTitleUseCase
 import com.example.passedpath.feature.locationtracking.data.local.PassedPathDatabase
 import com.example.passedpath.feature.locationtracking.data.manager.LocationTrackingServiceStateReader
 import com.example.passedpath.feature.locationtracking.data.manager.LocationTrackingServiceStateWriter
@@ -111,6 +115,10 @@ class AppContainer(
         retrofit.create(DayRouteApi::class.java)
     }
 
+    private val dayRouteTitleApi by lazy {
+        retrofit.create(DayRouteTitleApi::class.java)
+    }
+
     private val placeApi by lazy {
         retrofit.create(PlaceApi::class.java)
     }
@@ -164,6 +172,10 @@ class AppContainer(
         TestRepository(testApi)
     }
 
+    val dayRouteTitleRepository: DayRouteTitleRepository by lazy {
+        DayRouteTitleRepositoryImpl(dayRouteTitleApi)
+    }
+
     val placeRepository: PlaceRepository by lazy {
         PlaceRepositoryImpl(placeApi)
     }
@@ -174,6 +186,10 @@ class AppContainer(
             locationTrackingRepository = locationTrackingRepository,
             dayRouteRepository = dayRouteRepository
         )
+    }
+
+    val patchDayRouteTitleUseCase: PatchDayRouteTitleUseCase by lazy {
+        PatchDayRouteTitleUseCase(dayRouteTitleRepository = dayRouteTitleRepository)
     }
 
     val addPlaceUseCase: AddPlaceUseCase by lazy {
@@ -192,6 +208,8 @@ class AppContainer(
         ReorderPlacesUseCase(placeRepository = placeRepository)
     }
 }
+
+
 
 
 
