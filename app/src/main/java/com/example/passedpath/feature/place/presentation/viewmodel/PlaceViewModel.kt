@@ -5,6 +5,8 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.passedpath.app.AppContainer
 import com.example.passedpath.feature.place.domain.usecase.AddPlaceUseCase
+import com.example.passedpath.feature.place.domain.usecase.DeletePlaceUseCase
+import com.example.passedpath.feature.place.domain.usecase.UpdatePlaceUseCase
 import com.example.passedpath.feature.place.presentation.state.PlaceUiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,6 +21,8 @@ import java.util.Locale
 
 class PlaceViewModel(
     private val addPlaceUseCase: AddPlaceUseCase,
+    private val updatePlaceUseCase: UpdatePlaceUseCase,
+    private val deletePlaceUseCase: DeletePlaceUseCase,
     initialDateKey: String = todayDateKey()
 ) : ViewModel() {
 
@@ -27,6 +31,10 @@ class PlaceViewModel(
 
     fun updateDateKey(value: String) {
         updateField { copy(dateKey = value, errorMessage = null, successMessage = null) }
+    }
+
+    fun updatePlaceId(value: String) {
+        updateField { copy(placeId = value, errorMessage = null, successMessage = null) }
     }
 
     fun updatePlaceName(value: String) {
@@ -49,50 +57,146 @@ class PlaceViewModel(
         val currentState = _uiState.value
         val latitude = currentState.latitude.toDoubleOrNull()
         val longitude = currentState.longitude.toDoubleOrNull()
+        val placeId = currentState.parsedPlaceId
 
-        if (!isValidDateKey(currentState.dateKey)) {
-            _uiState.update { it.copy(errorMessage = "날짜는 yyyy-MM-dd 형식이어야 합니다.", successMessage = null) }
-            return
-        }
-        if (latitude == null || longitude == null) {
-            _uiState.update { it.copy(errorMessage = "위도와 경도는 숫자로 입력해야 합니다.", successMessage = null) }
-            return
-        }
-        if (!currentState.isSubmitEnabled) {
-            _uiState.update { it.copy(errorMessage = "모든 필드를 입력해 주세요.", successMessage = null) }
+        val validationError = validateForMutation(
+            state = currentState,
+            latitude = latitude,
+            longitude = longitude
+        )
+        if (validationError != null) {
+            _uiState.update { it.copy(errorMessage = validationError, successMessage = null) }
             return
         }
 
         viewModelScope.launch {
             _uiState.update { it.copy(isSubmitting = true, errorMessage = null, successMessage = null) }
             try {
-                val result = addPlaceUseCase(
+                if (placeId == null) {
+                    val result = addPlaceUseCase(
+                        dateKey = currentState.dateKey,
+                        placeName = currentState.placeName,
+                        roadAddress = currentState.roadAddress,
+                        latitude = latitude!!,
+                        longitude = longitude!!
+                    )
+                    _uiState.update {
+                        it.copy(
+                            placeId = result.placeId.toString(),
+                            isSubmitting = false,
+                            errorMessage = null,
+                            successMessage = "장소가 등록되었습니다. placeId=${result.placeId}, 순서 ${result.orderIndex}번"
+                        )
+                    }
+                } else {
+                    updatePlaceUseCase(
+                        dateKey = currentState.dateKey,
+                        placeId = placeId,
+                        placeName = currentState.placeName,
+                        roadAddress = currentState.roadAddress,
+                        latitude = latitude!!,
+                        longitude = longitude!!
+                    )
+                    _uiState.update {
+                        it.copy(
+                            isSubmitting = false,
+                            errorMessage = null,
+                            successMessage = "장소가 수정되었습니다. placeId=$placeId"
+                        )
+                    }
+                }
+            } catch (throwable: Throwable) {
+                _uiState.update {
+                    it.copy(
+                        isSubmitting = false,
+                        errorMessage = throwable.message ?: mutationFailureMessage(placeId == null),
+                        successMessage = null
+                    )
+                }
+            }
+        }
+    }
+
+    fun deletePlace() {
+        val currentState = _uiState.value
+        val placeId = currentState.parsedPlaceId
+
+        if (!isValidDateKey(currentState.dateKey)) {
+            _uiState.update { it.copy(errorMessage = "날짜는 yyyy-MM-dd 형식이어야 합니다.", successMessage = null) }
+            return
+        }
+        if (placeId == null) {
+            _uiState.update { it.copy(errorMessage = "삭제할 placeId를 입력해 주세요.", successMessage = null) }
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isSubmitting = true, errorMessage = null, successMessage = null) }
+            try {
+                deletePlaceUseCase(
                     dateKey = currentState.dateKey,
-                    placeName = currentState.placeName,
-                    roadAddress = currentState.roadAddress,
-                    latitude = latitude,
-                    longitude = longitude
+                    placeId = placeId
                 )
                 _uiState.update {
                     it.copy(
+                        placeId = "",
                         placeName = "",
                         roadAddress = "",
                         latitude = "",
                         longitude = "",
                         isSubmitting = false,
                         errorMessage = null,
-                        successMessage = "장소가 등록되었습니다. 순서 ${result.orderIndex}번"
+                        successMessage = "장소가 삭제되었습니다. placeId=$placeId"
                     )
                 }
             } catch (throwable: Throwable) {
                 _uiState.update {
                     it.copy(
                         isSubmitting = false,
-                        errorMessage = throwable.message ?: "장소 등록에 실패했습니다.",
+                        errorMessage = throwable.message ?: "장소 삭제에 실패했습니다.",
                         successMessage = null
                     )
                 }
             }
+        }
+    }
+
+    fun resetForm() {
+        _uiState.update {
+            it.copy(
+                placeId = "",
+                placeName = "",
+                roadAddress = "",
+                latitude = "",
+                longitude = "",
+                errorMessage = null,
+                successMessage = null
+            )
+        }
+    }
+
+    private fun validateForMutation(
+        state: PlaceUiState,
+        latitude: Double?,
+        longitude: Double?
+    ): String? {
+        if (!isValidDateKey(state.dateKey)) {
+            return "날짜는 yyyy-MM-dd 형식이어야 합니다."
+        }
+        if (latitude == null || longitude == null) {
+            return "위도와 경도는 숫자로 입력해야 합니다."
+        }
+        if (!state.hasCompleteForm) {
+            return "모든 필드를 입력해 주세요."
+        }
+        return null
+    }
+
+    private fun mutationFailureMessage(isCreate: Boolean): String {
+        return if (isCreate) {
+            "장소 등록에 실패했습니다."
+        } else {
+            "장소 수정에 실패했습니다."
         }
     }
 
@@ -123,6 +227,8 @@ class PlaceViewModelFactory(
             @Suppress("UNCHECKED_CAST")
             return PlaceViewModel(
                 addPlaceUseCase = appContainer.addPlaceUseCase,
+                updatePlaceUseCase = appContainer.updatePlaceUseCase,
+                deletePlaceUseCase = appContainer.deletePlaceUseCase,
                 initialDateKey = initialDateKey
             ) as T
         }
