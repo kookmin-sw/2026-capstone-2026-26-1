@@ -1,4 +1,4 @@
-package com.example.passedpath.feature.route.presentation.screen
+﻿package com.example.passedpath.feature.route.presentation.screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -21,7 +21,7 @@ import androidx.compose.ui.unit.dp
 import com.example.passedpath.R
 import com.example.passedpath.feature.route.presentation.state.MainRouteModeUiState
 import com.example.passedpath.feature.route.presentation.state.RouteUiAction
-import com.example.passedpath.ui.component.RoundedWhiteButton
+import com.example.passedpath.ui.component.BasePillButton
 import com.example.passedpath.ui.theme.Gray500
 import com.example.passedpath.ui.theme.Gray700
 import com.example.passedpath.ui.theme.Primary
@@ -67,7 +67,7 @@ internal fun TrackingToggleButton(
     isTracking: Boolean,
     onClick: () -> Unit
 ) {
-    RoundedWhiteButton(
+    BasePillButton(
         onClick = onClick,
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
         contentSpacing = 8.dp,
@@ -103,3 +103,4 @@ internal fun TrackingToggleButton(
 internal fun Double.formatDistanceKm(): String {
     return String.format(Locale.US, "%.2f km", this)
 }
+

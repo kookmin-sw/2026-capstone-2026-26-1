@@ -1,5 +1,7 @@
-package com.example.passedpath.feature.route.presentation.coordinator
+﻿package com.example.passedpath.feature.route.presentation.coordinator
 
+import com.example.passedpath.debug.AppDebugLogger
+import com.example.passedpath.debug.DebugLogTag
 import com.example.passedpath.feature.locationtracking.domain.repository.DayRouteRepository
 import com.example.passedpath.feature.locationtracking.domain.repository.RemoteDayRouteResult
 import com.example.passedpath.feature.route.presentation.mapper.createInitialRouteMode
@@ -27,28 +29,53 @@ class RouteStateCoordinator(
     }
 
     fun loadRoute(dateKey: String): Flow<RouteLoadState> = flow {
+        val isTodayRoute = isToday(dateKey)
+        AppDebugLogger.debug(
+            DebugLogTag.ROUTE_LOAD,
+            "loadRoute start dateKey=$dateKey mode=${if (isTodayRoute) "today" else "past"}"
+        )
         emit(
             RouteLoadState(
                 selectedDateKey = dateKey,
                 routeModeUiState = createLoadingRouteMode(
                     dateKey = dateKey,
-                    isToday = isToday(dateKey)
+                    isToday = isTodayRoute
+                ),
+                debugSnapshot = createRouteLoadingDebugSnapshot(
+                    isTodayRoute = isTodayRoute,
+                    dateKey = dateKey
                 )
             )
         )
 
-        if (isToday(dateKey)) {
+        if (isTodayRoute) {
+            AppDebugLogger.debug(
+                DebugLogTag.ROUTE_LOAD,
+                "observe local route dateKey=$dateKey"
+            )
             dayRouteRepository.observeLocalDayRoute(dateKey).collect { dailyPath ->
-                emit(
+                val routeState = if (dailyPath == null) {
+                    AppDebugLogger.debug(
+                        DebugLogTag.ROUTE_LOAD,
+                        "local route empty dateKey=$dateKey"
+                    )
                     RouteLoadState(
                         selectedDateKey = dateKey,
-                        routeModeUiState = if (dailyPath == null) {
-                            createTodayEmptyRouteMode(dateKey)
-                        } else {
-                            createTodayRouteMode(route = dailyPath.toSelectedDayRouteUiState())
-                        }
+                        routeModeUiState = createTodayEmptyRouteMode(dateKey),
+                        debugSnapshot = createTodayRouteDebugSnapshot(dailyPath)
                     )
-                )
+                } else {
+                    AppDebugLogger.debug(
+                        DebugLogTag.ROUTE_LOAD,
+                        "local route success dateKey=$dateKey points=${dailyPath.pathPointCount}"
+                    )
+                    RouteLoadState(
+                        selectedDateKey = dateKey,
+                        routeModeUiState = createTodayRouteMode(route = dailyPath.toSelectedDayRouteUiState()),
+                        debugSnapshot = createTodayRouteDebugSnapshot(dailyPath)
+                    )
+                }
+                emit(routeState)
             }
         } else {
             emit(loadPastRoute(dateKey))
@@ -59,25 +86,40 @@ class RouteStateCoordinator(
         return when (val result = dayRouteRepository.fetchRemoteDayRoute(dateKey)) {
             is RemoteDayRouteResult.Success -> {
                 val routeDetail = result.routeDetail
+                AppDebugLogger.debug(
+                    DebugLogTag.ROUTE_LOAD,
+                    "remote route success dateKey=$dateKey points=${routeDetail.pathPointCount}"
+                )
                 RouteLoadState(
                     selectedDateKey = routeDetail.dateKey,
                     routeModeUiState = createPastRouteMode(
                         route = routeDetail.toSelectedDayRouteUiState()
-                    )
+                    ),
+                    debugSnapshot = createPastRouteSuccessDebugSnapshot(routeDetail)
                 )
             }
 
             RemoteDayRouteResult.Empty -> {
+                AppDebugLogger.debug(
+                    DebugLogTag.ROUTE_LOAD,
+                    "remote route empty dateKey=$dateKey"
+                )
                 RouteLoadState(
                     selectedDateKey = dateKey,
-                    routeModeUiState = createPastEmptyRouteMode(dateKey)
+                    routeModeUiState = createPastEmptyRouteMode(dateKey),
+                    debugSnapshot = createPastRouteEmptyDebugSnapshot()
                 )
             }
 
             is RemoteDayRouteResult.Error -> {
+                AppDebugLogger.debug(
+                    DebugLogTag.ROUTE_LOAD,
+                    "remote route error dateKey=$dateKey cause=${result.throwable::class.java.simpleName}"
+                )
                 RouteLoadState(
                     selectedDateKey = dateKey,
-                    routeModeUiState = createPastErrorRouteMode(dateKey)
+                    routeModeUiState = createPastErrorRouteMode(dateKey),
+                    debugSnapshot = createPastRouteErrorDebugSnapshot(result.throwable)
                 )
             }
         }
@@ -90,5 +132,6 @@ class RouteStateCoordinator(
 
 data class RouteLoadState(
     val selectedDateKey: String,
-    val routeModeUiState: MainRouteModeUiState
+    val routeModeUiState: MainRouteModeUiState,
+    val debugSnapshot: RouteDebugSnapshot? = null
 )

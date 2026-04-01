@@ -1,4 +1,4 @@
-package com.example.passedpath.feature.permission.presentation.screen
+﻿package com.example.passedpath.feature.permission.presentation.screen
 
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -12,11 +12,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.passedpath.app.appContainer
+import com.example.passedpath.debug.AppDebugLogger
+import com.example.passedpath.debug.DebugLogTag
 import com.example.passedpath.feature.permission.presentation.viewmodel.PermissionEffect
 import com.example.passedpath.feature.permission.presentation.viewmodel.PermissionViewModel
 import com.example.passedpath.feature.permission.presentation.viewmodel.PermissionViewModelFactory
@@ -38,13 +40,25 @@ fun LocationPermissionIntroRoute(
 
     val foregroundPermissionLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
+            AppDebugLogger.debug(
+                DebugLogTag.PERMISSION,
+                "launch foreground permission result granted=$it"
+            )
             coroutineScope.launch {
                 viewModel.onForegroundPermissionResult()
             }
         }
 
     LaunchedEffect(Unit) {
+        AppDebugLogger.debug(
+            DebugLogTag.PERMISSION,
+            "permission intro route start collecting effects"
+        )
         viewModel.effect.collect { effect ->
+            AppDebugLogger.debug(
+                DebugLogTag.PERMISSION,
+                "permission effect=$effect"
+            )
             when (effect) {
                 PermissionEffect.RequestForegroundPermission -> {
                     foregroundPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
@@ -64,6 +78,12 @@ fun LocationPermissionIntroRoute(
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                AppDebugLogger.debug(
+                    DebugLogTag.PERMISSION,
+                    "permission intro lifecycle onResume returnedFromSettings=${returnedFromSettings.value}"
+                )
+            }
             if (event == Lifecycle.Event.ON_RESUME && returnedFromSettings.value) {
                 returnedFromSettings.value = false
                 coroutineScope.launch {

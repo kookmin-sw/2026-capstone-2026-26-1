@@ -18,7 +18,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.passedpath.R
 import com.example.passedpath.ui.PermissionSettingDialog
-import com.example.passedpath.ui.component.AppButton
+import com.example.passedpath.ui.component.BaseButton
 import com.example.passedpath.ui.theme.PassedPathTheme
 
 @Composable
@@ -52,7 +52,7 @@ fun LocationPermissionIntroScreen(
                 .padding(vertical = 48.dp)
         )
 
-        AppButton(
+        BaseButton(
             text = stringResource(R.string.permission_intro_continue),
             onClick = onContinueClick,
             modifier = Modifier.padding(bottom = 24.dp)
@@ -79,3 +79,4 @@ private fun LocationPermissionIntroScreenPreview() {
         )
     }
 }
+

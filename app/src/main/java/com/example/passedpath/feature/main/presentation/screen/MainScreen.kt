@@ -1,4 +1,4 @@
-package com.example.passedpath.feature.main.presentation.screen
+﻿package com.example.passedpath.feature.main.presentation.screen
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -20,7 +20,8 @@ fun MainScreen(
     onRouteAction: (RouteUiAction) -> Unit,
     onTrackingPermissionDialogConfirm: () -> Unit,
     onTrackingPermissionDialogDismiss: () -> Unit,
-    onPermissionBannerConfirm: () -> Unit
+    onPermissionBannerConfirm: () -> Unit,
+    debugActions: MainDebugActions
 ) {
     var selectedBottomSheetTab by rememberSaveable { mutableStateOf(MainBottomSheetTab.PLACE) }
 
@@ -35,6 +36,7 @@ fun MainScreen(
                 onDateSelected = onDateSelected,
                 onRouteAction = onRouteAction,
                 onPermissionBannerConfirm = onPermissionBannerConfirm,
+                debugActions = debugActions,
                 floatingBottomPadding = floatingBottomPadding
             )
         },

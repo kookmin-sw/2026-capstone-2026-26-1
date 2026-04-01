@@ -1,4 +1,4 @@
-package com.example.passedpath.feature.route.presentation.screen
+﻿package com.example.passedpath.feature.route.presentation.screen
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -17,7 +17,7 @@ import androidx.compose.ui.unit.dp
 import com.example.passedpath.R
 import com.example.passedpath.feature.route.presentation.state.MainRouteModeUiState
 import com.example.passedpath.feature.route.presentation.state.RouteUiAction
-import com.example.passedpath.ui.component.RoundedWhiteButton
+import com.example.passedpath.ui.component.BasePillButton
 import com.example.passedpath.ui.theme.Gray700
 
 @Composable
@@ -86,7 +86,8 @@ private fun RouteDistanceChip(distanceKm: Double) {
 
 @Composable
 private fun FloatingPillButton(text: String, onClick: () -> Unit) {
-    RoundedWhiteButton(onClick = onClick, shadowElevation = 6.dp) {
+    BasePillButton(onClick = onClick, shadowElevation = 6.dp) {
         Text(text = text, color = Gray700, fontWeight = FontWeight.Medium)
     }
 }
+

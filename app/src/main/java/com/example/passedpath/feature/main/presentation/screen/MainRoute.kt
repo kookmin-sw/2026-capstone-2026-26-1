@@ -61,6 +61,15 @@ fun MainRoute(
                 PermissionActionTarget.OpenLocationSettings -> AppSettingsNavigator.openLocationSettings(context)
                 PermissionActionTarget.None -> Unit
             }
-        }
+        },
+        debugActions = MainDebugActions(
+            refreshSystemState = {
+                viewModel.refreshPermissionState()
+                viewModel.refreshLocationServiceState()
+            },
+            reloadRoute = {
+                viewModel.selectDate(uiState.selectedDateKey)
+            }
+        )
     )
 }

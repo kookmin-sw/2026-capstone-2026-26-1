@@ -47,6 +47,7 @@ import com.example.passedpath.feature.place.domain.repository.PlaceRepository
 import com.example.passedpath.feature.place.domain.usecase.AddPlaceUseCase
 import com.example.passedpath.feature.place.domain.usecase.DeletePlaceUseCase
 import com.example.passedpath.feature.place.domain.usecase.ReorderPlacesUseCase
+import com.example.passedpath.feature.place.domain.usecase.UpdateBookmarkPlaceUseCase
 import com.example.passedpath.feature.place.domain.usecase.UpdatePlaceUseCase
 import java.time.LocalTime
 
@@ -236,7 +237,14 @@ class AppContainer(
         UpdatePlaceUseCase(placeRepository = placeRepository)
     }
 
+    val updateBookmarkPlaceUseCase: UpdateBookmarkPlaceUseCase by lazy {
+        UpdateBookmarkPlaceUseCase(placeRepository = placeRepository)
+    }
+
     val reorderPlacesUseCase: ReorderPlacesUseCase by lazy {
         ReorderPlacesUseCase(placeRepository = placeRepository)
     }
 }
+
+
+

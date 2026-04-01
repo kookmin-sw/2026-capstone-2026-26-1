@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -31,19 +32,20 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.passedpath.BuildConfig
 import com.example.passedpath.R
 import com.example.passedpath.feature.main.presentation.policy.createRouteCameraUpdate
 import com.example.passedpath.feature.main.presentation.policy.shouldCenterOnCurrentLocation
 import com.example.passedpath.feature.main.presentation.policy.shouldCenterOnRoute
-import com.example.passedpath.feature.permission.presentation.state.LocationPermissionUiState
 import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiState
 import com.example.passedpath.feature.main.presentation.state.MainUiState
 import com.example.passedpath.feature.permission.presentation.mapper.createPermissionOverlayUiModel
+import com.example.passedpath.feature.permission.presentation.state.LocationPermissionUiState
 import com.example.passedpath.feature.route.presentation.screen.RouteFloatingControls
 import com.example.passedpath.feature.route.presentation.screen.RouteMapContent
 import com.example.passedpath.feature.route.presentation.screen.RouteStatusOverlay
 import com.example.passedpath.feature.route.presentation.state.RouteUiAction
-import com.example.passedpath.ui.component.overlay.PermissionOverlay
+import com.example.passedpath.ui.component.banner.PermissionBanner
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -62,6 +64,7 @@ internal fun MainMapSection(
     onDateSelected: (String) -> Unit,
     onRouteAction: (RouteUiAction) -> Unit,
     onPermissionBannerConfirm: () -> Unit,
+    debugActions: MainDebugActions,
     floatingBottomPadding: androidx.compose.ui.unit.Dp
 ) {
     val routeAccentColor = MaterialTheme.colorScheme.primary
@@ -175,11 +178,19 @@ internal fun MainMapSection(
                     selectedDateKey = uiState.selectedDateKey,
                     onDateSelected = onDateSelected
                 )
-                androidx.compose.foundation.layout.Spacer(modifier = Modifier.size(10.dp))
+                Spacer(modifier = Modifier.size(10.dp))
                 RouteFloatingControls(
                     routeMode = uiState.routeModeUiState,
                     onRouteAction = onRouteAction
                 )
+                if (BuildConfig.DEBUG) {
+                    Spacer(modifier = Modifier.size(10.dp))
+                    MainDebugPanel(
+                        debugUiState = uiState.debugUiState,
+                        onRefreshSystemState = debugActions.refreshSystemState,
+                        onReloadRoute = debugActions.reloadRoute
+                    )
+                }
             }
 
             Column(
@@ -207,7 +218,7 @@ internal fun MainMapSection(
         }
 
         permissionOverlayUiModel?.let { overlayUiModel ->
-            PermissionOverlay(
+            PermissionBanner(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(horizontal = 16.dp)
@@ -224,7 +235,7 @@ private fun MainCoordinateUiState.toLatLng(): LatLng = LatLng(latitude, longitud
 
 @Preview(showBackground = true, name = "Permission Overlay")
 @Composable
-private fun PermissionOverlayPreview() {
+private fun PermissionBannerPreview() {
     com.example.passedpath.ui.theme.PassedPathTheme {
         Box(
             modifier = Modifier
@@ -232,7 +243,7 @@ private fun PermissionOverlayPreview() {
                 .background(Color(0xFFF3F4F6))
                 .padding(16.dp)
         ) {
-            PermissionOverlay(
+            PermissionBanner(
                 message = stringResource(R.string.permission_banner_foreground_title),
                 actionText = stringResource(R.string.permission_banner_action),
                 onClickAction = {}
@@ -240,4 +251,3 @@ private fun PermissionOverlayPreview() {
         }
     }
 }
-
