@@ -7,9 +7,12 @@ import backend.capstone.domain.gpspoint.entity.GpsPoint;
 import backend.capstone.domain.gpspoint.service.GpsPointService;
 import backend.capstone.domain.ongoingstay.entity.OngoingStay;
 import backend.capstone.domain.ongoingstay.repository.OngoingStayRepository;
+import backend.capstone.domain.ongoingstay.service.dto.PlaceSearchResult;
+import backend.capstone.domain.place.service.PlaceService;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +25,8 @@ public class StayAnalysisService {
     private final OngoingStayRepository ongoingStayRepository;
     private final GpsPointService gpsPointService;
     private final DayRouteService dayRouteService;
+    private final PlaceService placeService;
+    private final PlaceSearchService placeSearchService;
 
     @Transactional
     public void analyzeStay(DayRoute dayRoute) {
@@ -67,14 +72,22 @@ public class StayAnalysisService {
 
             //종료된 stay가 10분이상 체류한 stay인지 판단
             if (stay.getDurationMinutes() >= 10) {
-                //TODO: place 승격, 장소 조회
+                promoteStayToPlace(dayRoute, stay.getCenterLatitude(), stay.getCenterLongitude());
             }
+
             ongoingStayRepository.delete(stay);
             stay = OngoingStay.start(dayRoute, point);
             ongoingStayRepository.save(stay);
 
         }
         dayRoute.completeAnalysis(newPoints.getLast().getId());
+    }
+
+    public void promoteStayToPlace(DayRoute dayRoute, double stayLatitude, double stayLongitude) {
+        Optional<PlaceSearchResult> searchResult =
+            placeSearchService.searchByCoordinate(stayLatitude, stayLongitude);
+
+        placeService.saveAutoPlace(dayRoute, stayLatitude, stayLongitude, searchResult);
     }
 
     private void handleLastTailIfDayEnded(DayRoute dayRoute, OngoingStay stay) {
@@ -89,7 +102,7 @@ public class StayAnalysisService {
         }
 
         if (Duration.between(stay.getStartTime(), dayRouteEndTime).toMinutes() >= 10) {
-            //TODO: place 승격
+            promoteStayToPlace(dayRoute, stay.getCenterLatitude(), stay.getCenterLongitude());
         }
         ongoingStayRepository.delete(stay);
     }

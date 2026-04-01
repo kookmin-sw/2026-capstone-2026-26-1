@@ -16,7 +16,7 @@ public class PlaceSearchFallbackService {
     /**
      * 적절한 POI가 없을 때 중심좌표 기반 주소 fallback
      */
-    private Optional<PlaceSearchResult> searchAddressFallback(double latitude, double longitude) {
+    public Optional<PlaceSearchResult> searchAddressFallback(double latitude, double longitude) {
         KakaoCoord2AddressResponse response = kakaoLocalWebClient.get()
             .uri(uriBuilder -> uriBuilder
                 .path("/v2/local/geo/coord2address.json")

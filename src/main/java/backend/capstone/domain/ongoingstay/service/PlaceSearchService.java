@@ -46,23 +46,24 @@ public class PlaceSearchService {
     );
 
     private final WebClient kakaoLocalWebClient;
+    private final PlaceSearchFallbackService placeSearchFallbackService;
 
     public Optional<PlaceSearchResult> searchByCoordinate(double latitude, double longitude) {
         Optional<Document> bestPoi = findBestPoi(latitude, longitude);
-        if (bestPoi.isEmpty()) {
-            return Optional.empty();
+        if (bestPoi.isPresent()) {
+            Document doc = bestPoi.get();
+            return Optional.of(
+                PlaceSearchResult.builder()
+                    .name(emptyToNull(doc.place_name()))
+                    .roadAddress(emptyToNull(doc.road_address_name()))
+                    .jibunAddress(emptyToNull(doc.address_name()))
+                    .latitude(parseDouble(doc.y()))
+                    .longitude(parseDouble(doc.x()))
+                    .build()
+            );
         }
 
-        Document doc = bestPoi.get();
-        return Optional.of(
-            PlaceSearchResult.builder()
-                .name(emptyToNull(doc.place_name()))
-                .roadAddress(emptyToNull(doc.road_address_name()))
-                .jibunAddress(emptyToNull(doc.address_name()))
-                .latitude(parseDouble(doc.y()))
-                .longitude(parseDouble(doc.x()))
-                .build()
-        );
+        return placeSearchFallbackService.searchAddressFallback(latitude, longitude);
     }
 
     private Optional<KakaoCategorySearchResponse.Document> findBestPoi(
