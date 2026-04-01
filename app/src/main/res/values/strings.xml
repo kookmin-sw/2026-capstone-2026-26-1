@@ -5,15 +5,15 @@
     <string name="login_with_kakao">Login with Kakao</string>
     <string name="login_error_server_connection">Server connection failed. Please try again.</string>
     <string name="login_error_kakao_failed">Kakao login failed.</string>
-    <string name="bottom_nav_friends">친구</string>
-    <string name="bottom_nav_main">나의 지나온길</string>
-    <string name="bottom_nav_profile">프로필</string>
-    <string name="friends_title">친구</string>
-    <string name="friends_placeholder">친구 화면은 준비 중입니다.</string>
-    <string name="main_title">나의 지나온 길</string>
+    <string name="bottom_nav_friends">Friends</string>
+    <string name="bottom_nav_main">My Walk Log</string>
+    <string name="bottom_nav_profile">Profile</string>
+    <string name="friends_title">Friends</string>
+    <string name="friends_placeholder">Friends screen is under preparation.</string>
+    <string name="main_title">My Walk Log</string>
     <string name="main_permission_full">Background location is enabled</string>
     <string name="main_permission_limited">Background location is limited</string>
-    <string name="main_map_marker_title">현재 위치</string>
+    <string name="main_map_marker_title">Current location</string>
     <string name="main_test_api">Test API</string>
     <string name="main_logout">Logout</string>
     <string name="main_test_loading">Loading test result...</string>
@@ -25,16 +25,16 @@
     <string name="permission_intro_description">To keep tracking your path in background, allow location access.</string>
     <string name="permission_intro_image_content_description">Onboarding illustration for location permission</string>
     <string name="permission_intro_continue">Continue</string>
-    <string name="permission_dialog_title">Please allow location access</string>
-    <string name="permission_dialog_subtitle">To keep recording your path after the app is closed, enable background location access.</string>
+    <string name="permission_dialog_title">이렇게 설정해 주세요</string>
+    <string name="permission_dialog_subtitle">앱이 종료되어도 지나온 길을 기록할 수 있어요</string>
     <string name="permission_dialog_image_content_description">Location permission setting guide</string>
-    <string name="permission_dialog_step_1">Tap the button below to open settings.</string>
-    <string name="permission_dialog_step_2">Go to App permissions and open Location.</string>
-    <string name="permission_dialog_step_3_prefix">Change the access level to </string>
-    <string name="permission_dialog_step_3_highlight">Allow all the time</string>
-    <string name="permission_dialog_step_3_suffix">.</string>
-    <string name="permission_dialog_open_settings">Open settings</string>
-    <string name="permission_dialog_not_now">Not now</string>
+    <string name="permission_dialog_step_1">아래에서 설정 열기를 눌러 주세요</string>
+    <string name="permission_dialog_step_2">애플리케이션 &gt; 앱 권한 &gt; 위치에서</string>
+    <string name="permission_dialog_step_3_prefix">위치 접근을 항상 허용으로 바꿔 주세요</string>
+    <string name="permission_dialog_step_3_highlight">항상 허용</string>
+    <string name="permission_dialog_step_3_suffix"></string>
+    <string name="permission_dialog_open_settings">설정 열기</string>
+    <string name="permission_dialog_not_now">나중에 할게요</string>
     <string name="tracking_notification_channel_name">Path tracking</string>
     <string name="tracking_notification_channel_description">Shows background location tracking status.</string>
     <string name="tracking_notification_title">Tracking your path</string>
@@ -53,6 +53,8 @@
     <string name="route_distance">이동 거리: %1$s</string>
     <string name="route_path_points">경로 좌표 수: %1$d</string>
     <string name="route_refresh">경로 새로고침</string>
+    <string name="route_tracking_start">위치 수집 중</string>
+    <string name="route_tracking_stop">기록 중지</string>
     <string name="route_tracking_toggle">추적 시작/중지</string>
     <string name="route_open_playback">경로 재생 보기</string>
     <string name="route_retry">다시 시도</string>
@@ -66,4 +68,19 @@
     <string name="route_empty_today_message">오늘의 이동 경로가 기록되면 이곳에 표시됩니다.</string>
     <string name="route_empty_past_message">선택한 날짜에는 지도에 표시할 경로 데이터가 없습니다.</string>
     <string name="route_place_fallback_title">장소 %1$d</string>
+    <string name="record_sheet_tab_place">방문한 장소</string>
+    <string name="record_sheet_tab_daynote">지나온 길 메모</string>
+    <string name="place_sheet_title">방문한 장소</string>
+    <string name="place_sheet_placeholder_body">이 날짜에 저장한 장소 목록이 이곳에 표시됩니다. 다음 단계에서 장소 추가와 편집을 연결합니다.</string>
+    <string name="daynote_sheet_title">지나온 길 메모</string>
+    <string name="daynote_sheet_placeholder_body">이 날짜에 남긴 메모와 요약이 이곳에 표시됩니다. 다음 단계에서 입력과 저장 정책을 붙입니다.</string>
+    <string name="permission_banner_denied_title">위치 권한이 없어 현재 위치와 기록을 사용할 수 없어요</string>
+    <string name="permission_banner_foreground_title">위치 권한이 거부되어 기록이 남지 않고 있어요</string>
+    <string name="permission_banner_action">[권한 설정하기]</string>
+    <string name="gps_off_overlay_message">위치 서비스가 꺼져 있어 기록이 남지 않고 있어요</string>
+    <string name="gps_off_overlay_action">위치 서비스 켜기</string>
 </resources>
+
+
+
+

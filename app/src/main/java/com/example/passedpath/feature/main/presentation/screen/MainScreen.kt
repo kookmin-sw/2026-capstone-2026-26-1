@@ -1,53 +1,56 @@
-﻿package com.example.passedpath.feature.main.presentation.screen
+package com.example.passedpath.feature.main.presentation.screen
 
-import android.app.DatePickerDialog
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.example.passedpath.R
 import com.example.passedpath.feature.main.presentation.state.LocationPermissionUiState
 import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiState
 import com.example.passedpath.feature.main.presentation.state.MainUiState
-import com.example.passedpath.feature.route.presentation.screen.MainRouteSection
 import com.example.passedpath.feature.route.presentation.screen.RouteMapContent
 import com.example.passedpath.feature.route.presentation.screen.RouteStatusOverlay
 import com.example.passedpath.feature.route.presentation.state.RouteUiAction
+import com.example.passedpath.ui.PermissionSettingDialog
+import com.example.passedpath.ui.component.overlay.PermissionOverlay
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -56,12 +59,10 @@ import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.MarkerComposable
 import com.google.maps.android.compose.rememberCameraPositionState
+import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 
 private val CurrentLocationGlowBase = Color(0xFF006B5F)
-private val DateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 private const val RouteBoundsPaddingPx = 180
 
 @Composable
@@ -69,11 +70,14 @@ fun MainScreen(
     uiState: MainUiState,
     onInitialCameraCentered: () -> Unit,
     onDateSelected: (String) -> Unit,
-    onRouteAction: (RouteUiAction) -> Unit
+    onRouteAction: (RouteUiAction) -> Unit,
+    onTrackingPermissionDialogConfirm: () -> Unit,
+    onTrackingPermissionDialogDismiss: () -> Unit,
+    onPermissionBannerConfirm: () -> Unit
 ) {
-    val context = LocalContext.current
     val routeAccentColor = MaterialTheme.colorScheme.primary
     val fallbackPosition = LatLng(37.5662952, 126.9779451)
+    var selectedBottomSheetTab by rememberSaveable { mutableStateOf(MainBottomSheetTab.PLACE) }
     val currentLocation = if (uiState.permissionState == LocationPermissionUiState.DENIED) {
         null
     } else {
@@ -106,198 +110,218 @@ fun MainScreen(
         }
     }
 
-    Box(
+    BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
             .statusBarsPadding()
     ) {
-        GoogleMap(
-            modifier = Modifier.fillMaxSize(),
-            cameraPositionState = cameraPositionState,
-            properties = MapProperties(isMyLocationEnabled = false),
-            onMapLoaded = { isMapLoaded = true }
-        ) {
-            RouteMapContent(
-                routeModeUiState = uiState.routeModeUiState,
-                routeAccentColor = routeAccentColor
-            )
+        val density = androidx.compose.ui.platform.LocalDensity.current
+        val containerHeightPx = constraints.maxHeight.toFloat()
+        val collapsedVisibleHeightPx = with(density) { 26.dp.toPx() }
+        val middleVisibleHeightPx = with(density) { 332.dp.toPx() }
+        val expandedTopInsetPx = with(density) { 92.dp.toPx() }
+        val collapsedOffset = (containerHeightPx - collapsedVisibleHeightPx).coerceAtLeast(0f)
+        val middleOffset = (containerHeightPx - middleVisibleHeightPx).coerceIn(expandedTopInsetPx, collapsedOffset)
+        val expandedOffset = expandedTopInsetPx.coerceAtMost(middleOffset)
+        val sheetAnchors = remember(expandedOffset, middleOffset, collapsedOffset) {
+            listOf(expandedOffset, middleOffset, collapsedOffset)
+        }
+        val sheetOffset = remember { Animatable(collapsedOffset) }
 
-            currentLocation?.let {
-                MarkerComposable(
-                    state = com.google.maps.android.compose.MarkerState(position = it.toLatLng()),
-                    title = stringResource(R.string.main_map_marker_title),
-                    anchor = androidx.compose.ui.geometry.Offset(0.5f, 0.58f)
-                ) {
-                    Box(
-                        modifier = Modifier.size(104.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(94.dp)
-                                .clip(CircleShape)
-                                .background(
-                                    brush = Brush.radialGradient(
-                                        colors = listOf(
-                                            CurrentLocationGlowBase.copy(alpha = 0.80f),
-                                            CurrentLocationGlowBase.copy(alpha = 0.50f),
-                                            Color.Transparent
-                                        )
-                                    )
-                                )
-                        )
-                        Image(
-                            painter = painterResource(id = R.drawable.current_location_marker),
-                            contentDescription = stringResource(R.string.main_map_marker_title),
-                            modifier = Modifier.size(70.dp),
-                            contentScale = ContentScale.Fit
-                        )
-                    }
-                }
+        LaunchedEffect(expandedOffset, middleOffset, collapsedOffset) {
+            val targetOffset = when (nearestSheetValue(sheetOffset.value, sheetAnchors)) {
+                MainBottomSheetValue.EXPANDED -> expandedOffset
+                MainBottomSheetValue.MIDDLE -> middleOffset
+                MainBottomSheetValue.COLLAPSED -> collapsedOffset
+            }
+            sheetOffset.snapTo(targetOffset)
+        }
+
+        val draggableState = rememberDraggableState { delta ->
+            coroutineScope.launch {
+                val nextOffset = (sheetOffset.value + delta).coerceIn(expandedOffset, collapsedOffset)
+                sheetOffset.snapTo(nextOffset)
             }
         }
 
-        RouteStatusOverlay(
-            routeModeUiState = uiState.routeModeUiState,
-            hasRouteLocationData = hasRouteLocationData,
-            onRouteAction = onRouteAction
-        )
+        val visibleSheetHeightDp = with(density) { (containerHeightPx - sheetOffset.value).toDp() }
+        val floatingBottomPadding = visibleSheetHeightDp + 16.dp
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.SpaceBetween
-        ) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors()
+        Box(modifier = Modifier.fillMaxSize()) {
+            GoogleMap(
+                modifier = Modifier.fillMaxSize(),
+                cameraPositionState = cameraPositionState,
+                properties = MapProperties(isMyLocationEnabled = false),
+                onMapLoaded = { isMapLoaded = true }
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 14.dp)
-                ) {
-                    MainHeader(
-                        permissionState = uiState.permissionState,
-                        selectedDateKey = uiState.selectedDateKey,
-                        onPickDate = {
-                            showDatePicker(
-                                context = context,
-                                initialDateKey = uiState.selectedDateKey,
-                                onDateSelected = onDateSelected
+                RouteMapContent(
+                    routeModeUiState = uiState.routeModeUiState,
+                    routeAccentColor = routeAccentColor
+                )
+
+                currentLocation?.let {
+                    MarkerComposable(
+                        state = com.google.maps.android.compose.MarkerState(position = it.toLatLng()),
+                        title = stringResource(R.string.main_map_marker_title),
+                        anchor = Offset(0.5f, 0.58f)
+                    ) {
+                        Box(
+                            modifier = Modifier.size(104.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(94.dp)
+                                    .clip(CircleShape)
+                                    .background(
+                                        brush = Brush.radialGradient(
+                                            colors = listOf(
+                                                CurrentLocationGlowBase.copy(alpha = 0.80f),
+                                                CurrentLocationGlowBase.copy(alpha = 0.50f),
+                                                Color.Transparent
+                                            )
+                                        )
+                                    )
+                            )
+                            Image(
+                                painter = painterResource(id = R.drawable.current_location_marker),
+                                contentDescription = stringResource(R.string.main_map_marker_title),
+                                modifier = Modifier.size(70.dp),
+                                contentScale = ContentScale.Fit
                             )
                         }
+                    }
+                }
+            }
+
+            RouteStatusOverlay(
+                routeModeUiState = uiState.routeModeUiState,
+                hasRouteLocationData = hasRouteLocationData,
+                onRouteAction = onRouteAction
+            )
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    MainDateTopBar(
+                        selectedDateKey = uiState.selectedDateKey,
+                        onDateSelected = onDateSelected
                     )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    MainRouteSection(
+                    androidx.compose.foundation.layout.Spacer(modifier = Modifier.size(10.dp))
+                    MainRouteFloatingControls(
                         routeMode = uiState.routeModeUiState,
                         onRouteAction = onRouteAction
                     )
                 }
+
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.End
+                ) {
+                    if (currentLocation != null) {
+                        FloatingActionButton(
+                            onClick = {
+                                coroutineScope.launch {
+                                    cameraPositionState.animate(
+                                        CameraUpdateFactory.newLatLngZoom(currentLocation.toLatLng(), 17f)
+                                    )
+                                }
+                            },
+                            modifier = Modifier.padding(bottom = floatingBottomPadding)
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.my_location_24px),
+                                contentDescription = stringResource(R.string.main_move_to_current_location)
+                            )
+                        }
+                    }
+                }
             }
 
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.End
-            ) {
-                if (currentLocation != null) {
-                    FloatingActionButton(
-                        onClick = {
+            if (uiState.showPermissionOverlay) {
+                PermissionOverlay(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(horizontal = 16.dp)
+                        .padding(bottom = floatingBottomPadding),
+                    message = permissionOverlayMessage(uiState.permissionState, uiState.isLocationServiceEnabled),
+                    actionText = permissionOverlayActionText(uiState.permissionState, uiState.isLocationServiceEnabled),
+                    onClickAction = onPermissionBannerConfirm
+                )
+            }
+
+            MainBottomSheet(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .offset { IntOffset(0, sheetOffset.value.roundToInt()) }
+                    .draggable(
+                        state = draggableState,
+                        orientation = Orientation.Vertical,
+                        onDragStopped = { velocity ->
                             coroutineScope.launch {
-                                cameraPositionState.animate(
-                                    CameraUpdateFactory.newLatLngZoom(
-                                        currentLocation.toLatLng(),
-                                        17f
+                                val targetOffset = settleSheetOffset(
+                                    currentOffset = sheetOffset.value,
+                                    currentValue = nearestSheetValue(sheetOffset.value, sheetAnchors),
+                                    anchors = sheetAnchors,
+                                    velocity = velocity
+                                )
+                                sheetOffset.animateTo(
+                                    targetOffset,
+                                    animationSpec = spring(
+                                        dampingRatio = Spring.DampingRatioNoBouncy,
+                                        stiffness = Spring.StiffnessMediumLow
                                     )
                                 )
                             }
                         }
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.my_location_24px),
-                            contentDescription = stringResource(R.string.main_move_to_current_location)
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(12.dp))
-                }
-
-                if (uiState.permissionState == LocationPermissionUiState.DENIED) {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors()
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)
-                        ) {
-                            Text(text = stringResource(R.string.main_permission_off_title))
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(text = stringResource(R.string.main_permission_off_message))
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun MainHeader(
-    permissionState: LocationPermissionUiState,
-    selectedDateKey: String,
-    onPickDate: () -> Unit
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column {
-            Text(text = stringResource(R.string.main_title), fontWeight = FontWeight.SemiBold)
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(text = permissionText(permissionState))
-        }
-        Button(onClick = onPickDate) {
-            Text(text = stringResource(R.string.main_pick_date))
-        }
-    }
-    Spacer(modifier = Modifier.height(12.dp))
-    Text(text = stringResource(R.string.main_selected_date, selectedDateKey))
-}
-
-private fun showDatePicker(
-    context: android.content.Context,
-    initialDateKey: String,
-    onDateSelected: (String) -> Unit
-) {
-    val initialDate = runCatching { LocalDate.parse(initialDateKey, DateFormatter) }
-        .getOrDefault(LocalDate.now())
-
-    DatePickerDialog(
-        context,
-        { _, year, month, dayOfMonth ->
-            onDateSelected(
-                LocalDate.of(year, month + 1, dayOfMonth).format(DateFormatter)
+                    ),
+                selectedTab = selectedBottomSheetTab,
+                onTabSelected = { selectedBottomSheetTab = it }
             )
-        },
-        initialDate.year,
-        initialDate.monthValue - 1,
-        initialDate.dayOfMonth
-    ).show()
-}
+        }
+    }
 
-@Composable
-private fun permissionText(permissionState: LocationPermissionUiState): String {
-    return when (permissionState) {
-        LocationPermissionUiState.ALWAYS -> stringResource(R.string.main_permission_enabled_background)
-        LocationPermissionUiState.FOREGROUND_ONLY -> stringResource(R.string.main_permission_enabled_foreground)
-        LocationPermissionUiState.DENIED -> stringResource(R.string.main_permission_denied)
+    if (uiState.showTrackingPermissionDialog) {
+        PermissionSettingDialog(
+            onConfirm = onTrackingPermissionDialogConfirm,
+            onDismiss = onTrackingPermissionDialogDismiss
+        )
     }
 }
 
-private fun MainCoordinateUiState.toLatLng(): LatLng {
-    return LatLng(latitude, longitude)
+@Composable
+private fun permissionOverlayMessage(
+    permissionState: LocationPermissionUiState,
+    isLocationServiceEnabled: Boolean
+): String {
+    return when {
+        permissionState == LocationPermissionUiState.DENIED -> stringResource(R.string.permission_banner_denied_title)
+        permissionState == LocationPermissionUiState.FOREGROUND_ONLY -> stringResource(R.string.permission_banner_foreground_title)
+        !isLocationServiceEnabled -> stringResource(R.string.main_permission_off_title)
+        else -> ""
+    }
 }
+
+@Composable
+private fun permissionOverlayActionText(
+    permissionState: LocationPermissionUiState,
+    isLocationServiceEnabled: Boolean
+): String {
+    return when {
+        permissionState != LocationPermissionUiState.ALWAYS -> stringResource(R.string.permission_banner_action)
+        !isLocationServiceEnabled -> stringResource(R.string.gps_off_overlay_action)
+        else -> ""
+    }
+}
+
+private fun MainCoordinateUiState.toLatLng(): LatLng = LatLng(latitude, longitude)
 
 private fun buildRouteCameraUpdate(routePoints: List<LatLng>) = when {
     routePoints.isEmpty() -> CameraUpdateFactory.zoomTo(15f)
@@ -306,5 +330,24 @@ private fun buildRouteCameraUpdate(routePoints: List<LatLng>) = when {
         val boundsBuilder = LatLngBounds.builder()
         routePoints.forEach(boundsBuilder::include)
         CameraUpdateFactory.newLatLngBounds(boundsBuilder.build(), RouteBoundsPaddingPx)
+    }
+}
+
+@Preview(showBackground = true, name = "Permission Overlay")
+@Composable
+private fun PermissionOverlayPreview() {
+    com.example.passedpath.ui.theme.PassedPathTheme {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color(0xFFF3F4F6))
+                .padding(16.dp)
+        ) {
+            PermissionOverlay(
+                message = stringResource(R.string.permission_banner_foreground_title),
+                actionText = stringResource(R.string.permission_banner_action),
+                onClickAction = {}
+            )
+        }
     }
 }

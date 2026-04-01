@@ -10,6 +10,7 @@ import com.example.passedpath.app.appContainer
 import com.example.passedpath.feature.locationtracking.domain.policy.LocationTrackingPolicy
 import com.example.passedpath.feature.locationtracking.domain.policy.TrackingDateKeyResolver
 import com.example.passedpath.feature.locationtracking.domain.tracker.LocationTrackingSession
+import com.example.passedpath.feature.locationtracking.data.manager.LocationTrackingServiceStateWriter
 import com.example.passedpath.feature.locationtracking.presentation.notification.TrackingNotificationFactory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -28,6 +29,7 @@ class LocationTrackingService : Service() {
 
     private lateinit var notificationFactory: TrackingNotificationFactory
     private lateinit var dateKeyResolver: TrackingDateKeyResolver
+    private lateinit var serviceStateWriter: LocationTrackingServiceStateWriter
     private var trackingSession: LocationTrackingSession? = null
     private var periodicUploadJob: Job? = null
     private var preBoundaryUploadJob: Job? = null
@@ -36,6 +38,7 @@ class LocationTrackingService : Service() {
         super.onCreate()
         notificationFactory = TrackingNotificationFactory(this)
         dateKeyResolver = applicationContext.appContainer.trackingDateKeyResolver
+        serviceStateWriter = applicationContext.appContainer.locationTrackingServiceStateWriter
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -86,6 +89,7 @@ class LocationTrackingService : Service() {
                 }
             }
         }
+        serviceStateWriter.update(isTracking = true)
     }
 
     private fun stopTrackingAndSelf() {
@@ -102,6 +106,7 @@ class LocationTrackingService : Service() {
         periodicUploadJob = null
         preBoundaryUploadJob?.cancel()
         preBoundaryUploadJob = null
+        serviceStateWriter.update(isTracking = false)
         Log.i(TAG, "Stopped location tracking service")
     }
 

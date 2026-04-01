@@ -35,7 +35,8 @@ sealed interface MainRouteModeUiState {
         override val routeEmptyMessage: String? = null,
         override val routeErrorMessage: String? = null,
         val canRefreshDistance: Boolean = true,
-        val isTrackingToggleVisible: Boolean = true
+        val isTrackingToggleVisible: Boolean = true,
+        val isTrackingEnabled: Boolean = false
     ) : MainRouteModeUiState
 
     data class Past(

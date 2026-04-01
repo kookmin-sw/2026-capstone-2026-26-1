@@ -1,4 +1,4 @@
-package com.example.passedpath.feature.main.presentation.state
+﻿package com.example.passedpath.feature.main.presentation.state
 
 import com.example.passedpath.feature.route.presentation.state.MainRouteModeUiState
 import com.example.passedpath.feature.route.presentation.state.SelectedDayRouteUiState
@@ -10,8 +10,11 @@ data class MainCoordinateUiState(
 
 data class MainUiState(
     val permissionState: LocationPermissionUiState = LocationPermissionUiState.DENIED,
+    val isLocationServiceEnabled: Boolean = true,
+    val isTrackingActive: Boolean = false,
     val currentLocation: MainCoordinateUiState? = null,
     val hasCenteredOnCurrentLocation: Boolean = false,
+    val showTrackingPermissionDialog: Boolean = false,
     val selectedDateKey: String = "",
     val routeModeUiState: MainRouteModeUiState = MainRouteModeUiState.Today(
         route = SelectedDayRouteUiState(dateKey = "")
@@ -31,4 +34,7 @@ data class MainUiState(
 
     val routeErrorMessage: String?
         get() = routeModeUiState.routeErrorMessage
+
+    val showPermissionOverlay: Boolean
+        get() = permissionState != LocationPermissionUiState.ALWAYS || !isLocationServiceEnabled
 }

@@ -1,5 +1,6 @@
 ﻿package com.example.passedpath.feature.main.presentation.viewmodel
 
+import com.example.passedpath.feature.locationtracking.data.manager.LocationTrackingServiceStateReader
 import com.example.passedpath.feature.locationtracking.domain.model.DailyPath
 import com.example.passedpath.feature.locationtracking.domain.model.DayRouteDetail
 import com.example.passedpath.feature.locationtracking.domain.model.DayRoutePlace
@@ -7,18 +8,23 @@ import com.example.passedpath.feature.locationtracking.domain.model.RoutePoint
 import com.example.passedpath.feature.locationtracking.domain.model.TrackedLocation
 import com.example.passedpath.feature.locationtracking.domain.repository.DayRouteRepository
 import com.example.passedpath.feature.locationtracking.domain.repository.RemoteDayRouteResult
+import com.example.passedpath.feature.main.presentation.state.LocationPermissionUiState
 import com.example.passedpath.feature.permission.data.manager.LocationPermissionStatusReader
+import com.example.passedpath.feature.permission.data.manager.LocationServiceStatusReader
 import com.example.passedpath.feature.route.presentation.coordinator.RouteStateCoordinator
+import com.example.passedpath.feature.route.presentation.state.MainRouteModeUiState
 import com.example.passedpath.feature.route.presentation.state.RouteUiAction
 import com.example.passedpath.testutil.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -147,6 +153,187 @@ class MainViewModelTest {
     }
 
     @Test
+    fun `tracking state updates today route mode`() = runTest {
+        val trackingState = MutableStateFlow(false)
+        val viewModel = createViewModel(
+            repository = FakeDayRouteRepository(),
+            initialDateKey = "2026-03-31",
+            todayDateKey = "2026-03-31",
+            trackingState = trackingState
+        )
+        advanceUntilIdle()
+
+        assertFalse((viewModel.uiState.value.routeModeUiState as MainRouteModeUiState.Today).isTrackingEnabled)
+        assertFalse(viewModel.uiState.value.isTrackingActive)
+
+        trackingState.value = true
+        advanceUntilIdle()
+
+        assertTrue((viewModel.uiState.value.routeModeUiState as MainRouteModeUiState.Today).isTrackingEnabled)
+        assertTrue(viewModel.uiState.value.isTrackingActive)
+    }
+
+    @Test
+    fun `foreground only permission shows overlay`() = runTest {
+        val permissionReader = MutableLocationPermissionStatusReader(
+            foregroundGranted = true,
+            backgroundGranted = false
+        )
+        val viewModel = createViewModel(
+            repository = FakeDayRouteRepository(),
+            initialDateKey = "2026-03-31",
+            todayDateKey = "2026-03-31",
+            permissionReader = permissionReader
+        )
+        advanceUntilIdle()
+
+        assertEquals(LocationPermissionUiState.FOREGROUND_ONLY, viewModel.uiState.value.permissionState)
+        assertTrue(viewModel.uiState.value.showPermissionOverlay)
+    }
+
+    @Test
+    fun `denied permission shows overlay and clears current location`() = runTest {
+        val permissionReader = MutableLocationPermissionStatusReader(
+            foregroundGranted = false,
+            backgroundGranted = false
+        )
+        val viewModel = createViewModel(
+            repository = FakeDayRouteRepository(),
+            initialDateKey = "2026-03-31",
+            todayDateKey = "2026-03-31",
+            permissionReader = permissionReader
+        )
+        advanceUntilIdle()
+
+        assertEquals(LocationPermissionUiState.DENIED, viewModel.uiState.value.permissionState)
+        assertTrue(viewModel.uiState.value.showPermissionOverlay)
+        assertNull(viewModel.uiState.value.currentLocation)
+    }
+
+    @Test
+    fun `gps off shows overlay even with always permission`() = runTest {
+        val viewModel = createViewModel(
+            repository = FakeDayRouteRepository(),
+            initialDateKey = "2026-03-31",
+            todayDateKey = "2026-03-31",
+            backgroundGranted = true,
+            isLocationServiceEnabled = false
+        )
+        advanceUntilIdle()
+
+        assertEquals(LocationPermissionUiState.ALWAYS, viewModel.uiState.value.permissionState)
+        assertFalse(viewModel.uiState.value.isLocationServiceEnabled)
+        assertTrue(viewModel.uiState.value.showPermissionOverlay)
+    }
+
+    @Test
+    fun `refresh location service state updates gps flag`() = runTest {
+        val locationServiceReader = MutableLocationServiceStatusReader(isEnabled = false)
+        val viewModel = createViewModel(
+            repository = FakeDayRouteRepository(),
+            initialDateKey = "2026-03-31",
+            todayDateKey = "2026-03-31",
+            backgroundGranted = true,
+            locationServiceReader = locationServiceReader
+        )
+        advanceUntilIdle()
+
+        assertFalse(viewModel.uiState.value.isLocationServiceEnabled)
+
+        locationServiceReader.isEnabled = true
+        viewModel.refreshLocationServiceState()
+
+        assertTrue(viewModel.uiState.value.isLocationServiceEnabled)
+        assertFalse(viewModel.uiState.value.showPermissionOverlay)
+    }
+
+    @Test
+    fun `toggle tracking starts service when today is not tracking and permission is always granted`() = runTest {
+        var startCalls = 0
+        var stopCalls = 0
+        val viewModel = createViewModel(
+            repository = FakeDayRouteRepository(),
+            initialDateKey = "2026-03-31",
+            todayDateKey = "2026-03-31",
+            backgroundGranted = true,
+            onStartTracking = { startCalls += 1 },
+            onStopTracking = { stopCalls += 1 }
+        )
+        advanceUntilIdle()
+
+        viewModel.handleRouteAction(RouteUiAction.ToggleTracking)
+
+        assertEquals(1, startCalls)
+        assertEquals(0, stopCalls)
+        assertFalse(viewModel.uiState.value.showTrackingPermissionDialog)
+    }
+
+    @Test
+    fun `toggle tracking stops service when today is already tracking`() = runTest {
+        var startCalls = 0
+        var stopCalls = 0
+        val trackingState = MutableStateFlow(true)
+        val viewModel = createViewModel(
+            repository = FakeDayRouteRepository(),
+            initialDateKey = "2026-03-31",
+            todayDateKey = "2026-03-31",
+            backgroundGranted = true,
+            trackingState = trackingState,
+            onStartTracking = { startCalls += 1 },
+            onStopTracking = { stopCalls += 1 }
+        )
+        advanceUntilIdle()
+
+        viewModel.handleRouteAction(RouteUiAction.ToggleTracking)
+
+        assertEquals(0, startCalls)
+        assertEquals(1, stopCalls)
+        assertFalse(viewModel.uiState.value.showTrackingPermissionDialog)
+    }
+
+    @Test
+    fun `toggle tracking without always permission keeps off state and opens settings dialog`() = runTest {
+        var startCalls = 0
+        var stopCalls = 0
+        val trackingState = MutableStateFlow(false)
+        val viewModel = createViewModel(
+            repository = FakeDayRouteRepository(),
+            initialDateKey = "2026-03-31",
+            todayDateKey = "2026-03-31",
+            trackingState = trackingState,
+            onStartTracking = { startCalls += 1 },
+            onStopTracking = { stopCalls += 1 }
+        )
+        advanceUntilIdle()
+
+        viewModel.handleRouteAction(RouteUiAction.ToggleTracking)
+        advanceUntilIdle()
+
+        assertEquals(0, startCalls)
+        assertEquals(0, stopCalls)
+        assertFalse((viewModel.uiState.value.routeModeUiState as MainRouteModeUiState.Today).isTrackingEnabled)
+        assertTrue(viewModel.uiState.value.showTrackingPermissionDialog)
+    }
+
+    @Test
+    fun `dismiss tracking permission dialog clears dialog state`() = runTest {
+        val viewModel = createViewModel(
+            repository = FakeDayRouteRepository(),
+            initialDateKey = "2026-03-31",
+            todayDateKey = "2026-03-31"
+        )
+        advanceUntilIdle()
+
+        viewModel.handleRouteAction(RouteUiAction.ToggleTracking)
+        advanceUntilIdle()
+        assertTrue(viewModel.uiState.value.showTrackingPermissionDialog)
+
+        viewModel.dismissTrackingPermissionDialog()
+
+        assertFalse(viewModel.uiState.value.showTrackingPermissionDialog)
+    }
+
+    @Test
     fun `selectDate with empty remote result shows no location data state without error`() = runTest {
         val repository = FakeDayRouteRepository(
             resultByDate = mutableMapOf(
@@ -169,7 +356,7 @@ class MainViewModelTest {
         assertEquals("2026-03-30", state.selectedDateKey)
         assertTrue(state.isRouteEmpty)
         assertFalse(state.selectedRoute.hasLocationData)
-        assertEquals("선택한 날짜에는 지도에 표시할 경로 데이터가 없습니다.", state.routeEmptyMessage)
+        assertNotNull(state.routeEmptyMessage)
         assertNull(state.routeErrorMessage)
     }
 
@@ -195,7 +382,7 @@ class MainViewModelTest {
 
         assertEquals("2026-03-31", state.selectedDateKey)
         assertFalse(state.isRouteEmpty)
-        assertEquals("선택한 날짜의 경로를 불러오지 못했습니다.", state.routeErrorMessage)
+        assertNotNull(state.routeErrorMessage)
         assertFalse(state.selectedRoute.hasLocationData)
     }
 
@@ -243,7 +430,7 @@ class MainViewModelTest {
             todayDateKey = "2026-03-31"
         )
         advanceUntilIdle()
-        assertEquals("선택한 날짜의 경로를 불러오지 못했습니다.", viewModel.uiState.value.routeErrorMessage)
+        assertNotNull(viewModel.uiState.value.routeErrorMessage)
 
         viewModel.selectDate("2026-03-31")
         advanceUntilIdle()
@@ -260,15 +447,27 @@ class MainViewModelTest {
         repository: FakeDayRouteRepository,
         initialDateKey: String,
         todayDateKey: String,
-        backgroundGranted: Boolean = false
+        backgroundGranted: Boolean = false,
+        isLocationServiceEnabled: Boolean = true,
+        trackingState: MutableStateFlow<Boolean> = MutableStateFlow(false),
+        onStartTracking: () -> Unit = {},
+        onStopTracking: () -> Unit = {},
+        permissionReader: LocationPermissionStatusReader =
+            FakeLocationPermissionStatusReader(backgroundGranted = backgroundGranted),
+        locationServiceReader: LocationServiceStatusReader =
+            MutableLocationServiceStatusReader(isEnabled = isLocationServiceEnabled)
     ): MainViewModel {
         return MainViewModel(
-            locationPermissionStatusReader = FakeLocationPermissionStatusReader(backgroundGranted = backgroundGranted),
+            locationPermissionStatusReader = permissionReader,
+            locationServiceStatusReader = locationServiceReader,
             initialDateKeyProvider = { initialDateKey },
             routeStateCoordinator = RouteStateCoordinator(
                 dayRouteRepository = repository,
                 todayDateKeyProvider = { todayDateKey }
-            )
+            ),
+            trackingServiceStateReader = FakeLocationTrackingServiceStateReader(trackingState),
+            startTracking = onStartTracking,
+            stopTracking = onStopTracking
         )
     }
 
@@ -278,6 +477,26 @@ class MainViewModelTest {
     ) : LocationPermissionStatusReader {
         override fun isForegroundGranted(): Boolean = foregroundGranted
         override fun isBackgroundAlwaysGranted(): Boolean = backgroundGranted
+    }
+
+    private class MutableLocationPermissionStatusReader(
+        var foregroundGranted: Boolean = false,
+        var backgroundGranted: Boolean = false
+    ) : LocationPermissionStatusReader {
+        override fun isForegroundGranted(): Boolean = foregroundGranted
+        override fun isBackgroundAlwaysGranted(): Boolean = backgroundGranted
+    }
+
+    private class MutableLocationServiceStatusReader(
+        var isEnabled: Boolean = true
+    ) : LocationServiceStatusReader {
+        override fun isLocationServiceEnabled(): Boolean = isEnabled
+    }
+
+    private class FakeLocationTrackingServiceStateReader(
+        override val isTracking: StateFlow<Boolean>
+    ) : LocationTrackingServiceStateReader {
+        override fun isTrackingEnabledByUser(): Boolean = true
     }
 
     private class FakeDayRouteRepository(

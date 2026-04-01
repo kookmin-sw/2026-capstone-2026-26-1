@@ -1,4 +1,4 @@
-package com.example.passedpath.app
+﻿package com.example.passedpath.app
 
 import android.content.Context
 import androidx.room.Room
@@ -8,6 +8,9 @@ import com.example.passedpath.feature.auth.data.manager.AuthTokenManager
 import com.example.passedpath.feature.auth.data.remote.api.AuthApi
 import com.example.passedpath.feature.auth.data.repository.AuthRepository
 import com.example.passedpath.feature.locationtracking.data.local.PassedPathDatabase
+import com.example.passedpath.feature.locationtracking.data.manager.LocationTrackingServiceStateReader
+import com.example.passedpath.feature.locationtracking.data.manager.LocationTrackingServiceStateWriter
+import com.example.passedpath.feature.locationtracking.data.manager.PersistentLocationTrackingServiceStateHolder
 import com.example.passedpath.feature.locationtracking.data.manager.TrackingLocationProvider
 import com.example.passedpath.feature.locationtracking.data.remote.api.DayRouteApi
 import com.example.passedpath.feature.locationtracking.data.repository.RoomDayRouteRepository
@@ -23,7 +26,9 @@ import com.example.passedpath.feature.locationtracking.domain.usecase.UploadGpsP
 import com.example.passedpath.feature.main.data.manager.CurrentLocationProvider
 import com.example.passedpath.feature.main.data.repository.TestRepository
 import com.example.passedpath.feature.permission.data.manager.AndroidLocationPermissionStatusReader
+import com.example.passedpath.feature.permission.data.manager.AndroidLocationServiceStatusReader
 import com.example.passedpath.feature.permission.data.manager.LocationPermissionStatusReader
+import com.example.passedpath.feature.permission.data.manager.LocationServiceStatusReader
 import java.time.LocalTime
 
 class AppContainer(
@@ -39,12 +44,28 @@ class AppContainer(
         AndroidLocationPermissionStatusReader(appContext)
     }
 
+    val locationServiceStatusReader: LocationServiceStatusReader by lazy {
+        AndroidLocationServiceStatusReader(appContext)
+    }
+
     val currentLocationTracker: LocationTracker by lazy {
         CurrentLocationProvider(appContext)
     }
 
     val trackingLocationTracker: LocationTracker by lazy {
         TrackingLocationProvider(appContext)
+    }
+
+    private val locationTrackingServiceStateHolder by lazy {
+        PersistentLocationTrackingServiceStateHolder(appContext)
+    }
+
+    val locationTrackingServiceStateReader: LocationTrackingServiceStateReader by lazy {
+        locationTrackingServiceStateHolder
+    }
+
+    val locationTrackingServiceStateWriter: LocationTrackingServiceStateWriter by lazy {
+        locationTrackingServiceStateHolder
     }
 
     private val trackingDatabase: PassedPathDatabase by lazy {
@@ -100,11 +121,17 @@ class AppContainer(
     }
 
     val startLocationTrackingUseCase: StartLocationTrackingUseCase by lazy {
-        StartLocationTrackingUseCase(appContext)
+        StartLocationTrackingUseCase(
+            context = appContext,
+            trackingServiceStateWriter = locationTrackingServiceStateWriter
+        )
     }
 
     val stopLocationTrackingUseCase: StopLocationTrackingUseCase by lazy {
-        StopLocationTrackingUseCase(appContext)
+        StopLocationTrackingUseCase(
+            context = appContext,
+            trackingServiceStateWriter = locationTrackingServiceStateWriter
+        )
     }
 
     private val authTokenManager by lazy {
