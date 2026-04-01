@@ -6,6 +6,7 @@ import lombok.Builder;
 public record PlaceSearchResult(
     String name,
     String roadAddress,
+    String jibunAddress,
     double latitude,
     double longitude
 ) {

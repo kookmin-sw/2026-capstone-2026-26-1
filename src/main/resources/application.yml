@@ -31,5 +31,5 @@ server:
 
 kakao:
   local:
-    url: https://dapi.kakao.com/v2/local/geo/coord2address.json
+    base-url: https://dapi.kakao.com
     rest-api-key: ${KAKAO_REST_API_KEY}

@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+//TODO: 중심 좌표 계산이 맞는지 확인
 @Service
 @RequiredArgsConstructor
 public class StayAnalysisService {

@@ -9,19 +9,19 @@ import org.springframework.web.reactive.function.client.WebClient;
 @Configuration
 public class KakaoLocalConfig {
 
-    @Value("${kakao.local.url}")
-    private String kakaoLocalUrl;
+    @Value("${kakao.local.base-url}")
+    private String baseUrl;
 
     @Value("${kakao.local.rest-api-key}")
-    private String kakaoRestApiKey;
+    private String restApiKey;
 
     @Bean
     public WebClient kakaoLocalWebClient(
         WebClient.Builder builder
     ) {
         return builder
-            .baseUrl(kakaoLocalUrl)
-            .defaultHeader(HttpHeaders.AUTHORIZATION, "KakaoAK " + kakaoRestApiKey)
+            .baseUrl(baseUrl)
+            .defaultHeader(HttpHeaders.AUTHORIZATION, "KakaoAK " + restApiKey)
             .build();
     }
 
