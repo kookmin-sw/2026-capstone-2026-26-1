@@ -7,9 +7,13 @@ import com.example.passedpath.data.network.RetrofitClient
 import com.example.passedpath.feature.auth.data.manager.AuthTokenManager
 import com.example.passedpath.feature.auth.data.remote.api.AuthApi
 import com.example.passedpath.feature.auth.data.repository.AuthRepository
+import com.example.passedpath.feature.daynote.data.remote.api.DayRouteMemoApi
 import com.example.passedpath.feature.daynote.data.remote.api.DayRouteTitleApi
+import com.example.passedpath.feature.daynote.data.repository.DayRouteMemoRepositoryImpl
 import com.example.passedpath.feature.daynote.data.repository.DayRouteTitleRepositoryImpl
+import com.example.passedpath.feature.daynote.domain.repository.DayRouteMemoRepository
 import com.example.passedpath.feature.daynote.domain.repository.DayRouteTitleRepository
+import com.example.passedpath.feature.daynote.domain.usecase.PatchDayRouteMemoUseCase
 import com.example.passedpath.feature.daynote.domain.usecase.PatchDayRouteTitleUseCase
 import com.example.passedpath.feature.locationtracking.data.local.PassedPathDatabase
 import com.example.passedpath.feature.locationtracking.data.manager.LocationTrackingServiceStateReader
@@ -119,6 +123,10 @@ class AppContainer(
         retrofit.create(DayRouteTitleApi::class.java)
     }
 
+    private val dayRouteMemoApi by lazy {
+        retrofit.create(DayRouteMemoApi::class.java)
+    }
+
     private val placeApi by lazy {
         retrofit.create(PlaceApi::class.java)
     }
@@ -176,6 +184,10 @@ class AppContainer(
         DayRouteTitleRepositoryImpl(dayRouteTitleApi)
     }
 
+    val dayRouteMemoRepository: DayRouteMemoRepository by lazy {
+        DayRouteMemoRepositoryImpl(dayRouteMemoApi)
+    }
+
     val placeRepository: PlaceRepository by lazy {
         PlaceRepositoryImpl(placeApi)
     }
@@ -190,6 +202,10 @@ class AppContainer(
 
     val patchDayRouteTitleUseCase: PatchDayRouteTitleUseCase by lazy {
         PatchDayRouteTitleUseCase(dayRouteTitleRepository = dayRouteTitleRepository)
+    }
+
+    val patchDayRouteMemoUseCase: PatchDayRouteMemoUseCase by lazy {
+        PatchDayRouteMemoUseCase(dayRouteMemoRepository = dayRouteMemoRepository)
     }
 
     val addPlaceUseCase: AddPlaceUseCase by lazy {
@@ -208,10 +224,3 @@ class AppContainer(
         ReorderPlacesUseCase(placeRepository = placeRepository)
     }
 }
-
-
-
-
-
-
-

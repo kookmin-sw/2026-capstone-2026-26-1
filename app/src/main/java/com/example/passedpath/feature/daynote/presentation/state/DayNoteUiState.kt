@@ -3,6 +3,7 @@ package com.example.passedpath.feature.daynote.presentation.state
 data class DayNoteUiState(
     val dateKey: String = "",
     val title: String = "",
+    val memo: String = "",
     val isSubmitting: Boolean = false,
     val errorMessage: String? = null,
     val successMessage: String? = null
