@@ -1,4 +1,4 @@
-﻿package com.example.passedpath.app
+package com.example.passedpath.app
 
 import android.content.Context
 import androidx.room.Room
@@ -29,6 +29,10 @@ import com.example.passedpath.feature.permission.data.manager.AndroidLocationPer
 import com.example.passedpath.feature.permission.data.manager.AndroidLocationServiceStatusReader
 import com.example.passedpath.feature.permission.data.manager.LocationPermissionStatusReader
 import com.example.passedpath.feature.permission.data.manager.LocationServiceStatusReader
+import com.example.passedpath.feature.place.data.remote.api.PlaceApi
+import com.example.passedpath.feature.place.data.repository.PlaceRepositoryImpl
+import com.example.passedpath.feature.place.domain.repository.PlaceRepository
+import com.example.passedpath.feature.place.domain.usecase.AddPlaceUseCase
 import java.time.LocalTime
 
 class AppContainer(
@@ -104,6 +108,10 @@ class AppContainer(
         retrofit.create(DayRouteApi::class.java)
     }
 
+    private val placeApi by lazy {
+        retrofit.create(PlaceApi::class.java)
+    }
+
     val locationTrackingRepository: LocationTrackingRepository by lazy {
         RoomLocationTrackingRepository(
             gpsPointDao = trackingDatabase.gpsPointDao(),
@@ -153,6 +161,10 @@ class AppContainer(
         TestRepository(testApi)
     }
 
+    val placeRepository: PlaceRepository by lazy {
+        PlaceRepositoryImpl(placeApi)
+    }
+
     val uploadGpsPointsBatchUseCase: UploadGpsPointsBatchUseCase by lazy {
         UploadGpsPointsBatchUseCase(
             dayRouteApi = dayRouteApi,
@@ -160,4 +172,9 @@ class AppContainer(
             dayRouteRepository = dayRouteRepository
         )
     }
+
+    val addPlaceUseCase: AddPlaceUseCase by lazy {
+        AddPlaceUseCase(placeRepository = placeRepository)
+    }
 }
+
