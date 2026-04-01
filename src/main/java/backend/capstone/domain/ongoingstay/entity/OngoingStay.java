@@ -24,7 +24,7 @@ public class OngoingStay extends BaseTimeEntity {
 
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Id
-    @Column(name = "stay_cluster_id")
+    @Column(name = "ongoing_stay_id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)

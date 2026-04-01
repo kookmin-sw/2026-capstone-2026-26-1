@@ -28,3 +28,8 @@ logging:
 
 server:
   forward-headers-strategy: framework
+
+kakao:
+  local:
+    url: https://dapi.kakao.com/v2/local/geo/coord2address.json
+    rest-api-key: ${KAKAO_REST_API_KEY}
