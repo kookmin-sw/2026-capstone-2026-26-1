@@ -35,6 +35,8 @@ import com.example.passedpath.R
 import com.example.passedpath.feature.main.presentation.state.LocationPermissionUiState
 import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiState
 import com.example.passedpath.feature.main.presentation.state.MainUiState
+import com.example.passedpath.feature.permission.presentation.mapper.createPermissionOverlayUiModel
+import com.example.passedpath.feature.route.presentation.screen.RouteFloatingControls
 import com.example.passedpath.feature.route.presentation.screen.RouteMapContent
 import com.example.passedpath.feature.route.presentation.screen.RouteStatusOverlay
 import com.example.passedpath.feature.route.presentation.state.RouteUiAction
@@ -70,6 +72,10 @@ internal fun MainMapSection(
     }
     val routePoints = uiState.selectedRoute.polylinePoints.map(MainCoordinateUiState::toLatLng)
     val hasRouteLocationData = uiState.selectedRoute.hasLocationData
+    val permissionOverlayUiModel = createPermissionOverlayUiModel(
+        permissionState = uiState.permissionState,
+        isLocationServiceEnabled = uiState.isLocationServiceEnabled
+    )
     val initialCameraTarget = routePoints.firstOrNull() ?: currentLocation?.toLatLng() ?: fallbackPosition
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(initialCameraTarget, 15f)
@@ -163,7 +169,7 @@ internal fun MainMapSection(
                     onDateSelected = onDateSelected
                 )
                 androidx.compose.foundation.layout.Spacer(modifier = Modifier.size(10.dp))
-                MainRouteFloatingControls(
+                RouteFloatingControls(
                     routeMode = uiState.routeModeUiState,
                     onRouteAction = onRouteAction
                 )
@@ -193,42 +199,17 @@ internal fun MainMapSection(
             }
         }
 
-        if (uiState.showPermissionOverlay) {
+        permissionOverlayUiModel?.let { overlayUiModel ->
             PermissionOverlay(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(horizontal = 16.dp)
                     .padding(bottom = floatingBottomPadding),
-                message = permissionOverlayMessage(uiState.permissionState, uiState.isLocationServiceEnabled),
-                actionText = permissionOverlayActionText(uiState.permissionState, uiState.isLocationServiceEnabled),
+                message = stringResource(overlayUiModel.messageResId),
+                actionText = stringResource(overlayUiModel.actionTextResId),
                 onClickAction = onPermissionBannerConfirm
             )
         }
-    }
-}
-
-@Composable
-private fun permissionOverlayMessage(
-    permissionState: LocationPermissionUiState,
-    isLocationServiceEnabled: Boolean
-): String {
-    return when {
-        permissionState == LocationPermissionUiState.DENIED -> stringResource(R.string.permission_banner_denied_title)
-        permissionState == LocationPermissionUiState.FOREGROUND_ONLY -> stringResource(R.string.permission_banner_foreground_title)
-        !isLocationServiceEnabled -> stringResource(R.string.main_permission_off_title)
-        else -> ""
-    }
-}
-
-@Composable
-private fun permissionOverlayActionText(
-    permissionState: LocationPermissionUiState,
-    isLocationServiceEnabled: Boolean
-): String {
-    return when {
-        permissionState != LocationPermissionUiState.ALWAYS -> stringResource(R.string.permission_banner_action)
-        !isLocationServiceEnabled -> stringResource(R.string.permission_banner_action)
-        else -> ""
     }
 }
 

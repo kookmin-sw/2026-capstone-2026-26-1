@@ -1,11 +1,20 @@
 package com.example.passedpath.feature.main.presentation.screen
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -16,16 +25,96 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.example.passedpath.R
 import com.example.passedpath.feature.daynote.presentation.screen.DayNoteBottomSheetContent
 import com.example.passedpath.feature.place.presentation.screen.PlaceBottomSheetContent
 import kotlin.math.abs
+import kotlin.math.roundToInt
+import kotlinx.coroutines.launch
+
+@Composable
+internal fun MainBottomSheetScaffold(
+    modifier: Modifier = Modifier,
+    content: @Composable (Dp) -> Unit,
+    sheet: @Composable (Modifier) -> Unit
+) {
+    BoxWithConstraints(
+        modifier = modifier.fillMaxSize()
+    ) {
+        val density = androidx.compose.ui.platform.LocalDensity.current
+        val containerHeightPx = constraints.maxHeight.toFloat()
+        val collapsedVisibleHeightPx = with(density) { 80.dp.toPx() }
+        val middleVisibleHeightPx = with(density) { 332.dp.toPx() }
+        val expandedTopInsetPx = with(density) { 92.dp.toPx() }
+        val collapsedOffset = (containerHeightPx - collapsedVisibleHeightPx).coerceAtLeast(0f)
+        val middleOffset = (containerHeightPx - middleVisibleHeightPx).coerceIn(expandedTopInsetPx, collapsedOffset)
+        val expandedOffset = expandedTopInsetPx.coerceAtMost(middleOffset)
+        val sheetAnchors = remember(expandedOffset, middleOffset, collapsedOffset) {
+            listOf(expandedOffset, middleOffset, collapsedOffset)
+        }
+        val sheetOffset = remember { Animatable(collapsedOffset) }
+        val coroutineScope = rememberCoroutineScope()
+
+        LaunchedEffect(expandedOffset, middleOffset, collapsedOffset) {
+            val targetOffset = when (nearestSheetValue(sheetOffset.value, sheetAnchors)) {
+                MainBottomSheetValue.EXPANDED -> expandedOffset
+                MainBottomSheetValue.MIDDLE -> middleOffset
+                MainBottomSheetValue.COLLAPSED -> collapsedOffset
+            }
+            sheetOffset.snapTo(targetOffset)
+        }
+
+        val draggableState = rememberDraggableState { delta ->
+            coroutineScope.launch {
+                val nextOffset = (sheetOffset.value + delta).coerceIn(expandedOffset, collapsedOffset)
+                sheetOffset.snapTo(nextOffset)
+            }
+        }
+
+        val visibleSheetHeightDp = with(density) { (containerHeightPx - sheetOffset.value).toDp() }
+        val floatingBottomPadding = visibleSheetHeightDp + 16.dp
+        val sheetModifier = Modifier
+            .align(Alignment.TopCenter)
+            .offset { IntOffset(0, sheetOffset.value.roundToInt()) }
+            .draggable(
+                state = draggableState,
+                orientation = Orientation.Vertical,
+                onDragStopped = { velocity ->
+                    coroutineScope.launch {
+                        val targetOffset = settleSheetOffset(
+                            currentOffset = sheetOffset.value,
+                            currentValue = nearestSheetValue(sheetOffset.value, sheetAnchors),
+                            anchors = sheetAnchors,
+                            velocity = velocity
+                        )
+                        sheetOffset.animateTo(
+                            targetOffset,
+                            animationSpec = spring(
+                                dampingRatio = Spring.DampingRatioNoBouncy,
+                                stiffness = Spring.StiffnessMediumLow
+                            )
+                        )
+                    }
+                }
+            )
+
+        Box(modifier = Modifier.fillMaxSize()) {
+            content(floatingBottomPadding)
+            sheet(sheetModifier)
+        }
+    }
+}
 
 @Composable
 internal fun MainBottomSheet(
@@ -76,7 +165,7 @@ internal fun MainBottomSheet(
     }
 }
 
-internal fun settleSheetOffset(
+private fun settleSheetOffset(
     currentOffset: Float,
     currentValue: MainBottomSheetValue,
     anchors: List<Float>,
@@ -100,7 +189,7 @@ internal fun settleSheetOffset(
     return anchors.minBy { abs(it - currentOffset) }
 }
 
-internal fun nearestSheetValue(offset: Float, anchors: List<Float>): MainBottomSheetValue {
+private fun nearestSheetValue(offset: Float, anchors: List<Float>): MainBottomSheetValue {
     return when (anchors.minBy { abs(it - offset) }) {
         anchors[0] -> MainBottomSheetValue.EXPANDED
         anchors[1] -> MainBottomSheetValue.MIDDLE
@@ -113,7 +202,7 @@ internal enum class MainBottomSheetTab(val titleResId: Int) {
     DAYNOTE(R.string.record_sheet_tab_daynote)
 }
 
-internal enum class MainBottomSheetValue {
+private enum class MainBottomSheetValue {
     COLLAPSED,
     MIDDLE,
     EXPANDED

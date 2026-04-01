@@ -1,4 +1,4 @@
-﻿package com.example.passedpath.feature.main.presentation.screen
+package com.example.passedpath.feature.route.presentation.screen
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -15,15 +15,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.passedpath.R
-import com.example.passedpath.feature.route.presentation.screen.TrackingToggleButton
-import com.example.passedpath.feature.route.presentation.screen.formatDistanceKm
 import com.example.passedpath.feature.route.presentation.state.MainRouteModeUiState
 import com.example.passedpath.feature.route.presentation.state.RouteUiAction
 import com.example.passedpath.ui.component.RoundedWhiteButton
 import com.example.passedpath.ui.theme.Gray700
 
 @Composable
-internal fun MainRouteFloatingControls(
+internal fun RouteFloatingControls(
     routeMode: MainRouteModeUiState,
     onRouteAction: (RouteUiAction) -> Unit
 ) {
