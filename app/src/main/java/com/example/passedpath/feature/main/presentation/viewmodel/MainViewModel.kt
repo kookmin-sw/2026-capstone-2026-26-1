@@ -5,7 +5,9 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.passedpath.app.AppContainer
 import com.example.passedpath.feature.locationtracking.data.manager.LocationTrackingServiceStateReader
-import com.example.passedpath.feature.main.presentation.state.LocationPermissionUiState
+import com.example.passedpath.feature.main.presentation.policy.TrackingToggleDecision
+import com.example.passedpath.feature.main.presentation.policy.decideTrackingToggle
+import com.example.passedpath.feature.permission.presentation.state.LocationPermissionUiState
 import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiState
 import com.example.passedpath.feature.main.presentation.state.MainUiState
 import com.example.passedpath.feature.permission.data.manager.LocationPermissionStatusReader
@@ -144,23 +146,21 @@ class MainViewModel(
     }
 
     private fun toggleTracking() {
-        if (_uiState.value.permissionState != LocationPermissionUiState.ALWAYS) {
-            _uiState.update { currentState ->
-                currentState.copy(showTrackingPermissionDialog = true)
-            }
-            return
-        }
-
-        when (val routeMode = _uiState.value.routeModeUiState) {
-            is MainRouteModeUiState.Today -> {
-                if (routeMode.isTrackingEnabled) {
-                    stopTracking()
-                } else {
-                    startTracking()
+        when (
+            decideTrackingToggle(
+                permissionState = _uiState.value.permissionState,
+                routeModeUiState = _uiState.value.routeModeUiState
+            )
+        ) {
+            TrackingToggleDecision.ShowPermissionDialog -> {
+                _uiState.update { currentState ->
+                    currentState.copy(showTrackingPermissionDialog = true)
                 }
             }
 
-            is MainRouteModeUiState.Past -> Unit
+            TrackingToggleDecision.StartTracking -> startTracking()
+            TrackingToggleDecision.StopTracking -> stopTracking()
+            TrackingToggleDecision.NoOp -> Unit
         }
     }
 }

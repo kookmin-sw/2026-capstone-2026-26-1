@@ -1,7 +1,7 @@
-package com.example.passedpath.feature.main.presentation.screen
+﻿package com.example.passedpath.feature.main.presentation.screen
 
-import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
@@ -26,8 +26,11 @@ import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -63,48 +66,48 @@ internal fun MainBottomSheetScaffold(
         val sheetAnchors = remember(expandedOffset, middleOffset, collapsedOffset) {
             listOf(expandedOffset, middleOffset, collapsedOffset)
         }
-        val sheetOffset = remember { Animatable(collapsedOffset) }
+        var sheetOffset by remember { mutableFloatStateOf(collapsedOffset) }
         val coroutineScope = rememberCoroutineScope()
 
         LaunchedEffect(expandedOffset, middleOffset, collapsedOffset) {
-            val targetOffset = when (nearestSheetValue(sheetOffset.value, sheetAnchors)) {
+            val targetOffset = when (nearestSheetValue(sheetOffset, sheetAnchors)) {
                 MainBottomSheetValue.EXPANDED -> expandedOffset
                 MainBottomSheetValue.MIDDLE -> middleOffset
                 MainBottomSheetValue.COLLAPSED -> collapsedOffset
             }
-            sheetOffset.snapTo(targetOffset)
+            sheetOffset = targetOffset
         }
 
         val draggableState = rememberDraggableState { delta ->
-            coroutineScope.launch {
-                val nextOffset = (sheetOffset.value + delta).coerceIn(expandedOffset, collapsedOffset)
-                sheetOffset.snapTo(nextOffset)
-            }
+            sheetOffset = (sheetOffset + delta).coerceIn(expandedOffset, collapsedOffset)
         }
 
-        val visibleSheetHeightDp = with(density) { (containerHeightPx - sheetOffset.value).toDp() }
+        val visibleSheetHeightDp = with(density) { (containerHeightPx - sheetOffset).toDp() }
         val floatingBottomPadding = visibleSheetHeightDp + 16.dp
         val sheetModifier = Modifier
             .align(Alignment.TopCenter)
-            .offset { IntOffset(0, sheetOffset.value.roundToInt()) }
+            .offset { IntOffset(0, sheetOffset.roundToInt()) }
             .draggable(
                 state = draggableState,
                 orientation = Orientation.Vertical,
                 onDragStopped = { velocity ->
                     coroutineScope.launch {
                         val targetOffset = settleSheetOffset(
-                            currentOffset = sheetOffset.value,
-                            currentValue = nearestSheetValue(sheetOffset.value, sheetAnchors),
+                            currentOffset = sheetOffset,
+                            currentValue = nearestSheetValue(sheetOffset, sheetAnchors),
                             anchors = sheetAnchors,
                             velocity = velocity
                         )
-                        sheetOffset.animateTo(
-                            targetOffset,
+                        animate(
+                            initialValue = sheetOffset,
+                            targetValue = targetOffset,
                             animationSpec = spring(
                                 dampingRatio = Spring.DampingRatioNoBouncy,
                                 stiffness = Spring.StiffnessMediumLow
                             )
-                        )
+                        ) { value, _ ->
+                            sheetOffset = value
+                        }
                     }
                 }
             )

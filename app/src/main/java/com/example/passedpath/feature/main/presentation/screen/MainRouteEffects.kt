@@ -1,4 +1,4 @@
-package com.example.passedpath.feature.main.presentation.screen
+﻿package com.example.passedpath.feature.main.presentation.screen
 
 import androidx.compose.runtime.Composable
 import com.example.passedpath.feature.locationtracking.data.manager.LocationTrackingServiceStateReader
@@ -7,7 +7,7 @@ import com.example.passedpath.feature.main.presentation.effect.MainInitialLocati
 import com.example.passedpath.feature.main.presentation.effect.MainLifecycleRefreshEffect
 import com.example.passedpath.feature.main.presentation.effect.MainLocationUpdatesEffect
 import com.example.passedpath.feature.main.presentation.effect.MainTrackingRecoveryEffect
-import com.example.passedpath.feature.main.presentation.state.LocationPermissionUiState
+import com.example.passedpath.feature.permission.presentation.state.LocationPermissionUiState
 import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiState
 
 @Composable
@@ -50,3 +50,4 @@ internal fun MainRouteEffects(
         onCurrentLocationUpdated = onCurrentLocationUpdated
     )
 }
+

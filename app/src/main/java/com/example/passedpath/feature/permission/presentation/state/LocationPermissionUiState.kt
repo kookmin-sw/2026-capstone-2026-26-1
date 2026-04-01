@@ -1,4 +1,4 @@
-package com.example.passedpath.feature.main.presentation.state
+﻿package com.example.passedpath.feature.permission.presentation.state
 
 enum class LocationPermissionUiState {
     DENIED,

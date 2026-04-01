@@ -1,5 +1,6 @@
 ﻿package com.example.passedpath.feature.main.presentation.state
 
+import com.example.passedpath.feature.permission.presentation.state.LocationPermissionUiState
 import com.example.passedpath.feature.route.presentation.state.MainRouteModeUiState
 import com.example.passedpath.feature.route.presentation.state.SelectedDayRouteUiState
 
@@ -38,3 +39,4 @@ data class MainUiState(
     val showPermissionOverlay: Boolean
         get() = permissionState != LocationPermissionUiState.ALWAYS || !isLocationServiceEnabled
 }
+

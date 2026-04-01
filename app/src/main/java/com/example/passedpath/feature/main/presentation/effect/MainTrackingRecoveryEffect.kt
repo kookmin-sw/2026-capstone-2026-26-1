@@ -1,9 +1,9 @@
-package com.example.passedpath.feature.main.presentation.effect
+﻿package com.example.passedpath.feature.main.presentation.effect
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import com.example.passedpath.feature.locationtracking.data.manager.LocationTrackingServiceStateReader
-import com.example.passedpath.feature.main.presentation.state.LocationPermissionUiState
+import com.example.passedpath.feature.permission.presentation.state.LocationPermissionUiState
 
 @Composable
 internal fun MainTrackingRecoveryEffect(
@@ -29,3 +29,4 @@ internal fun MainTrackingRecoveryEffect(
         }
     }
 }
+

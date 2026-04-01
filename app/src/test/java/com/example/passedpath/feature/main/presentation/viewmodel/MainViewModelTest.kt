@@ -8,7 +8,7 @@ import com.example.passedpath.feature.locationtracking.domain.model.RoutePoint
 import com.example.passedpath.feature.locationtracking.domain.model.TrackedLocation
 import com.example.passedpath.feature.locationtracking.domain.repository.DayRouteRepository
 import com.example.passedpath.feature.locationtracking.domain.repository.RemoteDayRouteResult
-import com.example.passedpath.feature.main.presentation.state.LocationPermissionUiState
+import com.example.passedpath.feature.permission.presentation.state.LocationPermissionUiState
 import com.example.passedpath.feature.permission.data.manager.LocationPermissionStatusReader
 import com.example.passedpath.feature.permission.data.manager.LocationServiceStatusReader
 import com.example.passedpath.feature.route.presentation.coordinator.RouteStateCoordinator
@@ -524,3 +524,4 @@ class MainViewModelTest {
         }
     }
 }
+

@@ -1,4 +1,4 @@
-package com.example.passedpath.feature.main.presentation.screen
+﻿package com.example.passedpath.feature.main.presentation.screen
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -6,7 +6,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.passedpath.app.appContainer
-import com.example.passedpath.feature.main.presentation.state.LocationPermissionUiState
+import com.example.passedpath.feature.permission.presentation.state.LocationPermissionUiState
 import com.example.passedpath.feature.main.presentation.viewmodel.MainViewModel
 import com.example.passedpath.feature.main.presentation.viewmodel.MainViewModelFactory
 import com.example.passedpath.util.AppSettingsNavigator
@@ -61,3 +61,4 @@ fun MainRoute(
         }
     )
 }
+

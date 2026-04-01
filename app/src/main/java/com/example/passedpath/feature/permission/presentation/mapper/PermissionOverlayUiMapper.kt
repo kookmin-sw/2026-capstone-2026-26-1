@@ -1,7 +1,7 @@
-package com.example.passedpath.feature.permission.presentation.mapper
+﻿package com.example.passedpath.feature.permission.presentation.mapper
 
 import com.example.passedpath.R
-import com.example.passedpath.feature.main.presentation.state.LocationPermissionUiState
+import com.example.passedpath.feature.permission.presentation.state.LocationPermissionUiState
 import com.example.passedpath.feature.permission.presentation.model.PermissionOverlayUiModel
 
 internal fun createPermissionOverlayUiModel(
@@ -27,3 +27,4 @@ internal fun createPermissionOverlayUiModel(
         else -> null
     }
 }
+

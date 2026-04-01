@@ -1,4 +1,4 @@
-package com.example.passedpath.feature.main.presentation.screen
+﻿package com.example.passedpath.feature.main.presentation.screen
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -32,7 +32,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.passedpath.R
-import com.example.passedpath.feature.main.presentation.state.LocationPermissionUiState
+import com.example.passedpath.feature.main.presentation.policy.createRouteCameraUpdate
+import com.example.passedpath.feature.main.presentation.policy.shouldCenterOnCurrentLocation
+import com.example.passedpath.feature.main.presentation.policy.shouldCenterOnRoute
+import com.example.passedpath.feature.permission.presentation.state.LocationPermissionUiState
 import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiState
 import com.example.passedpath.feature.main.presentation.state.MainUiState
 import com.example.passedpath.feature.permission.presentation.mapper.createPermissionOverlayUiModel
@@ -44,7 +47,6 @@ import com.example.passedpath.ui.component.overlay.PermissionOverlay
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.LatLngBounds
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.MarkerComposable
@@ -52,7 +54,6 @@ import com.google.maps.android.compose.rememberCameraPositionState
 import kotlinx.coroutines.launch
 
 private val CurrentLocationGlowBase = Color(0xFF006B5F)
-private const val RouteBoundsPaddingPx = 180
 
 @Composable
 internal fun MainMapSection(
@@ -84,18 +85,24 @@ internal fun MainMapSection(
     var isMapLoaded by remember { mutableStateOf(false) }
 
     LaunchedEffect(isMapLoaded, uiState.selectedDateKey, routePoints) {
-        if (!isMapLoaded) return@LaunchedEffect
-        if (routePoints.isNotEmpty()) {
-            cameraPositionState.move(buildRouteCameraUpdate(routePoints))
+        if (shouldCenterOnRoute(isMapLoaded = isMapLoaded, routePoints = routePoints)) {
+            cameraPositionState.move(createRouteCameraUpdate(routePoints))
             onInitialCameraCentered()
         }
     }
 
     LaunchedEffect(isMapLoaded, currentLocation, uiState.hasCenteredOnCurrentLocation, routePoints) {
-        if (!isMapLoaded) return@LaunchedEffect
-        if (routePoints.isEmpty() && currentLocation != null && !uiState.hasCenteredOnCurrentLocation) {
+        if (
+            shouldCenterOnCurrentLocation(
+                isMapLoaded = isMapLoaded,
+                routePoints = routePoints,
+                currentLocation = currentLocation,
+                hasCenteredOnCurrentLocation = uiState.hasCenteredOnCurrentLocation
+            )
+        ) {
+            val resolvedCurrentLocation = requireNotNull(currentLocation)
             cameraPositionState.move(
-                CameraUpdateFactory.newLatLngZoom(currentLocation.toLatLng(), 17f)
+                CameraUpdateFactory.newLatLngZoom(resolvedCurrentLocation.toLatLng(), 17f)
             )
             onInitialCameraCentered()
         }
@@ -215,16 +222,6 @@ internal fun MainMapSection(
 
 private fun MainCoordinateUiState.toLatLng(): LatLng = LatLng(latitude, longitude)
 
-private fun buildRouteCameraUpdate(routePoints: List<LatLng>) = when {
-    routePoints.isEmpty() -> CameraUpdateFactory.zoomTo(15f)
-    routePoints.size == 1 -> CameraUpdateFactory.newLatLngZoom(routePoints.first(), 14f)
-    else -> {
-        val boundsBuilder = LatLngBounds.builder()
-        routePoints.forEach(boundsBuilder::include)
-        CameraUpdateFactory.newLatLngBounds(boundsBuilder.build(), RouteBoundsPaddingPx)
-    }
-}
-
 @Preview(showBackground = true, name = "Permission Overlay")
 @Composable
 private fun PermissionOverlayPreview() {
@@ -243,3 +240,4 @@ private fun PermissionOverlayPreview() {
         }
     }
 }
+
