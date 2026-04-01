@@ -117,7 +117,7 @@ fun MainScreen(
     ) {
         val density = androidx.compose.ui.platform.LocalDensity.current
         val containerHeightPx = constraints.maxHeight.toFloat()
-        val collapsedVisibleHeightPx = with(density) { 26.dp.toPx() }
+        val collapsedVisibleHeightPx = with(density) { 80.dp.toPx() }
         val middleVisibleHeightPx = with(density) { 332.dp.toPx() }
         val expandedTopInsetPx = with(density) { 92.dp.toPx() }
         val collapsedOffset = (containerHeightPx - collapsedVisibleHeightPx).coerceAtLeast(0f)
@@ -259,7 +259,7 @@ fun MainScreen(
 
             MainBottomSheet(
                 modifier = Modifier
-                    .align(Alignment.BottomCenter)
+                    .align(Alignment.TopCenter)
                     .offset { IntOffset(0, sheetOffset.value.roundToInt()) }
                     .draggable(
                         state = draggableState,
@@ -316,7 +316,7 @@ private fun permissionOverlayActionText(
 ): String {
     return when {
         permissionState != LocationPermissionUiState.ALWAYS -> stringResource(R.string.permission_banner_action)
-        !isLocationServiceEnabled -> stringResource(R.string.gps_off_overlay_action)
+        !isLocationServiceEnabled -> stringResource(R.string.permission_banner_action)
         else -> ""
     }
 }

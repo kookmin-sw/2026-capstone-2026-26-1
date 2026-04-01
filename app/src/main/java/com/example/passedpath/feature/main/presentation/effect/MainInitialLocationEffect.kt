@@ -1,0 +1,28 @@
+package com.example.passedpath.feature.main.presentation.effect
+
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import com.example.passedpath.feature.locationtracking.domain.tracker.LocationTracker
+import com.example.passedpath.feature.main.presentation.state.LocationPermissionUiState
+import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiState
+
+@Composable
+internal fun MainInitialLocationEffect(
+    permissionState: LocationPermissionUiState,
+    isLocationServiceEnabled: Boolean,
+    currentLocation: MainCoordinateUiState?,
+    onCurrentLocationUpdated: (MainCoordinateUiState) -> Unit,
+    locationTracker: LocationTracker
+) {
+    LaunchedEffect(permissionState, isLocationServiceEnabled, currentLocation) {
+        val canReceiveLocationUpdates =
+            permissionState == LocationPermissionUiState.ALWAYS ||
+                permissionState == LocationPermissionUiState.FOREGROUND_ONLY
+
+        if (canReceiveLocationUpdates && isLocationServiceEnabled && currentLocation == null) {
+            locationTracker.getCurrentLocation()?.let { trackedLocation ->
+                onCurrentLocationUpdated(trackedLocation.toMainCoordinateUiState())
+            }
+        }
+    }
+}

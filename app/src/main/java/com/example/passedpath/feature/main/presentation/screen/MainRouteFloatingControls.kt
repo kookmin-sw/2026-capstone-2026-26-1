@@ -1,13 +1,9 @@
-package com.example.passedpath.feature.main.presentation.screen
+﻿package com.example.passedpath.feature.main.presentation.screen
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -15,18 +11,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.passedpath.R
+import com.example.passedpath.feature.route.presentation.screen.TrackingToggleButton
+import com.example.passedpath.feature.route.presentation.screen.formatDistanceKm
 import com.example.passedpath.feature.route.presentation.state.MainRouteModeUiState
 import com.example.passedpath.feature.route.presentation.state.RouteUiAction
 import com.example.passedpath.ui.component.RoundedWhiteButton
-import com.example.passedpath.ui.theme.Gray500
 import com.example.passedpath.ui.theme.Gray700
-import com.example.passedpath.ui.theme.Primary
-import java.util.Locale
 
 @Composable
 internal fun MainRouteFloatingControls(
@@ -51,7 +45,7 @@ internal fun MainRouteFloatingControls(
                         )
                     }
                     if (routeMode.isTrackingToggleVisible) {
-                        TrackingFloatingPill(
+                        TrackingToggleButton(
                             isTracking = routeMode.isTrackingEnabled,
                             onClick = { onRouteAction(RouteUiAction.ToggleTracking) }
                         )
@@ -84,7 +78,7 @@ private fun RouteDistanceChip(distanceKm: Double) {
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(
-                text = stringResource(R.string.route_distance, formatDistanceKm(distanceKm)),
+                text = stringResource(R.string.route_distance, distanceKm.formatDistanceKm()),
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.SemiBold
             )
@@ -97,25 +91,4 @@ private fun FloatingPillButton(text: String, onClick: () -> Unit) {
     RoundedWhiteButton(onClick = onClick, shadowElevation = 6.dp) {
         Text(text = text, color = Gray700, fontWeight = FontWeight.Medium)
     }
-}
-
-@Composable
-private fun TrackingFloatingPill(isTracking: Boolean, onClick: () -> Unit) {
-    RoundedWhiteButton(onClick = onClick, shadowElevation = 6.dp) {
-        Box(
-            modifier = Modifier
-                .size(8.dp)
-                .clip(CircleShape)
-                .background(if (isTracking) Primary else Gray500)
-        )
-        Text(
-            text = stringResource(if (isTracking) R.string.route_tracking_stop else R.string.route_tracking_start),
-            color = Gray700,
-            fontWeight = FontWeight.Medium
-        )
-    }
-}
-
-private fun formatDistanceKm(distanceKm: Double): String {
-    return String.format(Locale.US, "%.2f km", distanceKm)
 }
