@@ -7,6 +7,10 @@ import com.example.passedpath.data.network.RetrofitClient
 import com.example.passedpath.feature.auth.data.manager.AuthTokenManager
 import com.example.passedpath.feature.auth.data.remote.api.AuthApi
 import com.example.passedpath.feature.auth.data.repository.AuthRepository
+import com.example.passedpath.feature.bookmark.data.remote.api.DayRouteBookmarkApi
+import com.example.passedpath.feature.bookmark.data.repository.DayRouteBookmarkRepositoryImpl
+import com.example.passedpath.feature.bookmark.domain.repository.DayRouteBookmarkRepository
+import com.example.passedpath.feature.bookmark.domain.usecase.ToggleDayRouteBookmarkUseCase
 import com.example.passedpath.feature.daynote.data.remote.api.DayRouteMemoApi
 import com.example.passedpath.feature.daynote.data.remote.api.DayRouteTitleApi
 import com.example.passedpath.feature.daynote.data.repository.DayRouteMemoRepositoryImpl
@@ -119,6 +123,10 @@ class AppContainer(
         retrofit.create(DayRouteApi::class.java)
     }
 
+    private val dayRouteBookmarkApi by lazy {
+        retrofit.create(DayRouteBookmarkApi::class.java)
+    }
+
     private val dayRouteTitleApi by lazy {
         retrofit.create(DayRouteTitleApi::class.java)
     }
@@ -180,6 +188,10 @@ class AppContainer(
         TestRepository(testApi)
     }
 
+    val dayRouteBookmarkRepository: DayRouteBookmarkRepository by lazy {
+        DayRouteBookmarkRepositoryImpl(dayRouteBookmarkApi)
+    }
+
     val dayRouteTitleRepository: DayRouteTitleRepository by lazy {
         DayRouteTitleRepositoryImpl(dayRouteTitleApi)
     }
@@ -198,6 +210,10 @@ class AppContainer(
             locationTrackingRepository = locationTrackingRepository,
             dayRouteRepository = dayRouteRepository
         )
+    }
+
+    val toggleDayRouteBookmarkUseCase: ToggleDayRouteBookmarkUseCase by lazy {
+        ToggleDayRouteBookmarkUseCase(dayRouteBookmarkRepository = dayRouteBookmarkRepository)
     }
 
     val patchDayRouteTitleUseCase: PatchDayRouteTitleUseCase by lazy {
