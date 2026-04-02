@@ -32,6 +32,7 @@ class RouteUiMapperTest {
         assertEquals("", uiState.memo)
         assertEquals(2, uiState.polylinePoints.size)
         assertEquals(2.45, uiState.totalDistanceKm, 0.0)
+        assertTrue(uiState.markerPlaces.isEmpty())
         assertTrue(uiState.places.isEmpty())
     }
 
@@ -61,9 +62,10 @@ class RouteUiMapperTest {
         assertEquals("Warm and clear", uiState.memo)
         assertEquals(3, uiState.polylinePoints.size)
         assertEquals(7.8, uiState.totalDistanceKm, 0.0)
+        assertEquals(2, uiState.markerPlaces.size)
         assertEquals(2, uiState.places.size)
-        assertEquals("Seoul Forest", uiState.places.first().placeName)
-        assertEquals(2, uiState.places.last().orderIndex)
+        assertEquals("Seoul Forest", uiState.markerPlaces.first().placeName)
+        assertEquals(2, uiState.markerPlaces.last().orderIndex)
     }
 
     @Test

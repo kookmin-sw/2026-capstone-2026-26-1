@@ -3,6 +3,7 @@
 import com.example.passedpath.feature.permission.presentation.state.LocationPermissionUiState
 import com.example.passedpath.feature.route.presentation.coordinator.RouteDebugSnapshot
 import com.example.passedpath.feature.route.presentation.state.MainRouteModeUiState
+import com.example.passedpath.feature.route.presentation.state.PlaceMarkerUiState
 import com.example.passedpath.feature.route.presentation.state.SelectedDayRouteUiState
 
 data class MainCoordinateUiState(
@@ -25,6 +26,9 @@ data class MainUiState(
 ) {
     val selectedRoute: SelectedDayRouteUiState
         get() = routeModeUiState.route
+
+    val mapPlaces: List<PlaceMarkerUiState>
+        get() = selectedRoute.markerPlaces
 
     val isRouteLoading: Boolean
         get() = routeModeUiState.isRouteLoading

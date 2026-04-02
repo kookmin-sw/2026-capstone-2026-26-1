@@ -97,7 +97,7 @@ internal fun DailyPath.toSelectedDayRouteUiState(): SelectedDayRouteUiState {
         polylinePoints = points.map(TrackedLocation::toMainCoordinateUiState),
         totalDistanceKm = totalDistanceMeters / 1000.0,
         pathPointCount = pathPointCount,
-        places = emptyList()
+        markerPlaces = emptyList()
     )
 }
 
@@ -109,7 +109,7 @@ internal fun DayRouteDetail.toSelectedDayRouteUiState(): SelectedDayRouteUiState
         polylinePoints = polylinePoints.map(RoutePoint::toMainCoordinateUiState),
         totalDistanceKm = totalDistanceKm,
         pathPointCount = pathPointCount,
-        places = places.map(DayRoutePlace::toPlaceMarkerUiState)
+        markerPlaces = places.map(DayRoutePlace::toPlaceMarkerUiState)
     )
 }
 

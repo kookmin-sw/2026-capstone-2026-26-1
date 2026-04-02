@@ -79,6 +79,7 @@ class MainViewModelTest {
         assertEquals("Han River", state.selectedRoute.title)
         assertEquals("Windy evening walk", state.selectedRoute.memo)
         assertEquals(3, state.selectedRoute.polylinePoints.size)
+        assertEquals(1, state.mapPlaces.size)
         assertEquals(1, state.selectedRoute.places.size)
         assertEquals(listOf("2026-03-29"), repository.requestedRemoteDates)
         assertTrue(repository.observedLocalDates.isEmpty())

@@ -18,10 +18,14 @@ data class SelectedDayRouteUiState(
     val polylinePoints: List<MainCoordinateUiState> = emptyList(),
     val totalDistanceKm: Double = 0.0,
     val pathPointCount: Int = 0,
-    val places: List<PlaceMarkerUiState> = emptyList()
+    val markerPlaces: List<PlaceMarkerUiState> = emptyList()
 ) {
     val hasLocationData: Boolean
         get() = polylinePoints.isNotEmpty()
+
+    // Route owns the initial marker seed. Place-sheet-specific read state will split later.
+    val places: List<PlaceMarkerUiState>
+        get() = markerPlaces
 }
 
 sealed interface MainRouteModeUiState {

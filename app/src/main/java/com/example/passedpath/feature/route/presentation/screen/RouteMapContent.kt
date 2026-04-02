@@ -35,6 +35,7 @@ import com.google.maps.android.compose.Polyline
 @Composable
 fun RouteMapContent(
     routeModeUiState: MainRouteModeUiState,
+    markerPlaces: List<PlaceMarkerUiState>,
     routeAccentColor: Color
 ) {
     val selectedRoute = routeModeUiState.route
@@ -48,7 +49,7 @@ fun RouteMapContent(
     }
 
     if (selectedRoute.hasLocationData) {
-        selectedRoute.places.forEach { place ->
+        markerPlaces.forEach { place ->
             MarkerComposable(
                 state = com.google.maps.android.compose.MarkerState(
                     position = LatLng(place.latitude, place.longitude)

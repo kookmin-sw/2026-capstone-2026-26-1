@@ -133,6 +133,7 @@ internal fun MainMapSection(
         ) {
             RouteMapContent(
                 routeModeUiState = uiState.routeModeUiState,
+                markerPlaces = uiState.mapPlaces,
                 routeAccentColor = routeAccentColor
             )
 
