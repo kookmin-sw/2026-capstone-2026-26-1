@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -46,8 +45,10 @@ import com.example.passedpath.feature.route.presentation.screen.RouteMapContent
 import com.example.passedpath.feature.route.presentation.screen.RouteStatusOverlay
 import com.example.passedpath.feature.route.presentation.state.MainRouteModeUiState
 import com.example.passedpath.feature.route.presentation.state.RouteUiAction
+import com.example.passedpath.ui.component.BaseCircleButton
 import com.example.passedpath.ui.component.banner.PermissionBanner
 import com.example.passedpath.ui.component.toast.RouteEmptyToast
+import com.example.passedpath.ui.theme.Gray900
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -222,7 +223,7 @@ internal fun MainMapSection(
                 horizontalAlignment = Alignment.End
             ) {
                 if (currentLocation != null) {
-                    FloatingActionButton(
+                    CurrentLocationButton(
                         onClick = {
                             coroutineScope.launch {
                                 cameraPositionState.animate(
@@ -234,12 +235,7 @@ internal fun MainMapSection(
                             }
                         },
                         modifier = Modifier.padding(bottom = floatingBottomPadding)
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_bottom_my_location),
-                            contentDescription = stringResource(R.string.main_move_to_current_location)
-                        )
-                    }
+                    )
                 }
             }
         }
@@ -259,6 +255,24 @@ internal fun MainMapSection(
 }
 
 private fun MainCoordinateUiState.toLatLng(): LatLng = LatLng(latitude, longitude)
+
+@Composable
+private fun CurrentLocationButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    BaseCircleButton(
+        onClick = onClick,
+        modifier = modifier,
+        containerColor = Color.White
+    ) {
+        Icon(
+            painter = painterResource(id = R.drawable.ic_bottom_my_location),
+            contentDescription = stringResource(R.string.main_move_to_current_location),
+            tint = Gray900
+        )
+    }
+}
 
 @Preview(showBackground = true, name = "Permission Overlay")
 @Composable

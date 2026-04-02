@@ -23,7 +23,7 @@ fun BasePillButton(
     onClick: () -> Unit,
     contentPadding: PaddingValues = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
     contentSpacing: Dp = 10.dp,
-    tonalElevation: Dp = 2.dp,
+    tonalElevation: Dp = 0.dp,
     shadowElevation: Dp = 6.dp,
     content: @Composable RowScope.() -> Unit
 ) {

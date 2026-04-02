@@ -28,8 +28,8 @@ fun PermissionBanner(
     onClickAction: () -> Unit
 ) {
     BaseBottomBanner(
-        modifier = modifier,
-        containerColor = Color(0xFFEAF8F7)
+        modifier = modifier
+
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),

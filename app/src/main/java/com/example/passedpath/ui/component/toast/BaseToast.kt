@@ -1,4 +1,4 @@
-package com.example.passedpath.ui.component.snackbar
+package com.example.passedpath.ui.component.toast
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
@@ -43,15 +43,15 @@ fun BaseToast(
     }
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, name = "Base Toast")
 @Composable
-private fun BaseSnackbarPreview() {
+private fun BaseToastPreview() {
     PassedPathTheme {
         BaseToast(
             modifier = Modifier.padding(horizontal = 16.dp)
         ) {
             Text(
-                text = "Snackbar preview",
+                text = "Toast preview",
                 color = Color.White
             )
         }
