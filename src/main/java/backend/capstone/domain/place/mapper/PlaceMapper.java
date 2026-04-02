@@ -32,6 +32,7 @@ public class PlaceMapper {
         return PlaceAddResponse.builder()
             .placeId(place.getId())
             .placeName(place.getName())
+            .type(place.getSource())
             .roadAddress(place.getRoadAddress())
             .latitude(place.getLatitude())
             .longitude(place.getLongitude())
@@ -66,6 +67,7 @@ public class PlaceMapper {
         return PlaceUpdateResponse.builder()
             .roadAddress(place.getRoadAddress())
             .placeName(place.getName())
+            .type(place.getSource())
             .latitude(place.getLatitude())
             .longitude(place.getLongitude())
             .build();
