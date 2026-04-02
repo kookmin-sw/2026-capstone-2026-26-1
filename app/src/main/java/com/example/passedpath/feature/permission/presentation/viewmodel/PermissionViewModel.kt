@@ -1,8 +1,10 @@
-package com.example.passedpath.feature.permission.presentation.viewmodel
+﻿package com.example.passedpath.feature.permission.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.example.passedpath.app.AppContainer
+import com.example.passedpath.debug.AppDebugLogger
+import com.example.passedpath.debug.DebugLogTag
 import com.example.passedpath.feature.permission.data.manager.LocationPermissionStatusReader
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,40 +33,83 @@ class PermissionViewModel(
     val effect = _effect.asSharedFlow()
 
     suspend fun onContinueClick() {
+        val hasBackgroundAlways = locationPermissionStatusReader.isBackgroundAlwaysGranted()
+        val hasForeground = locationPermissionStatusReader.isForegroundGranted()
+        AppDebugLogger.debug(
+            DebugLogTag.PERMISSION,
+            "permission continue click backgroundAlways=$hasBackgroundAlways foreground=$hasForeground"
+        )
         when {
-            locationPermissionStatusReader.isBackgroundAlwaysGranted() -> {
+            hasBackgroundAlways -> {
+                AppDebugLogger.debug(
+                    DebugLogTag.PERMISSION,
+                    "permission continue result=navigate-next"
+                )
                 _effect.emit(PermissionEffect.NavigateNext)
             }
 
-            !locationPermissionStatusReader.isForegroundGranted() -> {
+            !hasForeground -> {
+                AppDebugLogger.debug(
+                    DebugLogTag.PERMISSION,
+                    "permission continue result=request-foreground"
+                )
                 _effect.emit(PermissionEffect.RequestForegroundPermission)
             }
 
             else -> {
+                AppDebugLogger.debug(
+                    DebugLogTag.PERMISSION,
+                    "permission continue result=show-settings-dialog"
+                )
                 _uiState.update { it.copy(showSettingsDialog = true) }
             }
         }
     }
 
     suspend fun onForegroundPermissionResult() {
-        if (locationPermissionStatusReader.isBackgroundAlwaysGranted()) {
+        val hasBackgroundAlways = locationPermissionStatusReader.isBackgroundAlwaysGranted()
+        AppDebugLogger.debug(
+            DebugLogTag.PERMISSION,
+            "foreground permission result backgroundAlways=$hasBackgroundAlways"
+        )
+        if (hasBackgroundAlways) {
+            AppDebugLogger.debug(
+                DebugLogTag.PERMISSION,
+                "foreground permission resolved=navigate-next"
+            )
             _effect.emit(PermissionEffect.NavigateNext)
         } else {
+            AppDebugLogger.debug(
+                DebugLogTag.PERMISSION,
+                "foreground permission resolved=show-settings-dialog"
+            )
             _uiState.update { it.copy(showSettingsDialog = true) }
         }
     }
 
     suspend fun onSettingsConfirm() {
+        AppDebugLogger.debug(
+            DebugLogTag.PERMISSION,
+            "permission settings dialog confirm"
+        )
         _uiState.update { it.copy(showSettingsDialog = false) }
         _effect.emit(PermissionEffect.OpenAppSettings)
     }
 
     suspend fun onSettingsDismiss() {
+        AppDebugLogger.debug(
+            DebugLogTag.PERMISSION,
+            "permission settings dialog dismiss navigate-next"
+        )
         _uiState.update { it.copy(showSettingsDialog = false) }
         _effect.emit(PermissionEffect.NavigateNext)
     }
 
     suspend fun onReturnedFromSettings() {
+        AppDebugLogger.debug(
+            DebugLogTag.PERMISSION,
+            "returned from app settings navigate-next"
+        )
         _effect.emit(PermissionEffect.NavigateNext)
     }
 }

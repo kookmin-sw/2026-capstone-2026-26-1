@@ -1,74 +1,47 @@
-﻿# Current Task
+# Current Task
 
-Date: 2026-03-31
+Date: 2026-04-01
 Project: PassedPath Android app
 
-## Current status
-- Issue 1 through Issue 7 are closed for ongoing work.
-- Issue 8 is complete for its intended scope:
-  - today date observes local Room-backed route data
-  - past date fetches remote day-route data
-  - date changes cancel stale route work
-  - unit tests cover today-vs-past branching and stale-state clearing
-- The follow-up route-first architecture refactor is complete for the agreed scope.
-- `feature/route` now owns route presentation state, route UI mapping, route load coordination, route map rendering, and route-specific actions.
+## Current snapshot
+- Route-first refactor is complete and applied in code.
+- `feature/route` owns route state, route load coordination, rendering, and route actions.
+- Today tracking toggle behavior is implemented and preserves the user's intended ON/OFF state.
+- Permission and GPS UX is active on the main map through a bottom banner and settings shortcuts.
+- App entry is allowed even when background location permission is not granted.
+- `feature/permission` owns shared permission policy helpers such as permission-state resolution and action-target resolution.
+- Issue 10 is complete for the current scope:
+  - debug logger exists for route, permission, tracking, and main-flow events
+  - debug panel state exists in `MainUiState`
+  - debug actions can refresh system state and reload the selected route
+  - debug-build QA checklist exists in `docs/issue-10-qa-checklist.md`
 
-## Final route-first refactor result
-- `MainScreen` remains the record-screen container and shared screen shell.
-- `feature/route` owns:
-  - route mode state
-  - today-vs-past route mapping
-  - route polyline and place marker rendering
-  - route overlay state UI
-  - route action model
-  - route load coordination through `RouteStateCoordinator`
-- `MainViewModel` now keeps screen-level orchestration only:
-  - selected date
-  - permission state
-  - current location
-  - route action delegation
+## Feature ownership
+- `feature/main`: screen shell, selected date, composition, screen-level orchestration
+- `feature/route`: route state, today/past load behavior, rendering, route actions
+- `feature/permission`: permission state policy, service-state policy, intro/settings guidance flow
+- `feature/daynote`: note/title editing
 
-## Feature ownership decision
-- `feature/main`
-  - selected date, screen composition, shared screen shell
-- `feature/route`
-  - today local route, past remote route, route state, route UI, route load coordination, route actions
-- `feature/place`
-  - manual places and major places
-- `feature/daynote`
-  - title and memo
-- `feature/favorite`
-  - still deferred until policy and volume justify extraction
+## Next work
+- Past-date playback and animation behavior
+- Remote day-route caching policy
+- `feature/daynote` extraction boundary cleanup
+- Replace temporary Android `DatePickerDialog` when the real calendar UI is ready
 
-## Next product-facing work
-- Implement the real behavior behind route actions.
-  - today: tracking toggle
-  - past: playback entry
-- Define the extraction boundary for `feature/place` when place work resumes.
-- Define the extraction boundary for `feature/daynote` when note work resumes.
-- Expand route tests beyond current ViewModel-centered coverage.
-- Revisit future-date mode only after product policy is finalized.
-
-## Not part of the finished route refactor
-- Full favorite-feature extraction
-- Future-date-centered architecture work
-- Detailed playback implementation
-- Final place-edit interaction design
-- Final memo/title save policy
-
-## Files worth reading first in future sessions
+## Files worth reading first
 - `docs/main-screen-architecture-decision-2026-03-31.md`
+- `docs/issue-10-qa-checklist.md`
 - `app/src/main/java/com/example/passedpath/feature/main/presentation/viewmodel/MainViewModel.kt`
-- `app/src/main/java/com/example/passedpath/feature/main/presentation/screen/MainScreen.kt`
-- `app/src/main/java/com/example/passedpath/feature/route/presentation/state/RouteUiState.kt`
-- `app/src/main/java/com/example/passedpath/feature/route/presentation/mapper/RouteUiMapper.kt`
+- `app/src/main/java/com/example/passedpath/feature/main/presentation/state/MainUiState.kt`
+- `app/src/main/java/com/example/passedpath/feature/main/presentation/state/MainDebugStateMapper.kt`
+- `app/src/main/java/com/example/passedpath/feature/main/presentation/screen/MainMapSection.kt`
+- `app/src/main/java/com/example/passedpath/feature/main/presentation/screen/MainDebugPanel.kt`
+- `app/src/main/java/com/example/passedpath/feature/permission/presentation/policy/LocationAccessPolicy.kt`
 - `app/src/main/java/com/example/passedpath/feature/route/presentation/coordinator/RouteStateCoordinator.kt`
-- `app/src/main/java/com/example/passedpath/feature/route/presentation/screen/RouteMapContent.kt`
-- `app/src/test/java/com/example/passedpath/feature/main/presentation/viewmodel/MainViewModelTest.kt`
+- `app/src/main/java/com/example/passedpath/feature/route/presentation/coordinator/RouteDebugSnapshotFactory.kt`
 
 ## Guardrails
-- Do not weaken app entry from background-permission gating to foreground-only gating.
-- `DEV_SKIP_LOGIN` skips only login, not the permission gate.
+- Do not make `MainScreen` the long-term owner of route/daynote business rules.
 - Keep background tracking contracts separated by collection, storage, sync, and presentation responsibilities.
-- Prefer interface-based dependencies where tests need to fake Android state.
-- Do not let `MainScreen` become the permanent owner of place/daynote/favorite business rules.
+- Keep permission intro behavior advisory for app entry unless product policy changes.
+- Prefer interface-based dependencies where tests need Android-state fakes.

@@ -28,8 +28,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.passedpath.R
-import com.example.passedpath.ui.component.AppButton
-import com.example.passedpath.ui.component.ButtonVariant
+import com.example.passedpath.ui.component.BaseButton
+import com.example.passedpath.ui.component.BaseButtonVariant
 import com.example.passedpath.ui.theme.PassedPathTheme
 import com.example.passedpath.ui.theme.Pretendard
 
@@ -118,7 +118,7 @@ private fun PermissionSettingDialogContent(
 
                 Spacer(modifier = Modifier.height(28.dp))
 
-                AppButton(
+                BaseButton(
                     text = stringResource(R.string.permission_dialog_open_settings),
                     onClick = onConfirm,
                     modifier = Modifier
@@ -128,10 +128,10 @@ private fun PermissionSettingDialogContent(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                AppButton(
+                BaseButton(
                     text = stringResource(R.string.permission_dialog_not_now),
                     onClick = onDismiss,
-                    variant = ButtonVariant.TEXT_ONLY
+                    variant = BaseButtonVariant.TEXT_ONLY
                 )
             }
         }
@@ -181,3 +181,4 @@ private fun PermissionSettingDialogPreview() {
         )
     }
 }
+

@@ -1,4 +1,4 @@
-﻿package com.example.passedpath.app
+package com.example.passedpath.app
 
 import android.content.Context
 import androidx.room.Room
@@ -7,6 +7,18 @@ import com.example.passedpath.data.network.RetrofitClient
 import com.example.passedpath.feature.auth.data.manager.AuthTokenManager
 import com.example.passedpath.feature.auth.data.remote.api.AuthApi
 import com.example.passedpath.feature.auth.data.repository.AuthRepository
+import com.example.passedpath.feature.bookmark.data.remote.api.DayRouteBookmarkApi
+import com.example.passedpath.feature.bookmark.data.repository.DayRouteBookmarkRepositoryImpl
+import com.example.passedpath.feature.bookmark.domain.repository.DayRouteBookmarkRepository
+import com.example.passedpath.feature.bookmark.domain.usecase.ToggleDayRouteBookmarkUseCase
+import com.example.passedpath.feature.daynote.data.remote.api.DayRouteMemoApi
+import com.example.passedpath.feature.daynote.data.remote.api.DayRouteTitleApi
+import com.example.passedpath.feature.daynote.data.repository.DayRouteMemoRepositoryImpl
+import com.example.passedpath.feature.daynote.data.repository.DayRouteTitleRepositoryImpl
+import com.example.passedpath.feature.daynote.domain.repository.DayRouteMemoRepository
+import com.example.passedpath.feature.daynote.domain.repository.DayRouteTitleRepository
+import com.example.passedpath.feature.daynote.domain.usecase.PatchDayRouteMemoUseCase
+import com.example.passedpath.feature.daynote.domain.usecase.PatchDayRouteTitleUseCase
 import com.example.passedpath.feature.locationtracking.data.local.PassedPathDatabase
 import com.example.passedpath.feature.locationtracking.data.manager.LocationTrackingServiceStateReader
 import com.example.passedpath.feature.locationtracking.data.manager.LocationTrackingServiceStateWriter
@@ -29,6 +41,14 @@ import com.example.passedpath.feature.permission.data.manager.AndroidLocationPer
 import com.example.passedpath.feature.permission.data.manager.AndroidLocationServiceStatusReader
 import com.example.passedpath.feature.permission.data.manager.LocationPermissionStatusReader
 import com.example.passedpath.feature.permission.data.manager.LocationServiceStatusReader
+import com.example.passedpath.feature.place.data.remote.api.PlaceApi
+import com.example.passedpath.feature.place.data.repository.PlaceRepositoryImpl
+import com.example.passedpath.feature.place.domain.repository.PlaceRepository
+import com.example.passedpath.feature.place.domain.usecase.AddPlaceUseCase
+import com.example.passedpath.feature.place.domain.usecase.DeletePlaceUseCase
+import com.example.passedpath.feature.place.domain.usecase.ReorderPlacesUseCase
+import com.example.passedpath.feature.place.domain.usecase.UpdateBookmarkPlaceUseCase
+import com.example.passedpath.feature.place.domain.usecase.UpdatePlaceUseCase
 import java.time.LocalTime
 
 class AppContainer(
@@ -104,6 +124,22 @@ class AppContainer(
         retrofit.create(DayRouteApi::class.java)
     }
 
+    private val dayRouteBookmarkApi by lazy {
+        retrofit.create(DayRouteBookmarkApi::class.java)
+    }
+
+    private val dayRouteTitleApi by lazy {
+        retrofit.create(DayRouteTitleApi::class.java)
+    }
+
+    private val dayRouteMemoApi by lazy {
+        retrofit.create(DayRouteMemoApi::class.java)
+    }
+
+    private val placeApi by lazy {
+        retrofit.create(PlaceApi::class.java)
+    }
+
     val locationTrackingRepository: LocationTrackingRepository by lazy {
         RoomLocationTrackingRepository(
             gpsPointDao = trackingDatabase.gpsPointDao(),
@@ -153,6 +189,22 @@ class AppContainer(
         TestRepository(testApi)
     }
 
+    val dayRouteBookmarkRepository: DayRouteBookmarkRepository by lazy {
+        DayRouteBookmarkRepositoryImpl(dayRouteBookmarkApi)
+    }
+
+    val dayRouteTitleRepository: DayRouteTitleRepository by lazy {
+        DayRouteTitleRepositoryImpl(dayRouteTitleApi)
+    }
+
+    val dayRouteMemoRepository: DayRouteMemoRepository by lazy {
+        DayRouteMemoRepositoryImpl(dayRouteMemoApi)
+    }
+
+    val placeRepository: PlaceRepository by lazy {
+        PlaceRepositoryImpl(placeApi)
+    }
+
     val uploadGpsPointsBatchUseCase: UploadGpsPointsBatchUseCase by lazy {
         UploadGpsPointsBatchUseCase(
             dayRouteApi = dayRouteApi,
@@ -160,4 +212,39 @@ class AppContainer(
             dayRouteRepository = dayRouteRepository
         )
     }
+
+    val toggleDayRouteBookmarkUseCase: ToggleDayRouteBookmarkUseCase by lazy {
+        ToggleDayRouteBookmarkUseCase(dayRouteBookmarkRepository = dayRouteBookmarkRepository)
+    }
+
+    val patchDayRouteTitleUseCase: PatchDayRouteTitleUseCase by lazy {
+        PatchDayRouteTitleUseCase(dayRouteTitleRepository = dayRouteTitleRepository)
+    }
+
+    val patchDayRouteMemoUseCase: PatchDayRouteMemoUseCase by lazy {
+        PatchDayRouteMemoUseCase(dayRouteMemoRepository = dayRouteMemoRepository)
+    }
+
+    val addPlaceUseCase: AddPlaceUseCase by lazy {
+        AddPlaceUseCase(placeRepository = placeRepository)
+    }
+
+    val deletePlaceUseCase: DeletePlaceUseCase by lazy {
+        DeletePlaceUseCase(placeRepository = placeRepository)
+    }
+
+    val updatePlaceUseCase: UpdatePlaceUseCase by lazy {
+        UpdatePlaceUseCase(placeRepository = placeRepository)
+    }
+
+    val updateBookmarkPlaceUseCase: UpdateBookmarkPlaceUseCase by lazy {
+        UpdateBookmarkPlaceUseCase(placeRepository = placeRepository)
+    }
+
+    val reorderPlacesUseCase: ReorderPlacesUseCase by lazy {
+        ReorderPlacesUseCase(placeRepository = placeRepository)
+    }
 }
+
+
+

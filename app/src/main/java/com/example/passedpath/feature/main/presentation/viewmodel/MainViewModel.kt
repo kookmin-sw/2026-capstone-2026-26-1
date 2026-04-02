@@ -4,12 +4,18 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.passedpath.app.AppContainer
+import com.example.passedpath.debug.AppDebugLogger
+import com.example.passedpath.debug.DebugLogTag
 import com.example.passedpath.feature.locationtracking.data.manager.LocationTrackingServiceStateReader
-import com.example.passedpath.feature.main.presentation.state.LocationPermissionUiState
+import com.example.passedpath.feature.main.presentation.policy.TrackingToggleDecision
+import com.example.passedpath.feature.main.presentation.policy.decideTrackingToggle
 import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiState
 import com.example.passedpath.feature.main.presentation.state.MainUiState
+import com.example.passedpath.feature.main.presentation.state.withDebugState
 import com.example.passedpath.feature.permission.data.manager.LocationPermissionStatusReader
 import com.example.passedpath.feature.permission.data.manager.LocationServiceStatusReader
+import com.example.passedpath.feature.permission.presentation.policy.resolveLocationPermissionUiState
+import com.example.passedpath.feature.permission.presentation.state.LocationPermissionUiState
 import com.example.passedpath.feature.route.presentation.coordinator.RouteStateCoordinator
 import com.example.passedpath.feature.route.presentation.state.MainRouteModeUiState
 import com.example.passedpath.feature.route.presentation.state.RouteUiAction
@@ -45,6 +51,8 @@ class MainViewModel(
             routeModeUiState = routeStateCoordinator
                 .createInitialState(initialDateKey)
                 .withTrackingState(trackingServiceStateReader.isTracking.value)
+        ).withDebugState(
+            isTrackingEnabledByUser = userTrackingEnabled()
         )
     )
     val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
@@ -57,14 +65,17 @@ class MainViewModel(
     }
 
     fun refreshPermissionState() {
-        val permissionState = when {
-            locationPermissionStatusReader.isBackgroundAlwaysGranted() -> LocationPermissionUiState.ALWAYS
-            locationPermissionStatusReader.isForegroundGranted() -> LocationPermissionUiState.FOREGROUND_ONLY
-            else -> LocationPermissionUiState.DENIED
-        }
+        val permissionState = resolveLocationPermissionUiState(
+            isBackgroundAlwaysGranted = locationPermissionStatusReader.isBackgroundAlwaysGranted(),
+            isForegroundGranted = locationPermissionStatusReader.isForegroundGranted()
+        )
+        AppDebugLogger.debug(
+            DebugLogTag.PERMISSION,
+            "refreshPermissionState result=$permissionState"
+        )
 
         _uiState.update { currentState ->
-            if (permissionState == LocationPermissionUiState.DENIED) {
+            val nextState = if (permissionState == LocationPermissionUiState.DENIED) {
                 currentState.copy(
                     permissionState = permissionState,
                     currentLocation = null,
@@ -73,13 +84,20 @@ class MainViewModel(
             } else {
                 currentState.copy(permissionState = permissionState)
             }
+            nextState.withDebugState(isTrackingEnabledByUser = userTrackingEnabled())
         }
     }
 
     fun refreshLocationServiceState() {
         val isEnabled = locationServiceStatusReader.isLocationServiceEnabled()
+        AppDebugLogger.debug(
+            DebugLogTag.PERMISSION,
+            "refreshLocationServiceState enabled=$isEnabled"
+        )
         _uiState.update { currentState ->
-            currentState.copy(isLocationServiceEnabled = isEnabled)
+            currentState.copy(isLocationServiceEnabled = isEnabled).withDebugState(
+                isTrackingEnabledByUser = userTrackingEnabled()
+            )
         }
     }
 
@@ -96,6 +114,10 @@ class MainViewModel(
     }
 
     fun selectDate(dateKey: String) {
+        AppDebugLogger.debug(
+            DebugLogTag.MAIN_FLOW,
+            "selectDate dateKey=$dateKey previous=${_uiState.value.selectedDateKey}"
+        )
         loadDayRoute(dateKey)
     }
 
@@ -110,20 +132,39 @@ class MainViewModel(
 
     fun dismissTrackingPermissionDialog() {
         _uiState.update { currentState ->
-            currentState.copy(showTrackingPermissionDialog = false)
+            currentState.copy(showTrackingPermissionDialog = false).withDebugState(
+                isTrackingEnabledByUser = userTrackingEnabled()
+            )
         }
     }
 
     private fun loadDayRoute(dateKey: String) {
+        if (routeLoadJob != null) {
+            AppDebugLogger.debug(
+                DebugLogTag.MAIN_FLOW,
+                "cancel stale route load previousDateKey=${_uiState.value.selectedDateKey}"
+            )
+        }
         routeLoadJob?.cancel()
         routeLoadJob = viewModelScope.launch {
+            AppDebugLogger.debug(
+                DebugLogTag.MAIN_FLOW,
+                "loadDayRoute begin dateKey=$dateKey"
+            )
             routeStateCoordinator.loadRoute(dateKey).collect { routeState ->
+                AppDebugLogger.debug(
+                    DebugLogTag.MAIN_FLOW,
+                    "loadDayRoute update dateKey=${routeState.selectedDateKey} status=${routeState.debugSnapshot?.status ?: "unknown"}"
+                )
                 _uiState.update { currentState ->
                     currentState.copy(
                         selectedDateKey = routeState.selectedDateKey,
                         routeModeUiState = routeState.routeModeUiState
                             .withTrackingState(trackingServiceStateReader.isTracking.value),
                         hasCenteredOnCurrentLocation = false
+                    ).withDebugState(
+                        isTrackingEnabledByUser = userTrackingEnabled(),
+                        routeDebugSnapshot = routeState.debugSnapshot
                     )
                 }
             }
@@ -133,10 +174,16 @@ class MainViewModel(
     private fun observeTrackingState() {
         viewModelScope.launch {
             trackingServiceStateReader.isTracking.collectLatest { isTracking ->
+                AppDebugLogger.debug(
+                    DebugLogTag.TRACKING,
+                    "trackingState changed active=$isTracking userEnabled=${userTrackingEnabled()}"
+                )
                 _uiState.update { currentState ->
                     currentState.copy(
                         isTrackingActive = isTracking,
                         routeModeUiState = currentState.routeModeUiState.withTrackingState(isTracking)
+                    ).withDebugState(
+                        isTrackingEnabledByUser = userTrackingEnabled()
                     )
                 }
             }
@@ -144,24 +191,31 @@ class MainViewModel(
     }
 
     private fun toggleTracking() {
-        if (_uiState.value.permissionState != LocationPermissionUiState.ALWAYS) {
-            _uiState.update { currentState ->
-                currentState.copy(showTrackingPermissionDialog = true)
-            }
-            return
-        }
-
-        when (val routeMode = _uiState.value.routeModeUiState) {
-            is MainRouteModeUiState.Today -> {
-                if (routeMode.isTrackingEnabled) {
-                    stopTracking()
-                } else {
-                    startTracking()
+        val decision = decideTrackingToggle(
+            permissionState = _uiState.value.permissionState,
+            routeModeUiState = _uiState.value.routeModeUiState
+        )
+        AppDebugLogger.debug(
+            DebugLogTag.TRACKING,
+            "toggleTracking decision=$decision permission=${_uiState.value.permissionState} mode=${_uiState.value.routeModeUiState::class.java.simpleName}"
+        )
+        when (decision) {
+            TrackingToggleDecision.ShowPermissionDialog -> {
+                _uiState.update { currentState ->
+                    currentState.copy(showTrackingPermissionDialog = true).withDebugState(
+                        isTrackingEnabledByUser = userTrackingEnabled()
+                    )
                 }
             }
 
-            is MainRouteModeUiState.Past -> Unit
+            TrackingToggleDecision.StartTracking -> startTracking()
+            TrackingToggleDecision.StopTracking -> stopTracking()
+            TrackingToggleDecision.NoOp -> Unit
         }
+    }
+
+    private fun userTrackingEnabled(): Boolean {
+        return trackingServiceStateReader.isTrackingEnabledByUser()
     }
 }
 

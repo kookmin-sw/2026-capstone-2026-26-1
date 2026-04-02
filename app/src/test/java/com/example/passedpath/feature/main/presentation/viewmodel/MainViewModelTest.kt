@@ -8,7 +8,8 @@ import com.example.passedpath.feature.locationtracking.domain.model.RoutePoint
 import com.example.passedpath.feature.locationtracking.domain.model.TrackedLocation
 import com.example.passedpath.feature.locationtracking.domain.repository.DayRouteRepository
 import com.example.passedpath.feature.locationtracking.domain.repository.RemoteDayRouteResult
-import com.example.passedpath.feature.main.presentation.state.LocationPermissionUiState
+import com.example.passedpath.feature.permission.presentation.mapper.createPermissionOverlayUiModel
+import com.example.passedpath.feature.permission.presentation.state.LocationPermissionUiState
 import com.example.passedpath.feature.permission.data.manager.LocationPermissionStatusReader
 import com.example.passedpath.feature.permission.data.manager.LocationServiceStatusReader
 import com.example.passedpath.feature.route.presentation.coordinator.RouteStateCoordinator
@@ -188,7 +189,7 @@ class MainViewModelTest {
         advanceUntilIdle()
 
         assertEquals(LocationPermissionUiState.FOREGROUND_ONLY, viewModel.uiState.value.permissionState)
-        assertTrue(viewModel.uiState.value.showPermissionOverlay)
+        assertNotNull(createPermissionOverlayUiModel(viewModel.uiState.value.permissionState, viewModel.uiState.value.isLocationServiceEnabled))
     }
 
     @Test
@@ -206,7 +207,7 @@ class MainViewModelTest {
         advanceUntilIdle()
 
         assertEquals(LocationPermissionUiState.DENIED, viewModel.uiState.value.permissionState)
-        assertTrue(viewModel.uiState.value.showPermissionOverlay)
+        assertNotNull(createPermissionOverlayUiModel(viewModel.uiState.value.permissionState, viewModel.uiState.value.isLocationServiceEnabled))
         assertNull(viewModel.uiState.value.currentLocation)
     }
 
@@ -223,7 +224,7 @@ class MainViewModelTest {
 
         assertEquals(LocationPermissionUiState.ALWAYS, viewModel.uiState.value.permissionState)
         assertFalse(viewModel.uiState.value.isLocationServiceEnabled)
-        assertTrue(viewModel.uiState.value.showPermissionOverlay)
+        assertNotNull(createPermissionOverlayUiModel(viewModel.uiState.value.permissionState, viewModel.uiState.value.isLocationServiceEnabled))
     }
 
     @Test
@@ -244,7 +245,7 @@ class MainViewModelTest {
         viewModel.refreshLocationServiceState()
 
         assertTrue(viewModel.uiState.value.isLocationServiceEnabled)
-        assertFalse(viewModel.uiState.value.showPermissionOverlay)
+        assertNull(createPermissionOverlayUiModel(viewModel.uiState.value.permissionState, viewModel.uiState.value.isLocationServiceEnabled))
     }
 
     @Test
@@ -524,3 +525,7 @@ class MainViewModelTest {
         }
     }
 }
+
+
+
+

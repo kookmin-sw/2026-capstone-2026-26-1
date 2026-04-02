@@ -1,21 +1,15 @@
 ﻿package com.example.passedpath.feature.main.presentation.screen
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.passedpath.app.appContainer
-import com.example.passedpath.feature.locationtracking.domain.model.TrackedLocation
-import com.example.passedpath.feature.main.presentation.state.LocationPermissionUiState
-import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiState
 import com.example.passedpath.feature.main.presentation.viewmodel.MainViewModel
 import com.example.passedpath.feature.main.presentation.viewmodel.MainViewModelFactory
+import com.example.passedpath.feature.permission.presentation.policy.PermissionActionTarget
+import com.example.passedpath.feature.permission.presentation.policy.resolvePermissionActionTarget
 import com.example.passedpath.util.AppSettingsNavigator
 
 @Composable
@@ -26,72 +20,25 @@ fun MainRoute(
 ) {
     val context = LocalContext.current
     val appContainer = context.appContainer
-    val lifecycleOwner = LocalLifecycleOwner.current
-    val locationTracker = appContainer.currentLocationTracker
-    val trackingServiceStateReader = appContainer.locationTrackingServiceStateReader
-    val startLocationTracking = appContainer.startLocationTrackingUseCase
-    val stopLocationTracking = appContainer.stopLocationTrackingUseCase
     val uiState by viewModel.uiState.collectAsState()
 
-    DisposableEffect(lifecycleOwner, viewModel) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                viewModel.refreshPermissionState()
-                viewModel.refreshLocationServiceState()
-            }
+    MainRouteEffects(
+        permissionState = uiState.permissionState,
+        isLocationServiceEnabled = uiState.isLocationServiceEnabled,
+        currentLocation = uiState.currentLocation,
+        isTrackingActive = uiState.isTrackingActive,
+        onRefreshPermissionState = viewModel::refreshPermissionState,
+        onRefreshLocationServiceState = viewModel::refreshLocationServiceState,
+        onCurrentLocationUpdated = viewModel::updateCurrentLocation,
+        locationTracker = appContainer.currentLocationTracker,
+        trackingServiceStateReader = appContainer.locationTrackingServiceStateReader,
+        startLocationTracking = { persistUserPreference ->
+            appContainer.startLocationTrackingUseCase(persistUserPreference)
+        },
+        stopLocationTracking = { persistUserPreference ->
+            appContainer.stopLocationTrackingUseCase(persistUserPreference)
         }
-        lifecycleOwner.lifecycle.addObserver(observer)
-
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-        }
-    }
-
-    LaunchedEffect(uiState.permissionState, uiState.isLocationServiceEnabled, uiState.currentLocation) {
-        val canReceiveLocationUpdates =
-            uiState.permissionState == LocationPermissionUiState.ALWAYS ||
-                uiState.permissionState == LocationPermissionUiState.FOREGROUND_ONLY
-
-        if (canReceiveLocationUpdates && uiState.isLocationServiceEnabled && uiState.currentLocation == null) {
-            locationTracker.getCurrentLocation()?.let { trackedLocation ->
-                viewModel.updateCurrentLocation(trackedLocation.toMainCoordinateUiState())
-            }
-        }
-    }
-
-    LaunchedEffect(uiState.permissionState, uiState.isLocationServiceEnabled, uiState.isTrackingActive) {
-        val canRunTracking =
-            uiState.permissionState == LocationPermissionUiState.ALWAYS && uiState.isLocationServiceEnabled
-
-        if (canRunTracking) {
-            if (trackingServiceStateReader.isTrackingEnabledByUser() && !uiState.isTrackingActive) {
-                startLocationTracking(persistUserPreference = false)
-            } else if (!trackingServiceStateReader.isTrackingEnabledByUser() && uiState.isTrackingActive) {
-                stopLocationTracking(persistUserPreference = false)
-            }
-        } else if (uiState.isTrackingActive) {
-            stopLocationTracking(persistUserPreference = false)
-        }
-    }
-
-    DisposableEffect(uiState.permissionState, uiState.isLocationServiceEnabled, locationTracker) {
-        val canReceiveLocationUpdates =
-            (uiState.permissionState == LocationPermissionUiState.ALWAYS ||
-                uiState.permissionState == LocationPermissionUiState.FOREGROUND_ONLY) &&
-                uiState.isLocationServiceEnabled
-
-        if (!canReceiveLocationUpdates) {
-            onDispose { }
-        } else {
-            val trackingSession = locationTracker.startLocationUpdates { trackedLocation ->
-                viewModel.updateCurrentLocation(trackedLocation.toMainCoordinateUiState())
-            }
-
-            onDispose {
-                trackingSession.stop()
-            }
-        }
-    }
+    )
 
     MainScreen(
         uiState = uiState,
@@ -104,21 +51,25 @@ fun MainRoute(
         },
         onTrackingPermissionDialogDismiss = viewModel::dismissTrackingPermissionDialog,
         onPermissionBannerConfirm = {
-            when {
-                uiState.permissionState != LocationPermissionUiState.ALWAYS -> {
-                    AppSettingsNavigator.openAppSettings(context)
-                }
-                !uiState.isLocationServiceEnabled -> {
-                    AppSettingsNavigator.openLocationSettings(context)
-                }
+            when (
+                resolvePermissionActionTarget(
+                    permissionState = uiState.permissionState,
+                    isLocationServiceEnabled = uiState.isLocationServiceEnabled
+                )
+            ) {
+                PermissionActionTarget.OpenAppSettings -> AppSettingsNavigator.openAppSettings(context)
+                PermissionActionTarget.OpenLocationSettings -> AppSettingsNavigator.openLocationSettings(context)
+                PermissionActionTarget.None -> Unit
             }
-        }
-    )
-}
-
-private fun TrackedLocation.toMainCoordinateUiState(): MainCoordinateUiState {
-    return MainCoordinateUiState(
-        latitude = latitude,
-        longitude = longitude
+        },
+        debugActions = MainDebugActions(
+            refreshSystemState = {
+                viewModel.refreshPermissionState()
+                viewModel.refreshLocationServiceState()
+            },
+            reloadRoute = {
+                viewModel.selectDate(uiState.selectedDateKey)
+            }
+        )
     )
 }
