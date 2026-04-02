@@ -10,6 +10,27 @@ data class DayNoteUiState(
     val errorMessage: String? = null,
     val successMessage: String? = null
 ) {
-    val isSubmitEnabled: Boolean
-        get() = !isSubmitting && dateKey.isNotBlank()
+    val normalizedOriginalTitle: String
+        get() = originalTitle.trim()
+
+    val normalizedOriginalMemo: String
+        get() = originalMemo.trim()
+
+    val normalizedTitle: String
+        get() = title.trim()
+
+    val normalizedMemo: String
+        get() = memo.trim()
+
+    val titleCount: Int
+        get() = title.length
+
+    val memoCount: Int
+        get() = memo.length
+
+    val isDirty: Boolean
+        get() = normalizedTitle != normalizedOriginalTitle || normalizedMemo != normalizedOriginalMemo
+
+    val isSaveEnabled: Boolean
+        get() = !isSubmitting && dateKey.isNotBlank() && isDirty
 }

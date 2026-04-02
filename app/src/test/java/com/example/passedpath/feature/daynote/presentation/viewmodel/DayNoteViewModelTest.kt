@@ -11,6 +11,9 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
@@ -36,6 +39,7 @@ class DayNoteViewModelTest {
         assertEquals("Coffee stop", state.originalMemo)
         assertEquals("Morning route", state.title)
         assertEquals("Coffee stop", state.memo)
+        assertFalse(state.isDirty)
     }
 
     @Test
@@ -61,46 +65,122 @@ class DayNoteViewModelTest {
         assertEquals("Dinner stop", state.originalMemo)
         assertEquals("Evening route", state.title)
         assertEquals("Dinner stop", state.memo)
+        assertFalse(state.isDirty)
     }
 
     @Test
-    fun `submitTitle updates originalTitle with saved result`() = runTest {
+    fun `blank-only edits are treated as unchanged after normalization`() = runTest {
+        val viewModel = createViewModel()
+        viewModel.syncSelectedDay(dateKey = "2026-04-02", title = "", memo = "")
+
+        viewModel.updateTitle("   ")
+        viewModel.updateMemo("  ")
+
+        val state = viewModel.uiState.value
+        assertFalse(state.isDirty)
+        assertFalse(state.isSaveEnabled)
+    }
+
+    @Test
+    fun `submitDayNote saves changed fields sequentially and updates originals`() = runTest {
+        val callOrder = mutableListOf<String>()
         val viewModel = createViewModel(
             titleRepository = object : DayRouteTitleRepository {
                 override suspend fun patchTitle(dateKey: String, title: String?): DayRouteTitle {
-                    return DayRouteTitle(title = "Saved title")
+                    callOrder += "title:$title"
+                    return DayRouteTitle(title = title)
+                }
+            },
+            memoRepository = object : DayRouteMemoRepository {
+                override suspend fun patchMemo(dateKey: String, memo: String?): DayRouteMemo {
+                    callOrder += "memo:$memo"
+                    return DayRouteMemo(memo = memo)
                 }
             }
         )
-        viewModel.syncSelectedDay(dateKey = "2026-04-02", title = "", memo = "")
-        viewModel.updateTitle("Draft")
+        viewModel.syncSelectedDay(dateKey = "2026-04-02", title = "Old", memo = "Old memo")
+        viewModel.updateTitle(" New title ")
+        viewModel.updateMemo(" New memo ")
 
-        viewModel.submitTitle()
+        viewModel.submitDayNote()
         advanceUntilIdle()
 
         val state = viewModel.uiState.value
-        assertEquals("Saved title", state.originalTitle)
-        assertEquals("Saved title", state.title)
+        assertEquals(listOf("title:New title", "memo:New memo"), callOrder)
+        assertEquals("New title", state.originalTitle)
+        assertEquals("New memo", state.originalMemo)
+        assertEquals("New title", state.title)
+        assertEquals("New memo", state.memo)
+        assertEquals("제목과 메모를 저장했습니다.", state.successMessage)
     }
 
     @Test
-    fun `submitMemo updates originalMemo with saved result`() = runTest {
+    fun `submitDayNote skips unchanged field requests`() = runTest {
+        val callOrder = mutableListOf<String>()
         val viewModel = createViewModel(
+            titleRepository = object : DayRouteTitleRepository {
+                override suspend fun patchTitle(dateKey: String, title: String?): DayRouteTitle {
+                    callOrder += "title:$title"
+                    return DayRouteTitle(title = title)
+                }
+            },
             memoRepository = object : DayRouteMemoRepository {
                 override suspend fun patchMemo(dateKey: String, memo: String?): DayRouteMemo {
-                    return DayRouteMemo(memo = "Saved memo")
+                    callOrder += "memo:$memo"
+                    return DayRouteMemo(memo = memo)
                 }
             }
         )
-        viewModel.syncSelectedDay(dateKey = "2026-04-02", title = "", memo = "")
-        viewModel.updateMemo("Draft")
+        viewModel.syncSelectedDay(dateKey = "2026-04-02", title = "Old", memo = "Old memo")
+        viewModel.updateMemo("Updated memo")
 
-        viewModel.submitMemo()
+        viewModel.submitDayNote()
+        advanceUntilIdle()
+
+        assertEquals(listOf("memo:Updated memo"), callOrder)
+    }
+
+    @Test
+    fun `submitDayNote stops when title save fails before memo`() = runTest {
+        val callOrder = mutableListOf<String>()
+        val viewModel = createViewModel(
+            titleRepository = object : DayRouteTitleRepository {
+                override suspend fun patchTitle(dateKey: String, title: String?): DayRouteTitle {
+                    callOrder += "title"
+                    throw IllegalStateException("boom")
+                }
+            },
+            memoRepository = object : DayRouteMemoRepository {
+                override suspend fun patchMemo(dateKey: String, memo: String?): DayRouteMemo {
+                    callOrder += "memo"
+                    return DayRouteMemo(memo = memo)
+                }
+            }
+        )
+        viewModel.syncSelectedDay(dateKey = "2026-04-02", title = "Old", memo = "Old memo")
+        viewModel.updateTitle("Updated title")
+        viewModel.updateMemo("Updated memo")
+
+        viewModel.submitDayNote()
         advanceUntilIdle()
 
         val state = viewModel.uiState.value
-        assertEquals("Saved memo", state.originalMemo)
-        assertEquals("Saved memo", state.memo)
+        assertEquals(listOf("title"), callOrder)
+        assertEquals("boom", state.errorMessage)
+        assertNull(state.successMessage)
+        assertTrue(state.isDirty)
+    }
+
+    @Test
+    fun `updateTitle and updateMemo enforce max lengths`() = runTest {
+        val viewModel = createViewModel()
+
+        viewModel.updateTitle("a".repeat(DayNoteViewModel.MAX_TITLE_LENGTH + 10))
+        viewModel.updateMemo("b".repeat(DayNoteViewModel.MAX_MEMO_LENGTH + 10))
+
+        val state = viewModel.uiState.value
+        assertEquals(DayNoteViewModel.MAX_TITLE_LENGTH, state.title.length)
+        assertEquals(DayNoteViewModel.MAX_MEMO_LENGTH, state.memo.length)
     }
 
     private fun createViewModel(

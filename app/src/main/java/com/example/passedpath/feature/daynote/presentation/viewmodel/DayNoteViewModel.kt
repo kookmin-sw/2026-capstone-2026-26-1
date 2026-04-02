@@ -52,7 +52,7 @@ class DayNoteViewModel(
     fun updateTitle(value: String) {
         _uiState.update { currentState ->
             currentState.copy(
-                title = value,
+                title = value.take(MAX_TITLE_LENGTH),
                 errorMessage = null,
                 successMessage = null
             )
@@ -62,14 +62,14 @@ class DayNoteViewModel(
     fun updateMemo(value: String) {
         _uiState.update { currentState ->
             currentState.copy(
-                memo = value,
+                memo = value.take(MAX_MEMO_LENGTH),
                 errorMessage = null,
                 successMessage = null
             )
         }
     }
 
-    fun submitTitle() {
+    fun submitDayNote() {
         val currentState = _uiState.value
         if (!isValidDateKey(currentState.dateKey)) {
             _uiState.update {
@@ -80,104 +80,59 @@ class DayNoteViewModel(
             }
             return
         }
+        if (!currentState.isDirty) return
+
+        val normalizedTitle = currentState.normalizedTitle
+        val normalizedMemo = currentState.normalizedMemo
+        val titleChanged = normalizedTitle != currentState.normalizedOriginalTitle
+        val memoChanged = normalizedMemo != currentState.normalizedOriginalMemo
 
         viewModelScope.launch {
             _uiState.update { it.copy(isSubmitting = true, errorMessage = null, successMessage = null) }
             try {
-                val result = patchDayRouteTitleUseCase(
-                    dateKey = currentState.dateKey,
-                    title = currentState.title
-                )
-                val savedTitle = result.title.orEmpty()
-                val successMessage = if (result.title.isNullOrBlank()) {
-                    "제목이 삭제되었습니다."
+                val savedTitle = if (titleChanged) {
+                    patchDayRouteTitleUseCase(
+                        dateKey = currentState.dateKey,
+                        title = normalizedTitle.ifBlank { null }
+                    ).title.orEmpty()
                 } else {
-                    "제목이 저장되었습니다."
+                    currentState.originalTitle
                 }
+
+                val savedMemo = if (memoChanged) {
+                    patchDayRouteMemoUseCase(
+                        dateKey = currentState.dateKey,
+                        memo = normalizedMemo.ifBlank { null }
+                    ).memo.orEmpty()
+                } else {
+                    currentState.originalMemo
+                }
+
                 _uiState.update {
                     it.copy(
                         originalTitle = savedTitle,
-                        title = savedTitle,
-                        isSubmitting = false,
-                        errorMessage = null,
-                        successMessage = successMessage
-                    )
-                }
-            } catch (throwable: Throwable) {
-                _uiState.update {
-                    it.copy(
-                        isSubmitting = false,
-                        errorMessage = throwable.message ?: "제목 저장에 실패했습니다.",
-                        successMessage = null
-                    )
-                }
-            }
-        }
-    }
-
-    fun submitMemo() {
-        val currentState = _uiState.value
-        if (!isValidDateKey(currentState.dateKey)) {
-            _uiState.update {
-                it.copy(
-                    errorMessage = "날짜는 yyyy-MM-dd 형식이어야 합니다.",
-                    successMessage = null
-                )
-            }
-            return
-        }
-
-        viewModelScope.launch {
-            _uiState.update { it.copy(isSubmitting = true, errorMessage = null, successMessage = null) }
-            try {
-                val result = patchDayRouteMemoUseCase(
-                    dateKey = currentState.dateKey,
-                    memo = currentState.memo
-                )
-                val savedMemo = result.memo.orEmpty()
-                val successMessage = if (result.memo.isNullOrBlank()) {
-                    "메모가 삭제되었습니다."
-                } else {
-                    "메모가 저장되었습니다."
-                }
-                _uiState.update {
-                    it.copy(
                         originalMemo = savedMemo,
+                        title = savedTitle,
                         memo = savedMemo,
                         isSubmitting = false,
                         errorMessage = null,
-                        successMessage = successMessage
+                        successMessage = when {
+                            titleChanged && memoChanged -> "제목과 메모를 저장했습니다."
+                            titleChanged -> "제목을 저장했습니다."
+                            memoChanged -> "메모를 저장했습니다."
+                            else -> null
+                        }
                     )
                 }
             } catch (throwable: Throwable) {
                 _uiState.update {
                     it.copy(
                         isSubmitting = false,
-                        errorMessage = throwable.message ?: "메모 저장에 실패했습니다.",
+                        errorMessage = throwable.message ?: "기록 저장에 실패했습니다.",
                         successMessage = null
                     )
                 }
             }
-        }
-    }
-
-    fun clearTitle() {
-        _uiState.update { currentState ->
-            currentState.copy(
-                title = "",
-                errorMessage = null,
-                successMessage = null
-            )
-        }
-    }
-
-    fun clearMemo() {
-        _uiState.update { currentState ->
-            currentState.copy(
-                memo = "",
-                errorMessage = null,
-                successMessage = null
-            )
         }
     }
 
@@ -188,6 +143,11 @@ class DayNoteViewModel(
         } catch (_: DateTimeParseException) {
             false
         }
+    }
+
+    companion object {
+        const val MAX_TITLE_LENGTH: Int = 60
+        const val MAX_MEMO_LENGTH: Int = 1000
     }
 }
 
