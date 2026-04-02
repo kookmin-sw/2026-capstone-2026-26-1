@@ -31,7 +31,7 @@ public interface DayRouteRepository extends JpaRepository<DayRoute, Long> {
         @Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
 
     @Query("""
-        select distinct dr.id
+        select distinct dr
         from DayRoute dr
         left join OngoingStay os on os.dayRoute.id = dr.id
         where dr.analysisStatus = :status
