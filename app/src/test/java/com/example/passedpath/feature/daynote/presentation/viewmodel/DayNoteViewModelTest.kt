@@ -112,6 +112,7 @@ class DayNoteViewModelTest {
         assertEquals("New title", state.title)
         assertEquals("New memo", state.memo)
         assertEquals("제목과 메모를 저장했습니다.", state.successMessage)
+        assertEquals(1L, state.feedbackEventId)
     }
 
     @Test
@@ -169,6 +170,7 @@ class DayNoteViewModelTest {
         assertEquals("boom", state.errorMessage)
         assertNull(state.successMessage)
         assertTrue(state.isDirty)
+        assertEquals(1L, state.feedbackEventId)
     }
 
     @Test

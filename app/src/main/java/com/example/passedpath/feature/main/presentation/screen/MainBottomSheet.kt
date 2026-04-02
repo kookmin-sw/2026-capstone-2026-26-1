@@ -34,9 +34,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.passedpath.R
 import com.example.passedpath.feature.daynote.presentation.screen.DayNoteBottomSheetContent
+import com.example.passedpath.feature.daynote.presentation.state.DayNoteUiState
 import com.example.passedpath.feature.place.presentation.screen.PlaceBottomSheetContent
 import com.example.passedpath.feature.route.presentation.state.PlaceMarkerUiState
-import com.example.passedpath.ui.theme.Gray100
 import com.example.passedpath.ui.theme.Gray200
 import com.example.passedpath.ui.theme.Gray400
 import com.example.passedpath.ui.theme.Gray700
@@ -47,11 +47,10 @@ import com.example.passedpath.ui.theme.Green100
 internal fun MainBottomSheet(
     places: List<PlaceMarkerUiState>,
     selectedDateKey: String,
-    routeTitle: String,
-    routeMemo: String,
-    isRouteLoading: Boolean,
-    isRouteEmpty: Boolean,
-    routeErrorMessage: String?,
+    dayNoteUiState: DayNoteUiState,
+    onDayNoteTitleChanged: (String) -> Unit,
+    onDayNoteMemoChanged: (String) -> Unit,
+    onDayNoteSaveClick: () -> Unit,
     selectedTab: MainBottomSheetTab,
     onTabSelected: (MainBottomSheetTab) -> Unit,
     onAddPlaceClick: () -> Unit,
@@ -88,12 +87,10 @@ internal fun MainBottomSheet(
                     modifier = Modifier.padding(horizontal = 20.dp)
                 )
                 MainBottomSheetTab.DAYNOTE -> DayNoteBottomSheetContent(
-                    selectedDateKey = selectedDateKey,
-                    initialTitle = routeTitle,
-                    initialMemo = routeMemo,
-                    isRouteLoading = isRouteLoading,
-                    isRouteEmpty = isRouteEmpty,
-                    routeErrorMessage = routeErrorMessage,
+                    uiState = dayNoteUiState,
+                    onTitleChanged = onDayNoteTitleChanged,
+                    onMemoChanged = onDayNoteMemoChanged,
+                    onSaveClick = onDayNoteSaveClick,
                     modifier = Modifier.padding(horizontal = 20.dp)
                 )
             }
@@ -165,8 +162,7 @@ private fun BottomSheetTabRow(
     }
 }
 
-internal enum class MainBottomSheetTab(
-) {
+internal enum class MainBottomSheetTab {
     PLACE,
     DAYNOTE
 }

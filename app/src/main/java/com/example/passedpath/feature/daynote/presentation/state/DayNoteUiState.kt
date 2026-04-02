@@ -8,7 +8,8 @@ data class DayNoteUiState(
     val memo: String = "",
     val isSubmitting: Boolean = false,
     val errorMessage: String? = null,
-    val successMessage: String? = null
+    val successMessage: String? = null,
+    val feedbackEventId: Long = 0L
 ) {
     val normalizedOriginalTitle: String
         get() = originalTitle.trim()

@@ -1,4 +1,4 @@
-﻿package com.example.passedpath.feature.main.presentation.screen
+package com.example.passedpath.feature.main.presentation.screen
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -8,20 +8,30 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.example.passedpath.feature.daynote.presentation.state.DayNoteUiState
 import com.example.passedpath.feature.main.presentation.state.MainUiState
 import com.example.passedpath.feature.place.presentation.screen.PlaceCreateBottomSheet
 import com.example.passedpath.feature.route.presentation.state.RouteUiAction
 import com.example.passedpath.ui.PermissionSettingDialog
+import com.example.passedpath.ui.component.BaseConfirmDialog
 
 @Composable
 fun MainScreen(
     uiState: MainUiState,
+    dayNoteUiState: DayNoteUiState,
     onInitialCameraCentered: () -> Unit,
     onDateSelected: (String) -> Unit,
+    onDateSelectionRequested: (String) -> Unit,
     onRouteAction: (RouteUiAction) -> Unit,
+    onDayNoteTitleChanged: (String) -> Unit,
+    onDayNoteMemoChanged: (String) -> Unit,
+    onDayNoteSaveClick: () -> Unit,
     onTrackingPermissionDialogConfirm: () -> Unit,
     onTrackingPermissionDialogDismiss: () -> Unit,
     onPermissionBannerConfirm: () -> Unit,
+    showUnsavedDayNoteDialog: Boolean,
+    onDismissUnsavedDayNoteDialog: () -> Unit,
+    onConfirmUnsavedDayNoteDialog: () -> Unit,
     debugActions: MainDebugActions
 ) {
     var selectedBottomSheetTab by rememberSaveable { mutableStateOf(MainBottomSheetTab.PLACE) }
@@ -35,7 +45,7 @@ fun MainScreen(
             MainMapSection(
                 uiState = uiState,
                 onInitialCameraCentered = onInitialCameraCentered,
-                onDateSelected = onDateSelected,
+                onDateSelected = onDateSelectionRequested,
                 onRouteAction = onRouteAction,
                 onPermissionBannerConfirm = onPermissionBannerConfirm,
                 debugActions = debugActions,
@@ -47,11 +57,10 @@ fun MainScreen(
                 modifier = sheetModifier,
                 places = uiState.selectedRoute.places,
                 selectedDateKey = uiState.selectedDateKey,
-                routeTitle = uiState.selectedRoute.title,
-                routeMemo = uiState.selectedRoute.memo,
-                isRouteLoading = uiState.isRouteLoading,
-                isRouteEmpty = uiState.isRouteEmpty,
-                routeErrorMessage = uiState.routeErrorMessage,
+                dayNoteUiState = dayNoteUiState,
+                onDayNoteTitleChanged = onDayNoteTitleChanged,
+                onDayNoteMemoChanged = onDayNoteMemoChanged,
+                onDayNoteSaveClick = onDayNoteSaveClick,
                 selectedTab = selectedBottomSheetTab,
                 onTabSelected = { selectedBottomSheetTab = it },
                 onAddPlaceClick = { isPlaceCreateSheetVisible = true }
@@ -74,6 +83,17 @@ fun MainScreen(
         PermissionSettingDialog(
             onConfirm = onTrackingPermissionDialogConfirm,
             onDismiss = onTrackingPermissionDialogDismiss
+        )
+    }
+
+    if (showUnsavedDayNoteDialog) {
+        BaseConfirmDialog(
+            title = "변경 사항을 저장할까요?",
+            message = "저장하지 않으면 작성 중인 내용이 사라집니다.",
+            dismissText = "취소",
+            confirmText = "저장",
+            onDismiss = onDismissUnsavedDayNoteDialog,
+            onConfirm = onConfirmUnsavedDayNoteDialog
         )
     }
 }

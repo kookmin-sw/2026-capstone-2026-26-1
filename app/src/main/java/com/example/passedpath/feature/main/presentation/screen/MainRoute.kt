@@ -1,11 +1,18 @@
-﻿package com.example.passedpath.feature.main.presentation.screen
+package com.example.passedpath.feature.main.presentation.screen
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.passedpath.app.appContainer
+import com.example.passedpath.feature.daynote.presentation.viewmodel.DayNoteViewModel
+import com.example.passedpath.feature.daynote.presentation.viewmodel.DayNoteViewModelFactory
+import com.example.passedpath.feature.main.presentation.coordinator.DateSelectionDecision
+import com.example.passedpath.feature.main.presentation.coordinator.DateSelectionGuardCoordinator
 import com.example.passedpath.feature.main.presentation.viewmodel.MainViewModel
 import com.example.passedpath.feature.main.presentation.viewmodel.MainViewModelFactory
 import com.example.passedpath.feature.permission.presentation.policy.PermissionActionTarget
@@ -21,6 +28,54 @@ fun MainRoute(
     val context = LocalContext.current
     val appContainer = context.appContainer
     val uiState by viewModel.uiState.collectAsState()
+    val dayNoteViewModel: DayNoteViewModel = viewModel(
+        factory = DayNoteViewModelFactory(
+            appContainer = appContainer,
+            initialDateKey = uiState.selectedDateKey
+        )
+    )
+    val dayNoteUiState by dayNoteViewModel.uiState.collectAsStateWithLifecycle()
+    val dateSelectionGuardCoordinator = remember { DateSelectionGuardCoordinator() }
+    val dateSelectionGuardState by dateSelectionGuardCoordinator.state.collectAsStateWithLifecycle()
+
+    LaunchedEffect(uiState.selectedDateKey, uiState.selectedRoute.title, uiState.selectedRoute.memo) {
+        dayNoteViewModel.syncSelectedDay(
+            dateKey = uiState.selectedDateKey,
+            title = uiState.selectedRoute.title,
+            memo = uiState.selectedRoute.memo
+        )
+    }
+
+    LaunchedEffect(
+        dateSelectionGuardState.pendingDateSelection,
+        dayNoteUiState.isSubmitting,
+        dayNoteUiState.isDirty,
+        dayNoteUiState.errorMessage,
+        dayNoteUiState.successMessage
+    ) {
+        val targetDate = dateSelectionGuardCoordinator.consumeDateSelectionAfterSave(
+            isSubmitting = dayNoteUiState.isSubmitting,
+            hasUnsavedDayNoteChanges = dayNoteUiState.isDirty,
+            hasSaveError = dayNoteUiState.errorMessage != null,
+            hasSaveSuccessMessage = dayNoteUiState.successMessage != null
+        ) ?: return@LaunchedEffect
+
+        viewModel.selectDate(targetDate)
+    }
+
+    fun requestDateSelection(dateKey: String) {
+        when (
+            val decision = dateSelectionGuardCoordinator.requestDateSelection(
+                currentDateKey = uiState.selectedDateKey,
+                targetDateKey = dateKey,
+                hasUnsavedDayNoteChanges = dayNoteUiState.isDirty
+            )
+        ) {
+            DateSelectionDecision.Ignore -> Unit
+            DateSelectionDecision.RequireConfirmation -> Unit
+            is DateSelectionDecision.Proceed -> viewModel.selectDate(decision.dateKey)
+        }
+    }
 
     MainRouteEffects(
         permissionState = uiState.permissionState,
@@ -42,9 +97,14 @@ fun MainRoute(
 
     MainScreen(
         uiState = uiState,
+        dayNoteUiState = dayNoteUiState,
         onInitialCameraCentered = viewModel::markInitialCameraCentered,
         onDateSelected = viewModel::selectDate,
+        onDateSelectionRequested = ::requestDateSelection,
         onRouteAction = viewModel::handleRouteAction,
+        onDayNoteTitleChanged = dayNoteViewModel::updateTitle,
+        onDayNoteMemoChanged = dayNoteViewModel::updateMemo,
+        onDayNoteSaveClick = dayNoteViewModel::submitDayNote,
         onTrackingPermissionDialogConfirm = {
             viewModel.dismissTrackingPermissionDialog()
             AppSettingsNavigator.openAppSettings(context)
@@ -62,6 +122,9 @@ fun MainRoute(
                 PermissionActionTarget.None -> Unit
             }
         },
+        showUnsavedDayNoteDialog = dateSelectionGuardState.pendingDateSelection != null,
+        onDismissUnsavedDayNoteDialog = dateSelectionGuardCoordinator::dismissPendingDateSelection,
+        onConfirmUnsavedDayNoteDialog = dayNoteViewModel::submitDayNote,
         debugActions = MainDebugActions(
             refreshSystemState = {
                 viewModel.refreshPermissionState()

@@ -12,9 +12,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.text.ParseException
 import java.text.SimpleDateFormat
-import java.time.LocalDate
-import java.time.format.DateTimeParseException
 import java.util.Date
 import java.util.Locale
 
@@ -75,7 +74,8 @@ class DayNoteViewModel(
             _uiState.update {
                 it.copy(
                     errorMessage = "날짜는 yyyy-MM-dd 형식이어야 합니다.",
-                    successMessage = null
+                    successMessage = null,
+                    feedbackEventId = it.feedbackEventId + 1
                 )
             }
             return
@@ -121,7 +121,8 @@ class DayNoteViewModel(
                             titleChanged -> "제목을 저장했습니다."
                             memoChanged -> "메모를 저장했습니다."
                             else -> null
-                        }
+                        },
+                        feedbackEventId = it.feedbackEventId + 1
                     )
                 }
             } catch (throwable: Throwable) {
@@ -129,7 +130,8 @@ class DayNoteViewModel(
                     it.copy(
                         isSubmitting = false,
                         errorMessage = throwable.message ?: "기록 저장에 실패했습니다.",
-                        successMessage = null
+                        successMessage = null,
+                        feedbackEventId = it.feedbackEventId + 1
                     )
                 }
             }
@@ -137,10 +139,14 @@ class DayNoteViewModel(
     }
 
     private fun isValidDateKey(value: String): Boolean {
+        val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.KOREA).apply {
+            isLenient = false
+        }
+
         return try {
-            LocalDate.parse(value)
+            formatter.parse(value)
             true
-        } catch (_: DateTimeParseException) {
+        } catch (_: ParseException) {
             false
         }
     }
