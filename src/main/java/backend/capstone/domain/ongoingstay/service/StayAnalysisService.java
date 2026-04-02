@@ -17,11 +17,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-//TODO: 중심 좌표 계산이 맞는지 확인
 @Service
 @RequiredArgsConstructor
 public class StayAnalysisService {
 
+    private static final int STAY_RADIUS_METER = 50;
+    private static final int STAY_MIN_DURATION_MINUTE = 15;
     private final OngoingStayRepository ongoingStayRepository;
     private final GpsPointService gpsPointService;
     private final DayRouteService dayRouteService;
@@ -65,13 +66,13 @@ public class StayAnalysisService {
                 point.getLongitude());
 
             //현재 point가 기존 stay 중심에서 50m 이내면 같은 체류장소로 판단
-            if (distance <= 50) {
+            if (distance <= STAY_RADIUS_METER) {
                 stay.addPoint(point);
                 continue;
             }
 
             //종료된 stay가 10분이상 체류한 stay인지 판단
-            if (stay.getDurationMinutes() >= 10) {
+            if (stay.getDurationMinutes() >= STAY_MIN_DURATION_MINUTE) {
                 promoteStayToPlace(dayRoute, stay.getCenterLatitude(), stay.getCenterLongitude());
             }
 
@@ -101,7 +102,8 @@ public class StayAnalysisService {
             return;
         }
 
-        if (Duration.between(stay.getStartTime(), dayRouteEndTime).toMinutes() >= 10) {
+        if (Duration.between(stay.getStartTime(), dayRouteEndTime).toMinutes()
+            >= STAY_MIN_DURATION_MINUTE) {
             promoteStayToPlace(dayRoute, stay.getCenterLatitude(), stay.getCenterLongitude());
         }
         ongoingStayRepository.delete(stay);
