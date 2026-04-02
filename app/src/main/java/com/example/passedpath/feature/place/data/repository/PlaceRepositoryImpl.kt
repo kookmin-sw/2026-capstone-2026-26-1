@@ -4,6 +4,7 @@ import com.example.passedpath.feature.place.data.remote.api.PlaceApi
 import com.example.passedpath.feature.place.data.remote.dto.PlaceReorderRequestDto
 import com.example.passedpath.feature.place.data.remote.mapper.toBookmarkPlace
 import com.example.passedpath.feature.place.data.remote.mapper.toRegisteredPlace
+import com.example.passedpath.feature.place.data.remote.mapper.toVisitedPlaceList
 import com.example.passedpath.feature.place.data.remote.mapper.toRequestDto
 import com.example.passedpath.feature.place.data.remote.mapper.toUpdateBookmarkPlaceRequestDto
 import com.example.passedpath.feature.place.data.remote.mapper.toUpdateRequestDto
@@ -12,11 +13,16 @@ import com.example.passedpath.feature.place.domain.model.BookmarkPlace
 import com.example.passedpath.feature.place.domain.model.PlaceRegistration
 import com.example.passedpath.feature.place.domain.model.RegisteredPlace
 import com.example.passedpath.feature.place.domain.model.UpdatedPlace
+import com.example.passedpath.feature.place.domain.model.VisitedPlaceList
 import com.example.passedpath.feature.place.domain.repository.PlaceRepository
 
 class PlaceRepositoryImpl(
     private val placeApi: PlaceApi
 ) : PlaceRepository {
+    override suspend fun getPlaces(dateKey: String): VisitedPlaceList {
+        return placeApi.getPlaces(date = dateKey).toVisitedPlaceList()
+    }
+
     override suspend fun addPlace(dateKey: String, place: PlaceRegistration): RegisteredPlace {
         return placeApi.addPlace(
             date = dateKey,

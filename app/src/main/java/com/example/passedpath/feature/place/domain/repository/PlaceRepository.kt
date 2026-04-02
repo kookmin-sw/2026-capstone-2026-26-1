@@ -4,8 +4,11 @@ import com.example.passedpath.feature.place.domain.model.BookmarkPlace
 import com.example.passedpath.feature.place.domain.model.PlaceRegistration
 import com.example.passedpath.feature.place.domain.model.RegisteredPlace
 import com.example.passedpath.feature.place.domain.model.UpdatedPlace
+import com.example.passedpath.feature.place.domain.model.VisitedPlaceList
 
 interface PlaceRepository {
+    suspend fun getPlaces(dateKey: String): VisitedPlaceList
+
     suspend fun addPlace(dateKey: String, place: PlaceRegistration): RegisteredPlace
 
     suspend fun updatePlace(dateKey: String, placeId: Long, place: PlaceRegistration): UpdatedPlace
