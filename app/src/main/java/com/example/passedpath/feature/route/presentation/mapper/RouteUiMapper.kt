@@ -92,6 +92,8 @@ internal fun createPastRouteMode(
 internal fun DailyPath.toSelectedDayRouteUiState(): SelectedDayRouteUiState {
     return SelectedDayRouteUiState(
         dateKey = dateKey,
+        title = "",
+        memo = "",
         polylinePoints = points.map(TrackedLocation::toMainCoordinateUiState),
         totalDistanceKm = totalDistanceMeters / 1000.0,
         pathPointCount = pathPointCount,
@@ -102,6 +104,8 @@ internal fun DailyPath.toSelectedDayRouteUiState(): SelectedDayRouteUiState {
 internal fun DayRouteDetail.toSelectedDayRouteUiState(): SelectedDayRouteUiState {
     return SelectedDayRouteUiState(
         dateKey = dateKey,
+        title = title,
+        memo = memo,
         polylinePoints = polylinePoints.map(RoutePoint::toMainCoordinateUiState),
         totalDistanceKm = totalDistanceKm,
         pathPointCount = pathPointCount,

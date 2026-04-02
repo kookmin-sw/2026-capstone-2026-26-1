@@ -47,6 +47,11 @@ import com.example.passedpath.ui.theme.Green100
 internal fun MainBottomSheet(
     places: List<PlaceMarkerUiState>,
     selectedDateKey: String,
+    routeTitle: String,
+    routeMemo: String,
+    isRouteLoading: Boolean,
+    isRouteEmpty: Boolean,
+    routeErrorMessage: String?,
     selectedTab: MainBottomSheetTab,
     onTabSelected: (MainBottomSheetTab) -> Unit,
     onAddPlaceClick: () -> Unit,
@@ -82,7 +87,15 @@ internal fun MainBottomSheet(
                     onAddPlaceClick = onAddPlaceClick,
                     modifier = Modifier.padding(horizontal = 20.dp)
                 )
-                MainBottomSheetTab.DAYNOTE -> DayNoteBottomSheetContent(modifier = Modifier.padding(horizontal = 20.dp))
+                MainBottomSheetTab.DAYNOTE -> DayNoteBottomSheetContent(
+                    selectedDateKey = selectedDateKey,
+                    initialTitle = routeTitle,
+                    initialMemo = routeMemo,
+                    isRouteLoading = isRouteLoading,
+                    isRouteEmpty = isRouteEmpty,
+                    routeErrorMessage = routeErrorMessage,
+                    modifier = Modifier.padding(horizontal = 20.dp)
+                )
             }
         }
     }

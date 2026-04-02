@@ -45,6 +45,8 @@ class MainViewModelTest {
                     routeDetail = DayRouteDetail(
                         dateKey = "2026-03-29",
                         totalDistanceKm = 12.3,
+                        title = "Han River",
+                        memo = "Windy evening walk",
                         pathPointCount = 3,
                         polylinePoints = listOf(
                             RoutePoint(37.1, 127.1),
@@ -74,6 +76,8 @@ class MainViewModelTest {
         assertFalse(state.isRouteEmpty)
         assertNull(state.routeErrorMessage)
         assertTrue(state.selectedRoute.hasLocationData)
+        assertEquals("Han River", state.selectedRoute.title)
+        assertEquals("Windy evening walk", state.selectedRoute.memo)
         assertEquals(3, state.selectedRoute.polylinePoints.size)
         assertEquals(1, state.selectedRoute.places.size)
         assertEquals(listOf("2026-03-29"), repository.requestedRemoteDates)

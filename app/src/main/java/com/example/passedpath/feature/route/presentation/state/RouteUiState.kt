@@ -13,6 +13,8 @@ data class PlaceMarkerUiState(
 
 data class SelectedDayRouteUiState(
     val dateKey: String,
+    val title: String = "",
+    val memo: String = "",
     val polylinePoints: List<MainCoordinateUiState> = emptyList(),
     val totalDistanceKm: Double = 0.0,
     val pathPointCount: Int = 0,

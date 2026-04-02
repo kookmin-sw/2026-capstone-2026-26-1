@@ -47,6 +47,11 @@ fun MainScreen(
                 modifier = sheetModifier,
                 places = uiState.selectedRoute.places,
                 selectedDateKey = uiState.selectedDateKey,
+                routeTitle = uiState.selectedRoute.title,
+                routeMemo = uiState.selectedRoute.memo,
+                isRouteLoading = uiState.isRouteLoading,
+                isRouteEmpty = uiState.isRouteEmpty,
+                routeErrorMessage = uiState.routeErrorMessage,
                 selectedTab = selectedBottomSheetTab,
                 onTabSelected = { selectedBottomSheetTab = it },
                 onAddPlaceClick = { isPlaceCreateSheetVisible = true }
