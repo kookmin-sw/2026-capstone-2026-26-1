@@ -67,6 +67,7 @@
     <string name="route_empty_past_title">위치 데이터가 없습니다</string>
     <string name="route_empty_today_message">오늘의 이동 경로가 기록되면 이곳에 표시됩니다.</string>
     <string name="route_empty_past_message">선택한 날짜에는 지도에 표시할 경로 데이터가 없습니다.</string>
+    <string name="route_empty_past_toast">이 날의 경로 기록이 존재하지 않아요</string>
     <string name="route_place_fallback_title">장소 %1$d</string>
     <string name="record_sheet_tab_place">방문한 장소</string>
     <string name="record_sheet_tab_daynote">지나온 길 메모</string>

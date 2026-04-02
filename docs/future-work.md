@@ -11,3 +11,4 @@
 
 ## UI polish
 - Revisit main-map permission banner styling after debug work settles
+- Design and implement a dedicated loading state for route fetches instead of reusing the map overlay

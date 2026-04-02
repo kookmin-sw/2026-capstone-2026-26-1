@@ -13,8 +13,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -89,18 +87,10 @@ private fun PlaceOrderMarker(
 @Composable
 fun RouteStatusOverlay(
     routeModeUiState: MainRouteModeUiState,
-    hasRouteLocationData: Boolean,
     onRouteAction: (RouteUiAction) -> Unit
 ) {
     val routeErrorMessage = routeModeUiState.routeErrorMessage
-    val routeEmptyMessage = routeModeUiState.routeEmptyMessage
-    val routeAccentColor = MaterialTheme.colorScheme.primary
-    val shouldShowEmptyOverlay = when (routeModeUiState) {
-        is MainRouteModeUiState.Today -> false
-        is MainRouteModeUiState.Past ->
-            !routeModeUiState.isRouteLoading && routeErrorMessage == null && !hasRouteLocationData
-    }
-    if (!routeModeUiState.isRouteLoading && routeErrorMessage == null && !shouldShowEmptyOverlay) {
+    if (routeErrorMessage == null) {
         return
     }
 
@@ -121,86 +111,24 @@ fun RouteStatusOverlay(
                     .padding(horizontal = 24.dp, vertical = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                when {
-                    routeModeUiState.isRouteLoading -> {
-                        CircularProgressIndicator(color = routeAccentColor)
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = loadingTitle(routeModeUiState),
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = loadingMessage(routeModeUiState),
-                            color = Color(0xFF4B5563),
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                    routeErrorMessage != null -> {
-                        Text(
-                            text = stringResource(R.string.route_error_title),
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = routeErrorMessage,
-                            color = Color(0xFF9D1C1C),
-                            textAlign = TextAlign.Center
-                        )
-                        if (routeModeUiState is MainRouteModeUiState.Past) {
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Button(onClick = { onRouteAction(RouteUiAction.RetryPastRoute) }) {
-                                Text(text = stringResource(R.string.route_retry))
-                            }
-                        }
-                    }
-                    else -> {
-                        Text(
-                            text = emptyTitle(routeModeUiState),
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = routeEmptyMessage ?: emptyMessage(routeModeUiState),
-                            color = Color(0xFF4B5563),
-                            textAlign = TextAlign.Center
-                        )
+                Text(
+                    text = stringResource(R.string.route_error_title),
+                    fontWeight = FontWeight.SemiBold
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = routeErrorMessage,
+                    color = Color(0xFF9D1C1C),
+                    textAlign = TextAlign.Center
+                )
+                if (routeModeUiState is MainRouteModeUiState.Past) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(onClick = { onRouteAction(RouteUiAction.RetryPastRoute) }) {
+                        Text(text = stringResource(R.string.route_retry))
                     }
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun loadingTitle(routeModeUiState: MainRouteModeUiState): String {
-    return when (routeModeUiState) {
-        is MainRouteModeUiState.Today -> stringResource(R.string.route_loading_today_title)
-        is MainRouteModeUiState.Past -> stringResource(R.string.route_loading_past_title)
-    }
-}
-
-@Composable
-private fun loadingMessage(routeModeUiState: MainRouteModeUiState): String {
-    return when (routeModeUiState) {
-        is MainRouteModeUiState.Today -> stringResource(R.string.route_loading_today_message)
-        is MainRouteModeUiState.Past -> stringResource(R.string.route_loading_past_message)
-    }
-}
-
-@Composable
-private fun emptyTitle(routeModeUiState: MainRouteModeUiState): String {
-    return when (routeModeUiState) {
-        is MainRouteModeUiState.Today -> stringResource(R.string.route_empty_today_title)
-        is MainRouteModeUiState.Past -> stringResource(R.string.route_empty_past_title)
-    }
-}
-
-@Composable
-private fun emptyMessage(routeModeUiState: MainRouteModeUiState): String {
-    return when (routeModeUiState) {
-        is MainRouteModeUiState.Today -> stringResource(R.string.route_empty_today_message)
-        is MainRouteModeUiState.Past -> stringResource(R.string.route_empty_past_message)
     }
 }
 

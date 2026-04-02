@@ -44,8 +44,10 @@ import com.example.passedpath.feature.permission.presentation.state.LocationPerm
 import com.example.passedpath.feature.route.presentation.screen.RouteFloatingControls
 import com.example.passedpath.feature.route.presentation.screen.RouteMapContent
 import com.example.passedpath.feature.route.presentation.screen.RouteStatusOverlay
+import com.example.passedpath.feature.route.presentation.state.MainRouteModeUiState
 import com.example.passedpath.feature.route.presentation.state.RouteUiAction
 import com.example.passedpath.ui.component.banner.PermissionBanner
+import com.example.passedpath.ui.component.toast.RouteEmptyToast
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -75,11 +77,15 @@ internal fun MainMapSection(
         uiState.currentLocation
     }
     val routePoints = uiState.selectedRoute.polylinePoints.map(MainCoordinateUiState::toLatLng)
-    val hasRouteLocationData = uiState.selectedRoute.hasLocationData
     val permissionOverlayUiModel = createPermissionOverlayUiModel(
         permissionState = uiState.permissionState,
         isLocationServiceEnabled = uiState.isLocationServiceEnabled
     )
+    val shouldShowPastEmptyToast =
+        uiState.routeModeUiState is MainRouteModeUiState.Past &&
+            uiState.routeModeUiState.isRouteEmpty &&
+            uiState.routeModeUiState.routeErrorMessage == null &&
+            !uiState.routeModeUiState.isRouteLoading
     val initialCameraTarget =
         routePoints.firstOrNull() ?: currentLocation?.toLatLng() ?: fallbackPosition
     val cameraPositionState = rememberCameraPositionState {
@@ -166,9 +172,21 @@ internal fun MainMapSection(
 
         RouteStatusOverlay(
             routeModeUiState = uiState.routeModeUiState,
-            hasRouteLocationData = hasRouteLocationData,
             onRouteAction = onRouteAction
         )
+
+        if (shouldShowPastEmptyToast) {
+            RouteEmptyToast(
+                triggerKey = uiState.selectedDateKey,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(horizontal = 16.dp)
+                    .padding(
+                        bottom = floatingBottomPadding +
+                            if (permissionOverlayUiModel != null) 72.dp else 16.dp
+                    )
+            )
+        }
 
         Column(
             modifier = Modifier
