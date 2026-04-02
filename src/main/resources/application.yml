@@ -28,3 +28,8 @@ logging:
 
 server:
   forward-headers-strategy: framework
+
+kakao:
+  local:
+    base-url: https://dapi.kakao.com
+    rest-api-key: ${KAKAO_REST_API_KEY}

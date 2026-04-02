@@ -1,15 +1,16 @@
 package backend.capstone.domain.dayroute.service;
 
+import backend.capstone.domain.dayroute.entity.AnalysisStatus;
 import backend.capstone.domain.dayroute.entity.DayRoute;
 import backend.capstone.domain.dayroute.exception.DayRouteErrorCode;
 import backend.capstone.domain.dayroute.mapper.DayRouteMapper;
 import backend.capstone.domain.dayroute.repository.DayRouteRepository;
-import backend.capstone.domain.gpspoint.repository.GpsPointRepository;
 import backend.capstone.domain.place.repository.PlaceRepository;
 import backend.capstone.domain.user.service.UserService;
 import backend.capstone.global.exception.BusinessException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.YearMonth;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -22,13 +23,18 @@ import org.springframework.transaction.annotation.Transactional;
 public class DayRouteService {
 
     private final DayRouteRepository dayRouteRepository;
-    private final GpsPointRepository gpsPointRepository;
     private final PlaceRepository placeRepository;
     private final UserService userService;
 
     @Transactional
     public DayRoute getDayRouteByDateAndUserId(LocalDate date, Long userId) {
         return dayRouteRepository.findByUserIdAndDate(userId, date)
+            .orElseThrow(() -> new BusinessException(DayRouteErrorCode.DAY_ROUTE_NOT_FOUND));
+    }
+
+    @Transactional(readOnly = true)
+    public DayRoute getDayRouteById(Long dayRouteId) {
+        return dayRouteRepository.findById(dayRouteId)
             .orElseThrow(() -> new BusinessException(DayRouteErrorCode.DAY_ROUTE_NOT_FOUND));
     }
 
@@ -46,6 +52,20 @@ public class DayRouteService {
                             () -> new BusinessException(DayRouteErrorCode.DAY_ROUTE_CREATE_FAILED));
                 }
             });
+    }
+
+    @Transactional(readOnly = true)
+    public LocalDateTime getDayRouteEndTime(DayRoute dayRoute) {
+        //TODO: fetch join 적용
+        LocalDate routeDate = dayRoute.getDate();
+        LocalTime dayStartTime = dayRoute.getUser().getDayStartTime();
+        LocalTime dayEndTime = dayRoute.getUser().getDayEndTime();
+
+        LocalDate endDate = routeDate;
+        if (dayEndTime.isBefore(dayStartTime) || dayEndTime.equals(dayStartTime)) {
+            endDate = routeDate.plusDays(1);
+        }
+        return LocalDateTime.of(endDate, dayEndTime);
     }
 
     @Transactional(readOnly = true)
@@ -90,6 +110,11 @@ public class DayRouteService {
     @Transactional
     public void refreshHasManualData(DayRoute dayRoute) {
         dayRoute.updateHasManualData(hasManualData(dayRoute));
+    }
+
+    @Transactional(readOnly = true)
+    public List<DayRoute> getStayAnalysisTargetDayRoute(AnalysisStatus status) {
+        return dayRouteRepository.findStayAnalysisTargets(status);
     }
 
     private boolean hasManualData(DayRoute dayRoute) {

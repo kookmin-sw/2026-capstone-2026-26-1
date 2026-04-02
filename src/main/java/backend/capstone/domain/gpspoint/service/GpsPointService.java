@@ -6,6 +6,7 @@ import backend.capstone.domain.dayroute.entity.DayRoute;
 import backend.capstone.domain.gpspoint.dto.GpsPointRecordedAtRange;
 import backend.capstone.domain.gpspoint.entity.GpsPoint;
 import backend.capstone.domain.gpspoint.repository.GpsPointRepository;
+import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -47,6 +48,15 @@ public class GpsPointService {
     @Transactional(readOnly = true)
     public List<GpsPoint> getGpsPointsByDayRouteId(DayRoute dayRoute) {
         return gpsPointRepository.findByDayRouteIdOrderByRecordedAt(dayRoute);
+    }
+
+    @Transactional(readOnly = true)
+    public List<GpsPoint> getNewPoints(DayRoute dayRoute, LocalDateTime lastAnalyzedAt) {
+        if (lastAnalyzedAt == null) {
+            return gpsPointRepository.findByDayRouteOrderByRecordedAtAsc(dayRoute);
+        }
+
+        return gpsPointRepository.findNewPointsAfterCursor(dayRoute, lastAnalyzedAt);
     }
 
 }

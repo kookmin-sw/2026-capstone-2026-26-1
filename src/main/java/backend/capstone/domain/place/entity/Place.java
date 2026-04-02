@@ -4,6 +4,8 @@ import backend.capstone.domain.dayroute.entity.DayRoute;
 import backend.capstone.global.entity.BaseTimeEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -47,15 +49,19 @@ public class Place extends BaseTimeEntity {
 
     private int orderIndex;
 
+    @Enumerated(EnumType.STRING)
+    private PlaceSource source;
+
     @Builder
     Place(DayRoute dayRoute, String roadAddress, String name, double latitude, double longitude,
-        int orderIndex) {
+        int orderIndex, PlaceSource source) {
         this.dayRoute = dayRoute;
         this.roadAddress = roadAddress;
         this.name = name;
         this.latitude = latitude;
         this.longitude = longitude;
         this.orderIndex = orderIndex;
+        this.source = source;
     }
 
     public void update(String roadAddress, String name, double latitude, double longitude) {
