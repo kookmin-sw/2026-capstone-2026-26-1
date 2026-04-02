@@ -9,6 +9,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.example.passedpath.feature.main.presentation.state.MainUiState
+import com.example.passedpath.feature.place.presentation.screen.PlaceCreateBottomSheet
 import com.example.passedpath.feature.route.presentation.state.RouteUiAction
 import com.example.passedpath.ui.PermissionSettingDialog
 
@@ -24,6 +25,7 @@ fun MainScreen(
     debugActions: MainDebugActions
 ) {
     var selectedBottomSheetTab by rememberSaveable { mutableStateOf(MainBottomSheetTab.PLACE) }
+    var isPlaceCreateSheetVisible by rememberSaveable { mutableStateOf(false) }
 
     MainBottomSheetScaffold(
         modifier = Modifier
@@ -43,11 +45,25 @@ fun MainScreen(
         sheet = { sheetModifier ->
             MainBottomSheet(
                 modifier = sheetModifier,
+                places = uiState.selectedRoute.places,
+                selectedDateKey = uiState.selectedDateKey,
                 selectedTab = selectedBottomSheetTab,
-                onTabSelected = { selectedBottomSheetTab = it }
+                onTabSelected = { selectedBottomSheetTab = it },
+                onAddPlaceClick = { isPlaceCreateSheetVisible = true }
             )
         }
     )
+
+    if (isPlaceCreateSheetVisible) {
+        PlaceCreateBottomSheet(
+            selectedDateKey = uiState.selectedDateKey,
+            onDismiss = { isPlaceCreateSheetVisible = false },
+            onCreated = {
+                isPlaceCreateSheetVisible = false
+                onDateSelected(uiState.selectedDateKey)
+            }
+        )
+    }
 
     if (uiState.showTrackingPermissionDialog) {
         PermissionSettingDialog(

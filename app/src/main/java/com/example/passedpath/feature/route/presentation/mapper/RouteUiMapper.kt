@@ -127,6 +127,7 @@ private fun DayRoutePlace.toPlaceMarkerUiState(): PlaceMarkerUiState {
     return PlaceMarkerUiState(
         placeId = placeId,
         placeName = placeName,
+        roadAddress = roadAddress,
         latitude = latitude,
         longitude = longitude,
         orderIndex = orderIndex

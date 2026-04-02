@@ -35,7 +35,7 @@ internal fun MainDateTopBar(
     Surface(
         shape = RoundedCornerShape(24.dp),
         color = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.96f),
-        tonalElevation = 4.dp,
+        tonalElevation = 0.dp,
         shadowElevation = 8.dp
     ) {
         Row(

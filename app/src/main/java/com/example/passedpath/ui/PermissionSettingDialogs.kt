@@ -58,7 +58,7 @@ private fun PermissionSettingDialogContent(
         Surface(
             shape = RoundedCornerShape(30.dp),
             color = Color.White,
-            tonalElevation = 2.dp,
+            tonalElevation = 0.dp,
             shadowElevation = 8.dp,
             modifier = Modifier.fillMaxWidth(0.95f)
         ) {

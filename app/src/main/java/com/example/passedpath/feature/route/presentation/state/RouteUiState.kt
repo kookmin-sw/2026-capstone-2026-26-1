@@ -5,6 +5,7 @@ import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiSt
 data class PlaceMarkerUiState(
     val placeId: Long,
     val placeName: String,
+    val roadAddress: String,
     val latitude: Double,
     val longitude: Double,
     val orderIndex: Int
