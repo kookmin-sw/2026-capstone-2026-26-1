@@ -43,9 +43,8 @@ public class StayAnalysisService {
         OngoingStay stay = ongoingStayRepository.findByDayRoute(dayRoute)
             .orElse(null);
 
-        Long lastAnalyzedPointId = dayRoute.getLastAnalyzedPointId();
         List<GpsPoint> newPoints = gpsPointService.getNewPoints(dayRoute,
-            lastAnalyzedPointId == null ? 0L : lastAnalyzedPointId);
+            dayRoute.getLastAnalyzedAt());
 
         // 새 점이 없을 때: 마지막 ongoing stay tail 처리
         if (newPoints.isEmpty()) {
@@ -82,7 +81,7 @@ public class StayAnalysisService {
             ongoingStayRepository.save(stay);
 
         }
-        dayRoute.completeAnalysis(newPoints.getLast().getId());
+        dayRoute.completeAnalysis(newPoints.getLast().getRecordedAt());
     }
 
     public void promoteStayToPlace(DayRoute dayRoute, double stayLatitude, double stayLongitude) {
