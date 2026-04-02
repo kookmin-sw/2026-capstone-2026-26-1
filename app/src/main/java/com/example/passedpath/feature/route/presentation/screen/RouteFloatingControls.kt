@@ -67,7 +67,7 @@ private fun RouteDistanceChip(distanceKm: Double) {
     Surface(
         shape = RoundedCornerShape(50),
         color = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.96f),
-        tonalElevation = 2.dp,
+        tonalElevation = 0.dp,
         shadowElevation = 6.dp
     ) {
         Row(
