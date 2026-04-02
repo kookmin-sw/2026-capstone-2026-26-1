@@ -22,8 +22,8 @@ public record DayRouteMonthlyResponse(
 
     @Builder
     public record DayRouteItem(
-        boolean hasLocationData,
-        boolean hasManualData,
+        boolean hasPolyline,
+        boolean hasDetails,
         boolean isBookmarked
     ) {
 

@@ -2,6 +2,7 @@ package backend.capstone.domain.place.service;
 
 import backend.capstone.domain.dayroute.entity.DayRoute;
 import backend.capstone.domain.dayroute.service.DayRouteService;
+import backend.capstone.domain.ongoingstay.service.dto.PlaceSearchResult;
 import backend.capstone.domain.place.dto.PlaceAddRequest;
 import backend.capstone.domain.place.dto.PlaceAddResponse;
 import backend.capstone.domain.place.dto.PlaceReorderRequest;
@@ -15,6 +16,7 @@ import backend.capstone.global.exception.BusinessException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -29,10 +31,10 @@ public class PlaceService {
 
     @Transactional
     public PlaceAddResponse addPlace(DayRoute dayRoute, PlaceAddRequest request) {
-        int maxOrder = placeRepository.findMaxOrderIdxByRoute(dayRoute);
-        int newOrder = maxOrder + 1;
+        int newOrder = getNewOrder(dayRoute);
 
-        Place savedPlace = placeRepository.save(PlaceMapper.toEntity(dayRoute, request, newOrder));
+        Place savedPlace = placeRepository.save(
+            PlaceMapper.toEntityByManual(dayRoute, request, newOrder));
         dayRouteService.refreshHasManualData(dayRoute);
         return PlaceMapper.toPlaceAddResponse(savedPlace);
     }
@@ -104,7 +106,23 @@ public class PlaceService {
             Place place = placeMap.get(reorderedPlaceIds.get(i));
             place.changeOrderIndex(i + 1);
         }
-
     }
 
+    @Transactional
+    public void saveAutoPlace(DayRoute dayRoute, double stayLatitude,
+        double stayLongitude, Optional<PlaceSearchResult> searchResult) {
+        int newOrder = getNewOrder(dayRoute);
+
+        Place place = searchResult
+            .map(result -> PlaceMapper.toEntityByAuto(dayRoute, result, newOrder))
+            .orElseGet(
+                () -> PlaceMapper.toUnknownAuto(dayRoute, stayLatitude, stayLongitude, newOrder));
+
+        placeRepository.save(place);
+    }
+
+    private int getNewOrder(DayRoute dayRoute) {
+        int maxOrder = placeRepository.findMaxOrderIdxByRoute(dayRoute);
+        return maxOrder + 1;
+    }
 }

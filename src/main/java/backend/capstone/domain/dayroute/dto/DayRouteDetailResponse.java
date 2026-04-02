@@ -1,5 +1,6 @@
 package backend.capstone.domain.dayroute.dto;
 
+import backend.capstone.domain.place.dto.PlaceItem;
 import java.time.LocalDate;
 import java.util.List;
 import lombok.Builder;
@@ -13,19 +14,7 @@ public record DayRouteDetailResponse(
     boolean isBookmarked,
     String encodedPath,
     Integer pathPointCount,
+    int placeCount,
     List<PlaceItem> places
 ) {
-
-    @Builder
-    public record PlaceItem(
-        Long placeId,
-        String placeName,
-        String roadAddress,
-        double latitude,
-        double longitude,
-        int orderIndex
-    ) {
-
-    }
-
 }

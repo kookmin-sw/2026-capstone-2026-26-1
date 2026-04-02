@@ -6,6 +6,7 @@ import backend.capstone.domain.dayroute.dto.GpsPointsResponse;
 import backend.capstone.domain.dayroute.entity.DayRoute;
 import backend.capstone.domain.gpspoint.entity.GpsPoint;
 import backend.capstone.domain.place.entity.Place;
+import backend.capstone.domain.place.mapper.PlaceMapper;
 import backend.capstone.domain.user.entity.User;
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -48,15 +49,9 @@ public class DayRouteMapper {
             .isBookmarked(dayRoute.isBookmarked())
             .encodedPath(dayRoute.getEncodedPath())
             .pathPointCount(dayRoute.getPathPointCount())
+            .placeCount(places.size())
             .places(places.stream()
-                .map(p -> DayRouteDetailResponse.PlaceItem.builder()
-                    .placeId(p.getId())
-                    .placeName(p.getName())
-                    .roadAddress(p.getRoadAddress())
-                    .latitude(p.getLatitude())
-                    .longitude(p.getLongitude())
-                    .orderIndex(p.getOrderIndex())
-                    .build())
+                .map(PlaceMapper::toPlaceItem)
                 .toList())
             .build();
     }
@@ -79,8 +74,8 @@ public class DayRouteMapper {
                         .dayRouteExists(dayRoute != null)
                         .dayRoute(dayRoute == null ? null
                             : DayRouteMonthlyResponse.DayRouteItem.builder()
-                                .hasLocationData(dayRoute.isHasGpsPoints())
-                                .hasManualData(dayRoute.isHasManualData())
+                                .hasPolyline(dayRoute.isHasPolyline())
+                                .hasDetails(dayRoute.isHasDetails())
                                 .isBookmarked(dayRoute.isBookmarked())
                                 .build())
                         .build();

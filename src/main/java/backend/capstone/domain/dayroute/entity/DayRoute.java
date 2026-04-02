@@ -4,6 +4,8 @@ import backend.capstone.domain.gpspoint.entity.GpsPoint;
 import backend.capstone.domain.user.entity.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -67,15 +69,24 @@ public class DayRoute {
 
     private Integer pathPointCount;
 
-    private boolean hasGpsPoints;
+    private boolean hasPolyline;
 
-    private boolean hasManualData;
+    private boolean hasDetails;
+
+    // stay 분석 flag
+    private boolean analysisNeeded;
+
+    private LocalDateTime lastAnalyzedAt;
+
+    @Enumerated(EnumType.STRING)
+    private AnalysisStatus analysisStatus;
 
     @Builder
     public DayRoute(User user, LocalDate date) {
         this.user = user;
         this.date = date;
         gpsPoints = new ArrayList<>();
+        analysisStatus = AnalysisStatus.IDLE;
     }
 
     public void updateTime(LocalDateTime startTime, LocalDateTime endTime) {
@@ -97,11 +108,11 @@ public class DayRoute {
     }
 
     public void markHasGpsPoints() {
-        this.hasGpsPoints = true;
+        this.hasPolyline = true;
     }
 
     public void updateHasManualData(boolean hasManualData) {
-        this.hasManualData = hasManualData;
+        this.hasDetails = hasManualData;
     }
 
     public boolean toggleBookmarked() {
@@ -113,4 +124,22 @@ public class DayRoute {
         this.totalDistance = distance;
     }
 
+    // 분석용 업데이트
+    public void markAnalysisNeeded() {
+        this.analysisNeeded = true;
+    }
+
+    public void markInProgressAnalysis() {
+        this.analysisStatus = AnalysisStatus.IN_PROGRESS;
+    }
+
+    public void markIdleAnalysis() {
+        this.analysisNeeded = false;
+        this.analysisStatus = AnalysisStatus.IDLE;
+    }
+
+    public void completeAnalysis(LocalDateTime recordedAt) {
+        lastAnalyzedAt = recordedAt;
+        markIdleAnalysis();
+    }
 }

@@ -68,6 +68,7 @@ public class DayRouteFacade {
 
         // 이동거리 업데이트
         dayRouteService.updateDistance(dayRoute, request.distance());
+        dayRoute.markAnalysisNeeded();
 
         return new GpsPointBatchUploadResponse("좌표 업로드에 성공했습니다.");
     }
@@ -85,7 +86,7 @@ public class DayRouteFacade {
         DayRoute dayRoute = dayRouteService.getDayRouteByDateAndUserId(date, userId);
         List<Place> places = placeService.getPlacesByDayRoute(dayRoute);
 
-        if (dayRoute.isHasGpsPoints() && dayRoute.getEncodedPath() == null) {
+        if (dayRoute.isHasPolyline() && dayRoute.getEncodedPath() == null) {
             List<GpsPoint> gpsPoints = gpsPointService.getGpsPointsByDayRouteId(dayRoute);
             String encodePath = PolylineUtil.encode(gpsPoints);
             dayRoute.updateEncodedPath(encodePath, gpsPoints.size());
