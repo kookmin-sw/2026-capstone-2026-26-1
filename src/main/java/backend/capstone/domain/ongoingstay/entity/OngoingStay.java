@@ -11,7 +11,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToOne;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import lombok.Getter;
@@ -31,11 +30,11 @@ public class OngoingStay extends BaseTimeEntity {
     @JoinColumn(name = "day_route_id")
     private DayRoute dayRoute;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "start_point_id")
     private GpsPoint startPoint;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "end_point_id")
     private GpsPoint lastPoint;
 
