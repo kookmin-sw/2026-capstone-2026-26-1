@@ -18,6 +18,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -94,6 +95,7 @@ internal fun MainMapSection(
     }
     val coroutineScope = rememberCoroutineScope()
     var isMapLoaded by remember { mutableStateOf(false) }
+    var isDebugPanelExpanded by rememberSaveable { mutableStateOf(true) }
 
     LaunchedEffect(isMapLoaded, uiState.selectedDateKey, routePoints) {
         if (shouldCenterOnRoute(isMapLoaded = isMapLoaded, routePoints = routePoints)) {
@@ -214,7 +216,9 @@ internal fun MainMapSection(
                     MainDebugPanel(
                         debugUiState = uiState.debugUiState,
                         onRefreshSystemState = debugActions.refreshSystemState,
-                        onReloadRoute = debugActions.reloadRoute
+                        onReloadRoute = debugActions.reloadRoute,
+                        isExpanded = isDebugPanelExpanded,
+                        onToggleExpanded = { isDebugPanelExpanded = !isDebugPanelExpanded }
                     )
                 }
             }
