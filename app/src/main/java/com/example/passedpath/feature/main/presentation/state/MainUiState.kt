@@ -1,6 +1,7 @@
 ﻿package com.example.passedpath.feature.main.presentation.state
 
 import com.example.passedpath.feature.permission.presentation.state.LocationPermissionUiState
+import com.example.passedpath.feature.place.domain.model.VisitedPlace
 import com.example.passedpath.feature.route.presentation.coordinator.RouteDebugSnapshot
 import com.example.passedpath.feature.route.presentation.state.MainRouteModeUiState
 import com.example.passedpath.feature.route.presentation.state.PlaceMarkerUiState
@@ -19,6 +20,7 @@ data class MainUiState(
     val hasCenteredOnCurrentLocation: Boolean = false,
     val showTrackingPermissionDialog: Boolean = false,
     val selectedDateKey: String = "",
+    val fetchedMapPlaces: List<PlaceMarkerUiState>? = null,
     val routeModeUiState: MainRouteModeUiState = MainRouteModeUiState.Today(
         route = SelectedDayRouteUiState(dateKey = "")
     ),
@@ -28,7 +30,7 @@ data class MainUiState(
         get() = routeModeUiState.route
 
     val mapPlaces: List<PlaceMarkerUiState>
-        get() = selectedRoute.markerPlaces
+        get() = fetchedMapPlaces ?: selectedRoute.markerPlaces
 
     val isRouteLoading: Boolean
         get() = routeModeUiState.isRouteLoading
@@ -93,5 +95,16 @@ internal fun createMainDebugUiState(
         isTrackingEnabledByUser = isTrackingEnabledByUser,
         lastRouteMessage = routeDebugSnapshot?.message,
         recentTrackingEvents = recentTrackingEvents
+    )
+}
+
+fun VisitedPlace.toPlaceMarkerUiState(): PlaceMarkerUiState {
+    return PlaceMarkerUiState(
+        placeId = placeId,
+        placeName = placeName,
+        roadAddress = roadAddress,
+        latitude = latitude,
+        longitude = longitude,
+        orderIndex = orderIndex
     )
 }

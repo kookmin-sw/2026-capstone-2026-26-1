@@ -92,6 +92,7 @@ class PlaceViewModel(
                 it.copy(
                     placeList = it.placeList.copy(
                         dateKey = dateKey,
+                        hasLoaded = false,
                         isLoading = false,
                         errorMessage = "날짜는 yyyy-MM-dd 형식이어야 합니다."
                     ),
@@ -366,6 +367,7 @@ class PlaceViewModel(
                 dateKey = dateKey,
                 placeList = it.placeList.copy(
                     dateKey = dateKey,
+                    hasLoaded = false,
                     isLoading = true,
                     errorMessage = null
                 ),
@@ -383,6 +385,7 @@ class PlaceViewModel(
                         dateKey = dateKey,
                         places = result.places,
                         placeCount = result.placeCount,
+                        hasLoaded = true,
                         isLoading = false,
                         errorMessage = null
                     ),
@@ -397,6 +400,7 @@ class PlaceViewModel(
                     dateKey = dateKey,
                     placeList = it.placeList.copy(
                         dateKey = dateKey,
+                        hasLoaded = false,
                         isLoading = false,
                         errorMessage = errorMessage
                     ),

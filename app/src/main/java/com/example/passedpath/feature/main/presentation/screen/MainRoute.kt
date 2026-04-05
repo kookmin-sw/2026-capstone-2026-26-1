@@ -56,7 +56,30 @@ fun MainRoute(
     }
 
     LaunchedEffect(uiState.selectedDateKey) {
+        viewModel.clearFetchedMapPlaces(uiState.selectedDateKey)
         placeViewModel.updateDateKey(uiState.selectedDateKey)
+    }
+
+    LaunchedEffect(
+        placeUiState.placeList.dateKey,
+        placeUiState.placeList.places,
+        placeUiState.placeList.hasLoaded,
+        placeUiState.placeList.isLoading,
+        placeUiState.placeList.errorMessage
+    ) {
+        val placeListState = placeUiState.placeList
+        if (placeListState.dateKey != uiState.selectedDateKey) {
+            return@LaunchedEffect
+        }
+
+        if (!placeListState.hasLoaded || placeListState.isLoading || placeListState.errorMessage != null) {
+            return@LaunchedEffect
+        }
+
+        viewModel.updateFetchedMapPlaces(
+            dateKey = placeListState.dateKey,
+            places = placeListState.places
+        )
     }
 
     LaunchedEffect(

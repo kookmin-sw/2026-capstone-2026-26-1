@@ -12,7 +12,9 @@ import com.example.passedpath.feature.main.presentation.policy.TrackingToggleDec
 import com.example.passedpath.feature.main.presentation.policy.decideTrackingToggle
 import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiState
 import com.example.passedpath.feature.main.presentation.state.MainUiState
+import com.example.passedpath.feature.main.presentation.state.toPlaceMarkerUiState
 import com.example.passedpath.feature.main.presentation.state.withDebugState
+import com.example.passedpath.feature.place.domain.model.VisitedPlace
 import com.example.passedpath.feature.permission.data.manager.LocationPermissionStatusReader
 import com.example.passedpath.feature.permission.data.manager.LocationServiceStatusReader
 import com.example.passedpath.feature.permission.presentation.policy.resolveLocationPermissionUiState
@@ -124,6 +126,30 @@ class MainViewModel(
         loadDayRoute(dateKey)
     }
 
+    fun updateFetchedMapPlaces(dateKey: String, places: List<VisitedPlace>) {
+        _uiState.update { currentState ->
+            if (currentState.selectedDateKey != dateKey) {
+                currentState
+            } else {
+                currentState.copy(
+                    fetchedMapPlaces = places
+                        .sortedBy(VisitedPlace::orderIndex)
+                        .map(VisitedPlace::toPlaceMarkerUiState)
+                )
+            }
+        }
+    }
+
+    fun clearFetchedMapPlaces(dateKey: String) {
+        _uiState.update { currentState ->
+            if (currentState.selectedDateKey != dateKey) {
+                currentState
+            } else {
+                currentState.copy(fetchedMapPlaces = null)
+            }
+        }
+    }
+
     fun handleRouteAction(action: RouteUiAction) {
         when (action) {
             RouteUiAction.RefreshTodayRoute -> loadDayRoute(_uiState.value.selectedDateKey)
@@ -162,6 +188,11 @@ class MainViewModel(
                 _uiState.update { currentState ->
                     currentState.copy(
                         selectedDateKey = routeState.selectedDateKey,
+                        fetchedMapPlaces = if (currentState.selectedDateKey == routeState.selectedDateKey) {
+                            currentState.fetchedMapPlaces
+                        } else {
+                            null
+                        },
                         routeModeUiState = routeState.routeModeUiState
                             .withTrackingState(trackingServiceStateReader.isTracking.value),
                         hasCenteredOnCurrentLocation = false

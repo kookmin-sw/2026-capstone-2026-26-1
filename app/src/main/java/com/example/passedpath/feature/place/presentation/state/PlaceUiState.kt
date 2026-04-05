@@ -51,6 +51,7 @@ data class PlaceListUiState(
     val dateKey: String = "",
     val places: List<VisitedPlace> = emptyList(),
     val placeCount: Int = 0,
+    val hasLoaded: Boolean = false,
     val isLoading: Boolean = false,
     val errorMessage: String? = null
 )
