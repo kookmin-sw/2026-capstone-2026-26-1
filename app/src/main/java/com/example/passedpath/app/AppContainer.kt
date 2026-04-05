@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.example.passedpath.data.datastore.AuthSessionStorage
 import com.example.passedpath.data.network.RetrofitClient
+import com.example.passedpath.debug.TrackingDiagnosticsLogger
 import com.example.passedpath.feature.auth.data.manager.AuthTokenManager
 import com.example.passedpath.feature.auth.data.remote.api.AuthApi
 import com.example.passedpath.feature.auth.data.repository.AuthRepository
@@ -26,12 +27,15 @@ import com.example.passedpath.feature.locationtracking.data.manager.PersistentLo
 import com.example.passedpath.feature.locationtracking.data.manager.TrackingLocationProvider
 import com.example.passedpath.feature.locationtracking.data.remote.api.DayRouteApi
 import com.example.passedpath.feature.locationtracking.data.repository.RoomDayRouteRepository
+import com.example.passedpath.feature.locationtracking.data.repository.RoomTrackingDebugLogRepository
 import com.example.passedpath.feature.locationtracking.data.repository.RoomLocationTrackingRepository
 import com.example.passedpath.feature.locationtracking.domain.policy.FixedTrackingDayBoundaryTimeProvider
 import com.example.passedpath.feature.locationtracking.domain.policy.TrackingDateKeyResolver
 import com.example.passedpath.feature.locationtracking.domain.repository.DayRouteRepository
 import com.example.passedpath.feature.locationtracking.domain.repository.LocationTrackingRepository
+import com.example.passedpath.feature.locationtracking.domain.repository.TrackingDebugLogRepository
 import com.example.passedpath.feature.locationtracking.domain.tracker.LocationTracker
+import com.example.passedpath.feature.locationtracking.domain.usecase.ObserveRecentTrackingEventsUseCase
 import com.example.passedpath.feature.locationtracking.domain.usecase.StartLocationTrackingUseCase
 import com.example.passedpath.feature.locationtracking.domain.usecase.StopLocationTrackingUseCase
 import com.example.passedpath.feature.locationtracking.domain.usecase.UploadGpsPointsBatchUseCase
@@ -94,7 +98,9 @@ class AppContainer(
             appContext,
             PassedPathDatabase::class.java,
             "passed-path.db"
-        ).build()
+        )
+            .addMigrations(PassedPathDatabase.MIGRATION_1_2)
+            .build()
     }
 
     val trackingDayBoundaryTimeProvider by lazy {
@@ -141,11 +147,26 @@ class AppContainer(
         retrofit.create(PlaceApi::class.java)
     }
 
+    val trackingDebugLogRepository: TrackingDebugLogRepository by lazy {
+        RoomTrackingDebugLogRepository(
+            trackingDebugLogDao = trackingDatabase.trackingDebugLogDao()
+        )
+    }
+
+    val trackingDiagnosticsLogger: TrackingDiagnosticsLogger by lazy {
+        TrackingDiagnosticsLogger(repository = trackingDebugLogRepository)
+    }
+
+    val observeRecentTrackingEventsUseCase: ObserveRecentTrackingEventsUseCase by lazy {
+        ObserveRecentTrackingEventsUseCase(trackingDebugLogRepository = trackingDebugLogRepository)
+    }
+
     val locationTrackingRepository: LocationTrackingRepository by lazy {
         RoomLocationTrackingRepository(
             gpsPointDao = trackingDatabase.gpsPointDao(),
             dayRouteDao = trackingDatabase.dayRouteDao(),
-            dateKeyResolver = trackingDateKeyResolver
+            dateKeyResolver = trackingDateKeyResolver,
+            diagnosticsLogger = trackingDiagnosticsLogger
         )
     }
 
@@ -210,7 +231,8 @@ class AppContainer(
         UploadGpsPointsBatchUseCase(
             dayRouteApi = dayRouteApi,
             locationTrackingRepository = locationTrackingRepository,
-            dayRouteRepository = dayRouteRepository
+            dayRouteRepository = dayRouteRepository,
+            diagnosticsLogger = trackingDiagnosticsLogger
         )
     }
 

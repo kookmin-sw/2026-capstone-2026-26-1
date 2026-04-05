@@ -7,6 +7,7 @@ import android.os.IBinder
 import android.util.Log
 import androidx.core.content.ContextCompat
 import com.example.passedpath.app.appContainer
+import com.example.passedpath.debug.TrackingDiagnosticsLogger
 import com.example.passedpath.feature.locationtracking.domain.policy.LocationTrackingPolicy
 import com.example.passedpath.feature.locationtracking.domain.policy.TrackingDateKeyResolver
 import com.example.passedpath.feature.locationtracking.domain.tracker.LocationTrackingSession
@@ -30,15 +31,18 @@ class LocationTrackingService : Service() {
     private lateinit var notificationFactory: TrackingNotificationFactory
     private lateinit var dateKeyResolver: TrackingDateKeyResolver
     private lateinit var serviceStateWriter: LocationTrackingServiceStateWriter
+    private lateinit var diagnosticsLogger: TrackingDiagnosticsLogger
     private var trackingSession: LocationTrackingSession? = null
     private var periodicUploadJob: Job? = null
     private var preBoundaryUploadJob: Job? = null
+    private var lastLocationCallbackAtEpochMillis: Long? = null
 
     override fun onCreate() {
         super.onCreate()
         notificationFactory = TrackingNotificationFactory(this)
         dateKeyResolver = applicationContext.appContainer.trackingDateKeyResolver
         serviceStateWriter = applicationContext.appContainer.locationTrackingServiceStateWriter
+        diagnosticsLogger = applicationContext.appContainer.trackingDiagnosticsLogger
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -62,6 +66,12 @@ class LocationTrackingService : Service() {
         if (trackingSession != null) return
 
         Log.i(TAG, "Starting location tracking service")
+        serviceScope.launch {
+            diagnosticsLogger.log(
+                category = TrackingDiagnosticsLogger.CATEGORY_SERVICE,
+                message = "start_tracking_service"
+            )
+        }
         notificationFactory.ensureTrackingChannel()
         startForeground(
             TrackingNotificationFactory.NOTIFICATION_ID,
@@ -74,6 +84,8 @@ class LocationTrackingService : Service() {
         trackingSession = appContainer.trackingLocationTracker.startLocationUpdates { trackedLocation ->
             serviceScope.launch {
                 val dateKey = dateKeyResolver.resolveDateKey(trackedLocation.recordedAtEpochMillis)
+                lastLocationCallbackAtEpochMillis = System.currentTimeMillis()
+                diagnosticsLogger.logLocationCallback(dateKey, trackedLocation)
                 appContainer.locationTrackingRepository.saveRawLocation(trackedLocation)
                 Log.d(TAG, "Saved location for dateKey=$dateKey recordedAt=${trackedLocation.recordedAtEpochMillis}")
 
@@ -107,6 +119,12 @@ class LocationTrackingService : Service() {
         preBoundaryUploadJob?.cancel()
         preBoundaryUploadJob = null
         serviceStateWriter.update(isTracking = false)
+        serviceScope.launch {
+            diagnosticsLogger.log(
+                category = TrackingDiagnosticsLogger.CATEGORY_SERVICE,
+                message = "stop_tracking_service"
+            )
+        }
         Log.i(TAG, "Stopped location tracking service")
     }
 
@@ -118,6 +136,23 @@ class LocationTrackingService : Service() {
                 val currentDateKey = dateKeyResolver.resolveCurrentDateKey()
                 val previousDateKey = dateKeyResolver.resolvePreviousDateKey()
                 Log.d(TAG, "Periodic upload tick currentDateKey=$currentDateKey previousDateKey=$previousDateKey")
+                val lastCallbackAtEpochMillis = lastLocationCallbackAtEpochMillis
+                if (lastCallbackAtEpochMillis == null) {
+                    diagnosticsLogger.log(
+                        category = TrackingDiagnosticsLogger.CATEGORY_CALLBACK,
+                        message = "gap_no_callback_since_service_start",
+                        dateKey = currentDateKey
+                    )
+                } else {
+                    val silenceMillis = System.currentTimeMillis() - lastCallbackAtEpochMillis
+                    if (silenceMillis >= LocationTrackingPolicy.LOCATION_UPDATE_INTERVAL_MS * 2) {
+                        diagnosticsLogger.log(
+                            category = TrackingDiagnosticsLogger.CATEGORY_CALLBACK,
+                            message = "gap_since_last_callback_ms=$silenceMillis",
+                            dateKey = currentDateKey
+                        )
+                    }
+                }
 
                 val didUploadPrevious = uploadPendingPoints(previousDateKey)
                 val didUploadCurrent = uploadPendingPoints(currentDateKey)
@@ -184,6 +219,11 @@ class LocationTrackingService : Service() {
                 didUpload
             } catch (throwable: Throwable) {
                 Log.e(TAG, "Upload failed for dateKey=$dateKey", throwable)
+                diagnosticsLogger.log(
+                    category = TrackingDiagnosticsLogger.CATEGORY_UPLOAD,
+                    message = "failure cause=${throwable::class.java.simpleName}: ${throwable.message}",
+                    dateKey = dateKey
+                )
                 false
             }
         }

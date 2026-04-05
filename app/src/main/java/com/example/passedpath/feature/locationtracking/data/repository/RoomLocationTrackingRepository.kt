@@ -1,5 +1,6 @@
 package com.example.passedpath.feature.locationtracking.data.repository
 
+import com.example.passedpath.debug.TrackingDiagnosticsLogger
 import com.example.passedpath.feature.locationtracking.data.local.dao.DayRouteDao
 import com.example.passedpath.feature.locationtracking.data.local.dao.GpsPointDao
 import com.example.passedpath.feature.locationtracking.data.local.mapper.distanceBetweenMeters
@@ -18,7 +19,8 @@ import kotlinx.coroutines.flow.combine
 class RoomLocationTrackingRepository(
     private val gpsPointDao: GpsPointDao,
     private val dayRouteDao: DayRouteDao,
-    private val dateKeyResolver: TrackingDateKeyResolver
+    private val dateKeyResolver: TrackingDateKeyResolver,
+    private val diagnosticsLogger: TrackingDiagnosticsLogger
 ) : LocationTrackingRepository {
 
     override suspend fun saveRawLocation(location: TrackedLocation) {
@@ -32,6 +34,11 @@ class RoomLocationTrackingRepository(
             location.accuracyMeters != null &&
             location.accuracyMeters > LocationTrackingPolicy.MAX_ACCEPTABLE_ACCURACY_METERS
         ) {
+            diagnosticsLogger.log(
+                category = TrackingDiagnosticsLogger.CATEGORY_SAVE,
+                message = "drop_accuracy accuracy=${location.accuracyMeters} max=${LocationTrackingPolicy.MAX_ACCEPTABLE_ACCURACY_METERS}",
+                dateKey = dateKey
+            )
             return
         }
 
@@ -41,6 +48,11 @@ class RoomLocationTrackingRepository(
         if (latestSavedPoint != null) {
             val movedDistanceMeters = distanceBetweenMeters(latestSavedPoint, location)
             if (movedDistanceMeters < LocationTrackingPolicy.MIN_SAVE_DISTANCE_METERS) {
+                diagnosticsLogger.log(
+                    category = TrackingDiagnosticsLogger.CATEGORY_SAVE,
+                    message = "drop_distance moved=$movedDistanceMeters min=${LocationTrackingPolicy.MIN_SAVE_DISTANCE_METERS}",
+                    dateKey = dateKey
+                )
                 return
             }
         }
@@ -55,6 +67,11 @@ class RoomLocationTrackingRepository(
                 newPoint = location,
                 previousPoint = latestSavedPoint
             )
+        )
+        diagnosticsLogger.log(
+            category = TrackingDiagnosticsLogger.CATEGORY_SAVE,
+            message = "saved accuracy=${location.accuracyMeters} recordedAt=${location.recordedAtEpochMillis}",
+            dateKey = dateKey
         )
     }
 

@@ -74,6 +74,13 @@ internal fun MainDebugPanel(
                 style = MaterialTheme.typography.bodySmall
             )
         }
+        debugUiState.recentTrackingEvents.forEach { event ->
+            Text(
+                text = event,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.End

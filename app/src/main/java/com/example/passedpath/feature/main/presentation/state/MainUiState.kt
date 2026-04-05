@@ -52,7 +52,8 @@ data class MainDebugUiState(
     val isLocationServiceEnabled: Boolean = false,
     val isTrackingActive: Boolean = false,
     val isTrackingEnabledByUser: Boolean = true,
-    val lastRouteMessage: String? = null
+    val lastRouteMessage: String? = null,
+    val recentTrackingEvents: List<String> = emptyList()
 )
 
 internal fun createMainDebugUiState(
@@ -62,7 +63,8 @@ internal fun createMainDebugUiState(
     isLocationServiceEnabled: Boolean,
     isTrackingActive: Boolean,
     isTrackingEnabledByUser: Boolean,
-    routeDebugSnapshot: RouteDebugSnapshot?
+    routeDebugSnapshot: RouteDebugSnapshot?,
+    recentTrackingEvents: List<String> = emptyList()
 ): MainDebugUiState {
     val defaultSource = when (routeModeUiState) {
         is MainRouteModeUiState.Today -> "local"
@@ -89,6 +91,7 @@ internal fun createMainDebugUiState(
         isLocationServiceEnabled = isLocationServiceEnabled,
         isTrackingActive = isTrackingActive,
         isTrackingEnabledByUser = isTrackingEnabledByUser,
-        lastRouteMessage = routeDebugSnapshot?.message
+        lastRouteMessage = routeDebugSnapshot?.message,
+        recentTrackingEvents = recentTrackingEvents
     )
 }

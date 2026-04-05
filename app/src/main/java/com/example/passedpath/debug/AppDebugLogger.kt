@@ -20,5 +20,6 @@ object DebugLogTag {
     const val MAIN_FLOW = "MainFlow"
     const val ROUTE_LOAD = "RouteLoad"
     const val TRACKING = "Tracking"
+    const val TRACKING_DIAGNOSTICS = "TrackingDiag"
     const val PERMISSION = "Permission"
 }

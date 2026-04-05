@@ -8,6 +8,7 @@ import com.example.passedpath.feature.locationtracking.domain.model.RoutePoint
 import com.example.passedpath.feature.locationtracking.domain.model.TrackedLocation
 import com.example.passedpath.feature.locationtracking.domain.repository.DayRouteRepository
 import com.example.passedpath.feature.locationtracking.domain.repository.RemoteDayRouteResult
+import com.example.passedpath.feature.locationtracking.domain.usecase.ObserveRecentTrackingEventsUseCase
 import com.example.passedpath.feature.permission.presentation.mapper.createPermissionOverlayUiModel
 import com.example.passedpath.feature.permission.presentation.state.LocationPermissionUiState
 import com.example.passedpath.feature.permission.data.manager.LocationPermissionStatusReader
@@ -21,6 +22,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -471,6 +473,7 @@ class MainViewModelTest {
                 dayRouteRepository = repository,
                 todayDateKeyProvider = { todayDateKey }
             ),
+            observeRecentTrackingEvents = FakeObserveRecentTrackingEventsUseCase(),
             trackingServiceStateReader = FakeLocationTrackingServiceStateReader(trackingState),
             startTracking = onStartTracking,
             stopTracking = onStopTracking
@@ -528,6 +531,12 @@ class MainViewModelTest {
             return resultByDate[dateKey]
                 ?: error("No fake result prepared for $dateKey")
         }
+    }
+
+    private class FakeObserveRecentTrackingEventsUseCase : ObserveRecentTrackingEventsUseCase(
+        trackingDebugLogRepository = error("unused")
+    ) {
+        override fun invoke(limit: Int): Flow<List<String>> = flowOf(emptyList())
     }
 }
 

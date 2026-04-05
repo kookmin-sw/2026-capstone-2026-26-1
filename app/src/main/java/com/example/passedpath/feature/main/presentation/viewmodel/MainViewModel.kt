@@ -7,6 +7,7 @@ import com.example.passedpath.app.AppContainer
 import com.example.passedpath.debug.AppDebugLogger
 import com.example.passedpath.debug.DebugLogTag
 import com.example.passedpath.feature.locationtracking.data.manager.LocationTrackingServiceStateReader
+import com.example.passedpath.feature.locationtracking.domain.usecase.ObserveRecentTrackingEventsUseCase
 import com.example.passedpath.feature.main.presentation.policy.TrackingToggleDecision
 import com.example.passedpath.feature.main.presentation.policy.decideTrackingToggle
 import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiState
@@ -35,6 +36,7 @@ class MainViewModel(
     private val locationServiceStatusReader: LocationServiceStatusReader,
     initialDateKeyProvider: () -> String = ::todayDateKey,
     private val routeStateCoordinator: RouteStateCoordinator,
+    private val observeRecentTrackingEvents: ObserveRecentTrackingEventsUseCase,
     private val trackingServiceStateReader: LocationTrackingServiceStateReader,
     private val startTracking: () -> Unit,
     private val stopTracking: () -> Unit
@@ -61,6 +63,7 @@ class MainViewModel(
         refreshPermissionState()
         refreshLocationServiceState()
         observeTrackingState()
+        observeTrackingDebugLogs()
         loadDayRoute(initialDateKey)
     }
 
@@ -190,6 +193,19 @@ class MainViewModel(
         }
     }
 
+    private fun observeTrackingDebugLogs() {
+        viewModelScope.launch {
+            observeRecentTrackingEvents(limit = 5).collectLatest { recentEvents ->
+                _uiState.update { currentState ->
+                    currentState.withDebugState(
+                        isTrackingEnabledByUser = userTrackingEnabled(),
+                        recentTrackingEvents = recentEvents
+                    )
+                }
+            }
+        }
+    }
+
     private fun toggleTracking() {
         val decision = decideTrackingToggle(
             permissionState = _uiState.value.permissionState,
@@ -243,6 +259,7 @@ class MainViewModelFactory(
                     dayRouteRepository = appContainer.dayRouteRepository,
                     todayDateKeyProvider = ::todayDateKey
                 ),
+                observeRecentTrackingEvents = appContainer.observeRecentTrackingEventsUseCase,
                 trackingServiceStateReader = appContainer.locationTrackingServiceStateReader,
                 startTracking = appContainer.startLocationTrackingUseCase::invoke,
                 stopTracking = appContainer.stopLocationTrackingUseCase::invoke
