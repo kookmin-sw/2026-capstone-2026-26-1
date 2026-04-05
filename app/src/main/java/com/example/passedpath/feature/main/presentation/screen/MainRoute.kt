@@ -58,6 +58,7 @@ fun MainRoute(
     LaunchedEffect(uiState.selectedDateKey) {
         viewModel.clearFetchedMapPlaces(uiState.selectedDateKey)
         placeViewModel.updateDateKey(uiState.selectedDateKey)
+        placeViewModel.fetchVisitedPlaces(uiState.selectedDateKey)
     }
 
     LaunchedEffect(

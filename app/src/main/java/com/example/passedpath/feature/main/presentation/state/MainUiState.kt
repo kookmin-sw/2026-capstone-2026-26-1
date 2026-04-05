@@ -30,7 +30,7 @@ data class MainUiState(
         get() = routeModeUiState.route
 
     val mapPlaces: List<PlaceMarkerUiState>
-        get() = fetchedMapPlaces ?: selectedRoute.markerPlaces
+        get() = fetchedMapPlaces.orEmpty()
 
     val isRouteLoading: Boolean
         get() = routeModeUiState.isRouteLoading

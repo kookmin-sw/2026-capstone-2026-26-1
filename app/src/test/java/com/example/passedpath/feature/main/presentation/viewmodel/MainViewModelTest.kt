@@ -84,7 +84,7 @@ class MainViewModelTest {
         assertEquals("Han River", state.selectedRoute.title)
         assertEquals("Windy evening walk", state.selectedRoute.memo)
         assertEquals(3, state.selectedRoute.polylinePoints.size)
-        assertEquals(1, state.mapPlaces.size)
+        assertTrue(state.mapPlaces.isEmpty())
         assertEquals(1, state.selectedRoute.places.size)
         assertEquals(listOf("2026-03-29"), repository.requestedRemoteDates)
         assertTrue(repository.observedLocalDates.isEmpty())
@@ -125,7 +125,7 @@ class MainViewModelTest {
         assertEquals(2, state.selectedRoute.polylinePoints.size)
         assertEquals(1.5, state.selectedRoute.totalDistanceKm, 0.0)
         assertEquals(listOf("2026-03-31"), repository.observedLocalDates)
-        assertTrue(repository.requestedRemoteDates.isEmpty())
+        assertEquals(listOf("2026-03-31"), repository.requestedRemoteDates)
     }
 
     @Test
@@ -516,7 +516,7 @@ class MainViewModelTest {
     }
 
     @Test
-    fun `selectDate clears fetched markers and falls back to next route seed`() = runTest {
+    fun `selectDate clears fetched markers until places are fetched again`() = runTest {
         val repository = FakeDayRouteRepository(
             resultByDate = mutableMapOf(
                 "2026-03-29" to RemoteDayRouteResult.Success(
@@ -576,7 +576,7 @@ class MainViewModelTest {
 
         val state = viewModel.uiState.value
         assertEquals("2026-03-30", state.selectedDateKey)
-        assertEquals(listOf(2L), state.mapPlaces.map { it.placeId })
+        assertTrue(state.mapPlaces.isEmpty())
         assertNull(state.fetchedMapPlaces)
     }
 
@@ -658,7 +658,7 @@ class MainViewModelTest {
         override suspend fun fetchRemoteDayRoute(dateKey: String): RemoteDayRouteResult {
             requestedRemoteDates += dateKey
             return resultByDate[dateKey]
-                ?: error("No fake result prepared for $dateKey")
+                ?: RemoteDayRouteResult.Empty
         }
     }
 

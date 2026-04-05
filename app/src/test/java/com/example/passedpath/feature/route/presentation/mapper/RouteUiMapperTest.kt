@@ -100,4 +100,39 @@ class RouteUiMapperTest {
         assertEquals("선택한 날짜의 경로를 불러오지 못했습니다.", state.routeErrorMessage)
         assertFalse(state.isRouteLoading)
     }
+
+    @Test
+    fun `today route ui state combines local path with remote read data`() {
+        val dailyPath = DailyPath(
+            dateKey = "2026-04-01",
+            points = listOf(
+                TrackedLocation(37.1, 127.1, 5f, 1L),
+                TrackedLocation(37.2, 127.2, 5f, 2L)
+            ),
+            totalDistanceMeters = 2450.0,
+            pathPointCount = 2
+        )
+        val routeDetail = DayRouteDetail(
+            dateKey = "2026-04-01",
+            totalDistanceKm = 0.0,
+            title = "Today Title",
+            memo = "Today Memo",
+            places = listOf(
+                DayRoutePlace(10L, "Seed Place", "Road", 37.3, 127.3, 1)
+            )
+        )
+
+        val uiState = createTodaySelectedDayRouteUiState(
+            dateKey = "2026-04-01",
+            dailyPath = dailyPath,
+            remoteRouteDetail = routeDetail
+        )
+
+        assertEquals("2026-04-01", uiState.dateKey)
+        assertEquals("Today Title", uiState.title)
+        assertEquals("Today Memo", uiState.memo)
+        assertEquals(2, uiState.polylinePoints.size)
+        assertEquals(2.45, uiState.totalDistanceKm, 0.0)
+        assertEquals(1, uiState.markerPlaces.size)
+    }
 }

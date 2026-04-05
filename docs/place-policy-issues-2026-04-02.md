@@ -10,20 +10,28 @@ Project: PassedPath Android app
 
 ## Current code baseline
 - `feature/main` owns screen composition.
-- `feature/route` owns route loading and the initial route-owned marker seed.
-- `feature/place` now owns place write APIs and the new place-list read flow.
-- Initial map markers are still derived from `dayroute/{date}` route data.
-- The place bottom sheet now reads from place-list state instead of reading directly from `selectedRoute.places`.
+- `feature/route` owns route loading and route-specific read composition.
+- `feature/place` owns place write APIs and place-list read flow.
+- Map markers and the place bottom sheet now both read place data from the place-list API state.
+- `dayroute/{date}` is still used for route path and daynote read data.
 
 ## Agreed policy summary
-- Initial map markers come from `dayroute/{date}`.
-- That initial place data is treated as a first-render marker seed.
-- When the place bottom sheet opens, the app calls `GET /api/day-routes/{date}/places`.
-- After place-list fetch succeeds, that result becomes the latest source of truth for the place sheet.
+- Place data for both map markers and the place bottom sheet comes from `GET /api/day-routes/{date}/places`.
+- The app fetches the place list on selected-date entry and refreshes it again when the place sheet opens.
+- After place-list fetch succeeds, that result is the single source of truth for both map and sheet place rendering.
 - Place identity is always matched by `placeId`.
 - Place ordering is always based on server-provided `orderIndex`.
 - After place CRUD succeeds, the app should refresh via the place-list API rather than reloading place state from `dayroute/{date}`.
-- A short mismatch is allowed right after initial screen entry, but after place-list fetch succeeds, map and sheet should converge to the same place set.
+- `dayroute/{date}` place payload is no longer used as the UI source of truth for place rendering.
+
+## Today-date read policy
+- For today:
+  - route path, distance, and path point count come from local Room-backed route data
+  - title and memo come from remote `dayroute/{date}` read data
+  - place data for map and sheet comes from `GET /api/day-routes/{date}/places`
+- For past dates:
+  - route path, title, and memo come from remote `dayroute/{date}`
+  - place data for map and sheet comes from `GET /api/day-routes/{date}/places`
 
 ## Shared interaction state
 - `selectedDateKey`
@@ -55,14 +63,18 @@ Status: Done
 - DTO slimming is explicitly deferred; responsibility split was prioritized first.
 
 ## Issue 2. Keep initial map-marker rendering on dayroute
-Status: Done
+Status: Reframed
 
 ### What was implemented
 - Route-owned marker state was made explicit.
 - `SelectedDayRouteUiState` now exposes `markerPlaces` as the route-owned marker seed.
 - `MainUiState` exposes `mapPlaces` for the map layer.
 - `RouteMapContent` now renders markers from `mapPlaces`.
-- Initial marker rendering still comes from `dayroute/{date}` and remains available before the place sheet is opened.
+
+### Current decision
+- The earlier route-seed split was useful for clarifying responsibilities, but the current UI policy is simpler:
+  - map markers and place sheet now both use the place-list API as the read source of truth
+  - route-owned place seed is no longer the active UI rendering source
 
 ### Applied files
 - `app/src/main/java/com/example/passedpath/feature/route/presentation/state/RouteUiState.kt`
@@ -87,11 +99,12 @@ Status: In progress
   - `isLoading`
   - `errorMessage`
 - `MainRoute` now creates and provides `PlaceViewModel`.
+- `MainRoute` now also fetches the place list on selected-date entry, so place data can render before the sheet is opened.
 - `MainScreen` triggers place-list refresh when:
   - the selected tab is `PLACE`
   - the bottom sheet is not collapsed
 - Place add/update/delete/reorder success now refreshes via `GET /api/day-routes/{date}/places` instead of relying on generic same-date re-selection.
-- `PlaceBottomSheetContent` now renders from place-list state instead of route place markers.
+- `PlaceBottomSheetContent` now renders only from place-list state.
 - Loading, error, empty, and success branches were added to the place sheet.
 
 ### Applied files
@@ -120,33 +133,38 @@ Status: In progress
 - `compileDebugKotlin` passed after the main/place integration.
 
 ### What is still open
-- Mutation-followed-by-refresh coverage still needs to be added in tests.
+- Place-list retry UX is still minimal.
 - UX validation and visual polish are intentionally deferred until the place issue flow is functionally complete.
 
 ## Issue 4. Synchronize map markers and place-sheet list after place-list fetch
-Status: Not started
+Status: In progress
 
-### Next goal
-- After place-list fetch succeeds, feed the same result into map marker state.
-- Move from:
-  - route seed for initial markers only
-- To:
-  - route seed first
-  - place-list result as the latest shared place state after sheet fetch
+### What is done
+- After place-list fetch succeeds, the same result is now fed into map marker state.
+- Map markers no longer depend on route place seed for rendering.
+- Marker rendering was decoupled from polyline presence, so place markers can render even when the route line is empty.
+
+### What is still open
+- `selectedPlaceId` state and marker-to-sheet focus interaction are not implemented yet.
+- Marker tap should eventually open the sheet and focus the matching place card.
 
 ## Issue 5. Re-fetch flow after add, update, delete, reorder
 Status: Partially started
 
-### Next goal
-- Mutation success now refreshes the place-list API for sheet state.
-- The next step is to use that refreshed result to update both map and sheet state.
+### Current status
+- Mutation success now refreshes the place-list API.
+- That refreshed result is now used for both map and sheet place state.
+
+### What is still open
+- Marker selection state still needs to survive the mutation-followed-by-refresh cycle cleanly.
 
 ## Issue 6. Date-switch and lifecycle fetch policy
 Status: Partially started
 
 ### What is already applied
 - On selected-date change, `MainRoute` updates `PlaceViewModel` with the new date key.
-- Place-sheet fetch is already tied to selected date and sheet open state.
+- Place-list fetch now happens on selected-date entry and again on place-sheet open.
+- Map markers are cleared and repopulated through place-list state on date change.
 
 ### What is still open
 - Re-entry and resume policy is not finalized.
@@ -164,11 +182,12 @@ Status: In progress
   - invalid date rejection
   - fetch failure
   - date-key reset behavior
+- Mutation-followed-by-refresh tests were added for place viewmodel.
+- Main viewmodel tests cover fetched marker override and date-change reset.
 
 ### What is still open
 - Bottom-sheet-open trigger coverage
 - marker-to-sheet interaction coverage
-- CRUD-followed-by-refresh coverage
 - end-to-end QA scenarios for sheet refresh and marker synchronization
 
 ## Future work note
@@ -177,6 +196,6 @@ Status: In progress
 
 ## Guardrails
 - `feature/main` should remain a composition layer.
-- `feature/route` should remain responsible for initial route data and initial marker seed only.
+- `feature/route` should remain responsible for route path loading and route read composition.
 - `feature/place` should own place read/write rules and place-list freshness behavior.
-- Do not grow `dayroute/{date}` back into the bottom-sheet source of truth.
+- Do not grow `dayroute/{date}` back into the map or bottom-sheet place source of truth.

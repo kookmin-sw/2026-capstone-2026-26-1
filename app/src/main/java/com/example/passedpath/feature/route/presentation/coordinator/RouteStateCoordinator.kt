@@ -9,6 +9,7 @@ import com.example.passedpath.feature.route.presentation.mapper.createLoadingRou
 import com.example.passedpath.feature.route.presentation.mapper.createPastEmptyRouteMode
 import com.example.passedpath.feature.route.presentation.mapper.createPastErrorRouteMode
 import com.example.passedpath.feature.route.presentation.mapper.createPastRouteMode
+import com.example.passedpath.feature.route.presentation.mapper.createTodaySelectedDayRouteUiState
 import com.example.passedpath.feature.route.presentation.mapper.createTodayEmptyRouteMode
 import com.example.passedpath.feature.route.presentation.mapper.createTodayRouteMode
 import com.example.passedpath.feature.route.presentation.mapper.toSelectedDayRouteUiState
@@ -49,12 +50,18 @@ class RouteStateCoordinator(
         )
 
         if (isTodayRoute) {
+            val remoteRouteDetail = when (val remoteResult = dayRouteRepository.fetchRemoteDayRoute(dateKey)) {
+                is RemoteDayRouteResult.Success -> remoteResult.routeDetail
+                RemoteDayRouteResult.Empty -> null
+                is RemoteDayRouteResult.Error -> null
+            }
             AppDebugLogger.debug(
                 DebugLogTag.ROUTE_LOAD,
                 "observe local route dateKey=$dateKey"
             )
             dayRouteRepository.observeLocalDayRoute(dateKey).collect { dailyPath ->
-                val routeState = if (dailyPath == null) {
+                val hasRemoteReadData = remoteRouteDetail != null
+                val routeState = if (dailyPath == null && !hasRemoteReadData) {
                     AppDebugLogger.debug(
                         DebugLogTag.ROUTE_LOAD,
                         "local route empty dateKey=$dateKey"
@@ -67,11 +74,17 @@ class RouteStateCoordinator(
                 } else {
                     AppDebugLogger.debug(
                         DebugLogTag.ROUTE_LOAD,
-                        "local route success dateKey=$dateKey points=${dailyPath.pathPointCount}"
+                        "today route success dateKey=$dateKey localPoints=${dailyPath?.pathPointCount ?: 0} remoteSeed=$hasRemoteReadData"
                     )
                     RouteLoadState(
                         selectedDateKey = dateKey,
-                        routeModeUiState = createTodayRouteMode(route = dailyPath.toSelectedDayRouteUiState()),
+                        routeModeUiState = createTodayRouteMode(
+                            route = createTodaySelectedDayRouteUiState(
+                                dateKey = dateKey,
+                                dailyPath = dailyPath,
+                                remoteRouteDetail = remoteRouteDetail
+                            )
+                        ),
                         debugSnapshot = createTodayRouteDebugSnapshot(dailyPath)
                     )
                 }

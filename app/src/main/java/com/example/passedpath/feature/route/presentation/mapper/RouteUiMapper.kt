@@ -101,6 +101,24 @@ internal fun DailyPath.toSelectedDayRouteUiState(): SelectedDayRouteUiState {
     )
 }
 
+internal fun createTodaySelectedDayRouteUiState(
+    dateKey: String,
+    dailyPath: DailyPath?,
+    remoteRouteDetail: DayRouteDetail?
+): SelectedDayRouteUiState {
+    val remoteRouteUiState = remoteRouteDetail?.toSelectedDayRouteUiState()
+
+    return SelectedDayRouteUiState(
+        dateKey = dateKey,
+        title = remoteRouteUiState?.title.orEmpty(),
+        memo = remoteRouteUiState?.memo.orEmpty(),
+        polylinePoints = dailyPath?.points?.map(TrackedLocation::toMainCoordinateUiState).orEmpty(),
+        totalDistanceKm = (dailyPath?.totalDistanceMeters ?: 0.0) / 1000.0,
+        pathPointCount = dailyPath?.pathPointCount ?: 0,
+        markerPlaces = remoteRouteUiState?.markerPlaces.orEmpty()
+    )
+}
+
 internal fun DayRouteDetail.toSelectedDayRouteUiState(): SelectedDayRouteUiState {
     return SelectedDayRouteUiState(
         dateKey = dateKey,
