@@ -54,6 +54,7 @@ import com.example.passedpath.feature.place.domain.usecase.GetVisitedPlacesUseCa
 import com.example.passedpath.feature.place.domain.usecase.ReorderPlacesUseCase
 import com.example.passedpath.feature.place.domain.usecase.UpdateBookmarkPlaceUseCase
 import com.example.passedpath.feature.place.domain.usecase.UpdatePlaceUseCase
+import com.example.passedpath.interceptor.AccessTokenAuthenticator
 import java.time.LocalTime
 
 class AppContainer(
@@ -115,8 +116,32 @@ class AppContainer(
         )
     }
 
+    private val refreshRetrofit by lazy {
+        RetrofitClient.provideRetrofit(
+            sessionStorage = authSessionStorage,
+            attachAuthorizationToRefreshRequest = true
+        )
+    }
+
+    private val refreshAuthApi by lazy {
+        refreshRetrofit.create(AuthApi::class.java)
+    }
+
+    private val authTokenManager by lazy {
+        AuthTokenManager(
+            authApi = refreshAuthApi,
+            sessionStorage = authSessionStorage
+        )
+    }
+
     private val retrofit by lazy {
-        RetrofitClient.provideRetrofit(authSessionStorage)
+        RetrofitClient.provideRetrofit(
+            sessionStorage = authSessionStorage,
+            authenticator = AccessTokenAuthenticator(
+                sessionStorage = authSessionStorage,
+                tokenManager = authTokenManager
+            )
+        )
     }
 
     private val authApi by lazy {
@@ -189,13 +214,6 @@ class AppContainer(
         StopLocationTrackingUseCase(
             context = appContext,
             trackingServiceStateWriter = locationTrackingServiceStateWriter
-        )
-    }
-
-    private val authTokenManager by lazy {
-        AuthTokenManager(
-            authApi = authApi,
-            sessionStorage = authSessionStorage
         )
     }
 

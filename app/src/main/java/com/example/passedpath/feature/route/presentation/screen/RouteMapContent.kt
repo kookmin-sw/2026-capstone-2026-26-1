@@ -48,7 +48,7 @@ fun RouteMapContent(
         )
     }
 
-    if (selectedRoute.hasLocationData) {
+    if (markerPlaces.isNotEmpty()) {
         markerPlaces.forEach { place ->
             MarkerComposable(
                 state = com.google.maps.android.compose.MarkerState(

@@ -9,6 +9,7 @@ import com.example.passedpath.app.AppContainer
 import com.example.passedpath.data.datastore.AuthSessionStorage
 import com.example.passedpath.data.datastore.UserProfile
 import com.example.passedpath.feature.auth.presentation.state.AuthEvent
+import com.example.passedpath.feature.auth.presentation.state.LogoutEvent
 import com.example.passedpath.feature.main.data.repository.TestRepository
 import com.example.passedpath.ui.state.AsyncUiState
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -55,7 +56,7 @@ class MyPageViewModel(
     fun logout() {
         viewModelScope.launch {
             authSessionStorage.clear()
-            AuthEvent.logoutEvent.emit(Unit)
+            AuthEvent.logoutEvent.emit(LogoutEvent())
         }
     }
 }
