@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -67,12 +68,14 @@ internal fun MainMapSection(
     onInitialCameraCentered: () -> Unit,
     onDateSelected: (String) -> Unit,
     onRouteAction: (RouteUiAction) -> Unit,
+    onPlaceMarkerClick: (Long) -> Unit,
     onPermissionBannerConfirm: () -> Unit,
     debugActions: MainDebugActions,
     floatingBottomPadding: androidx.compose.ui.unit.Dp
 ) {
     val routeAccentColor = MaterialTheme.colorScheme.primary
     val fallbackPosition = LatLng(37.5662952, 126.9779451)
+    val mapCameraBottomPadding = floatingBottomPadding * 0.3f
     val currentLocation = if (uiState.permissionState == LocationPermissionUiState.DENIED) {
         null
     } else {
@@ -130,20 +133,37 @@ internal fun MainMapSection(
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState,
+            contentPadding = PaddingValues(bottom = mapCameraBottomPadding),
             properties = MapProperties(isMyLocationEnabled = false),
             onMapLoaded = { isMapLoaded = true }
         ) {
             RouteMapContent(
                 routeModeUiState = uiState.routeModeUiState,
                 markerPlaces = uiState.mapPlaces,
-                routeAccentColor = routeAccentColor
+                routeAccentColor = routeAccentColor,
+                onPlaceMarkerClick = { placeId ->
+                    uiState.mapPlaces
+                        .firstOrNull { it.placeId == placeId }
+                        ?.let { place ->
+                            coroutineScope.launch {
+                                cameraPositionState.animate(
+                                    CameraUpdateFactory.newLatLngZoom(
+                                        LatLng(place.latitude, place.longitude),
+                                        17f
+                                    )
+                                )
+                            }
+                        }
+                    onPlaceMarkerClick(placeId)
+                }
             )
 
             currentLocation?.let {
                 MarkerComposable(
                     state = com.google.maps.android.compose.MarkerState(position = it.toLatLng()),
                     title = stringResource(R.string.main_map_marker_title),
-                    anchor = Offset(0.5f, 0.58f)
+                    anchor = Offset(0.5f, 0.58f),
+                    zIndex = 10f
                 ) {
                     Box(
                         modifier = Modifier.size(104.dp),

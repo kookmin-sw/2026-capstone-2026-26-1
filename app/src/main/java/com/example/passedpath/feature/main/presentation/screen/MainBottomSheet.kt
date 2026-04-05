@@ -48,6 +48,8 @@ internal fun MainBottomSheet(
     selectedDateKey: String,
     placeUiState: PlaceUiState,
     dayNoteUiState: DayNoteUiState,
+    selectedPlaceId: Long?,
+    onSelectedPlaceHandled: () -> Unit,
     onDayNoteTitleChanged: (String) -> Unit,
     onDayNoteMemoChanged: (String) -> Unit,
     onDayNoteSaveClick: () -> Unit,
@@ -83,6 +85,8 @@ internal fun MainBottomSheet(
                 MainBottomSheetTab.PLACE -> PlaceBottomSheetContent(
                     selectedDateKey = selectedDateKey,
                     placeListUiState = placeUiState.placeList,
+                    selectedPlaceId = selectedPlaceId,
+                    onSelectedPlaceHandled = onSelectedPlaceHandled,
                     onAddPlaceClick = onAddPlaceClick,
                     modifier = Modifier.padding(horizontal = 20.dp)
                 )

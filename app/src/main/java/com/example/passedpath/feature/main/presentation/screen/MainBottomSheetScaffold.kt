@@ -41,6 +41,7 @@ private data class SheetAnchors(
 @Composable
 internal fun MainBottomSheetScaffold(
     modifier: Modifier = Modifier,
+    requestedSheetValue: MainBottomSheetValue? = null,
     onSheetValueChanged: (MainBottomSheetValue) -> Unit = {},
     content: @Composable (Dp) -> Unit,
     sheet: @Composable (Modifier) -> Unit
@@ -72,6 +73,25 @@ internal fun MainBottomSheetScaffold(
                 MainBottomSheetValue.EXPANDED -> sheetAnchors.expanded
                 MainBottomSheetValue.MIDDLE -> sheetAnchors.middle
                 MainBottomSheetValue.COLLAPSED -> sheetAnchors.collapsed
+            }
+        }
+
+        LaunchedEffect(requestedSheetValue, sheetAnchors) {
+            val targetValue = requestedSheetValue ?: return@LaunchedEffect
+            val targetOffset = when (targetValue) {
+                MainBottomSheetValue.EXPANDED -> sheetAnchors.expanded
+                MainBottomSheetValue.MIDDLE -> sheetAnchors.middle
+                MainBottomSheetValue.COLLAPSED -> sheetAnchors.collapsed
+            }
+            animate(
+                initialValue = sheetOffset,
+                targetValue = targetOffset,
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioNoBouncy,
+                    stiffness = Spring.StiffnessMediumLow
+                )
+            ) { value, _ ->
+                sheetOffset = value
             }
         }
 

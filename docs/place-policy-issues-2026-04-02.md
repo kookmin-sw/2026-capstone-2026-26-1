@@ -5,7 +5,7 @@ Project: PassedPath Android app
 
 ## Scope
 - This document covers the place-data policy split for the main record screen.
-- Scope includes `dayroute/{date}`, the place-list read API, initial map-marker rendering, bottom-sheet freshness, and upcoming marker-to-list interaction.
+- Scope includes `dayroute/{date}`, the place-list read API, map-marker synchronization, bottom-sheet freshness, and marker-to-list interaction.
 - `feature/daynote` rules are out of scope.
 
 ## Current code baseline
@@ -17,7 +17,9 @@ Project: PassedPath Android app
 
 ## Agreed policy summary
 - Place data for both map markers and the place bottom sheet comes from `GET /api/day-routes/{date}/places`.
-- The app fetches the place list on selected-date entry and refreshes it again when the place sheet opens.
+- The app fetches the place list once on selected-date entry.
+- The app refreshes the place list again when the user enters the `PLACE` tab or taps the `PLACE` tab again.
+- Bottom-sheet height changes do not trigger place-list fetches.
 - After place-list fetch succeeds, that result is the single source of truth for both map and sheet place rendering.
 - Place identity is always matched by `placeId`.
 - Place ordering is always based on server-provided `orderIndex`.
@@ -43,17 +45,18 @@ Project: PassedPath Android app
 ## Marker to sheet interaction policy
 - Marker tap updates `selectedPlaceId`.
 - Marker tap opens the place sheet.
-- If the current-date place list is not loaded yet, the app fetches it first.
-- After fetch succeeds, the sheet scrolls to the matching card.
-- That card should play a one-time small vertical shake animation.
-- If the sheet is already open and the user taps another marker, selection changes without re-fetch.
+- If the current tab is not `PLACE`, marker tap also refreshes the current-date place list.
+- The sheet scrolls to the matching card.
+- That card plays a one-time small horizontal shake animation.
+- `selectedPlaceId` is cleared after the one-time interaction is handled.
+- Marker tap also focuses the map camera near the tapped place, slightly above screen center to account for the bottom sheet.
 
 ## Issue 1. Split place-data ownership and finalize API responsibility
 Status: Done
 
 ### Decision summary
 - `dayroute/{date}` keeps its current DTO for now.
-- App-side policy treats `dayroute/{date}` as route + initial marker seed input.
+- App-side policy treats `dayroute/{date}` as route and daynote read input.
 - The place-list read API is the source of truth for the place bottom sheet and later place synchronization.
 - `placeId` is the canonical link key across route markers and place-list items.
 - `orderIndex` is the canonical ordering field.
@@ -63,7 +66,7 @@ Status: Done
 - DTO slimming is explicitly deferred; responsibility split was prioritized first.
 
 ## Issue 2. Keep initial map-marker rendering on dayroute
-Status: Reframed
+Status: Done as intermediate step, then superseded by simpler place-read policy
 
 ### What was implemented
 - Route-owned marker state was made explicit.
@@ -87,7 +90,7 @@ Status: Reframed
 - Route mapper and viewmodel tests were updated and passed during the implementation step.
 
 ## Issue 3. Connect place-list API on bottom-sheet open
-Status: In progress
+Status: Done
 
 ### What is done
 - `GET /api/day-routes/{date}/places` was added under `feature/place`.
@@ -100,9 +103,10 @@ Status: In progress
   - `errorMessage`
 - `MainRoute` now creates and provides `PlaceViewModel`.
 - `MainRoute` now also fetches the place list on selected-date entry, so place data can render before the sheet is opened.
-- `MainScreen` triggers place-list refresh when:
-  - the selected tab is `PLACE`
-  - the bottom sheet is not collapsed
+- `MainScreen` now refreshes place-list state when:
+  - the user enters the `PLACE` tab
+  - the user taps the already-selected `PLACE` tab again
+- Bottom-sheet height changes no longer trigger place-list fetches.
 - Place add/update/delete/reorder success now refreshes via `GET /api/day-routes/{date}/places` instead of relying on generic same-date re-selection.
 - `PlaceBottomSheetContent` now renders only from place-list state.
 - Loading, error, empty, and success branches were added to the place sheet.
@@ -132,44 +136,49 @@ Status: In progress
 - Place viewmodel tests passed.
 - `compileDebugKotlin` passed after the main/place integration.
 
-### What is still open
+### Remaining note
 - Place-list retry UX is still minimal.
 - UX validation and visual polish are intentionally deferred until the place issue flow is functionally complete.
 
 ## Issue 4. Synchronize map markers and place-sheet list after place-list fetch
-Status: In progress
+Status: Done
 
 ### What is done
 - After place-list fetch succeeds, the same result is now fed into map marker state.
 - Map markers no longer depend on route place seed for rendering.
 - Marker rendering was decoupled from polyline presence, so place markers can render even when the route line is empty.
-
-### What is still open
-- `selectedPlaceId` state and marker-to-sheet focus interaction are not implemented yet.
-- Marker tap should eventually open the sheet and focus the matching place card.
+- Marker tap now:
+  - opens the `PLACE` tab
+  - opens the sheet to `MIDDLE`
+  - scrolls to the matching place card
+  - plays a one-time card shake animation
+  - focuses the map camera near the tapped place
+- Current-location marker now renders above place markers via explicit z-index policy.
 
 ## Issue 5. Re-fetch flow after add, update, delete, reorder
-Status: Partially started
+Status: Done
 
 ### Current status
 - Mutation success now refreshes the place-list API.
 - That refreshed result is now used for both map and sheet place state.
-
-### What is still open
-- Marker selection state still needs to survive the mutation-followed-by-refresh cycle cleanly.
+- One-time marker-selection interaction no longer depends on persistent selected UI state.
 
 ## Issue 6. Date-switch and lifecycle fetch policy
-Status: Partially started
+Status: In progress
 
 ### What is already applied
 - On selected-date change, `MainRoute` updates `PlaceViewModel` with the new date key.
-- Place-list fetch now happens on selected-date entry and again on place-sheet open.
+- Place-list fetch now happens on selected-date entry.
+- Place-list refresh also happens on `PLACE` tab entry and `PLACE` tab re-tap.
 - Map markers are cleared and repopulated through place-list state on date change.
+- `selectedPlaceId` is cleared when:
+  - the selected date changes
+  - the bottom sheet collapses
+  - the one-time marker-to-card interaction is finished
 
 ### What is still open
 - Re-entry and resume policy is not finalized.
 - Explicit retry UX is not finalized.
-- `selectedPlaceId` lifecycle is not implemented yet.
 
 ## Issue 7. Tests and QA
 Status: In progress
@@ -186,7 +195,6 @@ Status: In progress
 - Main viewmodel tests cover fetched marker override and date-change reset.
 
 ### What is still open
-- Bottom-sheet-open trigger coverage
 - marker-to-sheet interaction coverage
 - end-to-end QA scenarios for sheet refresh and marker synchronization
 

@@ -10,9 +10,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -20,11 +22,15 @@ import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -34,6 +40,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
 import com.example.passedpath.R
 import com.example.passedpath.feature.place.domain.model.VisitedPlace
 import com.example.passedpath.feature.place.presentation.state.PlaceListUiState
@@ -43,16 +50,36 @@ import com.example.passedpath.ui.theme.Gray400
 import com.example.passedpath.ui.theme.Gray700
 import com.example.passedpath.ui.theme.Green50
 import com.example.passedpath.ui.theme.Green500
+import kotlinx.coroutines.delay
 
 @Composable
 fun PlaceBottomSheetContent(
     selectedDateKey: String,
     placeListUiState: PlaceListUiState,
+    selectedPlaceId: Long?,
+    onSelectedPlaceHandled: () -> Unit,
     onAddPlaceClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var isBannerVisible by rememberSaveable { mutableStateOf(true) }
+    var animatedPlaceId by remember { mutableStateOf<Long?>(null) }
     val sortedPlaces = placeListUiState.places.sortedBy(VisitedPlace::orderIndex)
+    val listState = rememberLazyListState()
+
+    LaunchedEffect(selectedPlaceId, sortedPlaces) {
+        val placeId = selectedPlaceId ?: return@LaunchedEffect
+        val selectedIndex = sortedPlaces.indexOfFirst { it.placeId == placeId }
+        if (selectedIndex < 0) {
+            onSelectedPlaceHandled()
+            return@LaunchedEffect
+        }
+
+        listState.animateScrollToItem(selectedIndex)
+        animatedPlaceId = placeId
+        delay(320)
+        animatedPlaceId = null
+        onSelectedPlaceHandled()
+    }
 
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -83,6 +110,7 @@ fun PlaceBottomSheetContent(
             else -> {
                 LazyColumn(
                     modifier = Modifier.fillMaxWidth(),
+                    state = listState,
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     itemsIndexed(
@@ -91,6 +119,7 @@ fun PlaceBottomSheetContent(
                     ) { index, place ->
                         PlaceTimelineItem(
                             place = place,
+                            shouldAnimate = place.placeId == animatedPlaceId,
                             isFirst = index == 0,
                             isLast = index == sortedPlaces.lastIndex
                         )
@@ -148,11 +177,31 @@ private fun ErrorPlaceSection(
 @Composable
 private fun PlaceTimelineItem(
     place: VisitedPlace,
+    shouldAnimate: Boolean,
     isFirst: Boolean,
     isLast: Boolean
 ) {
+    val horizontalOffset = androidx.compose.runtime.remember(place.placeId) {
+        Animatable(0f)
+    }
+
+    LaunchedEffect(shouldAnimate) {
+        if (!shouldAnimate) {
+            horizontalOffset.snapTo(0f)
+            return@LaunchedEffect
+        }
+
+        horizontalOffset.snapTo(0f)
+        horizontalOffset.animateTo(10f, animationSpec = tween(durationMillis = 70))
+        horizontalOffset.animateTo(-8f, animationSpec = tween(durationMillis = 90))
+        horizontalOffset.animateTo(6f, animationSpec = tween(durationMillis = 80))
+        horizontalOffset.animateTo(0f, animationSpec = tween(durationMillis = 70))
+    }
+
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .offset(x = horizontalOffset.value.toCardOffset()),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.Top
     ) {
@@ -183,6 +232,8 @@ private fun PlaceTimelineItem(
         )
     }
 }
+
+private fun Float.toCardOffset(): Dp = this.dp
 
 @Composable
 private fun EmptyPlaceSection() {

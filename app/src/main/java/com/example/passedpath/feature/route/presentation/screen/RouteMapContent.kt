@@ -36,7 +36,8 @@ import com.google.maps.android.compose.Polyline
 fun RouteMapContent(
     routeModeUiState: MainRouteModeUiState,
     markerPlaces: List<PlaceMarkerUiState>,
-    routeAccentColor: Color
+    routeAccentColor: Color,
+    onPlaceMarkerClick: (Long) -> Unit = {}
 ) {
     val selectedRoute = routeModeUiState.route
     val routePoints = selectedRoute.polylinePoints.map(MainCoordinateUiState::toLatLng)
@@ -57,7 +58,12 @@ fun RouteMapContent(
                 title = place.placeName.ifBlank {
                     stringResource(R.string.route_place_fallback_title, place.orderIndex)
                 },
-                anchor = androidx.compose.ui.geometry.Offset(0.5f, 0.5f)
+                anchor = androidx.compose.ui.geometry.Offset(0.5f, 0.5f),
+                zIndex = 0f,
+                onClick = {
+                    onPlaceMarkerClick(place.placeId)
+                    true
+                }
             ) {
                 PlaceOrderMarker(place = place, routeAccentColor = routeAccentColor)
             }

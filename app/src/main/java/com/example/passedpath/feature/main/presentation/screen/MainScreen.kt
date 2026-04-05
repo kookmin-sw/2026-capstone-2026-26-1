@@ -41,12 +41,18 @@ fun MainScreen(
     var selectedBottomSheetTab by rememberSaveable { mutableStateOf(MainBottomSheetTab.PLACE) }
     var isPlaceCreateSheetVisible by rememberSaveable { mutableStateOf(false) }
     var bottomSheetValue by rememberSaveable { mutableStateOf(MainBottomSheetValue.COLLAPSED) }
+    var requestedSheetValue by rememberSaveable { mutableStateOf<MainBottomSheetValue?>(null) }
+    var selectedPlaceId by rememberSaveable { mutableStateOf<Long?>(null) }
 
-    LaunchedEffect(selectedBottomSheetTab, bottomSheetValue, uiState.selectedDateKey) {
-        val isPlaceSheetVisible = selectedBottomSheetTab == MainBottomSheetTab.PLACE &&
-            bottomSheetValue != MainBottomSheetValue.COLLAPSED
-        if (isPlaceSheetVisible) {
-            onPlaceListRefreshRequested(uiState.selectedDateKey)
+    LaunchedEffect(uiState.selectedDateKey) {
+        selectedPlaceId = null
+        requestedSheetValue = null
+    }
+
+    LaunchedEffect(bottomSheetValue) {
+        if (bottomSheetValue == MainBottomSheetValue.COLLAPSED) {
+            selectedPlaceId = null
+            requestedSheetValue = null
         }
     }
 
@@ -54,6 +60,7 @@ fun MainScreen(
         modifier = Modifier
             .fillMaxSize()
             .statusBarsPadding(),
+        requestedSheetValue = requestedSheetValue,
         onSheetValueChanged = { bottomSheetValue = it },
         content = { floatingBottomPadding ->
             MainMapSection(
@@ -61,6 +68,15 @@ fun MainScreen(
                 onInitialCameraCentered = onInitialCameraCentered,
                 onDateSelected = onDateSelectionRequested,
                 onRouteAction = onRouteAction,
+                onPlaceMarkerClick = { placeId ->
+                    val shouldRefreshPlaces = selectedBottomSheetTab != MainBottomSheetTab.PLACE
+                    selectedPlaceId = placeId
+                    selectedBottomSheetTab = MainBottomSheetTab.PLACE
+                    requestedSheetValue = MainBottomSheetValue.MIDDLE
+                    if (shouldRefreshPlaces) {
+                        onPlaceListRefreshRequested(uiState.selectedDateKey)
+                    }
+                },
                 onPermissionBannerConfirm = onPermissionBannerConfirm,
                 debugActions = debugActions,
                 floatingBottomPadding = floatingBottomPadding
@@ -72,11 +88,22 @@ fun MainScreen(
                 selectedDateKey = uiState.selectedDateKey,
                 placeUiState = placeUiState,
                 dayNoteUiState = dayNoteUiState,
+                selectedPlaceId = selectedPlaceId,
+                onSelectedPlaceHandled = { selectedPlaceId = null },
                 onDayNoteTitleChanged = onDayNoteTitleChanged,
                 onDayNoteMemoChanged = onDayNoteMemoChanged,
                 onDayNoteSaveClick = onDayNoteSaveClick,
                 selectedTab = selectedBottomSheetTab,
-                onTabSelected = { selectedBottomSheetTab = it },
+                onTabSelected = { tab ->
+                    val isPlaceTabRefresh = tab == MainBottomSheetTab.PLACE
+                    selectedBottomSheetTab = tab
+                    requestedSheetValue = MainBottomSheetValue.MIDDLE
+                    if (isPlaceTabRefresh) {
+                        onPlaceListRefreshRequested(uiState.selectedDateKey)
+                    } else {
+                        selectedPlaceId = null
+                    }
+                },
                 onAddPlaceClick = { isPlaceCreateSheetVisible = true }
             )
         }

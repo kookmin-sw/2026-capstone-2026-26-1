@@ -1,6 +1,7 @@
 package com.example.passedpath.ui.component
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,6 +27,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.passedpath.ui.theme.Gray400
 import com.example.passedpath.ui.theme.Gray700
+import com.example.passedpath.ui.theme.Green500
 import com.example.passedpath.ui.theme.PassedPathTheme
 
 @Composable
@@ -33,14 +35,21 @@ fun PlaceCard(
     title: String,
     subtitle: String,
     modifier: Modifier = Modifier,
+    isSelected: Boolean = false,
     tertiaryText: String? = null
 ) {
     Surface(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .border(
+                width = if (isSelected) 2.dp else 0.dp,
+                color = if (isSelected) Green500.copy(alpha = 0.35f) else Color.Transparent,
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(22.dp)
+            ),
         shape = androidx.compose.foundation.shape.RoundedCornerShape(22.dp),
         color = Color.White,
         tonalElevation = 0.dp,
-        shadowElevation = 8.dp
+        shadowElevation = if (isSelected) 12.dp else 8.dp
     ) {
         Row(
             modifier = Modifier
