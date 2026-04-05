@@ -36,7 +36,7 @@ import com.example.passedpath.R
 import com.example.passedpath.feature.daynote.presentation.screen.DayNoteBottomSheetContent
 import com.example.passedpath.feature.daynote.presentation.state.DayNoteUiState
 import com.example.passedpath.feature.place.presentation.screen.PlaceBottomSheetContent
-import com.example.passedpath.feature.route.presentation.state.PlaceMarkerUiState
+import com.example.passedpath.feature.place.presentation.state.PlaceUiState
 import com.example.passedpath.ui.theme.Gray200
 import com.example.passedpath.ui.theme.Gray400
 import com.example.passedpath.ui.theme.Gray700
@@ -45,8 +45,8 @@ import com.example.passedpath.ui.theme.Green100
 
 @Composable
 internal fun MainBottomSheet(
-    places: List<PlaceMarkerUiState>,
     selectedDateKey: String,
+    placeUiState: PlaceUiState,
     dayNoteUiState: DayNoteUiState,
     onDayNoteTitleChanged: (String) -> Unit,
     onDayNoteMemoChanged: (String) -> Unit,
@@ -81,8 +81,8 @@ internal fun MainBottomSheet(
             Spacer(modifier = Modifier.height(16.dp))
             when (selectedTab) {
                 MainBottomSheetTab.PLACE -> PlaceBottomSheetContent(
-                    places = places,
                     selectedDateKey = selectedDateKey,
+                    placeListUiState = placeUiState.placeList,
                     onAddPlaceClick = onAddPlaceClick,
                     modifier = Modifier.padding(horizontal = 20.dp)
                 )

@@ -3,6 +3,7 @@ package com.example.passedpath.feature.main.presentation.screen
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -11,6 +12,7 @@ import androidx.compose.ui.Modifier
 import com.example.passedpath.feature.daynote.presentation.state.DayNoteUiState
 import com.example.passedpath.feature.main.presentation.state.MainUiState
 import com.example.passedpath.feature.place.presentation.screen.PlaceCreateBottomSheet
+import com.example.passedpath.feature.place.presentation.state.PlaceUiState
 import com.example.passedpath.feature.route.presentation.state.RouteUiAction
 import com.example.passedpath.ui.PermissionSettingDialog
 import com.example.passedpath.ui.component.BaseConfirmDialog
@@ -19,6 +21,7 @@ import com.example.passedpath.ui.component.BaseConfirmDialog
 fun MainScreen(
     uiState: MainUiState,
     dayNoteUiState: DayNoteUiState,
+    placeUiState: PlaceUiState,
     onInitialCameraCentered: () -> Unit,
     onDateSelected: (String) -> Unit,
     onDateSelectionRequested: (String) -> Unit,
@@ -26,6 +29,7 @@ fun MainScreen(
     onDayNoteTitleChanged: (String) -> Unit,
     onDayNoteMemoChanged: (String) -> Unit,
     onDayNoteSaveClick: () -> Unit,
+    onPlaceListRefreshRequested: (String) -> Unit,
     onTrackingPermissionDialogConfirm: () -> Unit,
     onTrackingPermissionDialogDismiss: () -> Unit,
     onPermissionBannerConfirm: () -> Unit,
@@ -36,11 +40,21 @@ fun MainScreen(
 ) {
     var selectedBottomSheetTab by rememberSaveable { mutableStateOf(MainBottomSheetTab.PLACE) }
     var isPlaceCreateSheetVisible by rememberSaveable { mutableStateOf(false) }
+    var bottomSheetValue by rememberSaveable { mutableStateOf(MainBottomSheetValue.COLLAPSED) }
+
+    LaunchedEffect(selectedBottomSheetTab, bottomSheetValue, uiState.selectedDateKey) {
+        val isPlaceSheetVisible = selectedBottomSheetTab == MainBottomSheetTab.PLACE &&
+            bottomSheetValue != MainBottomSheetValue.COLLAPSED
+        if (isPlaceSheetVisible) {
+            onPlaceListRefreshRequested(uiState.selectedDateKey)
+        }
+    }
 
     MainBottomSheetScaffold(
         modifier = Modifier
             .fillMaxSize()
             .statusBarsPadding(),
+        onSheetValueChanged = { bottomSheetValue = it },
         content = { floatingBottomPadding ->
             MainMapSection(
                 uiState = uiState,
@@ -55,8 +69,8 @@ fun MainScreen(
         sheet = { sheetModifier ->
             MainBottomSheet(
                 modifier = sheetModifier,
-                places = uiState.selectedRoute.places,
                 selectedDateKey = uiState.selectedDateKey,
+                placeUiState = placeUiState,
                 dayNoteUiState = dayNoteUiState,
                 onDayNoteTitleChanged = onDayNoteTitleChanged,
                 onDayNoteMemoChanged = onDayNoteMemoChanged,

@@ -41,6 +41,7 @@ private data class SheetAnchors(
 @Composable
 internal fun MainBottomSheetScaffold(
     modifier: Modifier = Modifier,
+    onSheetValueChanged: (MainBottomSheetValue) -> Unit = {},
     content: @Composable (Dp) -> Unit,
     sheet: @Composable (Modifier) -> Unit
 ) {
@@ -81,6 +82,12 @@ internal fun MainBottomSheetScaffold(
 
         val visibleSheetHeightDp = with(density) { (containerHeightPx - sheetOffset).toDp() }
         val floatingBottomPadding = visibleSheetHeightDp + 16.dp
+        val currentSheetValue = nearestSheetValue(sheetOffset, sheetAnchors)
+
+        LaunchedEffect(currentSheetValue) {
+            onSheetValueChanged(currentSheetValue)
+        }
+
         val sheetModifier = Modifier
             .align(Alignment.TopCenter)
             .fillMaxWidth()

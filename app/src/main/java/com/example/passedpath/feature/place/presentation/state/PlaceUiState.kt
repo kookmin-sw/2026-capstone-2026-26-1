@@ -1,5 +1,7 @@
 package com.example.passedpath.feature.place.presentation.state
 
+import com.example.passedpath.feature.place.domain.model.VisitedPlace
+
 data class PlaceUiState(
     val dateKey: String = "",
     val placeId: String = "",
@@ -9,6 +11,7 @@ data class PlaceUiState(
     val latitude: String = "",
     val longitude: String = "",
     val isSubmitting: Boolean = false,
+    val placeList: PlaceListUiState = PlaceListUiState(),
     val errorMessage: String? = null,
     val successMessage: String? = null
 ) {
@@ -43,3 +46,11 @@ data class PlaceUiState(
     val isReorderEnabled: Boolean
         get() = !isSubmitting && isDateValid && parsedReorderPlaceIds.isNotEmpty()
 }
+
+data class PlaceListUiState(
+    val dateKey: String = "",
+    val places: List<VisitedPlace> = emptyList(),
+    val placeCount: Int = 0,
+    val isLoading: Boolean = false,
+    val errorMessage: String? = null
+)

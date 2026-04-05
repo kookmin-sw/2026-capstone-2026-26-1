@@ -35,7 +35,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.passedpath.R
-import com.example.passedpath.feature.route.presentation.state.PlaceMarkerUiState
+import com.example.passedpath.feature.place.domain.model.VisitedPlace
+import com.example.passedpath.feature.place.presentation.state.PlaceListUiState
 import com.example.passedpath.ui.component.PlaceCard
 import com.example.passedpath.ui.theme.Gray100
 import com.example.passedpath.ui.theme.Gray400
@@ -45,13 +46,13 @@ import com.example.passedpath.ui.theme.Green500
 
 @Composable
 fun PlaceBottomSheetContent(
-    places: List<PlaceMarkerUiState>,
     selectedDateKey: String,
+    placeListUiState: PlaceListUiState,
     onAddPlaceClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var isBannerVisible by rememberSaveable { mutableStateOf(true) }
-    val sortedPlaces = places.sortedBy(PlaceMarkerUiState::orderIndex)
+    val sortedPlaces = placeListUiState.places.sortedBy(VisitedPlace::orderIndex)
 
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -68,35 +69,141 @@ fun PlaceBottomSheetContent(
                 color = Gray400
             )
             Text(
-                text = stringResource(R.string.place_sheet_visit_count, sortedPlaces.size),
+                text = stringResource(R.string.place_sheet_visit_count, placeListUiState.placeCount),
                 style = MaterialTheme.typography.bodyLarge,
                 color = Gray700,
                 fontWeight = FontWeight.SemiBold
             )
         }
 
-        if (sortedPlaces.isEmpty()) {
-            EmptyPlaceSection()
-        } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                itemsIndexed(
-                    items = sortedPlaces,
-                    key = { _, place -> place.placeId }
-                ) { index, place ->
-                    PlaceTimelineItem(
-                        place = place,
-                        isFirst = index == 0,
-                        isLast = index == sortedPlaces.lastIndex
-                    )
+        when {
+            placeListUiState.isLoading -> LoadingPlaceSection()
+            placeListUiState.errorMessage != null -> ErrorPlaceSection(placeListUiState.errorMessage)
+            sortedPlaces.isEmpty() -> EmptyPlaceSection()
+            else -> {
+                LazyColumn(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    itemsIndexed(
+                        items = sortedPlaces,
+                        key = { _, place -> place.placeId }
+                    ) { index, place ->
+                        PlaceTimelineItem(
+                            place = place,
+                            isFirst = index == 0,
+                            isLast = index == sortedPlaces.lastIndex
+                        )
+                    }
                 }
             }
         }
 
         PlaceAddButton(onClick = onAddPlaceClick)
         Spacer(modifier = Modifier.height(4.dp))
+    }
+}
+
+@Composable
+private fun LoadingPlaceSection() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(color = Gray100, shape = RoundedCornerShape(22.dp))
+            .padding(horizontal = 18.dp, vertical = 24.dp)
+    ) {
+        Text(
+            text = "방문 장소를 불러오는 중입니다.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = Gray400
+        )
+    }
+}
+
+@Composable
+private fun ErrorPlaceSection(
+    message: String
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(color = Gray100, shape = RoundedCornerShape(22.dp))
+            .padding(horizontal = 18.dp, vertical = 24.dp)
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(
+                text = "방문 장소를 불러오지 못했습니다.",
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                text = message,
+                style = MaterialTheme.typography.bodyMedium,
+                color = Gray400
+            )
+        }
+    }
+}
+
+@Composable
+private fun PlaceTimelineItem(
+    place: VisitedPlace,
+    isFirst: Boolean,
+    isLast: Boolean
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.Top
+    ) {
+        TimelineDecoration(
+            orderIndex = place.orderIndex,
+            isFirst = isFirst,
+            isLast = isLast
+        )
+        PlaceCard(
+            title = place.placeName.ifBlank {
+                stringResource(R.string.route_place_fallback_title, place.orderIndex)
+            },
+            subtitle = place.roadAddress.ifBlank {
+                stringResource(
+                    R.string.place_card_coordinate,
+                    place.latitude,
+                    place.longitude
+                )
+            },
+            tertiaryText = place.roadAddress.takeIf { it.isNotBlank() }?.let {
+                stringResource(
+                    R.string.place_card_coordinate,
+                    place.latitude,
+                    place.longitude
+                )
+            },
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+@Composable
+private fun EmptyPlaceSection() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(color = Gray100, shape = RoundedCornerShape(22.dp))
+            .padding(horizontal = 18.dp, vertical = 24.dp)
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(
+                text = stringResource(R.string.place_sheet_empty_title),
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                text = stringResource(R.string.place_sheet_empty_body),
+                style = MaterialTheme.typography.bodyMedium,
+                color = Gray400
+            )
+        }
     }
 }
 
@@ -141,45 +248,6 @@ private fun PlaceGuideBanner(
                 modifier = Modifier.size(16.dp)
             )
         }
-    }
-}
-
-@Composable
-private fun PlaceTimelineItem(
-    place: PlaceMarkerUiState,
-    isFirst: Boolean,
-    isLast: Boolean
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalAlignment = Alignment.Top
-    ) {
-        TimelineDecoration(
-            orderIndex = place.orderIndex,
-            isFirst = isFirst,
-            isLast = isLast
-        )
-        PlaceCard(
-            title = place.placeName.ifBlank {
-                stringResource(R.string.route_place_fallback_title, place.orderIndex)
-            },
-            subtitle = place.roadAddress.ifBlank {
-                stringResource(
-                    R.string.place_card_coordinate,
-                    place.latitude,
-                    place.longitude
-                )
-            },
-            tertiaryText = place.roadAddress.takeIf { it.isNotBlank() }?.let {
-                stringResource(
-                    R.string.place_card_coordinate,
-                    place.latitude,
-                    place.longitude
-                )
-            },
-            modifier = Modifier.weight(1f)
-        )
     }
 }
 
@@ -237,29 +305,6 @@ private fun TimelineDecoration(
             color = Green500,
             fontWeight = FontWeight.SemiBold
         )
-    }
-}
-
-@Composable
-private fun EmptyPlaceSection() {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(color = Gray100, shape = RoundedCornerShape(22.dp))
-            .padding(horizontal = 18.dp, vertical = 24.dp)
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(
-                text = stringResource(R.string.place_sheet_empty_title),
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.SemiBold
-            )
-            Text(
-                text = stringResource(R.string.place_sheet_empty_body),
-                style = MaterialTheme.typography.bodyMedium,
-                color = Gray400
-            )
-        }
     }
 }
 

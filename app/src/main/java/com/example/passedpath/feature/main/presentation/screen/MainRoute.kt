@@ -15,6 +15,8 @@ import com.example.passedpath.feature.main.presentation.coordinator.DateSelectio
 import com.example.passedpath.feature.main.presentation.coordinator.DateSelectionGuardCoordinator
 import com.example.passedpath.feature.main.presentation.viewmodel.MainViewModel
 import com.example.passedpath.feature.main.presentation.viewmodel.MainViewModelFactory
+import com.example.passedpath.feature.place.presentation.viewmodel.PlaceViewModel
+import com.example.passedpath.feature.place.presentation.viewmodel.PlaceViewModelFactory
 import com.example.passedpath.feature.permission.presentation.policy.PermissionActionTarget
 import com.example.passedpath.feature.permission.presentation.policy.resolvePermissionActionTarget
 import com.example.passedpath.util.AppSettingsNavigator
@@ -35,6 +37,13 @@ fun MainRoute(
         )
     )
     val dayNoteUiState by dayNoteViewModel.uiState.collectAsStateWithLifecycle()
+    val placeViewModel: PlaceViewModel = viewModel(
+        factory = PlaceViewModelFactory(
+            appContainer = appContainer,
+            initialDateKey = uiState.selectedDateKey
+        )
+    )
+    val placeUiState by placeViewModel.uiState.collectAsStateWithLifecycle()
     val dateSelectionGuardCoordinator = remember { DateSelectionGuardCoordinator() }
     val dateSelectionGuardState by dateSelectionGuardCoordinator.state.collectAsStateWithLifecycle()
 
@@ -44,6 +53,10 @@ fun MainRoute(
             title = uiState.selectedRoute.title,
             memo = uiState.selectedRoute.memo
         )
+    }
+
+    LaunchedEffect(uiState.selectedDateKey) {
+        placeViewModel.updateDateKey(uiState.selectedDateKey)
     }
 
     LaunchedEffect(
@@ -98,6 +111,7 @@ fun MainRoute(
     MainScreen(
         uiState = uiState,
         dayNoteUiState = dayNoteUiState,
+        placeUiState = placeUiState,
         onInitialCameraCentered = viewModel::markInitialCameraCentered,
         onDateSelected = viewModel::selectDate,
         onDateSelectionRequested = ::requestDateSelection,
@@ -105,6 +119,7 @@ fun MainRoute(
         onDayNoteTitleChanged = dayNoteViewModel::updateTitle,
         onDayNoteMemoChanged = dayNoteViewModel::updateMemo,
         onDayNoteSaveClick = dayNoteViewModel::submitDayNote,
+        onPlaceListRefreshRequested = placeViewModel::fetchVisitedPlaces,
         onTrackingPermissionDialogConfirm = {
             viewModel.dismissTrackingPermissionDialog()
             AppSettingsNavigator.openAppSettings(context)
