@@ -21,7 +21,7 @@ class TrackingLocationProvider(
 ) : LocationTracker {
     private val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
     private val locationRequest = LocationRequest.Builder(
-        Priority.PRIORITY_BALANCED_POWER_ACCURACY,
+        Priority.PRIORITY_HIGH_ACCURACY,
         LocationTrackingPolicy.LOCATION_UPDATE_INTERVAL_MS
     )
         .setMinUpdateIntervalMillis(LocationTrackingPolicy.LOCATION_MIN_UPDATE_INTERVAL_MS)
@@ -35,7 +35,7 @@ class TrackingLocationProvider(
 
         fusedLocationClient
             .getCurrentLocation(
-                Priority.PRIORITY_BALANCED_POWER_ACCURACY,
+                Priority.PRIORITY_HIGH_ACCURACY,
                 cancellationTokenSource.token
             )
             .addOnSuccessListener { location ->
