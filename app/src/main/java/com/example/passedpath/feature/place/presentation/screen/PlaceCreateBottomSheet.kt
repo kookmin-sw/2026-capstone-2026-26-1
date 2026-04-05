@@ -118,7 +118,7 @@ fun PlaceCreateBottomSheet(
 
             BaseButton(
                 text = stringResource(R.string.place_sheet_add),
-                onClick = viewModel::submit,
+                onClick = viewModel::savePlace,
                 enabled = uiState.isSubmitEnabled
             )
 

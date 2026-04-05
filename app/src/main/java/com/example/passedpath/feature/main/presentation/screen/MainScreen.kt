@@ -88,7 +88,6 @@ fun MainScreen(
             onDismiss = { isPlaceCreateSheetVisible = false },
             onCreated = {
                 isPlaceCreateSheetVisible = false
-                onPlaceListRefreshRequested(uiState.selectedDateKey)
             }
         )
     }
