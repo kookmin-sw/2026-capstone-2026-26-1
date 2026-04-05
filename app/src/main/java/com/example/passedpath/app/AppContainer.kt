@@ -35,6 +35,7 @@ import com.example.passedpath.feature.locationtracking.domain.repository.DayRout
 import com.example.passedpath.feature.locationtracking.domain.repository.LocationTrackingRepository
 import com.example.passedpath.feature.locationtracking.domain.repository.TrackingDebugLogRepository
 import com.example.passedpath.feature.locationtracking.domain.tracker.LocationTracker
+import com.example.passedpath.feature.locationtracking.domain.usecase.CleanupTrackingLocalDataUseCase
 import com.example.passedpath.feature.locationtracking.domain.usecase.ObserveRecentTrackingEventsUseCase
 import com.example.passedpath.feature.locationtracking.domain.usecase.StartLocationTrackingUseCase
 import com.example.passedpath.feature.locationtracking.domain.usecase.StopLocationTrackingUseCase
@@ -184,6 +185,15 @@ class AppContainer(
 
     val observeRecentTrackingEventsUseCase: ObserveRecentTrackingEventsUseCase by lazy {
         ObserveRecentTrackingEventsUseCase(trackingDebugLogRepository = trackingDebugLogRepository)
+    }
+
+    val cleanupTrackingLocalDataUseCase: CleanupTrackingLocalDataUseCase by lazy {
+        CleanupTrackingLocalDataUseCase(
+            gpsPointDao = trackingDatabase.gpsPointDao(),
+            dayRouteDao = trackingDatabase.dayRouteDao(),
+            trackingDebugLogDao = trackingDatabase.trackingDebugLogDao(),
+            diagnosticsLogger = trackingDiagnosticsLogger
+        )
     }
 
     val locationTrackingRepository: LocationTrackingRepository by lazy {

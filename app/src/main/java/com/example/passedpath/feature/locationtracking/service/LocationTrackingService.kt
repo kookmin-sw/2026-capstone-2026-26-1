@@ -79,6 +79,9 @@ class LocationTrackingService : Service() {
         )
 
         val appContainer = applicationContext.appContainer
+        serviceScope.launch {
+            appContainer.cleanupTrackingLocalDataUseCase()
+        }
         startPeriodicUploadLoop()
         startPreBoundaryUploadLoop()
         trackingSession = appContainer.trackingLocationTracker.startLocationUpdates { trackedLocation ->

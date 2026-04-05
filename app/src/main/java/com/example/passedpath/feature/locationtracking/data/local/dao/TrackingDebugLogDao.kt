@@ -19,4 +19,12 @@ interface TrackingDebugLogDao {
         """
     )
     fun observeRecent(limit: Int): Flow<List<TrackingDebugLogEntity>>
+
+    @Query(
+        """
+        DELETE FROM tracking_debug_logs
+        WHERE recordedAtEpochMillis < :cutoffEpochMillis
+        """
+    )
+    suspend fun deleteOlderThan(cutoffEpochMillis: Long): Int
 }

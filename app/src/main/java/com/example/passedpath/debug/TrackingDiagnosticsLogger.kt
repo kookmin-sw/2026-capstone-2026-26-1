@@ -24,5 +24,6 @@ class TrackingDiagnosticsLogger(
         const val CATEGORY_CALLBACK = "callback"
         const val CATEGORY_SAVE = "save"
         const val CATEGORY_UPLOAD = "upload"
+        const val CATEGORY_CLEANUP = "cleanup"
     }
 }
