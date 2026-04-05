@@ -90,6 +90,7 @@ Status: In progress
 - `MainScreen` triggers place-list refresh when:
   - the selected tab is `PLACE`
   - the bottom sheet is not collapsed
+- Place add/update/delete/reorder success now refreshes via `GET /api/day-routes/{date}/places` instead of relying on generic same-date re-selection.
 - `PlaceBottomSheetContent` now renders from place-list state instead of route place markers.
 - Loading, error, empty, and success branches were added to the place sheet.
 
@@ -119,8 +120,8 @@ Status: In progress
 - `compileDebugKotlin` passed after the main/place integration.
 
 ### What is still open
-- Place create/update/delete/reorder flows still need to switch from generic route reload behavior to place-list refresh behavior.
-- The current loading copy is functional, but visual design is still temporary.
+- Mutation-followed-by-refresh coverage still needs to be added in tests.
+- UX validation and visual polish are intentionally deferred until the place issue flow is functionally complete.
 
 ## Issue 4. Synchronize map markers and place-sheet list after place-list fetch
 Status: Not started
@@ -134,12 +135,11 @@ Status: Not started
   - place-list result as the latest shared place state after sheet fetch
 
 ## Issue 5. Re-fetch flow after add, update, delete, reorder
-Status: Not started
+Status: Partially started
 
 ### Next goal
-- Replace route-level refresh behavior after place mutations.
-- Make place mutation success refresh the place-list API.
-- Use that result to update both map and sheet state.
+- Mutation success now refreshes the place-list API for sheet state.
+- The next step is to use that refreshed result to update both map and sheet state.
 
 ## Issue 6. Date-switch and lifecycle fetch policy
 Status: Partially started
@@ -173,7 +173,7 @@ Status: In progress
 
 ## Future work note
 - The visual design for place-sheet loading is still temporary.
-- Policy and state handling are in place first; final loading UI design remains a follow-up item.
+- Policy and state handling are in place first; final loading UI design and UX validation remain follow-up items after the place issue flow is functionally closed.
 
 ## Guardrails
 - `feature/main` should remain a composition layer.

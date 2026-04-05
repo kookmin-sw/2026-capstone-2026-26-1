@@ -118,6 +118,76 @@ class PlaceViewModelTest {
         assertNull(state.placeList.errorMessage)
     }
 
+    @Test
+    fun `savePlace create refreshes place list after success`() = runTest {
+        val repository = FakePlaceRepository()
+        val viewModel = createViewModel(repository = repository, initialDateKey = "2026-04-03")
+
+        viewModel.updatePlaceName("Seoul Forest")
+        viewModel.updateRoadAddress("Ttukseom-ro")
+        viewModel.updateLatitude("37.4")
+        viewModel.updateLongitude("127.4")
+
+        viewModel.savePlace()
+        advanceUntilIdle()
+
+        assertEquals(listOf("2026-04-03"), repository.requestedPlaceListDates)
+        assertEquals(1, repository.addRequests.size)
+        assertEquals("장소가 등록되었습니다. placeId=1, 순서 1번", viewModel.uiState.value.successMessage)
+    }
+
+    @Test
+    fun `savePlace update refreshes place list after success`() = runTest {
+        val repository = FakePlaceRepository()
+        val viewModel = createViewModel(repository = repository, initialDateKey = "2026-04-03")
+
+        viewModel.updatePlaceId("7")
+        viewModel.updatePlaceName("Updated Place")
+        viewModel.updateRoadAddress("Updated Address")
+        viewModel.updateLatitude("37.5")
+        viewModel.updateLongitude("127.5")
+
+        viewModel.savePlace()
+        advanceUntilIdle()
+
+        assertEquals(listOf("2026-04-03"), repository.requestedPlaceListDates)
+        assertEquals(listOf(7L), repository.updatedPlaceIds)
+        assertEquals("장소가 수정되었습니다. placeId=7", viewModel.uiState.value.successMessage)
+    }
+
+    @Test
+    fun `deletePlace refreshes place list after success`() = runTest {
+        val repository = FakePlaceRepository()
+        val viewModel = createViewModel(repository = repository, initialDateKey = "2026-04-03")
+
+        viewModel.updatePlaceId("9")
+
+        viewModel.deletePlace()
+        advanceUntilIdle()
+
+        assertEquals(listOf("2026-04-03"), repository.requestedPlaceListDates)
+        assertEquals(listOf(9L), repository.deletedPlaceIds)
+        assertEquals("장소가 삭제되었습니다. placeId=9", viewModel.uiState.value.successMessage)
+    }
+
+    @Test
+    fun `reorderPlaces refreshes place list after success`() = runTest {
+        val repository = FakePlaceRepository()
+        val viewModel = createViewModel(repository = repository, initialDateKey = "2026-04-03")
+
+        viewModel.updateReorderPlaceIdsInput("3,1,2")
+
+        viewModel.reorderPlaces()
+        advanceUntilIdle()
+
+        assertEquals(listOf("2026-04-03"), repository.requestedPlaceListDates)
+        assertEquals(listOf(listOf(3L, 1L, 2L)), repository.reorderRequests)
+        assertEquals(
+            "장소 순서가 변경되었습니다. ids=3,1,2",
+            viewModel.uiState.value.successMessage
+        )
+    }
+
     private fun createViewModel(
         repository: FakePlaceRepository,
         initialDateKey: String
@@ -137,6 +207,10 @@ class PlaceViewModelTest {
         private val throwOnGetPlaces: Throwable? = null
     ) : PlaceRepository {
         val requestedPlaceListDates = mutableListOf<String>()
+        val addRequests = mutableListOf<PlaceRegistration>()
+        val updatedPlaceIds = mutableListOf<Long>()
+        val reorderRequests = mutableListOf<List<Long>>()
+        val deletedPlaceIds = mutableListOf<Long>()
 
         override suspend fun getPlaces(dateKey: String): VisitedPlaceList {
             requestedPlaceListDates += dateKey
@@ -148,6 +222,7 @@ class PlaceViewModelTest {
         }
 
         override suspend fun addPlace(dateKey: String, place: PlaceRegistration): RegisteredPlace {
+            addRequests += place
             return RegisteredPlace(
                 placeId = 1L,
                 placeName = place.placeName,
@@ -163,6 +238,7 @@ class PlaceViewModelTest {
             placeId: Long,
             place: PlaceRegistration
         ): UpdatedPlace {
+            updatedPlaceIds += placeId
             return UpdatedPlace(
                 placeName = place.placeName,
                 roadAddress = place.roadAddress,
@@ -171,7 +247,9 @@ class PlaceViewModelTest {
             )
         }
 
-        override suspend fun reorderPlaces(dateKey: String, placeIds: List<Long>) = Unit
+        override suspend fun reorderPlaces(dateKey: String, placeIds: List<Long>) {
+            reorderRequests += placeIds
+        }
 
         override suspend fun updateBookmarkPlace(
             bookmarkPlaceId: Long,
@@ -180,6 +258,8 @@ class PlaceViewModelTest {
             return bookmarkPlace
         }
 
-        override suspend fun deletePlace(dateKey: String, placeId: Long) = Unit
+        override suspend fun deletePlace(dateKey: String, placeId: Long) {
+            deletedPlaceIds += placeId
+        }
     }
 }
