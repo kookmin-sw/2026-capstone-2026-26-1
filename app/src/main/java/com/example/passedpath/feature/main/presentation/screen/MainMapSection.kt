@@ -118,10 +118,20 @@ internal fun MainMapSection(
             floatingBottomPadding = floatingBottomPadding,
             isDebugPanelExpanded = isDebugPanelExpanded,
             onToggleDebugPanelExpanded = { isDebugPanelExpanded = !isDebugPanelExpanded },
+            topStartControls = {
+                StatsButton(
+                    onClick = onStatsClick,
+                    modifier = Modifier
+                )
+            },
+            topEndControls = {
+                MoreButton(
+                    onClick = onMoreClick,
+                    modifier = Modifier
+                )
+            },
             floatingControls = {
                 FloatingMapButtons(
-                    onStatsClick = onStatsClick,
-                    onMoreClick = onMoreClick,
                     onCurrentLocationClick = currentLocation?.let {
                         {
                             coroutineScope.launch {
@@ -142,14 +152,10 @@ internal fun MainMapSection(
 
 @Composable
 private fun FloatingMapButtons(
-    onStatsClick: () -> Unit,
-    onMoreClick: () -> Unit,
     onCurrentLocationClick: (() -> Unit)?,
     modifier: Modifier = Modifier
 ) {
     FloatingButtonColumn(modifier = modifier) {
-        StatsButton(onClick = onStatsClick)
-        MoreButton(onClick = onMoreClick)
         onCurrentLocationClick?.let { onClick ->
             CurrentLocationButton(
                 onClick = onClick,
