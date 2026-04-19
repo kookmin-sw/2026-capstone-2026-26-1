@@ -9,7 +9,7 @@ import org.junit.Test
 class RouteActionUiStateFactoryTest {
 
     @Test
-    fun `today route exposes refresh and tracking actions`() {
+    fun `today route exposes tracking action only`() {
         val routeMode = MainRouteModeUiState.Today(
             route = SelectedDayRouteUiState(dateKey = "2026-04-19"),
             canRefreshDistance = true,
@@ -19,7 +19,6 @@ class RouteActionUiStateFactoryTest {
 
         val result = buildRouteActionUiState(routeMode)
 
-        assertTrue(result.showRefresh)
         assertTrue(result.showTrackingToggle)
         assertFalse(result.showPlayback)
         assertTrue(result.isTrackingEnabled)
@@ -34,7 +33,6 @@ class RouteActionUiStateFactoryTest {
 
         val result = buildRouteActionUiState(routeMode)
 
-        assertFalse(result.showRefresh)
         assertFalse(result.showTrackingToggle)
         assertTrue(result.showPlayback)
         assertFalse(result.isTrackingEnabled)

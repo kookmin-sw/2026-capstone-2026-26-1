@@ -5,7 +5,6 @@ import com.example.passedpath.feature.route.presentation.state.MainRouteModeUiSt
 internal fun buildRouteActionUiState(routeMode: MainRouteModeUiState): RouteActionUiState {
     return when (routeMode) {
         is MainRouteModeUiState.Today -> RouteActionUiState(
-            showRefresh = routeMode.canRefreshDistance,
             showTrackingToggle = routeMode.isTrackingToggleVisible,
             isTrackingEnabled = routeMode.isTrackingEnabled
         )

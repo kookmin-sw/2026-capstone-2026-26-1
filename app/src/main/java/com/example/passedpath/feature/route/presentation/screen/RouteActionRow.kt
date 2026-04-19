@@ -13,20 +13,13 @@ import com.example.passedpath.feature.route.presentation.state.RouteUiAction
 internal fun RouteActionRow(
     actionUiState: RouteActionUiState,
     onRouteAction: (RouteUiAction) -> Unit,
-    modifier: Modifier = Modifier,
-    useFloatingStyle: Boolean = false
+    modifier: Modifier = Modifier
 ) {
     Row(
         modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        if (actionUiState.showRefresh) {
-            RouteRefreshButton(
-                useFloatingStyle = useFloatingStyle,
-                onClick = { onRouteAction(RouteUiAction.RefreshTodayRoute) }
-            )
-        }
         if (actionUiState.showTrackingToggle) {
             TrackingToggleButton(
                 isTracking = actionUiState.isTrackingEnabled,

@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -20,23 +19,6 @@ import com.example.passedpath.ui.component.BasePillButton
 import com.example.passedpath.ui.theme.Gray500
 import com.example.passedpath.ui.theme.Gray700
 import com.example.passedpath.ui.theme.Primary
-
-@Composable
-internal fun RouteRefreshButton(
-    useFloatingStyle: Boolean,
-    onClick: () -> Unit
-) {
-    if (useFloatingStyle) {
-        FloatingPillButton(
-            text = stringResource(R.string.route_refresh),
-            onClick = onClick
-        )
-    } else {
-        Button(onClick = onClick) {
-            Text(text = stringResource(R.string.route_refresh))
-        }
-    }
-}
 
 @Composable
 internal fun RoutePlaybackButton(onClick: () -> Unit) {

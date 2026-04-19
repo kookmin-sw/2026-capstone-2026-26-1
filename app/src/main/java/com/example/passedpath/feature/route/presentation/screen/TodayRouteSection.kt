@@ -36,7 +36,7 @@ internal fun TodayRouteSection(
     )
     Spacer(modifier = Modifier.height(4.dp))
     Text(text = stringResource(R.string.route_path_points, routeMode.route.pathPointCount))
-    if (actionUiState.showRefresh || actionUiState.showTrackingToggle || actionUiState.showPlayback) {
+    if (actionUiState.showTrackingToggle || actionUiState.showPlayback) {
         Spacer(modifier = Modifier.height(8.dp))
         RouteActionRow(
             actionUiState = actionUiState,

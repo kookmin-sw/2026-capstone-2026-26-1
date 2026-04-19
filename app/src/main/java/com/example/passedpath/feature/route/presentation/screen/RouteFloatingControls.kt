@@ -32,8 +32,7 @@ internal fun RouteFloatingControls(
         RouteDistanceChip(distanceKm = routeMode.route.totalDistanceKm)
         RouteActionRow(
             actionUiState = actionUiState,
-            onRouteAction = onRouteAction,
-            useFloatingStyle = true
+            onRouteAction = onRouteAction
         )
     }
 }
