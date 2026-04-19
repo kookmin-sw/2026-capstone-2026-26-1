@@ -20,4 +20,3 @@
 
 ## UI polish
 - Design and implement a dedicated loading state for route fetches instead of reusing the map overlay
-- Design the loading UI for place bottom sheet fetches, including the state shown when the sheet opens from a marker tap before the place list has loaded

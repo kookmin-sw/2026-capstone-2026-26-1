@@ -36,14 +36,22 @@
   - fetch once on selected-date entry
   - refresh on `PLACE` tab entry
   - refresh again when the already-selected `PLACE` tab is tapped
+  - do not auto-refresh on app resume alone
   - do not fetch on bottom-sheet height changes
 - After place-list fetch succeeds, that result is the single source of truth for both map and sheet place rendering.
+- Failure policy:
+  - if the current date already has a successfully loaded non-empty place list, keep showing that stale result on fetch failure
+  - expose retry from the place sheet when fetch fails
+  - if there is no retained successful content, show the error state with retry instead
 - Place identity is always matched by `placeId`.
 - Place ordering is always based on server-provided `orderIndex`.
+- Place markers may render even when the route polyline is empty.
+- Current-location marker renders above place markers.
 - After place CRUD succeeds, refresh via the place-list API rather than reloading place state from `dayroute/{date}`.
 - `dayroute/{date}` place payload is not the UI source of truth for place rendering.
 - Marker interaction policy:
   - marker tap opens the `PLACE` tab and bottom sheet
+  - marker tap requests the sheet `MIDDLE` state
   - marker tap focuses the map camera near the tapped place, slightly above center
   - marker tap scrolls the sheet to the matching card and plays a one-time shake animation
   - `selectedPlaceId` is cleared after the one-time interaction is handled
@@ -81,6 +89,9 @@
 - Permission-state resolution and action-target selection stay centralized in `feature/permission`.
 
 ## Daynote save policy
+- Read binding policy:
+  - selected-date `title` and `memo` are read from the current selected route snapshot
+  - when selected date changes, `feature/daynote` re-hydrates input state from that snapshot
 - `title` and `memo` use overwrite-style update APIs.
 - There is no separate delete API for either field.
 - If request value is `null`, `""`, or blank-only text, the server treats it as delete and stores `null`.
@@ -99,6 +110,15 @@
 - If the first request fails, do not send the second request in the same save attempt.
 - Treat the save action as fully successful only when every required request succeeds.
 - After save success, store normalized values as the new originals.
+- Post-save synchronization policy:
+  - `feature/daynote` owns edit and save rules
+  - `feature/main` owns the selected-date read snapshot
+  - after save success, the current selected-date route snapshot is patched in memory immediately
+  - if only some fields succeeded, patch only those successful fields into the current snapshot
+- Save feedback policy:
+  - save success feedback stays toast-based
+  - user-facing save failure feedback uses one common network-failure toast message
+  - split API success/failure details must not be exposed directly in the toast copy
 - Frontend length limits:
   - `title`: max 60 characters
   - `memo`: max 1000 characters
