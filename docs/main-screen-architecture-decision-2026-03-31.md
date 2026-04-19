@@ -22,6 +22,7 @@ Status: Accepted and applied in code
 - Issue 10 debug and QA support is applied through shared debug logging, route debug snapshots, and a debug panel on the main map.
 
 ## Ongoing follow-up
+- Finalize `feature/daynote` extraction boundary when that flow resumes.
 - Decide whether remote day-route responses should be cached locally.
 - Keep future-date mode out of the architectural center until product policy is fixed.
 
@@ -29,4 +30,4 @@ Status: Accepted and applied in code
 - Route-specific logic belongs in `feature/route`.
 - Permission and location-access policy belongs in `feature/permission`.
 - Cross-feature screen composition belongs in `feature/main`.
-- `feature/daynote` should keep ownership of title/memo edit rules even when rendered inside Main.
+- Temporary QA/debug helpers should stay isolated from product-facing state as they grow.
