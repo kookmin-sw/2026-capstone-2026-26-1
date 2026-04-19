@@ -24,6 +24,7 @@ Status: Accepted and applied in code
 - Permission-state resolution and action-target selection should stay centralized in `feature/permission`.
 
 ## Ongoing follow-up
+- Finalize `feature/daynote` extraction boundary when that flow resumes.
 - Decide whether remote day-route responses should be cached locally.
 - Keep future-date mode out of the architectural center until product policy is fixed.
 
@@ -31,4 +32,4 @@ Status: Accepted and applied in code
 - Route-specific logic belongs in `feature/route`.
 - Permission and location-access policy belongs in `feature/permission`.
 - Cross-feature screen composition belongs in `feature/main`.
-- `feature/daynote` should keep ownership of title/memo edit rules even when rendered inside Main.
+- Temporary QA/debug helpers should stay isolated from product-facing state as they grow.
