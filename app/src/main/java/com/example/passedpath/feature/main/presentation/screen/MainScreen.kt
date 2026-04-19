@@ -10,6 +10,12 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.example.passedpath.feature.daynote.presentation.state.DayNoteUiState
+import com.example.passedpath.feature.main.presentation.policy.reduceForBottomSheetTabSelection
+import com.example.passedpath.feature.main.presentation.policy.reduceForDateChange
+import com.example.passedpath.feature.main.presentation.policy.reduceForPlaceCreateSheetVisibility
+import com.example.passedpath.feature.main.presentation.policy.reduceForPlaceMarkerClick
+import com.example.passedpath.feature.main.presentation.policy.reduceForSelectedPlaceHandled
+import com.example.passedpath.feature.main.presentation.policy.reduceForSheetValueChange
 import com.example.passedpath.feature.main.presentation.state.MainUiState
 import com.example.passedpath.feature.place.presentation.screen.PlaceCreateBottomSheet
 import com.example.passedpath.feature.place.presentation.state.PlaceUiState
@@ -38,30 +44,25 @@ fun MainScreen(
     onConfirmUnsavedDayNoteDialog: () -> Unit,
     debugActions: MainDebugActions
 ) {
-    var selectedBottomSheetTab by rememberSaveable { mutableStateOf(MainBottomSheetTab.PLACE) }
-    var isPlaceCreateSheetVisible by rememberSaveable { mutableStateOf(false) }
-    var bottomSheetValue by rememberSaveable { mutableStateOf(MainBottomSheetValue.COLLAPSED) }
-    var requestedSheetValue by rememberSaveable { mutableStateOf<MainBottomSheetValue?>(null) }
-    var selectedPlaceId by rememberSaveable { mutableStateOf<Long?>(null) }
-
-    LaunchedEffect(uiState.selectedDateKey) {
-        selectedPlaceId = null
-        requestedSheetValue = null
+    var localUiState by rememberSaveable(stateSaver = MainScreenLocalUiStateSaver) {
+        mutableStateOf(MainScreenLocalUiState())
     }
 
-    LaunchedEffect(bottomSheetValue) {
-        if (bottomSheetValue == MainBottomSheetValue.COLLAPSED) {
-            selectedPlaceId = null
-            requestedSheetValue = null
-        }
+    LaunchedEffect(uiState.selectedDateKey) {
+        localUiState = reduceForDateChange(localUiState)
     }
 
     MainBottomSheetScaffold(
         modifier = Modifier
             .fillMaxSize()
             .statusBarsPadding(),
-        requestedSheetValue = requestedSheetValue,
-        onSheetValueChanged = { bottomSheetValue = it },
+        requestedSheetValue = localUiState.requestedSheetValue,
+        onSheetValueChanged = { bottomSheetValue ->
+            localUiState = reduceForSheetValueChange(
+                state = localUiState,
+                bottomSheetValue = bottomSheetValue
+            )
+        },
         content = { floatingBottomPadding ->
             MainMapSection(
                 uiState = uiState,
@@ -69,11 +70,12 @@ fun MainScreen(
                 onDateSelected = onDateSelectionRequested,
                 onRouteAction = onRouteAction,
                 onPlaceMarkerClick = { placeId ->
-                    val shouldRefreshPlaces = selectedBottomSheetTab != MainBottomSheetTab.PLACE
-                    selectedPlaceId = placeId
-                    selectedBottomSheetTab = MainBottomSheetTab.PLACE
-                    requestedSheetValue = MainBottomSheetValue.MIDDLE
-                    if (shouldRefreshPlaces) {
+                    val result = reduceForPlaceMarkerClick(
+                        state = localUiState,
+                        placeId = placeId
+                    )
+                    localUiState = result.state
+                    if (result.shouldRefreshPlaces) {
                         onPlaceListRefreshRequested(uiState.selectedDateKey)
                     }
                 },
@@ -88,33 +90,48 @@ fun MainScreen(
                 selectedDateKey = uiState.selectedDateKey,
                 placeUiState = placeUiState,
                 dayNoteUiState = dayNoteUiState,
-                selectedPlaceId = selectedPlaceId,
-                onSelectedPlaceHandled = { selectedPlaceId = null },
+                selectedPlaceId = localUiState.selectedPlaceId,
+                onSelectedPlaceHandled = {
+                    localUiState = reduceForSelectedPlaceHandled(localUiState)
+                },
                 onDayNoteTitleChanged = onDayNoteTitleChanged,
                 onDayNoteMemoChanged = onDayNoteMemoChanged,
                 onDayNoteSaveClick = onDayNoteSaveClick,
-                selectedTab = selectedBottomSheetTab,
+                selectedTab = localUiState.selectedBottomSheetTab,
                 onTabSelected = { tab ->
-                    val isPlaceTabRefresh = tab == MainBottomSheetTab.PLACE
-                    selectedBottomSheetTab = tab
-                    requestedSheetValue = MainBottomSheetValue.MIDDLE
-                    if (isPlaceTabRefresh) {
+                    val result = reduceForBottomSheetTabSelection(
+                        state = localUiState,
+                        selectedTab = tab
+                    )
+                    localUiState = result.state
+                    if (result.shouldRefreshPlaces) {
                         onPlaceListRefreshRequested(uiState.selectedDateKey)
-                    } else {
-                        selectedPlaceId = null
                     }
                 },
-                onAddPlaceClick = { isPlaceCreateSheetVisible = true }
+                onAddPlaceClick = {
+                    localUiState = reduceForPlaceCreateSheetVisibility(
+                        state = localUiState,
+                        isVisible = true
+                    )
+                }
             )
         }
     )
 
-    if (isPlaceCreateSheetVisible) {
+    if (localUiState.isPlaceCreateSheetVisible) {
         PlaceCreateBottomSheet(
             selectedDateKey = uiState.selectedDateKey,
-            onDismiss = { isPlaceCreateSheetVisible = false },
+            onDismiss = {
+                localUiState = reduceForPlaceCreateSheetVisibility(
+                    state = localUiState,
+                    isVisible = false
+                )
+            },
             onCreated = {
-                isPlaceCreateSheetVisible = false
+                localUiState = reduceForPlaceCreateSheetVisibility(
+                    state = localUiState,
+                    isVisible = false
+                )
             }
         )
     }
