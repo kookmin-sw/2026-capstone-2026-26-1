@@ -48,6 +48,32 @@
   - marker tap scrolls the sheet to the matching card and plays a one-time shake animation
   - `selectedPlaceId` is cleared after the one-time interaction is handled
 
+## Main map and bottom-sheet interaction policy
+- Bottom-sheet state uses three stable UI states:
+  - `HIDDEN`
+  - `MIDDLE`
+  - `EXPANDED`
+- `HIDDEN` is a bottom-bar-safe hidden state, not a full zero-height removal.
+  - hidden visible height stays `92dp`
+- Sheet visibility policy:
+  - map tap requests `HIDDEN`
+  - re-tapping the already-selected `MAIN` bottom tab requests `HIDDEN`
+  - marker tap requests `MIDDLE`
+  - bottom-sheet tab selection requests `MIDDLE`
+- `feature/main` owns only screen-local sheet interaction orchestration.
+- Bottom-bar reselection is a navigation-shell event and must be passed down as an interaction signal, not handled inside map/sheet UI code.
+
+## Main camera intent policy
+- Map camera movement is driven by one-time camera intent state, not directly by raw route/location stream updates.
+- Route data loading and current-location updates must not directly re-trigger camera movement after an intent has already been consumed.
+- Camera intent rules:
+  - if a date enters with route data available, request route-fit camera once
+  - if a date enters without route data but with current location available, request current-location centering once
+  - if current location arrives first while the route is still empty, request current-location centering once
+  - if route data later becomes available for the same date after previously being empty, request route-fit once
+- After camera movement is applied, the pending camera intent is cleared.
+- `feature/main/presentation/viewmodel` may decide when to issue camera intents, but camera side effects stay in the screen/effect layer.
+
 ## Permission policy
 - Permission intro is advisory, not a hard blocker for entering `Main`.
 - Users may continue into `Main` without background location permission.

@@ -2,11 +2,11 @@
 
 Date: 2026-04-03
 Project: PassedPath Android app
+Status: Archived implementation history
 
-## Scope
-- This document covers the place-data policy split for the main record screen.
-- Scope includes `dayroute/{date}`, the place-list read API, map-marker synchronization, bottom-sheet freshness, and marker-to-list interaction.
-- `feature/daynote` rules are out of scope.
+## Note
+- Stable app-side place policy has been moved to `docs/global-policy.md`.
+- Keep this document only as implementation history for the 2026-04 place-policy rollout.
 
 ## Current code baseline
 - `feature/main` owns screen composition.
@@ -15,41 +15,12 @@ Project: PassedPath Android app
 - Map markers and the place bottom sheet now both read place data from the place-list API state.
 - `dayroute/{date}` is still used for route path and daynote read data.
 
-## Agreed policy summary
-- Place data for both map markers and the place bottom sheet comes from `GET /api/day-routes/{date}/places`.
-- The app fetches the place list once on selected-date entry.
-- The app refreshes the place list again when the user enters the `PLACE` tab or taps the `PLACE` tab again.
-- Bottom-sheet height changes do not trigger place-list fetches.
-- After place-list fetch succeeds, that result is the single source of truth for both map and sheet place rendering.
-- Place identity is always matched by `placeId`.
-- Place ordering is always based on server-provided `orderIndex`.
-- After place CRUD succeeds, the app should refresh via the place-list API rather than reloading place state from `dayroute/{date}`.
-- `dayroute/{date}` place payload is no longer used as the UI source of truth for place rendering.
-
-## Today-date read policy
-- For today:
-  - route path, distance, and path point count come from local Room-backed route data
-  - title and memo come from remote `dayroute/{date}` read data
-  - place data for map and sheet comes from `GET /api/day-routes/{date}/places`
-- For past dates:
-  - route path, title, and memo come from remote `dayroute/{date}`
-  - place data for map and sheet comes from `GET /api/day-routes/{date}/places`
-
 ## Shared interaction state
 - `selectedDateKey`
 - `mapPlaces`
 - `sheetPlaces`
 - `selectedPlaceId`
 - `isPlaceSheetOpen`
-
-## Marker to sheet interaction policy
-- Marker tap updates `selectedPlaceId`.
-- Marker tap opens the place sheet.
-- If the current tab is not `PLACE`, marker tap also refreshes the current-date place list.
-- The sheet scrolls to the matching card.
-- That card plays a one-time small horizontal shake animation.
-- `selectedPlaceId` is cleared after the one-time interaction is handled.
-- Marker tap also focuses the map camera near the tapped place, slightly above screen center to account for the bottom sheet.
 
 ## Issue 1. Split place-data ownership and finalize API responsibility
 Status: Done
