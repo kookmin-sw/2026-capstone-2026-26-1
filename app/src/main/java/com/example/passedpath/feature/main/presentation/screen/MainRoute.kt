@@ -56,6 +56,18 @@ fun MainRoute(
         )
     }
 
+    LaunchedEffect(dayNoteViewModel) {
+        dayNoteViewModel.snapshotPatch.collect { patch ->
+            viewModel.applyDayNoteSnapshotPatch(
+                dateKey = patch.dateKey,
+                title = patch.title,
+                memo = patch.memo,
+                shouldUpdateTitle = patch.shouldUpdateTitle,
+                shouldUpdateMemo = patch.shouldUpdateMemo
+            )
+        }
+    }
+
     LaunchedEffect(uiState.selectedDateKey) {
         viewModel.clearFetchedMapPlaces(uiState.selectedDateKey)
         placeViewModel.updateDateKey(uiState.selectedDateKey)

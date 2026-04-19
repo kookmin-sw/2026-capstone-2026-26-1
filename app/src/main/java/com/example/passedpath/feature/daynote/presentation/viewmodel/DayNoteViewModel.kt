@@ -7,15 +7,25 @@ import com.example.passedpath.app.AppContainer
 import com.example.passedpath.feature.daynote.domain.usecase.PatchDayRouteMemoUseCase
 import com.example.passedpath.feature.daynote.domain.usecase.PatchDayRouteTitleUseCase
 import com.example.passedpath.feature.daynote.presentation.state.DayNoteUiState
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+
+data class DayNoteSnapshotPatch(
+    val dateKey: String,
+    val title: String? = null,
+    val memo: String? = null,
+    val shouldUpdateTitle: Boolean = false,
+    val shouldUpdateMemo: Boolean = false
+)
 
 class DayNoteViewModel(
     private val patchDayRouteTitleUseCase: PatchDayRouteTitleUseCase,
@@ -25,6 +35,9 @@ class DayNoteViewModel(
 
     private val _uiState = MutableStateFlow(DayNoteUiState(dateKey = initialDateKey))
     val uiState: StateFlow<DayNoteUiState> = _uiState.asStateFlow()
+
+    private val snapshotPatchChannel = Channel<DayNoteSnapshotPatch>(capacity = Channel.BUFFERED)
+    val snapshotPatch = snapshotPatchChannel.receiveAsFlow()
 
     fun syncSelectedDay(dateKey: String, title: String, memo: String) {
         _uiState.update { currentState ->
@@ -89,23 +102,27 @@ class DayNoteViewModel(
 
         viewModelScope.launch {
             _uiState.update { it.copy(isSubmitting = true, errorMessage = null, successMessage = null) }
+
+            var savedTitle = currentState.originalTitle
+            var savedMemo = currentState.originalMemo
+            var titleSaved = false
+            var memoSaved = false
+
             try {
-                val savedTitle = if (titleChanged) {
-                    patchDayRouteTitleUseCase(
+                if (titleChanged) {
+                    savedTitle = patchDayRouteTitleUseCase(
                         dateKey = currentState.dateKey,
                         title = normalizedTitle.ifBlank { null }
                     ).title.orEmpty()
-                } else {
-                    currentState.originalTitle
+                    titleSaved = true
                 }
 
-                val savedMemo = if (memoChanged) {
-                    patchDayRouteMemoUseCase(
+                if (memoChanged) {
+                    savedMemo = patchDayRouteMemoUseCase(
                         dateKey = currentState.dateKey,
                         memo = normalizedMemo.ifBlank { null }
                     ).memo.orEmpty()
-                } else {
-                    currentState.originalMemo
+                    memoSaved = true
                 }
 
                 _uiState.update {
@@ -125,17 +142,55 @@ class DayNoteViewModel(
                         feedbackEventId = it.feedbackEventId + 1
                     )
                 }
-            } catch (throwable: Throwable) {
+                emitSnapshotPatch(
+                    currentState = currentState,
+                    savedTitle = savedTitle,
+                    savedMemo = savedMemo,
+                    titleSaved = titleSaved,
+                    memoSaved = memoSaved
+                )
+            } catch (_: Throwable) {
                 _uiState.update {
                     it.copy(
+                        originalTitle = if (titleSaved) savedTitle else it.originalTitle,
+                        originalMemo = if (memoSaved) savedMemo else it.originalMemo,
+                        title = if (titleSaved) savedTitle else it.title,
+                        memo = if (memoSaved) savedMemo else it.memo,
                         isSubmitting = false,
-                        errorMessage = throwable.message ?: "기록 저장에 실패했습니다.",
+                        errorMessage = SAVE_FAILURE_MESSAGE,
                         successMessage = null,
                         feedbackEventId = it.feedbackEventId + 1
                     )
                 }
+                emitSnapshotPatch(
+                    currentState = currentState,
+                    savedTitle = savedTitle,
+                    savedMemo = savedMemo,
+                    titleSaved = titleSaved,
+                    memoSaved = memoSaved
+                )
             }
         }
+    }
+
+    private suspend fun emitSnapshotPatch(
+        currentState: DayNoteUiState,
+        savedTitle: String,
+        savedMemo: String,
+        titleSaved: Boolean,
+        memoSaved: Boolean
+    ) {
+        if (!titleSaved && !memoSaved) return
+
+        snapshotPatchChannel.send(
+            DayNoteSnapshotPatch(
+                dateKey = currentState.dateKey,
+                title = savedTitle,
+                memo = savedMemo,
+                shouldUpdateTitle = titleSaved,
+                shouldUpdateMemo = memoSaved
+            )
+        )
     }
 
     private fun isValidDateKey(value: String): Boolean {
@@ -154,6 +209,8 @@ class DayNoteViewModel(
     companion object {
         const val MAX_TITLE_LENGTH: Int = 60
         const val MAX_MEMO_LENGTH: Int = 1000
+        private const val SAVE_FAILURE_MESSAGE: String =
+            "네트워크 문제로 저장하지 못했습니다. 잠시 후 다시 시도해 주세요."
     }
 }
 

@@ -30,6 +30,7 @@ import com.example.passedpath.feature.route.presentation.coordinator.RouteLoadSt
 import com.example.passedpath.feature.route.presentation.coordinator.RouteStateCoordinator
 import com.example.passedpath.feature.route.presentation.state.MainRouteModeUiState
 import com.example.passedpath.feature.route.presentation.state.RouteUiAction
+import com.example.passedpath.feature.route.presentation.state.SelectedDayRouteUiState
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -175,6 +176,31 @@ class MainViewModel(
                 currentState
             } else {
                 currentState.copy(fetchedMapPlaces = null)
+            }
+        }
+    }
+
+    fun applyDayNoteSnapshotPatch(
+        dateKey: String,
+        title: String? = null,
+        memo: String? = null,
+        shouldUpdateTitle: Boolean = false,
+        shouldUpdateMemo: Boolean = false
+    ) {
+        if (!shouldUpdateTitle && !shouldUpdateMemo) return
+
+        _uiState.update { currentState ->
+            if (currentState.selectedDateKey != dateKey) {
+                currentState
+            } else {
+                currentState.copy(
+                    routeModeUiState = currentState.routeModeUiState.updateRouteSnapshot { route ->
+                        route.copy(
+                            title = if (shouldUpdateTitle) title.orEmpty() else route.title,
+                            memo = if (shouldUpdateMemo) memo.orEmpty() else route.memo
+                        )
+                    }
+                )
             }
         }
     }
@@ -331,6 +357,15 @@ private fun MainRouteModeUiState.withTrackingState(isTracking: Boolean): MainRou
     return when (this) {
         is MainRouteModeUiState.Today -> copy(isTrackingEnabled = isTracking)
         is MainRouteModeUiState.Past -> this
+    }
+}
+
+private fun MainRouteModeUiState.updateRouteSnapshot(
+    transform: (SelectedDayRouteUiState) -> SelectedDayRouteUiState
+): MainRouteModeUiState {
+    return when (this) {
+        is MainRouteModeUiState.Today -> copy(route = transform(route))
+        is MainRouteModeUiState.Past -> copy(route = transform(route))
     }
 }
 
