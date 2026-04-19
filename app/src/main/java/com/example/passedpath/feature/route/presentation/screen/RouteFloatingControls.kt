@@ -15,50 +15,26 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.passedpath.R
+import com.example.passedpath.feature.route.presentation.action.buildRouteActionUiState
 import com.example.passedpath.feature.route.presentation.state.MainRouteModeUiState
 import com.example.passedpath.feature.route.presentation.state.RouteUiAction
-import com.example.passedpath.ui.component.BasePillButton
-import com.example.passedpath.ui.theme.Gray700
 
 @Composable
 internal fun RouteFloatingControls(
     routeMode: MainRouteModeUiState,
     onRouteAction: (RouteUiAction) -> Unit
 ) {
+    val actionUiState = buildRouteActionUiState(routeMode)
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         RouteDistanceChip(distanceKm = routeMode.route.totalDistanceKm)
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            when (routeMode) {
-                is MainRouteModeUiState.Today -> {
-                    if (routeMode.canRefreshDistance) {
-                        FloatingPillButton(
-                            text = stringResource(R.string.route_refresh),
-                            onClick = { onRouteAction(RouteUiAction.RefreshTodayRoute) }
-                        )
-                    }
-                    if (routeMode.isTrackingToggleVisible) {
-                        TrackingToggleButton(
-                            isTracking = routeMode.isTrackingEnabled,
-                            onClick = { onRouteAction(RouteUiAction.ToggleTracking) }
-                        )
-                    }
-                }
-                is MainRouteModeUiState.Past -> {
-                    if (routeMode.isPlaybackEntryVisible) {
-                        FloatingPillButton(
-                            text = stringResource(R.string.route_open_playback),
-                            onClick = { onRouteAction(RouteUiAction.EnterPastPlayback) }
-                        )
-                    }
-                }
-            }
-        }
+        RouteActionRow(
+            actionUiState = actionUiState,
+            onRouteAction = onRouteAction,
+            useFloatingStyle = true
+        )
     }
 }
 
@@ -81,13 +57,6 @@ private fun RouteDistanceChip(distanceKm: Double) {
                 fontWeight = FontWeight.SemiBold
             )
         }
-    }
-}
-
-@Composable
-private fun FloatingPillButton(text: String, onClick: () -> Unit) {
-    BasePillButton(onClick = onClick, shadowElevation = 6.dp) {
-        Text(text = text, color = Gray700, fontWeight = FontWeight.Medium)
     }
 }
 
