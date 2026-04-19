@@ -153,6 +153,9 @@ fun MainScreen(
                             selectedTab = tab
                         ))
                     },
+                    onPlaceRetryClick = {
+                        onPlaceListRefreshRequested(uiState.selectedDateKey)
+                    },
                     onAddPlaceClick = {
                         dispatchInteraction(reduceForPlaceCreateSheetVisibility(
                             state = localUiState,
