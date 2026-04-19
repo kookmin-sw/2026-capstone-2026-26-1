@@ -13,7 +13,7 @@ class AuthTokenManager(
 ) {
 
     private val logTag = "AuthFlow"
-    private val sessionExpiredMessage = "로그인 인증이 만료되어 자동으로 로그아웃되었어요"
+    private val sessionExpiredMessage = "로그인이 만료되어 자동으로 로그아웃되었어요"
 
     suspend fun refreshAccessToken(): Boolean {
         val refreshToken = sessionStorage.getRefreshToken()

@@ -83,9 +83,9 @@ internal fun TrackingToggleButton(
         Text(
             text = stringResource(
                 if (isTracking) {
-                    R.string.route_tracking_stop
+                    R.string.route_tracking_active
                 } else {
-                    R.string.route_tracking_start
+                    R.string.route_tracking_inactive
                 }
             ),
             color = Gray700

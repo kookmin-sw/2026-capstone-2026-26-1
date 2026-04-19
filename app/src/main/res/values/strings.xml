@@ -53,8 +53,8 @@
     <string name="route_distance">이동 거리: %1$s</string>
     <string name="route_path_points">경로 좌표 수: %1$d</string>
     <string name="route_refresh">경로 새로고침</string>
-    <string name="route_tracking_start">위치 수집 중</string>
-    <string name="route_tracking_stop">기록 중지</string>
+    <string name="route_tracking_active">위치 수집 중</string>
+    <string name="route_tracking_inactive">기록 중지</string>
     <string name="route_tracking_toggle">추적 시작/중지</string>
     <string name="route_open_playback">경로 재생 보기</string>
     <string name="route_retry">다시 시도</string>
