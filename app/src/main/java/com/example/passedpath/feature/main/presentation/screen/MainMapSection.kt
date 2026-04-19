@@ -51,6 +51,8 @@ internal fun MainMapSection(
     val routeAccentColor = androidx.compose.material3.MaterialTheme.colorScheme.primary
     val fallbackPosition = LatLng(37.5662952, 126.9779451)
     val mapCameraBottomPadding = (BottomSheetMiddleVisibleHeight + BottomSheetFloatingPadding) * 0.3f
+    val currentLocationBottomPadding =
+        floatingBottomPadding.coerceAtMost(BottomSheetMiddleVisibleHeight + BottomSheetFloatingPadding)
     val currentLocation = if (uiState.permissionState == LocationPermissionUiState.DENIED) {
         null
     } else {
@@ -116,6 +118,7 @@ internal fun MainMapSection(
             onPermissionBannerConfirm = onPermissionBannerConfirm,
             debugActions = debugActions,
             floatingBottomPadding = floatingBottomPadding,
+            bottomEndControlsBottomPadding = currentLocationBottomPadding,
             isDebugPanelExpanded = isDebugPanelExpanded,
             onToggleDebugPanelExpanded = { isDebugPanelExpanded = !isDebugPanelExpanded },
             topStartControls = {

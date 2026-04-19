@@ -20,9 +20,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.EditNote
-import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -35,20 +32,27 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.passedpath.R
 import com.example.passedpath.feature.daynote.presentation.screen.DayNoteBottomSheetContent
 import com.example.passedpath.feature.daynote.presentation.state.DayNoteUiState
 import com.example.passedpath.feature.place.presentation.screen.PlaceBottomSheetContent
 import com.example.passedpath.feature.place.presentation.state.PlaceUiState
+import com.example.passedpath.ui.theme.Gray100
 import com.example.passedpath.ui.theme.Gray200
 import com.example.passedpath.ui.theme.Gray400
+import com.example.passedpath.ui.theme.Gray500
 import com.example.passedpath.ui.theme.Gray700
+import com.example.passedpath.ui.theme.Gray900
 import com.example.passedpath.ui.theme.Green50
 import com.example.passedpath.ui.theme.Green100
+import com.example.passedpath.ui.theme.Green500
+import com.example.passedpath.ui.theme.PassedPathTheme
 
 @Composable
 internal fun MainBottomSheet(
@@ -163,12 +167,11 @@ private fun BottomSheetTabRow(
 ) {
     Row(
         modifier = Modifier
-            .padding(horizontal = 20.dp)
+            .padding(horizontal = 16.dp)
             .fillMaxWidth()
-            .height(44.dp)
-            .clip(RoundedCornerShape(22.dp))
-            .background(Green50)
-            .border(width = 1.dp, color = Green100, shape = RoundedCornerShape(22.dp)),
+            .height(58.dp)
+            .clip(RoundedCornerShape(20.dp))
+            .background(Gray100),
         verticalAlignment = Alignment.CenterVertically
     ) {
         MainBottomSheetTab.entries.forEach { tab ->
@@ -177,7 +180,7 @@ private fun BottomSheetTabRow(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
-                    .padding(horizontal = 4.dp, vertical = 4.dp)
+                    .padding(horizontal = 6.dp, vertical = 6.dp)
                     .clip(RoundedCornerShape(18.dp))
                     .clickable { onTabSelected(tab) },
                 shape = RoundedCornerShape(18.dp),
@@ -190,16 +193,17 @@ private fun BottomSheetTabRow(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
-                        imageVector = tab.icon(),
+                        painter = painterResource(id = tab.iconResId()),
                         contentDescription = null,
-                        tint = if (selected) Gray700 else Gray400,
+                        tint = if (selected) Green500 else Gray400,
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = stringResource(tab.titleResId()),
-                        color = if (selected) Gray700 else Gray400,
-                        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+                        color = if (selected) Gray900 else Gray400,
+                        fontWeight = if (selected) FontWeight.Bold else FontWeight.SemiBold,
+                        fontSize = 17.sp,
                         style = androidx.compose.material3.MaterialTheme.typography.bodyMedium
                     )
                 }
@@ -220,10 +224,10 @@ private fun MainBottomSheetTab.titleResId(): Int {
     }
 }
 
-private fun MainBottomSheetTab.icon(): ImageVector {
+private fun MainBottomSheetTab.iconResId(): Int {
     return when (this) {
-        MainBottomSheetTab.PLACE -> Icons.Outlined.Place
-        MainBottomSheetTab.DAYNOTE -> Icons.Outlined.EditNote
+        MainBottomSheetTab.PLACE -> R.drawable.ic_bottom_sheet_place
+        MainBottomSheetTab.DAYNOTE -> R.drawable.ic_bottom_sheet_memo
     }
 }
 
@@ -231,4 +235,32 @@ internal enum class MainBottomSheetValue {
     HIDDEN,
     MIDDLE,
     EXPANDED
+}
+
+@Preview(showBackground = true, heightDp = 720, name = "Main Bottom Sheet")
+@Composable
+private fun MainBottomSheetPreview() {
+    PassedPathTheme {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(0xFFF3F4F6))
+        ) {
+            MainBottomSheet(
+                selectedDateKey = "2026-04-20",
+                placeUiState = PlaceUiState(),
+                dayNoteUiState = DayNoteUiState(dateKey = "2026-04-20"),
+                selectedPlaceId = null,
+                onSelectedPlaceHandled = {},
+                onDayNoteTitleChanged = {},
+                onDayNoteMemoChanged = {},
+                onDayNoteSaveClick = {},
+                selectedTab = MainBottomSheetTab.PLACE,
+                onTabSelected = {},
+                onPlaceRetryClick = {},
+                onAddPlaceClick = {},
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+    }
 }

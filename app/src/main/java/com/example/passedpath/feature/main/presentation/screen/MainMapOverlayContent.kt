@@ -30,6 +30,7 @@ internal fun BoxScope.MainMapOverlayContent(
     onPermissionBannerConfirm: () -> Unit,
     debugActions: MainDebugActions,
     floatingBottomPadding: Dp,
+    bottomEndControlsBottomPadding: Dp = floatingBottomPadding,
     isDebugPanelExpanded: Boolean,
     onToggleDebugPanelExpanded: () -> Unit,
     topStartControls: @Composable (() -> Unit)? = null,
@@ -104,7 +105,7 @@ internal fun BoxScope.MainMapOverlayContent(
     FloatingButtonColumn(
         modifier = Modifier
             .align(Alignment.BottomEnd)
-            .padding(end = 16.dp, bottom = floatingBottomPadding)
+            .padding(end = 16.dp, bottom = bottomEndControlsBottomPadding)
     ) {
         floatingControls?.invoke()
     }
