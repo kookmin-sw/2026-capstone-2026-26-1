@@ -31,7 +31,7 @@ internal fun createPastRouteSuccessDebugSnapshot(routeDetail: DayRouteDetail): R
     return RouteDebugSnapshot(
         source = "remote",
         status = "success",
-        message = "points=${routeDetail.pathPointCount} distanceKm=${routeDetail.totalDistanceKm}"
+        message = "points=${routeDetail.pathPointCount} decoded=${routeDetail.polylinePoints.size} encodedLength=${routeDetail.encodedPath.length} distanceKm=${routeDetail.totalDistanceKm}"
     )
 }
 

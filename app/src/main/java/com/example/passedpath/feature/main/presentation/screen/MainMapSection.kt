@@ -40,6 +40,7 @@ internal fun MainMapSection(
     uiState: MainUiState,
     onCameraIntentConsumed: () -> Unit,
     onDateSelected: (String) -> Unit,
+    onBookmarkClick: () -> Unit,
     onRouteAction: (RouteUiAction) -> Unit,
     onMapClick: () -> Unit,
     onPlaceMarkerClick: (Long) -> Unit,
@@ -110,6 +111,7 @@ internal fun MainMapSection(
         MainMapOverlayContent(
             uiState = uiState,
             onDateSelected = onDateSelected,
+            onBookmarkClick = onBookmarkClick,
             onRouteAction = onRouteAction,
             onPermissionBannerConfirm = onPermissionBannerConfirm,
             debugActions = debugActions,
@@ -129,7 +131,7 @@ internal fun MainMapSection(
                                 )
                             }
                         },
-                        modifier = Modifier.padding(bottom = floatingBottomPadding)
+                        modifier = Modifier
                     )
                 }
             }

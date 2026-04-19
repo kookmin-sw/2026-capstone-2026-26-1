@@ -40,6 +40,7 @@ fun MainScreen(
     onCameraIntentConsumed: () -> Unit,
     onDateSelected: (String) -> Unit,
     onDateSelectionRequested: (String) -> Unit,
+    onBookmarkClick: () -> Unit,
     onRouteAction: (RouteUiAction) -> Unit,
     onDayNoteTitleChanged: (String) -> Unit,
     onDayNoteMemoChanged: (String) -> Unit,
@@ -117,6 +118,7 @@ fun MainScreen(
                     uiState = uiState,
                     onCameraIntentConsumed = onCameraIntentConsumed,
                     onDateSelected = onDateSelectionRequested,
+                    onBookmarkClick = onBookmarkClick,
                     onRouteAction = onRouteAction,
                     onMapClick = {
                         focusManager.clearFocus(force = true)

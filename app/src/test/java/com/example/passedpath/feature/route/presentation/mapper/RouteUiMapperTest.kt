@@ -30,6 +30,7 @@ class RouteUiMapperTest {
         assertEquals("2026-04-01", uiState.dateKey)
         assertEquals("", uiState.title)
         assertEquals("", uiState.memo)
+        assertFalse(uiState.isBookmarked)
         assertEquals(2, uiState.polylinePoints.size)
         assertEquals(1, uiState.routeSegments.size)
         assertEquals(1L, uiState.polylinePoints.first().recordedAtEpochMillis)
@@ -46,6 +47,7 @@ class RouteUiMapperTest {
             totalDistanceKm = 7.8,
             title = "Spring walk",
             memo = "Warm and clear",
+            isBookmarked = true,
             pathPointCount = 3,
             polylinePoints = listOf(
                 RoutePoint(37.1, 127.1),
@@ -63,6 +65,7 @@ class RouteUiMapperTest {
         assertEquals("2026-03-31", uiState.dateKey)
         assertEquals("Spring walk", uiState.title)
         assertEquals("Warm and clear", uiState.memo)
+        assertTrue(uiState.isBookmarked)
         assertEquals(3, uiState.polylinePoints.size)
         assertEquals(2, uiState.routeSegments.size)
         assertEquals(7.8, uiState.totalDistanceKm, 0.0)
@@ -121,6 +124,7 @@ class RouteUiMapperTest {
             totalDistanceKm = 0.0,
             title = "Today Title",
             memo = "Today Memo",
+            isBookmarked = true,
             places = listOf(
                 DayRoutePlace(10L, "Seed Place", "Road", 37.3, 127.3, 1)
             )
@@ -135,6 +139,7 @@ class RouteUiMapperTest {
         assertEquals("2026-04-01", uiState.dateKey)
         assertEquals("Today Title", uiState.title)
         assertEquals("Today Memo", uiState.memo)
+        assertTrue(uiState.isBookmarked)
         assertEquals(2, uiState.polylinePoints.size)
         assertEquals(1, uiState.routeSegments.size)
         assertEquals(1L, uiState.polylinePoints.first().recordedAtEpochMillis)

@@ -8,6 +8,7 @@ import com.example.passedpath.debug.AppDebugLogger
 import com.example.passedpath.debug.DebugLogTag
 import com.example.passedpath.feature.locationtracking.data.manager.LocationTrackingServiceStateReader
 import com.example.passedpath.feature.locationtracking.domain.usecase.ObserveRecentTrackingEventsUseCase
+import com.example.passedpath.feature.bookmark.domain.usecase.ToggleDayRouteBookmarkUseCase
 import com.example.passedpath.feature.main.presentation.policy.MainRouteActionRequest
 import com.example.passedpath.feature.main.presentation.policy.RouteReloadTrigger
 import com.example.passedpath.feature.main.presentation.policy.TrackingToggleDecision
@@ -48,6 +49,7 @@ class MainViewModel(
     private val locationServiceStatusReader: LocationServiceStatusReader,
     initialDateKeyProvider: () -> String = ::todayDateKey,
     private val routeStateCoordinator: RouteStateCoordinator,
+    private val toggleDayRouteBookmarkUseCase: ToggleDayRouteBookmarkUseCase,
     private val observeRecentTrackingEvents: ObserveRecentTrackingEventsUseCase,
     private val trackingServiceStateReader: LocationTrackingServiceStateReader,
     private val startTracking: () -> Unit,
@@ -212,6 +214,24 @@ class MainViewModel(
                 selectedDateKey = _uiState.value.selectedDateKey
             )
         )
+    }
+
+    fun toggleSelectedRouteBookmark() {
+        val selectedDateKey = _uiState.value.selectedDateKey
+        viewModelScope.launch {
+            val bookmark = toggleDayRouteBookmarkUseCase(selectedDateKey)
+            _uiState.update { currentState ->
+                if (currentState.selectedDateKey != selectedDateKey) {
+                    currentState
+                } else {
+                    currentState.copy(
+                        routeModeUiState = currentState.routeModeUiState.updateRouteSnapshot { route ->
+                            route.copy(isBookmarked = bookmark.isBookmarked)
+                        }
+                    )
+                }
+            }
+        }
     }
 
     fun dismissTrackingPermissionDialog() {
@@ -386,6 +406,7 @@ class MainViewModelFactory(
                     dayRouteRepository = appContainer.dayRouteRepository,
                     todayDateKeyProvider = ::todayDateKey
                 ),
+                toggleDayRouteBookmarkUseCase = appContainer.toggleDayRouteBookmarkUseCase,
                 observeRecentTrackingEvents = appContainer.observeRecentTrackingEventsUseCase,
                 trackingServiceStateReader = appContainer.locationTrackingServiceStateReader,
                 startTracking = appContainer.startLocationTrackingUseCase::invoke,

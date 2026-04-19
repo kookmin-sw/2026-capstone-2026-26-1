@@ -3,11 +3,9 @@ package com.example.passedpath.feature.main.presentation.screen
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,6 +24,7 @@ import com.example.passedpath.ui.component.banner.PermissionBanner
 internal fun BoxScope.MainMapOverlayContent(
     uiState: MainUiState,
     onDateSelected: (String) -> Unit,
+    onBookmarkClick: () -> Unit,
     onRouteAction: (RouteUiAction) -> Unit,
     onPermissionBannerConfirm: () -> Unit,
     debugActions: MainDebugActions,
@@ -44,43 +43,46 @@ internal fun BoxScope.MainMapOverlayContent(
         onRouteAction = onRouteAction
     )
 
+    RouteTopBars(
+        route = uiState.selectedRoute,
+        onDateSelected = onDateSelected,
+        onBookmarkClick = onBookmarkClick,
+        modifier = Modifier
+            .align(Alignment.TopCenter)
+            .fillMaxWidth()
+    )
+
     Column(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.SpaceBetween
+            .align(Alignment.TopCenter)
+            .fillMaxWidth()
+            .statusBarsPadding()
+            .padding(top = RouteTopBarsHeight + 12.dp, start = 16.dp, end = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            MainDateTopBar(
-                selectedDateKey = uiState.selectedDateKey,
-                onDateSelected = onDateSelected
+        RouteFloatingControls(
+            routeMode = uiState.routeModeUiState,
+            onRouteAction = onRouteAction
+        )
+        if (BuildConfig.DEBUG) {
+            MainDebugPanel(
+                debugUiState = uiState.debugUiState,
+                onRefreshSystemState = debugActions.refreshSystemState,
+                onReloadRoute = debugActions.reloadRoute,
+                isExpanded = isDebugPanelExpanded,
+                onToggleExpanded = onToggleDebugPanelExpanded
             )
-            Spacer(modifier = Modifier.size(10.dp))
-            RouteFloatingControls(
-                routeMode = uiState.routeModeUiState,
-                onRouteAction = onRouteAction
-            )
-            if (BuildConfig.DEBUG) {
-                Spacer(modifier = Modifier.size(10.dp))
-                MainDebugPanel(
-                    debugUiState = uiState.debugUiState,
-                    onRefreshSystemState = debugActions.refreshSystemState,
-                    onReloadRoute = debugActions.reloadRoute,
-                    isExpanded = isDebugPanelExpanded,
-                    onToggleExpanded = onToggleDebugPanelExpanded
-                )
-            }
         }
+    }
 
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.End
-        ) {
-            currentLocationButton?.invoke()
-        }
+    Column(
+        modifier = Modifier
+            .align(Alignment.BottomEnd)
+            .padding(end = 16.dp, bottom = floatingBottomPadding),
+        horizontalAlignment = Alignment.End
+    ) {
+        currentLocationButton?.invoke()
     }
 
     permissionOverlayUiModel?.let { overlayUiModel ->

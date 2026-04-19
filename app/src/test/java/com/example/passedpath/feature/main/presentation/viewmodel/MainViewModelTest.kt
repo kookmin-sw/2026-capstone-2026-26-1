@@ -1,5 +1,8 @@
 ﻿package com.example.passedpath.feature.main.presentation.viewmodel
 
+import com.example.passedpath.feature.bookmark.domain.model.DayRouteBookmark
+import com.example.passedpath.feature.bookmark.domain.repository.DayRouteBookmarkRepository
+import com.example.passedpath.feature.bookmark.domain.usecase.ToggleDayRouteBookmarkUseCase
 import com.example.passedpath.feature.locationtracking.data.manager.LocationTrackingServiceStateReader
 import com.example.passedpath.feature.locationtracking.domain.model.DailyPath
 import com.example.passedpath.feature.locationtracking.domain.model.DayRouteDetail
@@ -488,6 +491,37 @@ class MainViewModelTest {
     }
 
     @Test
+    fun `toggleSelectedRouteBookmark updates selected route bookmark state`() = runTest {
+        val bookmarkRepository = FakeDayRouteBookmarkRepository(
+            resultByDate = mutableMapOf("2026-03-29" to true)
+        )
+        val repository = FakeDayRouteRepository(
+            resultByDate = mutableMapOf(
+                "2026-03-29" to RemoteDayRouteResult.Success(
+                    routeDetail = DayRouteDetail(
+                        dateKey = "2026-03-29",
+                        totalDistanceKm = 1.2,
+                        isBookmarked = false
+                    )
+                )
+            )
+        )
+        val viewModel = createViewModel(
+            repository = repository,
+            initialDateKey = "2026-03-29",
+            todayDateKey = "2026-03-31",
+            bookmarkRepository = bookmarkRepository
+        )
+        advanceUntilIdle()
+
+        viewModel.toggleSelectedRouteBookmark()
+        advanceUntilIdle()
+
+        assertTrue(viewModel.uiState.value.selectedRoute.isBookmarked)
+        assertEquals(listOf("2026-03-29"), bookmarkRepository.toggledDates)
+    }
+
+    @Test
     fun `switching from past error date to today clears stale error and starts local observation`() = runTest {
         val localFlow = MutableStateFlow<DailyPath?>(
             DailyPath(
@@ -661,7 +695,8 @@ class MainViewModelTest {
         permissionReader: LocationPermissionStatusReader =
             FakeLocationPermissionStatusReader(backgroundGranted = backgroundGranted),
         locationServiceReader: LocationServiceStatusReader =
-            MutableLocationServiceStatusReader(isEnabled = isLocationServiceEnabled)
+            MutableLocationServiceStatusReader(isEnabled = isLocationServiceEnabled),
+        bookmarkRepository: DayRouteBookmarkRepository = FakeDayRouteBookmarkRepository()
     ): MainViewModel {
         return MainViewModel(
             locationPermissionStatusReader = permissionReader,
@@ -671,6 +706,7 @@ class MainViewModelTest {
                 dayRouteRepository = repository,
                 todayDateKeyProvider = { todayDateKey }
             ),
+            toggleDayRouteBookmarkUseCase = ToggleDayRouteBookmarkUseCase(bookmarkRepository),
             observeRecentTrackingEvents = FakeObserveRecentTrackingEventsUseCase(),
             trackingServiceStateReader = FakeLocationTrackingServiceStateReader(trackingState),
             startTracking = onStartTracking,
@@ -735,6 +771,19 @@ class MainViewModelTest {
         trackingDebugLogRepository = FakeTrackingDebugLogRepository()
     ) {
         override fun invoke(limit: Int): Flow<List<String>> = flowOf(emptyList())
+    }
+
+    private class FakeDayRouteBookmarkRepository(
+        private val resultByDate: MutableMap<String, Boolean> = mutableMapOf()
+    ) : DayRouteBookmarkRepository {
+        val toggledDates = mutableListOf<String>()
+
+        override suspend fun toggleBookmark(dateKey: String): DayRouteBookmark {
+            toggledDates += dateKey
+            val nextValue = resultByDate[dateKey] ?: true
+            resultByDate[dateKey] = nextValue
+            return DayRouteBookmark(isBookmarked = nextValue)
+        }
     }
 
     private class FakeTrackingDebugLogRepository : TrackingDebugLogRepository {
