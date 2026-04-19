@@ -6,8 +6,10 @@ import com.example.passedpath.feature.locationtracking.domain.model.DayRoutePlac
 import com.example.passedpath.feature.locationtracking.domain.model.RoutePoint
 import com.example.passedpath.feature.locationtracking.domain.model.TrackedLocation
 import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiState
+import com.example.passedpath.feature.route.presentation.policy.shouldRenderGapAsDashed
 import com.example.passedpath.feature.route.presentation.state.MainRouteModeUiState
 import com.example.passedpath.feature.route.presentation.state.PlaceMarkerUiState
+import com.example.passedpath.feature.route.presentation.state.RoutePolylineSegmentUiState
 import com.example.passedpath.feature.route.presentation.state.SelectedDayRouteUiState
 
 internal fun createInitialRouteMode(dateKey: String, isToday: Boolean): MainRouteModeUiState {
@@ -90,11 +92,13 @@ internal fun createPastRouteMode(
 }
 
 internal fun DailyPath.toSelectedDayRouteUiState(): SelectedDayRouteUiState {
+    val polylinePoints = points.map(TrackedLocation::toMainCoordinateUiState)
     return SelectedDayRouteUiState(
         dateKey = dateKey,
         title = "",
         memo = "",
-        polylinePoints = points.map(TrackedLocation::toMainCoordinateUiState),
+        polylinePoints = polylinePoints,
+        routeSegments = polylinePoints.toRoutePolylineSegments(),
         totalDistanceKm = totalDistanceMeters / 1000.0,
         pathPointCount = pathPointCount,
         markerPlaces = emptyList()
@@ -107,12 +111,14 @@ internal fun createTodaySelectedDayRouteUiState(
     remoteRouteDetail: DayRouteDetail?
 ): SelectedDayRouteUiState {
     val remoteRouteUiState = remoteRouteDetail?.toSelectedDayRouteUiState()
+    val polylinePoints = dailyPath?.points?.map(TrackedLocation::toMainCoordinateUiState).orEmpty()
 
     return SelectedDayRouteUiState(
         dateKey = dateKey,
         title = remoteRouteUiState?.title.orEmpty(),
         memo = remoteRouteUiState?.memo.orEmpty(),
-        polylinePoints = dailyPath?.points?.map(TrackedLocation::toMainCoordinateUiState).orEmpty(),
+        polylinePoints = polylinePoints,
+        routeSegments = polylinePoints.toRoutePolylineSegments(),
         totalDistanceKm = (dailyPath?.totalDistanceMeters ?: 0.0) / 1000.0,
         pathPointCount = dailyPath?.pathPointCount ?: 0,
         markerPlaces = remoteRouteUiState?.markerPlaces.orEmpty()
@@ -120,21 +126,36 @@ internal fun createTodaySelectedDayRouteUiState(
 }
 
 internal fun DayRouteDetail.toSelectedDayRouteUiState(): SelectedDayRouteUiState {
+    val polylinePoints = polylinePoints.map(RoutePoint::toMainCoordinateUiState)
     return SelectedDayRouteUiState(
         dateKey = dateKey,
         title = title,
         memo = memo,
-        polylinePoints = polylinePoints.map(RoutePoint::toMainCoordinateUiState),
+        polylinePoints = polylinePoints,
+        routeSegments = polylinePoints.toRoutePolylineSegments(),
         totalDistanceKm = totalDistanceKm,
         pathPointCount = pathPointCount,
         markerPlaces = places.map(DayRoutePlace::toPlaceMarkerUiState)
     )
 }
 
+private fun List<MainCoordinateUiState>.toRoutePolylineSegments(): List<RoutePolylineSegmentUiState> {
+    if (size < 2) return emptyList()
+
+    return zipWithNext { start, end ->
+        RoutePolylineSegmentUiState(
+            start = start,
+            end = end,
+            isDashed = shouldRenderGapAsDashed(start = start, end = end)
+        )
+    }
+}
+
 private fun TrackedLocation.toMainCoordinateUiState(): MainCoordinateUiState {
     return MainCoordinateUiState(
         latitude = latitude,
-        longitude = longitude
+        longitude = longitude,
+        recordedAtEpochMillis = recordedAtEpochMillis
     )
 }
 

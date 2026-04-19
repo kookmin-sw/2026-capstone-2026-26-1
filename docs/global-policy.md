@@ -20,6 +20,16 @@
   - route path, title, and memo come from remote `dayroute/{date}`
   - place data for map and sheet comes from `GET /api/day-routes/{date}/places`
 
+## Route gap render policy
+- Route rendering keeps the base path color unchanged for both solid and gap segments.
+- The app renders only the connecting line between two adjacent route points as dashed when both conditions are true:
+  - point time gap is at least 10 minutes
+  - straight-line distance between the two points is at least 1km
+- Dashed rendering is evaluated per adjacent point pair, not for the whole route polyline.
+- Current limitation:
+  - today/local route points include timestamps, so the dashed-gap rule can be applied
+  - past-date remote route points currently do not include per-point timestamps in `dayroute/{date}`, so the time-gap rule cannot be evaluated there until the server contract widens
+
 ## Place read and synchronization policy
 - Place data for both map markers and the place bottom sheet comes from `GET /api/day-routes/{date}/places`.
 - Fetch trigger policy:

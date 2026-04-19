@@ -11,11 +11,18 @@ data class PlaceMarkerUiState(
     val orderIndex: Int
 )
 
+data class RoutePolylineSegmentUiState(
+    val start: MainCoordinateUiState,
+    val end: MainCoordinateUiState,
+    val isDashed: Boolean
+)
+
 data class SelectedDayRouteUiState(
     val dateKey: String,
     val title: String = "",
     val memo: String = "",
     val polylinePoints: List<MainCoordinateUiState> = emptyList(),
+    val routeSegments: List<RoutePolylineSegmentUiState> = emptyList(),
     val totalDistanceKm: Double = 0.0,
     val pathPointCount: Int = 0,
     val markerPlaces: List<PlaceMarkerUiState> = emptyList()

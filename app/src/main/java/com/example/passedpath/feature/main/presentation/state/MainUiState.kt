@@ -9,7 +9,8 @@ import com.example.passedpath.feature.route.presentation.state.SelectedDayRouteU
 
 data class MainCoordinateUiState(
     val latitude: Double,
-    val longitude: Double
+    val longitude: Double,
+    val recordedAtEpochMillis: Long? = null
 )
 
 data class MainUiState(
