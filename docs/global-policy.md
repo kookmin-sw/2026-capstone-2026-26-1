@@ -93,6 +93,31 @@
 - A date is considered synced when `day_routes.lastSyncedAtEpochMillis != null`.
 - A date is considered unsynced when `day_routes.lastSyncedAtEpochMillis == null`.
 
+## Location tracking request and save policy
+- Tracking keeps `PRIORITY_HIGH_ACCURACY` for path quality.
+- Location request policy uses adaptive request modes:
+  - moving mode:
+    - request interval: `60s`
+    - minimum update interval: `30s`
+    - minimum update distance: `20m`
+  - idle mode:
+    - request interval: `5m`
+    - minimum update interval: `2m`
+    - minimum update distance: `50m`
+- Mode transition policy:
+  - tracking starts in moving mode
+  - if a local point is saved, stay in moving mode
+  - if no point is saved for `5m`, switch to idle mode
+  - if a point is saved again while idle, switch back to moving mode
+- Local save policy:
+  - drop locations whose accuracy is worse than `50m`
+  - skip local save when moved distance from the latest saved point is less than `20m`
+- Policy split by responsibility:
+  - location callback request policy belongs in `feature/locationtracking/domain/policy/LocationRequestPolicy.kt`
+  - moving/idle transition policy belongs in `feature/locationtracking/domain/policy/AdaptiveTrackingModePolicy.kt`
+  - local save acceptance policy belongs in `feature/locationtracking/domain/policy/LocationPersistencePolicy.kt`
+  - upload scheduling policy belongs in `feature/locationtracking/domain/policy/LocationUploadPolicy.kt`
+
 ## Notes
 - This document intentionally captures stable policy only.
 - Open questions and future reconsiderations should stay in `docs/future-work.md` or issue/history documents.

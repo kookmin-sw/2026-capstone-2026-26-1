@@ -13,6 +13,7 @@ import com.example.passedpath.feature.locationtracking.domain.model.TrackedLocat
 import com.example.passedpath.feature.locationtracking.domain.policy.LocationPersistencePolicy
 import com.example.passedpath.feature.locationtracking.domain.policy.TrackingDateKeyResolver
 import com.example.passedpath.feature.locationtracking.domain.repository.LocationTrackingRepository
+import com.example.passedpath.feature.locationtracking.domain.repository.SaveRawLocationResult
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 
@@ -23,7 +24,7 @@ class RoomLocationTrackingRepository(
     private val diagnosticsLogger: TrackingDiagnosticsLogger
 ) : LocationTrackingRepository {
 
-    override suspend fun saveRawLocation(location: TrackedLocation) {
+    override suspend fun saveRawLocation(location: TrackedLocation): SaveRawLocationResult {
         val dateKey = dateKeyResolver.resolveDateKey(location.recordedAtEpochMillis)
         val latestSavedPoint = gpsPointDao.getLatestPointByDate(dateKey)?.toTrackedLocation()
 
@@ -36,7 +37,7 @@ class RoomLocationTrackingRepository(
                 message = "drop_accuracy accuracy=${location.accuracyMeters} max=${LocationPersistencePolicy.MAX_ACCEPTABLE_ACCURACY_METERS}",
                 dateKey = dateKey
             )
-            return
+            return SaveRawLocationResult.DROPPED_ACCURACY
         }
 
         if (!LocationPersistencePolicy.shouldPersistLocation(latestSavedPoint, location)) {
@@ -46,7 +47,7 @@ class RoomLocationTrackingRepository(
                 message = "drop_distance moved=$movedDistanceMeters min=${LocationPersistencePolicy.MIN_SAVE_DISTANCE_METERS}",
                 dateKey = dateKey
             )
-            return
+            return SaveRawLocationResult.DROPPED_DISTANCE
         }
 
         gpsPointDao.insert(location.toGpsPointEntity(dateKey))
@@ -63,6 +64,7 @@ class RoomLocationTrackingRepository(
             message = "saved accuracy=${location.accuracyMeters} recordedAt=${location.recordedAtEpochMillis}",
             dateKey = dateKey
         )
+        return SaveRawLocationResult.SAVED
     }
 
     override fun observeDailyPath(dateKey: String): Flow<DailyPath> {

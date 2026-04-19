@@ -8,9 +8,11 @@ import android.util.Log
 import androidx.core.content.ContextCompat
 import com.example.passedpath.app.appContainer
 import com.example.passedpath.debug.TrackingDiagnosticsLogger
+import com.example.passedpath.feature.locationtracking.domain.policy.AdaptiveTrackingModePolicy
 import com.example.passedpath.feature.locationtracking.domain.policy.LocationRequestPolicy
-import com.example.passedpath.feature.locationtracking.domain.policy.TrackingDateKeyResolver
 import com.example.passedpath.feature.locationtracking.domain.policy.LocationUploadPolicy
+import com.example.passedpath.feature.locationtracking.domain.policy.TrackingLocationMode
+import com.example.passedpath.feature.locationtracking.domain.repository.SaveRawLocationResult
 import com.example.passedpath.feature.locationtracking.domain.tracker.LocationTrackingSession
 import com.example.passedpath.feature.locationtracking.data.manager.LocationTrackingServiceStateWriter
 import com.example.passedpath.feature.locationtracking.presentation.notification.TrackingNotificationFactory
@@ -30,18 +32,18 @@ class LocationTrackingService : Service() {
     private val uploadMutex = Mutex()
 
     private lateinit var notificationFactory: TrackingNotificationFactory
-    private lateinit var dateKeyResolver: TrackingDateKeyResolver
     private lateinit var serviceStateWriter: LocationTrackingServiceStateWriter
     private lateinit var diagnosticsLogger: TrackingDiagnosticsLogger
     private var trackingSession: LocationTrackingSession? = null
     private var periodicUploadJob: Job? = null
     private var preBoundaryUploadJob: Job? = null
+    private var idleModeFallbackJob: Job? = null
     private var lastLocationCallbackAtEpochMillis: Long? = null
+    private var currentTrackingMode: TrackingLocationMode = AdaptiveTrackingModePolicy.initialMode()
 
     override fun onCreate() {
         super.onCreate()
         notificationFactory = TrackingNotificationFactory(this)
-        dateKeyResolver = applicationContext.appContainer.trackingDateKeyResolver
         serviceStateWriter = applicationContext.appContainer.locationTrackingServiceStateWriter
         diagnosticsLogger = applicationContext.appContainer.trackingDiagnosticsLogger
     }
@@ -80,26 +82,32 @@ class LocationTrackingService : Service() {
         )
 
         val appContainer = applicationContext.appContainer
+        currentTrackingMode = AdaptiveTrackingModePolicy.initialMode()
         serviceScope.launch {
             appContainer.cleanupTrackingLocalDataUseCase()
         }
         startPeriodicUploadLoop()
         startPreBoundaryUploadLoop()
+        scheduleIdleModeFallback()
         trackingSession = appContainer.trackingLocationTracker.startLocationUpdates { trackedLocation ->
             serviceScope.launch {
-                val dateKey = dateKeyResolver.resolveDateKey(trackedLocation.recordedAtEpochMillis)
                 lastLocationCallbackAtEpochMillis = System.currentTimeMillis()
-                diagnosticsLogger.logLocationCallback(dateKey, trackedLocation)
-                appContainer.locationTrackingRepository.saveRawLocation(trackedLocation)
-                Log.d(TAG, "Saved location for dateKey=$dateKey recordedAt=${trackedLocation.recordedAtEpochMillis}")
+                val trackedLocationResult = appContainer.handleTrackedLocationUseCase(trackedLocation)
+                diagnosticsLogger.logLocationCallback(trackedLocationResult.dateKey, trackedLocation)
+                Log.d(
+                    TAG,
+                    "Location processed for dateKey=${trackedLocationResult.dateKey} recordedAt=${trackedLocation.recordedAtEpochMillis} result=${trackedLocationResult.saveResult} mode=$currentTrackingMode pending=${trackedLocationResult.pendingCount}"
+                )
 
-                val pendingCount = appContainer.locationTrackingRepository
-                    .getPendingUploadLocationCount(dateKey)
-                Log.d(TAG, "Pending upload count for dateKey=$dateKey is $pendingCount")
-                if (pendingCount >= LocationUploadPolicy.BATCH_SIZE) {
-                    val didUpload = uploadPendingPoints(dateKey)
+                if (trackedLocationResult.saveResult == SaveRawLocationResult.SAVED) {
+                    switchTrackingMode(TrackingLocationMode.MOVING)
+                    scheduleIdleModeFallback()
+                }
+
+                if (trackedLocationResult.shouldUploadImmediately) {
+                    val didUpload = uploadPendingPoints(trackedLocationResult.dateKey)
                     if (didUpload) {
-                        Log.i(TAG, "Immediate upload succeeded for dateKey=$dateKey after reaching batch size")
+                        Log.i(TAG, "Immediate upload succeeded for dateKey=${trackedLocationResult.dateKey} after reaching batch size")
                         resetPeriodicUploadLoop()
                     }
                 }
@@ -122,6 +130,8 @@ class LocationTrackingService : Service() {
         periodicUploadJob = null
         preBoundaryUploadJob?.cancel()
         preBoundaryUploadJob = null
+        idleModeFallbackJob?.cancel()
+        idleModeFallbackJob = null
         serviceStateWriter.update(isTracking = false)
         serviceScope.launch {
             diagnosticsLogger.log(
@@ -137,8 +147,8 @@ class LocationTrackingService : Service() {
         periodicUploadJob = serviceScope.launch {
             while (true) {
                 delay(LocationUploadPolicy.UPLOAD_INTERVAL_MS)
-                val currentDateKey = dateKeyResolver.resolveCurrentDateKey()
-                val previousDateKey = dateKeyResolver.resolvePreviousDateKey()
+                val currentDateKey = applicationContext.appContainer.trackingDateKeyResolver.resolveCurrentDateKey()
+                val previousDateKey = applicationContext.appContainer.trackingDateKeyResolver.resolvePreviousDateKey()
                 Log.d(TAG, "Periodic upload tick currentDateKey=$currentDateKey previousDateKey=$previousDateKey")
                 val lastCallbackAtEpochMillis = lastLocationCallbackAtEpochMillis
                 if (lastCallbackAtEpochMillis == null) {
@@ -149,7 +159,7 @@ class LocationTrackingService : Service() {
                     )
                 } else {
                     val silenceMillis = System.currentTimeMillis() - lastCallbackAtEpochMillis
-                    if (silenceMillis >= LocationRequestPolicy.CALLBACK_SILENCE_THRESHOLD_MS) {
+                    if (silenceMillis >= LocationRequestPolicy.callbackSilenceThresholdMs(currentTrackingMode)) {
                         diagnosticsLogger.log(
                             category = TrackingDiagnosticsLogger.CATEGORY_CALLBACK,
                             message = "gap_since_last_callback_ms=$silenceMillis",
@@ -173,13 +183,13 @@ class LocationTrackingService : Service() {
         preBoundaryUploadJob?.cancel()
         preBoundaryUploadJob = serviceScope.launch {
             while (true) {
-                val delayMillis = dateKeyResolver.millisUntilPreBoundaryFlush(
+                val delayMillis = applicationContext.appContainer.trackingDateKeyResolver.millisUntilPreBoundaryFlush(
                     leadTimeMillis = LocationUploadPolicy.PRE_BOUNDARY_UPLOAD_LEAD_TIME_MS
                 )
                 Log.d(TAG, "Scheduling pre-boundary upload in ${delayMillis}ms")
                 delay(delayMillis)
 
-                val activeDateKey = dateKeyResolver.resolveCurrentDateKey()
+                val activeDateKey = applicationContext.appContainer.trackingDateKeyResolver.resolveCurrentDateKey()
                 val didUpload = uploadPendingPoints(activeDateKey)
                 if (didUpload) {
                     Log.i(TAG, "Pre-boundary upload succeeded for dateKey=$activeDateKey")
@@ -195,10 +205,31 @@ class LocationTrackingService : Service() {
         startPeriodicUploadLoop()
     }
 
+    private fun scheduleIdleModeFallback() {
+        idleModeFallbackJob?.cancel()
+        idleModeFallbackJob = serviceScope.launch {
+            delay(AdaptiveTrackingModePolicy.idleFallbackDelayMillis())
+            switchTrackingMode(TrackingLocationMode.IDLE)
+        }
+    }
+
+    private fun switchTrackingMode(mode: TrackingLocationMode) {
+        if (currentTrackingMode == mode) return
+        currentTrackingMode = mode
+        trackingSession?.updateMode(mode)
+        serviceScope.launch {
+            diagnosticsLogger.log(
+                category = TrackingDiagnosticsLogger.CATEGORY_SERVICE,
+                message = "tracking_mode=$mode"
+            )
+        }
+        Log.i(TAG, "Switched tracking mode to $mode")
+    }
+
     private fun flushPendingPointsOnStop() {
         runBlocking {
-            val currentDateKey = dateKeyResolver.resolveCurrentDateKey()
-            val previousDateKey = dateKeyResolver.resolvePreviousDateKey()
+            val currentDateKey = applicationContext.appContainer.trackingDateKeyResolver.resolveCurrentDateKey()
+            val previousDateKey = applicationContext.appContainer.trackingDateKeyResolver.resolvePreviousDateKey()
             Log.i(
                 TAG,
                 "Flushing pending points on stop currentDateKey=$currentDateKey previousDateKey=$previousDateKey"

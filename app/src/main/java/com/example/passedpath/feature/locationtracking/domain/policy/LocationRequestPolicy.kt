@@ -1,9 +1,31 @@
 package com.example.passedpath.feature.locationtracking.domain.policy
 
 object LocationRequestPolicy {
-    const val UPDATE_INTERVAL_MS = 60_000L
-    const val MIN_UPDATE_INTERVAL_MS = 30_000L
-    const val MIN_UPDATE_DISTANCE_METERS = 20f
+    data class RequestConfig(
+        val updateIntervalMs: Long,
+        val minUpdateIntervalMs: Long,
+        val minUpdateDistanceMeters: Float
+    )
 
-    const val CALLBACK_SILENCE_THRESHOLD_MS = UPDATE_INTERVAL_MS * 2
+    private val movingConfig = RequestConfig(
+        updateIntervalMs = 60_000L,
+        minUpdateIntervalMs = 30_000L,
+        minUpdateDistanceMeters = 20f
+    )
+    private val idleConfig = RequestConfig(
+        updateIntervalMs = 5 * 60_000L,
+        minUpdateIntervalMs = 2 * 60_000L,
+        minUpdateDistanceMeters = 50f
+    )
+
+    fun configFor(mode: TrackingLocationMode): RequestConfig {
+        return when (mode) {
+            TrackingLocationMode.MOVING -> movingConfig
+            TrackingLocationMode.IDLE -> idleConfig
+        }
+    }
+
+    fun callbackSilenceThresholdMs(mode: TrackingLocationMode): Long {
+        return configFor(mode).updateIntervalMs * 2
+    }
 }
