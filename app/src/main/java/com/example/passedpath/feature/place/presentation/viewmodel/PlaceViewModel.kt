@@ -45,7 +45,7 @@ class PlaceViewModel(
             copy(
                 dateKey = value,
                 placeList = if (placeList.dateKey == value) {
-                    placeList.copy(errorMessage = null)
+                    placeList.copy(errorMessage = null, isStale = false)
                 } else {
                     PlaceListUiState(dateKey = value)
                 },
@@ -363,13 +363,14 @@ class PlaceViewModel(
         clearFeedbackMessage: Boolean = false
     ) {
         _uiState.update {
+            val currentPlaceList = it.placeList
             it.copy(
                 dateKey = dateKey,
-                placeList = it.placeList.copy(
+                placeList = currentPlaceList.copy(
                     dateKey = dateKey,
-                    hasLoaded = false,
                     isLoading = true,
-                    errorMessage = null
+                    errorMessage = null,
+                    isStale = false
                 ),
                 errorMessage = null,
                 successMessage = if (clearFeedbackMessage) null else it.successMessage
@@ -387,7 +388,8 @@ class PlaceViewModel(
                         placeCount = result.placeCount,
                         hasLoaded = true,
                         isLoading = false,
-                        errorMessage = null
+                        errorMessage = null,
+                        isStale = false
                     ),
                     errorMessage = null,
                     successMessage = if (clearFeedbackMessage) null else it.successMessage
@@ -396,13 +398,15 @@ class PlaceViewModel(
         } catch (throwable: Throwable) {
             val errorMessage = throwable.message ?: "방문 장소 목록 조회에 실패했습니다."
             _uiState.update {
+                val currentPlaceList = it.placeList
+                val hasRetainedContent = currentPlaceList.hasRetainedContent
                 it.copy(
                     dateKey = dateKey,
-                    placeList = it.placeList.copy(
+                    placeList = currentPlaceList.copy(
                         dateKey = dateKey,
-                        hasLoaded = false,
                         isLoading = false,
-                        errorMessage = errorMessage
+                        errorMessage = errorMessage,
+                        isStale = hasRetainedContent
                     ),
                     errorMessage = errorMessage,
                     successMessage = if (clearFeedbackMessage) null else it.successMessage

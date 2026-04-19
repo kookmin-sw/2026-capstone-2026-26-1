@@ -90,6 +90,108 @@ class PlaceViewModelTest {
     }
 
     @Test
+    fun `fetchVisitedPlaces keeps stale content on failure after a successful load`() = runTest {
+        val repository = FakePlaceRepository(
+            visitedPlaceListByDate = mutableMapOf(
+                "2026-04-03" to VisitedPlaceList(
+                    placeCount = 1,
+                    places = listOf(
+                        VisitedPlace(
+                            placeId = 1L,
+                            placeName = "Seoul Forest",
+                            type = PlaceSourceType.AUTO,
+                            roadAddress = "Ttukseom-ro",
+                            latitude = 37.4,
+                            longitude = 127.4,
+                            orderIndex = 1
+                        )
+                    )
+                )
+            )
+        )
+        val viewModel = createViewModel(repository = repository, initialDateKey = "2026-04-03")
+
+        viewModel.fetchVisitedPlaces()
+        advanceUntilIdle()
+
+        repository.throwOnGetPlaces = IllegalStateException("boom")
+        viewModel.fetchVisitedPlaces()
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertEquals(1, state.placeList.places.size)
+        assertEquals(1, state.placeList.placeCount)
+        assertEquals("Seoul Forest", state.placeList.places.first().placeName)
+        assertTrue(state.placeList.isStale)
+        assertEquals("boom", state.placeList.errorMessage)
+    }
+
+    @Test
+    fun `retry after stale failure restores fresh place list state`() = runTest {
+        val repository = FakePlaceRepository(
+            visitedPlaceListByDate = mutableMapOf(
+                "2026-04-03" to VisitedPlaceList(
+                    placeCount = 1,
+                    places = listOf(
+                        VisitedPlace(
+                            placeId = 1L,
+                            placeName = "Seoul Forest",
+                            type = PlaceSourceType.AUTO,
+                            roadAddress = "Ttukseom-ro",
+                            latitude = 37.4,
+                            longitude = 127.4,
+                            orderIndex = 1
+                        )
+                    )
+                )
+            )
+        )
+        val viewModel = createViewModel(repository = repository, initialDateKey = "2026-04-03")
+
+        viewModel.fetchVisitedPlaces()
+        advanceUntilIdle()
+
+        repository.throwOnGetPlaces = IllegalStateException("boom")
+        viewModel.fetchVisitedPlaces()
+        advanceUntilIdle()
+        assertTrue(viewModel.uiState.value.placeList.isStale)
+
+        repository.throwOnGetPlaces = null
+        repository.visitedPlaceListByDate["2026-04-03"] = VisitedPlaceList(
+            placeCount = 2,
+            places = listOf(
+                VisitedPlace(
+                    placeId = 1L,
+                    placeName = "Seoul Forest",
+                    type = PlaceSourceType.AUTO,
+                    roadAddress = "Ttukseom-ro",
+                    latitude = 37.4,
+                    longitude = 127.4,
+                    orderIndex = 1
+                ),
+                VisitedPlace(
+                    placeId = 2L,
+                    placeName = "Cafe",
+                    type = PlaceSourceType.MANUAL,
+                    roadAddress = "Seoul Forest 2-gil",
+                    latitude = 37.5,
+                    longitude = 127.5,
+                    orderIndex = 2
+                )
+            )
+        )
+
+        viewModel.fetchVisitedPlaces()
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertFalse(state.placeList.isStale)
+        assertNull(state.placeList.errorMessage)
+        assertEquals(2, state.placeList.placeCount)
+        assertEquals(listOf("Seoul Forest", "Cafe"), state.placeList.places.map { it.placeName })
+    }
+
+    @Test
     fun `fetchVisitedPlaces rejects invalid date before repository call`() = runTest {
         val repository = FakePlaceRepository()
         val viewModel = createViewModel(repository = repository, initialDateKey = "2026-04-03")
@@ -203,8 +305,8 @@ class PlaceViewModelTest {
     }
 
     private class FakePlaceRepository(
-        private val visitedPlaceListByDate: MutableMap<String, VisitedPlaceList> = mutableMapOf(),
-        private val throwOnGetPlaces: Throwable? = null
+        val visitedPlaceListByDate: MutableMap<String, VisitedPlaceList> = mutableMapOf(),
+        var throwOnGetPlaces: Throwable? = null
     ) : PlaceRepository {
         val requestedPlaceListDates = mutableListOf<String>()
         val addRequests = mutableListOf<PlaceRegistration>()

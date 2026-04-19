@@ -78,6 +78,7 @@
     <string name="place_sheet_visit_count">방문한 장소 · %1$d곳</string>
     <string name="place_sheet_empty_title">아직 추가된 장소가 없어요</string>
     <string name="place_sheet_empty_body">기록한 경로 위에 장소를 추가하면 이곳에서 순서대로 확인할 수 있어요.</string>
+    <string name="place_sheet_stale_title">마지막으로 불러온 장소 목록을 보여주고 있어요</string>
     <string name="place_sheet_add">장소 추가하기</string>
     <string name="place_card_order">장소 %1$d</string>
     <string name="place_card_coordinate">위도 %1$.4f, 경도 %2$.4f</string>

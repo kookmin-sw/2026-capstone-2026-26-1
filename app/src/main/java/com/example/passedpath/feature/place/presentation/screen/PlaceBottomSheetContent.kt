@@ -25,6 +25,7 @@ import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -61,6 +62,7 @@ fun PlaceBottomSheetContent(
     placeListUiState: PlaceListUiState,
     selectedPlaceId: Long?,
     onSelectedPlaceHandled: () -> Unit,
+    onRetryClick: () -> Unit,
     onAddPlaceClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -108,12 +110,26 @@ fun PlaceBottomSheetContent(
             )
         }
 
+        if (placeListUiState.isStale && placeListUiState.errorMessage != null) {
+            item(key = "stale_notice") {
+                StalePlaceSection(
+                    message = placeListUiState.errorMessage,
+                    onRetryClick = onRetryClick
+                )
+            }
+        }
+
         when {
-            placeListUiState.isLoading -> {
+            placeListUiState.isLoading && !placeListUiState.hasRetainedContent -> {
                 item(key = "loading") { LoadingPlaceSection() }
             }
-            placeListUiState.errorMessage != null -> {
-                item(key = "error") { ErrorPlaceSection(placeListUiState.errorMessage) }
+            placeListUiState.errorMessage != null && !placeListUiState.isStale -> {
+                item(key = "error") {
+                    ErrorPlaceSection(
+                        message = placeListUiState.errorMessage,
+                        onRetryClick = onRetryClick
+                    )
+                }
             }
             sortedPlaces.isEmpty() -> {
                 item(key = "empty") { EmptyPlaceSection() }
@@ -181,7 +197,8 @@ private fun LoadingPlaceSection() {
 
 @Composable
 private fun ErrorPlaceSection(
-    message: String
+    message: String,
+    onRetryClick: () -> Unit
 ) {
     Box(
         modifier = Modifier
@@ -200,6 +217,39 @@ private fun ErrorPlaceSection(
                 style = MaterialTheme.typography.bodyMedium,
                 color = Gray400
             )
+            TextButton(onClick = onRetryClick) {
+                Text(text = stringResource(R.string.route_retry), color = Green500)
+            }
+        }
+    }
+}
+
+@Composable
+private fun StalePlaceSection(
+    message: String,
+    onRetryClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(color = Gray100, shape = RoundedCornerShape(22.dp))
+            .padding(horizontal = 18.dp, vertical = 18.dp)
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(
+                text = stringResource(R.string.place_sheet_stale_title),
+                style = MaterialTheme.typography.bodyMedium,
+                color = Gray700,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                text = message,
+                style = MaterialTheme.typography.bodySmall,
+                color = Gray400
+            )
+            TextButton(onClick = onRetryClick) {
+                Text(text = stringResource(R.string.route_retry), color = Green500)
+            }
         }
     }
 }

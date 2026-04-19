@@ -53,5 +53,9 @@ data class PlaceListUiState(
     val placeCount: Int = 0,
     val hasLoaded: Boolean = false,
     val isLoading: Boolean = false,
-    val errorMessage: String? = null
-)
+    val errorMessage: String? = null,
+    val isStale: Boolean = false
+) {
+    val hasRetainedContent: Boolean
+        get() = hasLoaded && places.isNotEmpty()
+}

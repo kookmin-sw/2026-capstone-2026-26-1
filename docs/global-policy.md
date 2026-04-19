@@ -36,17 +36,51 @@
   - fetch once on selected-date entry
   - refresh on `PLACE` tab entry
   - refresh again when the already-selected `PLACE` tab is tapped
+  - do not auto-refresh on app resume alone
   - do not fetch on bottom-sheet height changes
 - After place-list fetch succeeds, that result is the single source of truth for both map and sheet place rendering.
+- Failure policy:
+  - if the current date already has a successfully loaded non-empty place list, keep showing that stale result on fetch failure
+  - expose retry from the place sheet when fetch fails
+  - if there is no retained successful content, show the error state with retry instead
 - Place identity is always matched by `placeId`.
 - Place ordering is always based on server-provided `orderIndex`.
+- Place markers may render even when the route polyline is empty.
+- Current-location marker renders above place markers.
 - After place CRUD succeeds, refresh via the place-list API rather than reloading place state from `dayroute/{date}`.
 - `dayroute/{date}` place payload is not the UI source of truth for place rendering.
 - Marker interaction policy:
   - marker tap opens the `PLACE` tab and bottom sheet
+  - marker tap requests the sheet `MIDDLE` state
   - marker tap focuses the map camera near the tapped place, slightly above center
   - marker tap scrolls the sheet to the matching card and plays a one-time shake animation
   - `selectedPlaceId` is cleared after the one-time interaction is handled
+
+## Main map and bottom-sheet interaction policy
+- Bottom-sheet state uses three stable UI states:
+  - `HIDDEN`
+  - `MIDDLE`
+  - `EXPANDED`
+- `HIDDEN` is a bottom-bar-safe hidden state, not a full zero-height removal.
+  - hidden visible height stays `92dp`
+- Sheet visibility policy:
+  - map tap requests `HIDDEN`
+  - re-tapping the already-selected `MAIN` bottom tab requests `HIDDEN`
+  - marker tap requests `MIDDLE`
+  - bottom-sheet tab selection requests `MIDDLE`
+- `feature/main` owns only screen-local sheet interaction orchestration.
+- Bottom-bar reselection is a navigation-shell event and must be passed down as an interaction signal, not handled inside map/sheet UI code.
+
+## Main camera intent policy
+- Map camera movement is driven by one-time camera intent state, not directly by raw route/location stream updates.
+- Route data loading and current-location updates must not directly re-trigger camera movement after an intent has already been consumed.
+- Camera intent rules:
+  - if a date enters with route data available, request route-fit camera once
+  - if a date enters without route data but with current location available, request current-location centering once
+  - if current location arrives first while the route is still empty, request current-location centering once
+  - if route data later becomes available for the same date after previously being empty, request route-fit once
+- After camera movement is applied, the pending camera intent is cleared.
+- `feature/main/presentation/viewmodel` may decide when to issue camera intents, but camera side effects stay in the screen/effect layer.
 
 ## Permission policy
 - Permission intro is advisory, not a hard blocker for entering `Main`.
@@ -55,6 +89,9 @@
 - Permission-state resolution and action-target selection stay centralized in `feature/permission`.
 
 ## Daynote save policy
+- Read binding policy:
+  - selected-date `title` and `memo` are read from the current selected route snapshot
+  - when selected date changes, `feature/daynote` re-hydrates input state from that snapshot
 - `title` and `memo` use overwrite-style update APIs.
 - There is no separate delete API for either field.
 - If request value is `null`, `""`, or blank-only text, the server treats it as delete and stores `null`.
@@ -73,6 +110,15 @@
 - If the first request fails, do not send the second request in the same save attempt.
 - Treat the save action as fully successful only when every required request succeeds.
 - After save success, store normalized values as the new originals.
+- Post-save synchronization policy:
+  - `feature/daynote` owns edit and save rules
+  - `feature/main` owns the selected-date read snapshot
+  - after save success, the current selected-date route snapshot is patched in memory immediately
+  - if only some fields succeeded, patch only those successful fields into the current snapshot
+- Save feedback policy:
+  - save success feedback stays toast-based
+  - user-facing save failure feedback uses one common network-failure toast message
+  - split API success/failure details must not be exposed directly in the toast copy
 - Frontend length limits:
   - `title`: max 60 characters
   - `memo`: max 1000 characters

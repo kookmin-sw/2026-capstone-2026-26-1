@@ -43,6 +43,23 @@ class MainScreenInteractionPolicyTest {
     }
 
     @Test
+    fun `place tab reselection keeps place tab open at middle and requests refresh`() {
+        val initialState = MainScreenLocalUiState(
+            selectedBottomSheetTab = MainBottomSheetTab.PLACE,
+            requestedSheetValue = MainBottomSheetValue.HIDDEN
+        )
+
+        val result = reduceForBottomSheetTabSelection(
+            state = initialState,
+            selectedTab = MainBottomSheetTab.PLACE
+        )
+
+        assertEquals(MainBottomSheetTab.PLACE, result.state.selectedBottomSheetTab)
+        assertEquals(MainBottomSheetValue.MIDDLE, result.state.requestedSheetValue)
+        assertTrue(result.shouldRefreshPlaces)
+    }
+
+    @Test
     fun `daynote tab selection clears selected place without refresh`() {
         val initialState = MainScreenLocalUiState(
             selectedBottomSheetTab = MainBottomSheetTab.PLACE,
@@ -58,6 +75,21 @@ class MainScreenInteractionPolicyTest {
         assertEquals(MainBottomSheetValue.MIDDLE, result.state.requestedSheetValue)
         assertNull(result.state.selectedPlaceId)
         assertFalse(result.shouldRefreshPlaces)
+    }
+
+    @Test
+    fun `selected place handled clears one time marker selection only`() {
+        val initialState = MainScreenLocalUiState(
+            selectedBottomSheetTab = MainBottomSheetTab.PLACE,
+            bottomSheetValue = MainBottomSheetValue.MIDDLE,
+            selectedPlaceId = 9L
+        )
+
+        val result = reduceForSelectedPlaceHandled(initialState)
+
+        assertEquals(MainBottomSheetTab.PLACE, result.state.selectedBottomSheetTab)
+        assertEquals(MainBottomSheetValue.MIDDLE, result.state.bottomSheetValue)
+        assertNull(result.state.selectedPlaceId)
     }
 
     @Test

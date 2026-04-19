@@ -8,6 +8,8 @@ import com.example.passedpath.feature.daynote.domain.usecase.PatchDayRouteMemoUs
 import com.example.passedpath.feature.daynote.domain.usecase.PatchDayRouteTitleUseCase
 import com.example.passedpath.testutil.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -116,6 +118,25 @@ class DayNoteViewModelTest {
     }
 
     @Test
+    fun `submitDayNote emits snapshot patch for successful fields`() = runTest {
+        val viewModel = createViewModel()
+        viewModel.syncSelectedDay(dateKey = "2026-04-02", title = "Old", memo = "Old memo")
+        viewModel.updateTitle("New title")
+        viewModel.updateMemo("New memo")
+        val patchDeferred = async { viewModel.snapshotPatch.first() }
+
+        viewModel.submitDayNote()
+        advanceUntilIdle()
+
+        val patch = patchDeferred.await()
+        assertEquals("2026-04-02", patch.dateKey)
+        assertTrue(patch.shouldUpdateTitle)
+        assertTrue(patch.shouldUpdateMemo)
+        assertEquals("New title", patch.title)
+        assertEquals("New memo", patch.memo)
+    }
+
+    @Test
     fun `submitDayNote skips unchanged field requests`() = runTest {
         val callOrder = mutableListOf<String>()
         val viewModel = createViewModel(
@@ -167,10 +188,47 @@ class DayNoteViewModelTest {
 
         val state = viewModel.uiState.value
         assertEquals(listOf("title"), callOrder)
-        assertEquals("boom", state.errorMessage)
+        assertEquals("네트워크 문제로 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.", state.errorMessage)
         assertNull(state.successMessage)
         assertTrue(state.isDirty)
         assertEquals(1L, state.feedbackEventId)
+    }
+
+    @Test
+    fun `submitDayNote keeps successful title when memo save fails and emits partial patch`() = runTest {
+        val viewModel = createViewModel(
+            titleRepository = object : DayRouteTitleRepository {
+                override suspend fun patchTitle(dateKey: String, title: String?): DayRouteTitle {
+                    return DayRouteTitle(title = title)
+                }
+            },
+            memoRepository = object : DayRouteMemoRepository {
+                override suspend fun patchMemo(dateKey: String, memo: String?): DayRouteMemo {
+                    throw IllegalStateException("memo failure")
+                }
+            }
+        )
+        viewModel.syncSelectedDay(dateKey = "2026-04-02", title = "Old", memo = "Old memo")
+        viewModel.updateTitle("New title")
+        viewModel.updateMemo("New memo")
+        val patchDeferred = async { viewModel.snapshotPatch.first() }
+
+        viewModel.submitDayNote()
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        val patch = patchDeferred.await()
+        assertEquals("New title", state.originalTitle)
+        assertEquals("New title", state.title)
+        assertEquals("Old memo", state.originalMemo)
+        assertEquals("New memo", state.memo)
+        assertEquals("네트워크 문제로 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.", state.errorMessage)
+        assertNull(state.successMessage)
+        assertTrue(state.isDirty)
+        assertTrue(patch.shouldUpdateTitle)
+        assertFalse(patch.shouldUpdateMemo)
+        assertEquals("New title", patch.title)
+        assertEquals("Old memo", patch.memo)
     }
 
     @Test

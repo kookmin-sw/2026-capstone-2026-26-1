@@ -62,6 +62,7 @@ internal fun MainBottomSheet(
     onDayNoteSaveClick: () -> Unit,
     selectedTab: MainBottomSheetTab,
     onTabSelected: (MainBottomSheetTab) -> Unit,
+    onPlaceRetryClick: () -> Unit,
     onAddPlaceClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -105,6 +106,7 @@ internal fun MainBottomSheet(
                         placeListUiState = placeUiState.placeList,
                         selectedPlaceId = selectedPlaceId,
                         onSelectedPlaceHandled = onSelectedPlaceHandled,
+                        onRetryClick = onPlaceRetryClick,
                         onAddPlaceClick = onAddPlaceClick,
                         modifier = Modifier
                             .fillMaxSize()

@@ -4,6 +4,10 @@ Date: 2026-03-31
 Project: PassedPath Android app
 Status: Accepted and applied in code
 
+## Note
+- Stable app-side policy has been consolidated into `docs/global-policy.md`.
+- This document remains as the architecture decision record for the main-screen split.
+
 ## Decision summary
 - `MainScreen` stays as the single record-screen entry point.
 - `feature/main` owns shared shell and screen orchestration.
@@ -16,12 +20,6 @@ Status: Accepted and applied in code
 - Tracking toggle behavior is implemented and persisted.
 - Main-map permission/GPS UX is handled through permission-owned policy helpers plus a bottom banner UI.
 - Issue 10 debug and QA support is applied through shared debug logging, route debug snapshots, and a debug panel on the main map.
-
-## Permission policy
-- Permission intro is advisory, not a hard blocker for entering `Main`.
-- Users may continue into `Main` without background location permission.
-- Background location permission is still required for background tracking behavior.
-- Permission-state resolution and action-target selection should stay centralized in `feature/permission`.
 
 ## Ongoing follow-up
 - Finalize `feature/daynote` extraction boundary when that flow resumes.
