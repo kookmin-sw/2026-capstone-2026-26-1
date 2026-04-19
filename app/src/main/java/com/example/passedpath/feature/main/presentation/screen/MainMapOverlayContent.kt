@@ -19,10 +19,8 @@ import com.example.passedpath.feature.main.presentation.state.MainUiState
 import com.example.passedpath.feature.permission.presentation.mapper.createPermissionOverlayUiModel
 import com.example.passedpath.feature.route.presentation.screen.RouteFloatingControls
 import com.example.passedpath.feature.route.presentation.screen.RouteStatusOverlay
-import com.example.passedpath.feature.route.presentation.state.MainRouteModeUiState
 import com.example.passedpath.feature.route.presentation.state.RouteUiAction
 import com.example.passedpath.ui.component.banner.PermissionBanner
-import com.example.passedpath.ui.component.toast.RouteEmptyToast
 
 @Composable
 internal fun BoxScope.MainMapOverlayContent(
@@ -40,29 +38,11 @@ internal fun BoxScope.MainMapOverlayContent(
         permissionState = uiState.permissionState,
         isLocationServiceEnabled = uiState.isLocationServiceEnabled
     )
-    val shouldShowPastEmptyToast =
-        uiState.routeModeUiState is MainRouteModeUiState.Past &&
-            uiState.routeModeUiState.isRouteEmpty &&
-            uiState.routeModeUiState.routeErrorMessage == null &&
-            !uiState.routeModeUiState.isRouteLoading
 
     RouteStatusOverlay(
         routeModeUiState = uiState.routeModeUiState,
         onRouteAction = onRouteAction
     )
-
-    if (shouldShowPastEmptyToast) {
-        RouteEmptyToast(
-            triggerKey = uiState.selectedDateKey,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(horizontal = 16.dp)
-                .padding(
-                    bottom = floatingBottomPadding +
-                        if (permissionOverlayUiModel != null) 72.dp else 16.dp
-                )
-        )
-    }
 
     Column(
         modifier = Modifier

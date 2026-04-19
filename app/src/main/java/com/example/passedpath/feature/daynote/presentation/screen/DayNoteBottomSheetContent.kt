@@ -23,7 +23,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.example.passedpath.feature.daynote.presentation.state.DayNoteUiState
 import com.example.passedpath.ui.component.BaseInputField
-import com.example.passedpath.ui.component.toast.MessageToast
 import com.example.passedpath.ui.theme.Gray100
 import com.example.passedpath.ui.theme.Gray400
 import com.example.passedpath.ui.theme.Gray500
@@ -94,16 +93,6 @@ fun DayNoteBottomSheetContent(
             }
         }
 
-        val toastMessage = uiState.errorMessage ?: uiState.successMessage
-        if (toastMessage != null) {
-            MessageToast(
-                message = toastMessage,
-                triggerKey = "${uiState.feedbackEventId}:$toastMessage",
-                modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .padding(top = 6.dp)
-            )
-        }
     }
 }
 
