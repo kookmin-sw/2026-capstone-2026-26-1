@@ -4,7 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Looper
 import com.example.passedpath.feature.locationtracking.domain.model.TrackedLocation
-import com.example.passedpath.feature.locationtracking.domain.policy.LocationTrackingPolicy
+import com.example.passedpath.feature.locationtracking.domain.policy.LocationRequestPolicy
 import com.example.passedpath.feature.locationtracking.domain.tracker.LocationTracker
 import com.example.passedpath.feature.locationtracking.domain.tracker.LocationTrackingSession
 import com.google.android.gms.location.LocationCallback
@@ -22,10 +22,10 @@ class TrackingLocationProvider(
     private val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
     private val locationRequest = LocationRequest.Builder(
         Priority.PRIORITY_HIGH_ACCURACY,
-        LocationTrackingPolicy.LOCATION_UPDATE_INTERVAL_MS
+        LocationRequestPolicy.UPDATE_INTERVAL_MS
     )
-        .setMinUpdateIntervalMillis(LocationTrackingPolicy.LOCATION_MIN_UPDATE_INTERVAL_MS)
-        .setMinUpdateDistanceMeters(LocationTrackingPolicy.LOCATION_MIN_UPDATE_DISTANCE_METERS)
+        .setMinUpdateIntervalMillis(LocationRequestPolicy.MIN_UPDATE_INTERVAL_MS)
+        .setMinUpdateDistanceMeters(LocationRequestPolicy.MIN_UPDATE_DISTANCE_METERS)
         .setWaitForAccurateLocation(false)
         .build()
 

@@ -6,7 +6,7 @@ import com.example.passedpath.feature.locationtracking.data.local.mapper.metersT
 import com.example.passedpath.feature.locationtracking.data.local.mapper.toGpsPointRequestDto
 import com.example.passedpath.feature.locationtracking.data.remote.api.DayRouteApi
 import com.example.passedpath.feature.locationtracking.data.remote.dto.GpsPointBatchUploadRequestDto
-import com.example.passedpath.feature.locationtracking.domain.policy.LocationTrackingPolicy
+import com.example.passedpath.feature.locationtracking.domain.policy.LocationUploadPolicy
 import com.example.passedpath.feature.locationtracking.domain.repository.DayRouteRepository
 import com.example.passedpath.feature.locationtracking.domain.repository.LocationTrackingRepository
 
@@ -18,7 +18,7 @@ class UploadGpsPointsBatchUseCase(
 ) {
     suspend operator fun invoke(
         dateKey: String,
-        limit: Int = LocationTrackingPolicy.UPLOAD_BATCH_SIZE
+        limit: Int = LocationUploadPolicy.BATCH_SIZE
     ): Boolean {
         val pendingLocations = locationTrackingRepository.getPendingUploadLocations(
             dateKey = dateKey,

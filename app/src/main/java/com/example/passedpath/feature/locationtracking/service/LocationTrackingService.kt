@@ -8,8 +8,9 @@ import android.util.Log
 import androidx.core.content.ContextCompat
 import com.example.passedpath.app.appContainer
 import com.example.passedpath.debug.TrackingDiagnosticsLogger
-import com.example.passedpath.feature.locationtracking.domain.policy.LocationTrackingPolicy
+import com.example.passedpath.feature.locationtracking.domain.policy.LocationRequestPolicy
 import com.example.passedpath.feature.locationtracking.domain.policy.TrackingDateKeyResolver
+import com.example.passedpath.feature.locationtracking.domain.policy.LocationUploadPolicy
 import com.example.passedpath.feature.locationtracking.domain.tracker.LocationTrackingSession
 import com.example.passedpath.feature.locationtracking.data.manager.LocationTrackingServiceStateWriter
 import com.example.passedpath.feature.locationtracking.presentation.notification.TrackingNotificationFactory
@@ -95,7 +96,7 @@ class LocationTrackingService : Service() {
                 val pendingCount = appContainer.locationTrackingRepository
                     .getPendingUploadLocationCount(dateKey)
                 Log.d(TAG, "Pending upload count for dateKey=$dateKey is $pendingCount")
-                if (pendingCount >= LocationTrackingPolicy.UPLOAD_BATCH_SIZE) {
+                if (pendingCount >= LocationUploadPolicy.BATCH_SIZE) {
                     val didUpload = uploadPendingPoints(dateKey)
                     if (didUpload) {
                         Log.i(TAG, "Immediate upload succeeded for dateKey=$dateKey after reaching batch size")
@@ -135,7 +136,7 @@ class LocationTrackingService : Service() {
         periodicUploadJob?.cancel()
         periodicUploadJob = serviceScope.launch {
             while (true) {
-                delay(LocationTrackingPolicy.UPLOAD_INTERVAL_MS)
+                delay(LocationUploadPolicy.UPLOAD_INTERVAL_MS)
                 val currentDateKey = dateKeyResolver.resolveCurrentDateKey()
                 val previousDateKey = dateKeyResolver.resolvePreviousDateKey()
                 Log.d(TAG, "Periodic upload tick currentDateKey=$currentDateKey previousDateKey=$previousDateKey")
@@ -148,7 +149,7 @@ class LocationTrackingService : Service() {
                     )
                 } else {
                     val silenceMillis = System.currentTimeMillis() - lastCallbackAtEpochMillis
-                    if (silenceMillis >= LocationTrackingPolicy.LOCATION_UPDATE_INTERVAL_MS * 2) {
+                    if (silenceMillis >= LocationRequestPolicy.CALLBACK_SILENCE_THRESHOLD_MS) {
                         diagnosticsLogger.log(
                             category = TrackingDiagnosticsLogger.CATEGORY_CALLBACK,
                             message = "gap_since_last_callback_ms=$silenceMillis",
@@ -173,7 +174,7 @@ class LocationTrackingService : Service() {
         preBoundaryUploadJob = serviceScope.launch {
             while (true) {
                 val delayMillis = dateKeyResolver.millisUntilPreBoundaryFlush(
-                    leadTimeMillis = LocationTrackingPolicy.PRE_BOUNDARY_UPLOAD_LEAD_TIME_MS
+                    leadTimeMillis = LocationUploadPolicy.PRE_BOUNDARY_UPLOAD_LEAD_TIME_MS
                 )
                 Log.d(TAG, "Scheduling pre-boundary upload in ${delayMillis}ms")
                 delay(delayMillis)

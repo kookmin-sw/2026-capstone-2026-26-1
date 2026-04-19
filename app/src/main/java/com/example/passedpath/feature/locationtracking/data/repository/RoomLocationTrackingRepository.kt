@@ -10,7 +10,7 @@ import com.example.passedpath.feature.locationtracking.data.local.mapper.toTrack
 import com.example.passedpath.feature.locationtracking.data.local.mapper.toUpdatedDayRouteEntity
 import com.example.passedpath.feature.locationtracking.domain.model.DailyPath
 import com.example.passedpath.feature.locationtracking.domain.model.TrackedLocation
-import com.example.passedpath.feature.locationtracking.domain.policy.LocationTrackingPolicy
+import com.example.passedpath.feature.locationtracking.domain.policy.LocationPersistencePolicy
 import com.example.passedpath.feature.locationtracking.domain.policy.TrackingDateKeyResolver
 import com.example.passedpath.feature.locationtracking.domain.repository.LocationTrackingRepository
 import kotlinx.coroutines.flow.Flow
@@ -24,42 +24,32 @@ class RoomLocationTrackingRepository(
 ) : LocationTrackingRepository {
 
     override suspend fun saveRawLocation(location: TrackedLocation) {
-
-        // "2026-03-28"
         val dateKey = dateKeyResolver.resolveDateKey(location.recordedAtEpochMillis)
+        val latestSavedPoint = gpsPointDao.getLatestPointByDate(dateKey)?.toTrackedLocation()
 
-        // 정책에 맞게 저장 전 필터링: 정확도가 낮으면 저장 안함
-        // 현재, 정확도가 null일 때도 저장하는 구조
         if (
             location.accuracyMeters != null &&
-            location.accuracyMeters > LocationTrackingPolicy.MAX_ACCEPTABLE_ACCURACY_METERS
+            location.accuracyMeters > LocationPersistencePolicy.MAX_ACCEPTABLE_ACCURACY_METERS
         ) {
             diagnosticsLogger.log(
                 category = TrackingDiagnosticsLogger.CATEGORY_SAVE,
-                message = "drop_accuracy accuracy=${location.accuracyMeters} max=${LocationTrackingPolicy.MAX_ACCEPTABLE_ACCURACY_METERS}",
+                message = "drop_accuracy accuracy=${location.accuracyMeters} max=${LocationPersistencePolicy.MAX_ACCEPTABLE_ACCURACY_METERS}",
                 dateKey = dateKey
             )
             return
         }
 
-        // 정책에 맞게 저장 전 필터링: 마지막 포인트 기준으로, 이동 거리 미충족시에는 저장 안함
-        val latestSavedPointEntity = gpsPointDao.getLatestPointByDate(dateKey)
-        val latestSavedPoint = latestSavedPointEntity?.toTrackedLocation()
-        if (latestSavedPoint != null) {
-            val movedDistanceMeters = distanceBetweenMeters(latestSavedPoint, location)
-            if (movedDistanceMeters < LocationTrackingPolicy.MIN_SAVE_DISTANCE_METERS) {
-                diagnosticsLogger.log(
-                    category = TrackingDiagnosticsLogger.CATEGORY_SAVE,
-                    message = "drop_distance moved=$movedDistanceMeters min=${LocationTrackingPolicy.MIN_SAVE_DISTANCE_METERS}",
-                    dateKey = dateKey
-                )
-                return
-            }
+        if (!LocationPersistencePolicy.shouldPersistLocation(latestSavedPoint, location)) {
+            val movedDistanceMeters = latestSavedPoint?.let { distanceBetweenMeters(it, location) }
+            diagnosticsLogger.log(
+                category = TrackingDiagnosticsLogger.CATEGORY_SAVE,
+                message = "drop_distance moved=$movedDistanceMeters min=${LocationPersistencePolicy.MIN_SAVE_DISTANCE_METERS}",
+                dateKey = dateKey
+            )
+            return
         }
 
-        // 실제 ROOM DB에 저장
         gpsPointDao.insert(location.toGpsPointEntity(dateKey))
-        // 증분 갱신
         val previousRoute = dayRouteDao.getByDate(dateKey)
         dayRouteDao.upsert(
             previousRoute.toUpdatedDayRouteEntity(
