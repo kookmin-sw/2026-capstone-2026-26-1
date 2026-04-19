@@ -154,6 +154,7 @@ private fun BottomBarItem(
 @Composable
 fun AppScaffold(
     navController: NavHostController,
+    onBottomBarReselected: (String) -> Unit = {},
     content: @Composable (Modifier) -> Unit
 ) {
     val navBackStackEntry = navController.currentBackStackEntryAsState().value
@@ -192,12 +193,16 @@ fun AppScaffold(
                                     selected = selected,
                                     width = itemWidth,
                                     onClick = {
-                                        navController.navigate(item.route) {
-                                            popUpTo(navController.graph.findStartDestination().id) {
-                                                saveState = true
+                                        if (selected) {
+                                            onBottomBarReselected(item.route)
+                                        } else {
+                                            navController.navigate(item.route) {
+                                                popUpTo(navController.graph.findStartDestination().id) {
+                                                    saveState = true
+                                                }
+                                                launchSingleTop = true
+                                                restoreState = true
                                             }
-                                            launchSingleTop = true
-                                            restoreState = true
                                         }
                                     }
                                 )

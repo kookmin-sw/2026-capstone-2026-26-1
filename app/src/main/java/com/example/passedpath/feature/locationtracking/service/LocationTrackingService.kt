@@ -8,10 +8,9 @@ import android.util.Log
 import androidx.core.content.ContextCompat
 import com.example.passedpath.app.appContainer
 import com.example.passedpath.debug.TrackingDiagnosticsLogger
-import com.example.passedpath.feature.locationtracking.domain.policy.AdaptiveTrackingModePolicy
-import com.example.passedpath.feature.locationtracking.domain.policy.LocationRequestPolicy
 import com.example.passedpath.feature.locationtracking.domain.policy.LocationUploadPolicy
 import com.example.passedpath.feature.locationtracking.domain.policy.TrackingLocationMode
+import com.example.passedpath.feature.locationtracking.domain.policy.TrackingModePolicy
 import com.example.passedpath.feature.locationtracking.domain.repository.SaveRawLocationResult
 import com.example.passedpath.feature.locationtracking.domain.tracker.LocationTrackingSession
 import com.example.passedpath.feature.locationtracking.data.manager.LocationTrackingServiceStateWriter
@@ -39,7 +38,7 @@ class LocationTrackingService : Service() {
     private var preBoundaryUploadJob: Job? = null
     private var idleModeFallbackJob: Job? = null
     private var lastLocationCallbackAtEpochMillis: Long? = null
-    private var currentTrackingMode: TrackingLocationMode = AdaptiveTrackingModePolicy.initialMode()
+    private var currentTrackingMode: TrackingLocationMode = TrackingModePolicy.initialMode()
 
     override fun onCreate() {
         super.onCreate()
@@ -82,7 +81,7 @@ class LocationTrackingService : Service() {
         )
 
         val appContainer = applicationContext.appContainer
-        currentTrackingMode = AdaptiveTrackingModePolicy.initialMode()
+        currentTrackingMode = TrackingModePolicy.initialMode()
         serviceScope.launch {
             appContainer.cleanupTrackingLocalDataUseCase()
         }
@@ -159,7 +158,7 @@ class LocationTrackingService : Service() {
                     )
                 } else {
                     val silenceMillis = System.currentTimeMillis() - lastCallbackAtEpochMillis
-                    if (silenceMillis >= LocationRequestPolicy.callbackSilenceThresholdMs(currentTrackingMode)) {
+                    if (silenceMillis >= TrackingModePolicy.callbackSilenceThresholdMs(currentTrackingMode)) {
                         diagnosticsLogger.log(
                             category = TrackingDiagnosticsLogger.CATEGORY_CALLBACK,
                             message = "gap_since_last_callback_ms=$silenceMillis",
@@ -208,7 +207,7 @@ class LocationTrackingService : Service() {
     private fun scheduleIdleModeFallback() {
         idleModeFallbackJob?.cancel()
         idleModeFallbackJob = serviceScope.launch {
-            delay(AdaptiveTrackingModePolicy.idleFallbackDelayMillis())
+            delay(TrackingModePolicy.idleFallbackDelayMillis())
             switchTrackingMode(TrackingLocationMode.IDLE)
         }
     }

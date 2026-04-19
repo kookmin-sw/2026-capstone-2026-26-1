@@ -23,6 +23,7 @@ import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiSt
 import com.example.passedpath.feature.main.presentation.state.MainUiState
 import com.example.passedpath.feature.permission.presentation.state.LocationPermissionUiState
 import com.example.passedpath.feature.route.presentation.screen.RouteMapContent
+import com.example.passedpath.feature.route.presentation.state.PlaceMarkerUiState
 import com.example.passedpath.feature.route.presentation.state.RouteUiAction
 import com.example.passedpath.ui.component.BaseCircleButton
 import com.example.passedpath.ui.theme.Gray900
@@ -37,9 +38,10 @@ import kotlinx.coroutines.launch
 @Composable
 internal fun MainMapSection(
     uiState: MainUiState,
-    onInitialCameraCentered: () -> Unit,
+    onCameraIntentConsumed: () -> Unit,
     onDateSelected: (String) -> Unit,
     onRouteAction: (RouteUiAction) -> Unit,
+    onMapClick: () -> Unit,
     onPlaceMarkerClick: (Long) -> Unit,
     onPermissionBannerConfirm: () -> Unit,
     debugActions: MainDebugActions,
@@ -65,12 +67,11 @@ internal fun MainMapSection(
 
     MainMapCameraEffects(
         isMapLoaded = isMapLoaded,
-        selectedDateKey = uiState.selectedDateKey,
+        pendingCameraIntent = uiState.pendingCameraIntent,
         routePoints = routePoints,
         currentLocation = currentLocation,
-        hasCenteredOnCurrentLocation = uiState.hasCenteredOnCurrentLocation,
         cameraPositionState = cameraPositionState,
-        onInitialCameraCentered = onInitialCameraCentered
+        onCameraIntentConsumed = onCameraIntentConsumed
     )
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -79,25 +80,24 @@ internal fun MainMapSection(
             cameraPositionState = cameraPositionState,
             contentPadding = PaddingValues(bottom = mapCameraBottomPadding),
             properties = MapProperties(isMyLocationEnabled = false),
-            onMapLoaded = { isMapLoaded = true }
+            onMapLoaded = { isMapLoaded = true },
+            onMapClick = { onMapClick() }
         ) {
             RouteMapContent(
                 routeModeUiState = uiState.routeModeUiState,
                 markerPlaces = uiState.mapPlaces,
                 routeAccentColor = routeAccentColor,
                 onPlaceMarkerClick = { placeId ->
-                    uiState.mapPlaces
-                        .firstOrNull { it.placeId == placeId }
-                        ?.let { place ->
-                            coroutineScope.launch {
-                                cameraPositionState.animate(
-                                    CameraUpdateFactory.newLatLngZoom(
-                                        LatLng(place.latitude, place.longitude),
-                                        17f
-                                    )
-                                )
-                            }
+                    markerCameraTarget(
+                        markerPlaces = uiState.mapPlaces,
+                        placeId = placeId
+                    )?.let { target ->
+                        coroutineScope.launch {
+                            cameraPositionState.animate(
+                                CameraUpdateFactory.newLatLngZoom(target, 17f)
+                            )
                         }
+                    }
                     onPlaceMarkerClick(placeId)
                 }
             )
@@ -138,6 +138,15 @@ internal fun MainMapSection(
 }
 
 internal fun MainCoordinateUiState.toLatLng(): LatLng = LatLng(latitude, longitude)
+
+private fun markerCameraTarget(
+    markerPlaces: List<PlaceMarkerUiState>,
+    placeId: Long
+): LatLng? {
+    return markerPlaces
+        .firstOrNull { it.placeId == placeId }
+        ?.let { place -> LatLng(place.latitude, place.longitude) }
+}
 
 @Composable
 private fun CurrentLocationButton(

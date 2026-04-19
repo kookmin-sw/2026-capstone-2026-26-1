@@ -6,7 +6,7 @@ import androidx.compose.runtime.saveable.listSaver
 internal data class MainScreenLocalUiState(
     val selectedBottomSheetTab: MainBottomSheetTab = MainBottomSheetTab.PLACE,
     val isPlaceCreateSheetVisible: Boolean = false,
-    val bottomSheetValue: MainBottomSheetValue = MainBottomSheetValue.COLLAPSED,
+    val bottomSheetValue: MainBottomSheetValue = MainBottomSheetValue.HIDDEN,
     val requestedSheetValue: MainBottomSheetValue? = null,
     val selectedPlaceId: Long? = null
 )

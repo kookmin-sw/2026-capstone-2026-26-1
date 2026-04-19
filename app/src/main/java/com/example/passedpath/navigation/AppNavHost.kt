@@ -31,6 +31,7 @@ fun AppNavHost(
     var logoutToastTrigger by remember { mutableStateOf(0) }
     var loginToastMessage by remember { mutableStateOf<String?>(null) }
     var loginToastTrigger by remember { mutableStateOf(0) }
+    var mainTabReselectionEvent by remember { mutableStateOf(0) }
 
     LaunchedEffect(Unit) {
         AuthEvent.logoutEvent.collect { event ->
@@ -45,7 +46,14 @@ fun AppNavHost(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        AppScaffold(navController = navController) { modifier: Modifier ->
+        AppScaffold(
+            navController = navController,
+            onBottomBarReselected = { route ->
+                if (route == NavRoute.MAIN) {
+                    mainTabReselectionEvent++
+                }
+            }
+        ) { modifier: Modifier ->
             NavHost(
                 navController = navController,
                 startDestination = NavRoute.ENTRY,
@@ -91,7 +99,7 @@ fun AppNavHost(
                 }
 
                 composable(NavRoute.MAIN) {
-                    MainRoute()
+                    MainRoute(mainTabReselectionEvent = mainTabReselectionEvent)
                 }
 
                 composable(NavRoute.MYPAGE) {

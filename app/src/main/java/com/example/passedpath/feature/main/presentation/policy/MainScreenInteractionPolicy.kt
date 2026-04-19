@@ -9,26 +9,30 @@ internal data class MainScreenInteractionResult(
     val shouldRefreshPlaces: Boolean = false
 )
 
-internal fun reduceForDateChange(state: MainScreenLocalUiState): MainScreenLocalUiState {
-    return state.copy(
-        selectedPlaceId = null,
-        requestedSheetValue = null
+internal fun reduceForDateChange(state: MainScreenLocalUiState): MainScreenInteractionResult {
+    return MainScreenInteractionResult(
+        state = state.copy(
+            selectedPlaceId = null,
+            requestedSheetValue = null
+        )
     )
 }
 
 internal fun reduceForSheetValueChange(
     state: MainScreenLocalUiState,
     bottomSheetValue: MainBottomSheetValue
-): MainScreenLocalUiState {
-    return if (bottomSheetValue == MainBottomSheetValue.COLLAPSED) {
-        state.copy(
-            bottomSheetValue = bottomSheetValue,
-            selectedPlaceId = null,
-            requestedSheetValue = null
-        )
-    } else {
-        state.copy(bottomSheetValue = bottomSheetValue)
-    }
+): MainScreenInteractionResult {
+    return MainScreenInteractionResult(
+        state = if (bottomSheetValue == MainBottomSheetValue.HIDDEN) {
+            state.copy(
+                bottomSheetValue = bottomSheetValue,
+                selectedPlaceId = null,
+                requestedSheetValue = null
+            )
+        } else {
+            state.copy(bottomSheetValue = bottomSheetValue)
+        }
+    )
 }
 
 internal fun reduceForPlaceMarkerClick(
@@ -42,6 +46,17 @@ internal fun reduceForPlaceMarkerClick(
             requestedSheetValue = MainBottomSheetValue.MIDDLE
         ),
         shouldRefreshPlaces = state.selectedBottomSheetTab != MainBottomSheetTab.PLACE
+    )
+}
+
+internal fun reduceForSheetHideRequest(
+    state: MainScreenLocalUiState
+): MainScreenInteractionResult {
+    return MainScreenInteractionResult(
+        state = state.copy(
+            requestedSheetValue = MainBottomSheetValue.HIDDEN,
+            selectedPlaceId = null
+        )
     )
 }
 
@@ -68,13 +83,19 @@ internal fun reduceForBottomSheetTabSelection(
     }
 }
 
-internal fun reduceForSelectedPlaceHandled(state: MainScreenLocalUiState): MainScreenLocalUiState {
-    return state.copy(selectedPlaceId = null)
+internal fun reduceForSelectedPlaceHandled(
+    state: MainScreenLocalUiState
+): MainScreenInteractionResult {
+    return MainScreenInteractionResult(
+        state = state.copy(selectedPlaceId = null)
+    )
 }
 
 internal fun reduceForPlaceCreateSheetVisibility(
     state: MainScreenLocalUiState,
     isVisible: Boolean
-): MainScreenLocalUiState {
-    return state.copy(isPlaceCreateSheetVisible = isVisible)
+): MainScreenInteractionResult {
+    return MainScreenInteractionResult(
+        state = state.copy(isPlaceCreateSheetVisible = isVisible)
+    )
 }

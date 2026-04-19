@@ -7,16 +7,16 @@ class LocationRequestPolicyTest {
 
     @Test
     fun `moving mode uses tighter request config`() {
-        val config = LocationRequestPolicy.configFor(TrackingLocationMode.MOVING)
+        val config = TrackingModePolicy.requestConfigFor(TrackingLocationMode.MOVING)
 
         assertEquals(60_000L, config.updateIntervalMs)
         assertEquals(30_000L, config.minUpdateIntervalMs)
-        assertEquals(20f, config.minUpdateDistanceMeters)
+        assertEquals(30f, config.minUpdateDistanceMeters)
     }
 
     @Test
     fun `idle mode uses relaxed request config`() {
-        val config = LocationRequestPolicy.configFor(TrackingLocationMode.IDLE)
+        val config = TrackingModePolicy.requestConfigFor(TrackingLocationMode.IDLE)
 
         assertEquals(5 * 60_000L, config.updateIntervalMs)
         assertEquals(2 * 60_000L, config.minUpdateIntervalMs)

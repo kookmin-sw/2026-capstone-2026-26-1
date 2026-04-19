@@ -13,7 +13,10 @@ import com.example.passedpath.feature.main.presentation.policy.RouteReloadTrigge
 import com.example.passedpath.feature.main.presentation.policy.TrackingToggleDecision
 import com.example.passedpath.feature.main.presentation.policy.createRouteReloadRequest
 import com.example.passedpath.feature.main.presentation.policy.decideTrackingToggle
+import com.example.passedpath.feature.main.presentation.policy.resolveCameraIntentAfterRouteState
 import com.example.passedpath.feature.main.presentation.policy.resolveMainRouteActionRequest
+import com.example.passedpath.feature.main.presentation.policy.shouldRequestCurrentLocationCamera
+import com.example.passedpath.feature.main.presentation.state.MainCameraIntent
 import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiState
 import com.example.passedpath.feature.main.presentation.state.MainUiState
 import com.example.passedpath.feature.main.presentation.state.toPlaceMarkerUiState
@@ -95,7 +98,7 @@ class MainViewModel(
                 currentState.copy(
                     permissionState = permissionState,
                     currentLocation = null,
-                    hasCenteredOnCurrentLocation = false
+                    pendingCameraIntent = null
                 )
             } else {
                 currentState.copy(permissionState = permissionState)
@@ -119,13 +122,23 @@ class MainViewModel(
 
     fun updateCurrentLocation(location: MainCoordinateUiState) {
         _uiState.update { currentState ->
-            currentState.copy(currentLocation = location)
+            currentState.copy(
+                currentLocation = location,
+                pendingCameraIntent = when {
+                    shouldRequestCurrentLocationCamera(
+                        currentRouteHasLocationData = currentState.selectedRoute.hasLocationData,
+                        previousLocation = currentState.currentLocation
+                    ) -> MainCameraIntent.CenterCurrentLocation
+
+                    else -> currentState.pendingCameraIntent
+                }
+            )
         }
     }
 
-    fun markInitialCameraCentered() {
+    fun consumeCameraIntent() {
         _uiState.update { currentState ->
-            currentState.copy(hasCenteredOnCurrentLocation = true)
+            currentState.copy(pendingCameraIntent = null)
         }
     }
 
@@ -230,6 +243,12 @@ class MainViewModel(
         routeState: RouteLoadState
     ) {
         _uiState.update { currentState ->
+            val nextCameraIntent = resolveCameraIntentAfterRouteState(
+                currentDateKey = currentState.selectedDateKey,
+                currentRouteHasLocationData = currentState.selectedRoute.hasLocationData,
+                currentLocation = currentState.currentLocation,
+                routeState = routeState
+            )
             currentState.copy(
                 selectedDateKey = routeState.selectedDateKey,
                 fetchedMapPlaces = if (currentState.selectedDateKey == routeState.selectedDateKey) {
@@ -239,7 +258,7 @@ class MainViewModel(
                 },
                 routeModeUiState = routeState.routeModeUiState
                     .withTrackingState(trackingServiceStateReader.isTracking.value),
-                hasCenteredOnCurrentLocation = false
+                pendingCameraIntent = nextCameraIntent ?: currentState.pendingCameraIntent
             ).withDebugState(
                 isTrackingEnabledByUser = userTrackingEnabled(),
                 routeDebugSnapshot = routeState.debugSnapshot

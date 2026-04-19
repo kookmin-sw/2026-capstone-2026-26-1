@@ -30,7 +30,7 @@ import kotlinx.coroutines.launch
 private data class SheetAnchors(
     val expanded: Float,
     val middle: Float,
-    val collapsed: Float
+    val hidden: Float
 )
 
 @Composable
@@ -46,28 +46,28 @@ internal fun MainBottomSheetScaffold(
     ) {
         val density = androidx.compose.ui.platform.LocalDensity.current
         val containerHeightPx = constraints.maxHeight.toFloat()
-        val collapsedVisibleHeightPx = with(density) { BottomSheetCollapsedVisibleHeight.toPx() }
+        val hiddenVisibleHeightPx = with(density) { BottomSheetHiddenVisibleHeight.toPx() }
         val middleVisibleHeightPx = with(density) { BottomSheetMiddleVisibleHeight.toPx() }
         val expandedTopInsetPx = with(density) { BottomSheetExpandedTopInset.toPx() }
-        val collapsedOffset = (containerHeightPx - collapsedVisibleHeightPx).coerceAtLeast(0f)
+        val hiddenOffset = (containerHeightPx - hiddenVisibleHeightPx).coerceAtLeast(0f)
         val middleOffset = (containerHeightPx - middleVisibleHeightPx)
-            .coerceIn(expandedTopInsetPx, collapsedOffset)
+            .coerceIn(expandedTopInsetPx, hiddenOffset)
         val expandedOffset = expandedTopInsetPx.coerceAtMost(middleOffset)
-        val sheetAnchors = remember(expandedOffset, middleOffset, collapsedOffset) {
+        val sheetAnchors = remember(expandedOffset, middleOffset, hiddenOffset) {
             SheetAnchors(
                 expanded = expandedOffset,
                 middle = middleOffset,
-                collapsed = collapsedOffset
+                hidden = hiddenOffset
             )
         }
-        var sheetOffset by remember { mutableFloatStateOf(collapsedOffset) }
+        var sheetOffset by remember { mutableFloatStateOf(hiddenOffset) }
         val coroutineScope = rememberCoroutineScope()
 
-        LaunchedEffect(expandedOffset, middleOffset, collapsedOffset) {
+        LaunchedEffect(expandedOffset, middleOffset, hiddenOffset) {
             sheetOffset = when (nearestSheetValue(sheetOffset, sheetAnchors)) {
                 MainBottomSheetValue.EXPANDED -> sheetAnchors.expanded
                 MainBottomSheetValue.MIDDLE -> sheetAnchors.middle
-                MainBottomSheetValue.COLLAPSED -> sheetAnchors.collapsed
+                MainBottomSheetValue.HIDDEN -> sheetAnchors.hidden
             }
         }
 
@@ -76,7 +76,7 @@ internal fun MainBottomSheetScaffold(
             val targetOffset = when (targetValue) {
                 MainBottomSheetValue.EXPANDED -> sheetAnchors.expanded
                 MainBottomSheetValue.MIDDLE -> sheetAnchors.middle
-                MainBottomSheetValue.COLLAPSED -> sheetAnchors.collapsed
+                MainBottomSheetValue.HIDDEN -> sheetAnchors.hidden
             }
             animate(
                 initialValue = sheetOffset,
@@ -92,7 +92,7 @@ internal fun MainBottomSheetScaffold(
 
         val draggableState = rememberDraggableState { delta ->
             sheetOffset = (sheetOffset + delta)
-                .coerceIn(sheetAnchors.expanded, sheetAnchors.collapsed)
+                .coerceIn(sheetAnchors.expanded, sheetAnchors.hidden)
         }
 
         val visibleSheetHeightDp = with(density) { (containerHeightPx - sheetOffset).toDp() }
@@ -149,7 +149,7 @@ private fun settleSheetOffset(
     val velocityThreshold = 1800f
     if (velocity <= -velocityThreshold) {
         return when (currentValue) {
-            MainBottomSheetValue.COLLAPSED -> anchors.middle
+            MainBottomSheetValue.HIDDEN -> anchors.middle
             MainBottomSheetValue.MIDDLE -> anchors.expanded
             MainBottomSheetValue.EXPANDED -> anchors.expanded
         }
@@ -157,11 +157,11 @@ private fun settleSheetOffset(
     if (velocity >= velocityThreshold) {
         return when (currentValue) {
             MainBottomSheetValue.EXPANDED -> anchors.middle
-            MainBottomSheetValue.MIDDLE -> anchors.collapsed
-            MainBottomSheetValue.COLLAPSED -> anchors.collapsed
+            MainBottomSheetValue.MIDDLE -> anchors.hidden
+            MainBottomSheetValue.HIDDEN -> anchors.hidden
         }
     }
-    return listOf(anchors.expanded, anchors.middle, anchors.collapsed)
+    return listOf(anchors.expanded, anchors.middle, anchors.hidden)
         .minBy { abs(it - currentOffset) }
 }
 
@@ -170,11 +170,11 @@ private fun nearestSheetValue(
     anchors: SheetAnchors
 ): MainBottomSheetValue {
     return when (
-        listOf(anchors.expanded, anchors.middle, anchors.collapsed)
+        listOf(anchors.expanded, anchors.middle, anchors.hidden)
             .minBy { abs(it - offset) }
     ) {
         anchors.expanded -> MainBottomSheetValue.EXPANDED
         anchors.middle -> MainBottomSheetValue.MIDDLE
-        else -> MainBottomSheetValue.COLLAPSED
+        else -> MainBottomSheetValue.HIDDEN
     }
 }

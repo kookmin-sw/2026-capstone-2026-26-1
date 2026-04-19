@@ -23,6 +23,7 @@ import com.example.passedpath.util.AppSettingsNavigator
 
 @Composable
 fun MainRoute(
+    mainTabReselectionEvent: Int = 0,
     viewModel: MainViewModel = viewModel(
         factory = MainViewModelFactory(LocalContext.current.appContainer)
     )
@@ -136,7 +137,7 @@ fun MainRoute(
         uiState = uiState,
         dayNoteUiState = dayNoteUiState,
         placeUiState = placeUiState,
-        onInitialCameraCentered = viewModel::markInitialCameraCentered,
+        onCameraIntentConsumed = viewModel::consumeCameraIntent,
         onDateSelected = viewModel::selectDate,
         onDateSelectionRequested = ::requestDateSelection,
         onRouteAction = viewModel::handleRouteAction,
@@ -161,6 +162,7 @@ fun MainRoute(
                 PermissionActionTarget.None -> Unit
             }
         },
+        mainTabReselectionEvent = mainTabReselectionEvent,
         showUnsavedDayNoteDialog = dateSelectionGuardState.pendingDateSelection != null,
         onDismissUnsavedDayNoteDialog = dateSelectionGuardCoordinator::dismissPendingDateSelection,
         onConfirmUnsavedDayNoteDialog = dayNoteViewModel::submitDayNote,

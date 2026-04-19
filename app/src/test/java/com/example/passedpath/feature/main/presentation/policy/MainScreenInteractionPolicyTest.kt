@@ -61,7 +61,21 @@ class MainScreenInteractionPolicyTest {
     }
 
     @Test
-    fun `collapsed sheet clears selected place and requested value`() {
+    fun `sheet hide request sets hidden sheet and clears selected place`() {
+        val initialState = MainScreenLocalUiState(
+            bottomSheetValue = MainBottomSheetValue.EXPANDED,
+            requestedSheetValue = MainBottomSheetValue.EXPANDED,
+            selectedPlaceId = 4L
+        )
+
+        val result = reduceForSheetHideRequest(initialState)
+
+        assertEquals(MainBottomSheetValue.HIDDEN, result.state.requestedSheetValue)
+        assertNull(result.state.selectedPlaceId)
+    }
+
+    @Test
+    fun `hidden sheet clears selected place and requested value`() {
         val initialState = MainScreenLocalUiState(
             bottomSheetValue = MainBottomSheetValue.MIDDLE,
             requestedSheetValue = MainBottomSheetValue.MIDDLE,
@@ -70,11 +84,11 @@ class MainScreenInteractionPolicyTest {
 
         val result = reduceForSheetValueChange(
             state = initialState,
-            bottomSheetValue = MainBottomSheetValue.COLLAPSED
+            bottomSheetValue = MainBottomSheetValue.HIDDEN
         )
 
-        assertEquals(MainBottomSheetValue.COLLAPSED, result.bottomSheetValue)
-        assertNull(result.requestedSheetValue)
-        assertNull(result.selectedPlaceId)
+        assertEquals(MainBottomSheetValue.HIDDEN, result.state.bottomSheetValue)
+        assertNull(result.state.requestedSheetValue)
+        assertNull(result.state.selectedPlaceId)
     }
 }

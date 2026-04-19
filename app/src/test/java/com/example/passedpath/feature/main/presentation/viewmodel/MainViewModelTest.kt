@@ -10,6 +10,8 @@ import com.example.passedpath.feature.locationtracking.domain.repository.DayRout
 import com.example.passedpath.feature.locationtracking.domain.repository.RemoteDayRouteResult
 import com.example.passedpath.feature.locationtracking.domain.repository.TrackingDebugLogRepository
 import com.example.passedpath.feature.locationtracking.domain.usecase.ObserveRecentTrackingEventsUseCase
+import com.example.passedpath.feature.main.presentation.state.MainCameraIntent
+import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiState
 import com.example.passedpath.feature.permission.presentation.mapper.createPermissionOverlayUiModel
 import com.example.passedpath.feature.place.domain.model.PlaceSourceType
 import com.example.passedpath.feature.place.domain.model.VisitedPlace
@@ -161,6 +163,73 @@ class MainViewModelTest {
         assertNull(state.routeErrorMessage)
         assertEquals(3, state.selectedRoute.polylinePoints.size)
         assertEquals(2.3, state.selectedRoute.totalDistanceKm, 0.0)
+    }
+
+    @Test
+    fun `first current location requests current location camera intent when route is empty`() = runTest {
+        val viewModel = createViewModel(
+            repository = FakeDayRouteRepository(),
+            initialDateKey = "2026-03-31",
+            todayDateKey = "2026-03-31",
+            backgroundGranted = true
+        )
+        advanceUntilIdle()
+
+        viewModel.updateCurrentLocation(
+            MainCoordinateUiState(latitude = 37.1, longitude = 127.1)
+        )
+
+        assertEquals(
+            MainCameraIntent.CenterCurrentLocation,
+            viewModel.uiState.value.pendingCameraIntent
+        )
+    }
+
+    @Test
+    fun `consumed camera intent is not recreated by later today route updates on same date`() = runTest {
+        val localFlow = MutableStateFlow<DailyPath?>(null)
+        val viewModel = createViewModel(
+            repository = FakeDayRouteRepository(
+                localRouteByDate = mutableMapOf("2026-03-31" to localFlow)
+            ),
+            initialDateKey = "2026-03-31",
+            todayDateKey = "2026-03-31",
+            backgroundGranted = true
+        )
+        advanceUntilIdle()
+
+        viewModel.updateCurrentLocation(
+            MainCoordinateUiState(latitude = 37.1, longitude = 127.1)
+        )
+        viewModel.consumeCameraIntent()
+
+        localFlow.value = DailyPath(
+            dateKey = "2026-03-31",
+            points = listOf(
+                TrackedLocation(37.1, 127.1, 5f, 1L),
+                TrackedLocation(37.2, 127.2, 5f, 2L)
+            ),
+            totalDistanceMeters = 1500.0,
+            pathPointCount = 2
+        )
+        advanceUntilIdle()
+
+        assertEquals(MainCameraIntent.FitRoute, viewModel.uiState.value.pendingCameraIntent)
+        viewModel.consumeCameraIntent()
+
+        localFlow.value = DailyPath(
+            dateKey = "2026-03-31",
+            points = listOf(
+                TrackedLocation(37.1, 127.1, 5f, 1L),
+                TrackedLocation(37.2, 127.2, 5f, 2L),
+                TrackedLocation(37.3, 127.3, 5f, 3L)
+            ),
+            totalDistanceMeters = 2300.0,
+            pathPointCount = 3
+        )
+        advanceUntilIdle()
+
+        assertNull(viewModel.uiState.value.pendingCameraIntent)
     }
 
     @Test

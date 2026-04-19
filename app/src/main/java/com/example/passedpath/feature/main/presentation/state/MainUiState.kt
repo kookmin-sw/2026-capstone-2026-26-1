@@ -13,12 +13,18 @@ data class MainCoordinateUiState(
     val recordedAtEpochMillis: Long? = null
 )
 
+sealed interface MainCameraIntent {
+    data object CenterCurrentLocation : MainCameraIntent
+
+    data object FitRoute : MainCameraIntent
+}
+
 data class MainUiState(
     val permissionState: LocationPermissionUiState = LocationPermissionUiState.DENIED,
     val isLocationServiceEnabled: Boolean = true,
     val isTrackingActive: Boolean = false,
     val currentLocation: MainCoordinateUiState? = null,
-    val hasCenteredOnCurrentLocation: Boolean = false,
+    val pendingCameraIntent: MainCameraIntent? = null,
     val showTrackingPermissionDialog: Boolean = false,
     val selectedDateKey: String = "",
     val fetchedMapPlaces: List<PlaceMarkerUiState>? = null,

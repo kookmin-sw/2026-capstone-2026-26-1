@@ -1,5 +1,8 @@
 package com.example.passedpath.feature.main.presentation.screen
 
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -29,6 +32,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -59,6 +65,8 @@ internal fun MainBottomSheet(
     onAddPlaceClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val focusManager = LocalFocusManager.current
+
     Surface(
         modifier = modifier
             .fillMaxWidth()
@@ -87,6 +95,9 @@ internal fun MainBottomSheet(
                     .fillMaxWidth()
                     .weight(1f)
                     .clipToBounds()
+                    .clearFocusOnBackgroundTap {
+                        focusManager.clearFocus(force = true)
+                    }
             ) {
                 when (selectedTab) {
                     MainBottomSheetTab.PLACE -> PlaceBottomSheetContent(
@@ -110,6 +121,23 @@ internal fun MainBottomSheet(
                     )
                 }
             }
+        }
+    }
+}
+
+private fun Modifier.clearFocusOnBackgroundTap(
+    onTap: () -> Unit
+): Modifier = pointerInput(onTap) {
+    awaitEachGesture {
+        val down = awaitFirstDown(
+            requireUnconsumed = false,
+            pass = PointerEventPass.Final
+        )
+        if (down.isConsumed) return@awaitEachGesture
+
+        val up = waitForUpOrCancellation(pass = PointerEventPass.Final)
+        if (up != null && !up.isConsumed) {
+            onTap()
         }
     }
 }
@@ -198,7 +226,7 @@ private fun MainBottomSheetTab.icon(): ImageVector {
 }
 
 internal enum class MainBottomSheetValue {
-    COLLAPSED,
+    HIDDEN,
     MIDDLE,
     EXPANDED
 }

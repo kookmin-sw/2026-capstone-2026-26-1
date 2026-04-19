@@ -4,9 +4,8 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Looper
 import com.example.passedpath.feature.locationtracking.domain.model.TrackedLocation
-import com.example.passedpath.feature.locationtracking.domain.policy.AdaptiveTrackingModePolicy
-import com.example.passedpath.feature.locationtracking.domain.policy.LocationRequestPolicy
 import com.example.passedpath.feature.locationtracking.domain.policy.TrackingLocationMode
+import com.example.passedpath.feature.locationtracking.domain.policy.TrackingModePolicy
 import com.example.passedpath.feature.locationtracking.domain.tracker.LocationTracker
 import com.example.passedpath.feature.locationtracking.domain.tracker.LocationTrackingSession
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -54,7 +53,7 @@ class TrackingLocationProvider(
         return GoogleTrackingLocationSession(
             fusedLocationClient = fusedLocationClient,
             locationCallback = locationCallback,
-            currentMode = AdaptiveTrackingModePolicy.initialMode()
+            currentMode = TrackingModePolicy.initialMode()
         ).also { session ->
             session.start()
         }
@@ -102,7 +101,7 @@ private class GoogleTrackingLocationSession(
     }
 
     private fun buildLocationRequest(mode: TrackingLocationMode): LocationRequest {
-        val config = LocationRequestPolicy.configFor(mode)
+        val config = TrackingModePolicy.requestConfigFor(mode)
         return LocationRequest.Builder(
             Priority.PRIORITY_HIGH_ACCURACY,
             config.updateIntervalMs

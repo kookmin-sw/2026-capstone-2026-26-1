@@ -11,14 +11,16 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import com.example.passedpath.R
 import com.example.passedpath.feature.daynote.presentation.state.DayNoteUiState
 import com.example.passedpath.feature.main.presentation.policy.reduceForBottomSheetTabSelection
 import com.example.passedpath.feature.main.presentation.policy.reduceForDateChange
-import com.example.passedpath.feature.main.presentation.policy.reduceForPlaceCreateSheetVisibility
 import com.example.passedpath.feature.main.presentation.policy.reduceForPlaceMarkerClick
 import com.example.passedpath.feature.main.presentation.policy.reduceForSelectedPlaceHandled
+import com.example.passedpath.feature.main.presentation.policy.reduceForPlaceCreateSheetVisibility
+import com.example.passedpath.feature.main.presentation.policy.reduceForSheetHideRequest
 import com.example.passedpath.feature.main.presentation.policy.reduceForSheetValueChange
 import com.example.passedpath.feature.main.presentation.state.MainUiState
 import com.example.passedpath.feature.place.presentation.screen.PlaceCreateBottomSheet
@@ -35,7 +37,7 @@ fun MainScreen(
     uiState: MainUiState,
     dayNoteUiState: DayNoteUiState,
     placeUiState: PlaceUiState,
-    onInitialCameraCentered: () -> Unit,
+    onCameraIntentConsumed: () -> Unit,
     onDateSelected: (String) -> Unit,
     onDateSelectionRequested: (String) -> Unit,
     onRouteAction: (RouteUiAction) -> Unit,
@@ -46,6 +48,7 @@ fun MainScreen(
     onTrackingPermissionDialogConfirm: () -> Unit,
     onTrackingPermissionDialogDismiss: () -> Unit,
     onPermissionBannerConfirm: () -> Unit,
+    mainTabReselectionEvent: Int,
     showUnsavedDayNoteDialog: Boolean,
     onDismissUnsavedDayNoteDialog: () -> Unit,
     onConfirmUnsavedDayNoteDialog: () -> Unit,
@@ -53,6 +56,14 @@ fun MainScreen(
 ) {
     var localUiState by rememberSaveable(stateSaver = MainScreenLocalUiStateSaver) {
         mutableStateOf(MainScreenLocalUiState())
+    }
+    val focusManager = LocalFocusManager.current
+
+    fun dispatchInteraction(result: com.example.passedpath.feature.main.presentation.policy.MainScreenInteractionResult) {
+        localUiState = result.state
+        if (result.shouldRefreshPlaces) {
+            onPlaceListRefreshRequested(uiState.selectedDateKey)
+        }
     }
     val dayNoteToastMessage = dayNoteUiState.errorMessage ?: dayNoteUiState.successMessage
     val shouldShowPastEmptyToast =
@@ -80,7 +91,13 @@ fun MainScreen(
     }
 
     LaunchedEffect(uiState.selectedDateKey) {
-        localUiState = reduceForDateChange(localUiState)
+        dispatchInteraction(reduceForDateChange(localUiState))
+    }
+
+    LaunchedEffect(mainTabReselectionEvent) {
+        if (mainTabReselectionEvent == 0) return@LaunchedEffect
+        focusManager.clearFocus(force = true)
+        dispatchInteraction(reduceForSheetHideRequest(localUiState))
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -90,26 +107,26 @@ fun MainScreen(
                 .statusBarsPadding(),
             requestedSheetValue = localUiState.requestedSheetValue,
             onSheetValueChanged = { bottomSheetValue ->
-                localUiState = reduceForSheetValueChange(
+                dispatchInteraction(reduceForSheetValueChange(
                     state = localUiState,
                     bottomSheetValue = bottomSheetValue
-                )
+                ))
             },
             content = { floatingBottomPadding ->
                 MainMapSection(
                     uiState = uiState,
-                    onInitialCameraCentered = onInitialCameraCentered,
+                    onCameraIntentConsumed = onCameraIntentConsumed,
                     onDateSelected = onDateSelectionRequested,
                     onRouteAction = onRouteAction,
+                    onMapClick = {
+                        focusManager.clearFocus(force = true)
+                        dispatchInteraction(reduceForSheetHideRequest(localUiState))
+                    },
                     onPlaceMarkerClick = { placeId ->
-                        val result = reduceForPlaceMarkerClick(
+                        dispatchInteraction(reduceForPlaceMarkerClick(
                             state = localUiState,
                             placeId = placeId
-                        )
-                        localUiState = result.state
-                        if (result.shouldRefreshPlaces) {
-                            onPlaceListRefreshRequested(uiState.selectedDateKey)
-                        }
+                        ))
                     },
                     onPermissionBannerConfirm = onPermissionBannerConfirm,
                     debugActions = debugActions,
@@ -124,27 +141,23 @@ fun MainScreen(
                     dayNoteUiState = dayNoteUiState,
                     selectedPlaceId = localUiState.selectedPlaceId,
                     onSelectedPlaceHandled = {
-                        localUiState = reduceForSelectedPlaceHandled(localUiState)
+                        dispatchInteraction(reduceForSelectedPlaceHandled(localUiState))
                     },
                     onDayNoteTitleChanged = onDayNoteTitleChanged,
                     onDayNoteMemoChanged = onDayNoteMemoChanged,
                     onDayNoteSaveClick = onDayNoteSaveClick,
                     selectedTab = localUiState.selectedBottomSheetTab,
                     onTabSelected = { tab ->
-                        val result = reduceForBottomSheetTabSelection(
+                        dispatchInteraction(reduceForBottomSheetTabSelection(
                             state = localUiState,
                             selectedTab = tab
-                        )
-                        localUiState = result.state
-                        if (result.shouldRefreshPlaces) {
-                            onPlaceListRefreshRequested(uiState.selectedDateKey)
-                        }
+                        ))
                     },
                     onAddPlaceClick = {
-                        localUiState = reduceForPlaceCreateSheetVisibility(
+                        dispatchInteraction(reduceForPlaceCreateSheetVisibility(
                             state = localUiState,
                             isVisible = true
-                        )
+                        ))
                     }
                 )
             }
@@ -160,16 +173,16 @@ fun MainScreen(
         PlaceCreateBottomSheet(
             selectedDateKey = uiState.selectedDateKey,
             onDismiss = {
-                localUiState = reduceForPlaceCreateSheetVisibility(
+                dispatchInteraction(reduceForPlaceCreateSheetVisibility(
                     state = localUiState,
                     isVisible = false
-                )
+                ))
             },
             onCreated = {
-                localUiState = reduceForPlaceCreateSheetVisibility(
+                dispatchInteraction(reduceForPlaceCreateSheetVisibility(
                     state = localUiState,
                     isVisible = false
-                )
+                ))
             }
         )
     }
