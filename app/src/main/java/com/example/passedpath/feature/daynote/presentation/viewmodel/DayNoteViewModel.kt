@@ -12,9 +12,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.text.ParseException
 import java.text.SimpleDateFormat
-import java.time.LocalDate
-import java.time.format.DateTimeParseException
 import java.util.Date
 import java.util.Locale
 
@@ -27,20 +26,32 @@ class DayNoteViewModel(
     private val _uiState = MutableStateFlow(DayNoteUiState(dateKey = initialDateKey))
     val uiState: StateFlow<DayNoteUiState> = _uiState.asStateFlow()
 
-    fun updateDateKey(value: String) {
+    fun syncSelectedDay(dateKey: String, title: String, memo: String) {
         _uiState.update { currentState ->
-            currentState.copy(
-                dateKey = value,
-                errorMessage = null,
-                successMessage = null
-            )
+            if (
+                currentState.dateKey == dateKey &&
+                currentState.originalTitle == title &&
+                currentState.originalMemo == memo
+            ) {
+                currentState
+            } else {
+                currentState.copy(
+                    dateKey = dateKey,
+                    originalTitle = title,
+                    originalMemo = memo,
+                    title = title,
+                    memo = memo,
+                    errorMessage = null,
+                    successMessage = null
+                )
+            }
         }
     }
 
     fun updateTitle(value: String) {
         _uiState.update { currentState ->
             currentState.copy(
-                title = value,
+                title = value.take(MAX_TITLE_LENGTH),
                 errorMessage = null,
                 successMessage = null
             )
@@ -50,128 +61,99 @@ class DayNoteViewModel(
     fun updateMemo(value: String) {
         _uiState.update { currentState ->
             currentState.copy(
-                memo = value,
+                memo = value.take(MAX_MEMO_LENGTH),
                 errorMessage = null,
                 successMessage = null
             )
         }
     }
 
-    fun submitTitle() {
+    fun submitDayNote() {
         val currentState = _uiState.value
         if (!isValidDateKey(currentState.dateKey)) {
             _uiState.update {
                 it.copy(
-                    errorMessage = "³¯Â¥´Â yyyy-MM-dd Çü½ÄÀÌ¾î¾ß ÇÕ´Ï´Ù.",
-                    successMessage = null
+                    errorMessage = "ë‚ ì§œëŠ” yyyy-MM-dd í˜•ì‹ì´ì–´ì•¼ í•©ë‹ˆë‹¤.",
+                    successMessage = null,
+                    feedbackEventId = it.feedbackEventId + 1
                 )
             }
             return
         }
+        if (!currentState.isDirty) return
+
+        val normalizedTitle = currentState.normalizedTitle
+        val normalizedMemo = currentState.normalizedMemo
+        val titleChanged = normalizedTitle != currentState.normalizedOriginalTitle
+        val memoChanged = normalizedMemo != currentState.normalizedOriginalMemo
 
         viewModelScope.launch {
             _uiState.update { it.copy(isSubmitting = true, errorMessage = null, successMessage = null) }
             try {
-                val result = patchDayRouteTitleUseCase(
-                    dateKey = currentState.dateKey,
-                    title = currentState.title
-                )
-                val successMessage = if (result.title.isNullOrBlank()) {
-                    "Á¦¸ñÀÌ »èÁ¦µÇ¾ú½À´Ï´Ù."
+                val savedTitle = if (titleChanged) {
+                    patchDayRouteTitleUseCase(
+                        dateKey = currentState.dateKey,
+                        title = normalizedTitle.ifBlank { null }
+                    ).title.orEmpty()
                 } else {
-                    "Á¦¸ñÀÌ ÀúÀåµÇ¾ú½À´Ï´Ù."
+                    currentState.originalTitle
                 }
+
+                val savedMemo = if (memoChanged) {
+                    patchDayRouteMemoUseCase(
+                        dateKey = currentState.dateKey,
+                        memo = normalizedMemo.ifBlank { null }
+                    ).memo.orEmpty()
+                } else {
+                    currentState.originalMemo
+                }
+
                 _uiState.update {
                     it.copy(
-                        title = result.title.orEmpty(),
+                        originalTitle = savedTitle,
+                        originalMemo = savedMemo,
+                        title = savedTitle,
+                        memo = savedMemo,
                         isSubmitting = false,
                         errorMessage = null,
-                        successMessage = successMessage
+                        successMessage = when {
+                            titleChanged && memoChanged -> "ì œëª©ê³¼ ë©”ëª¨ë¥¼ ì €ìž¥í–ˆìŠµë‹ˆë‹¤."
+                            titleChanged -> "ì œëª©ì„ ì €ìž¥í–ˆìŠµë‹ˆë‹¤."
+                            memoChanged -> "ë©”ëª¨ë¥¼ ì €ìž¥í–ˆìŠµë‹ˆë‹¤."
+                            else -> null
+                        },
+                        feedbackEventId = it.feedbackEventId + 1
                     )
                 }
             } catch (throwable: Throwable) {
                 _uiState.update {
                     it.copy(
                         isSubmitting = false,
-                        errorMessage = throwable.message ?: "Á¦¸ñ ÀúÀå¿¡ ½ÇÆÐÇß½À´Ï´Ù.",
-                        successMessage = null
+                        errorMessage = throwable.message ?: "ê¸°ë¡ ì €ìž¥ì— ì‹¤íŒ¨í–ˆìŠµë‹ˆë‹¤.",
+                        successMessage = null,
+                        feedbackEventId = it.feedbackEventId + 1
                     )
                 }
             }
-        }
-    }
-
-    fun submitMemo() {
-        val currentState = _uiState.value
-        if (!isValidDateKey(currentState.dateKey)) {
-            _uiState.update {
-                it.copy(
-                    errorMessage = "³¯Â¥´Â yyyy-MM-dd Çü½ÄÀÌ¾î¾ß ÇÕ´Ï´Ù.",
-                    successMessage = null
-                )
-            }
-            return
-        }
-
-        viewModelScope.launch {
-            _uiState.update { it.copy(isSubmitting = true, errorMessage = null, successMessage = null) }
-            try {
-                val result = patchDayRouteMemoUseCase(
-                    dateKey = currentState.dateKey,
-                    memo = currentState.memo
-                )
-                val successMessage = if (result.memo.isNullOrBlank()) {
-                    "¸Þ¸ð°¡ »èÁ¦µÇ¾ú½À´Ï´Ù."
-                } else {
-                    "¸Þ¸ð°¡ ÀúÀåµÇ¾ú½À´Ï´Ù."
-                }
-                _uiState.update {
-                    it.copy(
-                        memo = result.memo.orEmpty(),
-                        isSubmitting = false,
-                        errorMessage = null,
-                        successMessage = successMessage
-                    )
-                }
-            } catch (throwable: Throwable) {
-                _uiState.update {
-                    it.copy(
-                        isSubmitting = false,
-                        errorMessage = throwable.message ?: "¸Þ¸ð ÀúÀå¿¡ ½ÇÆÐÇß½À´Ï´Ù.",
-                        successMessage = null
-                    )
-                }
-            }
-        }
-    }
-
-    fun clearTitle() {
-        _uiState.update { currentState ->
-            currentState.copy(
-                title = "",
-                errorMessage = null,
-                successMessage = null
-            )
-        }
-    }
-
-    fun clearMemo() {
-        _uiState.update { currentState ->
-            currentState.copy(
-                memo = "",
-                errorMessage = null,
-                successMessage = null
-            )
         }
     }
 
     private fun isValidDateKey(value: String): Boolean {
+        val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.KOREA).apply {
+            isLenient = false
+        }
+
         return try {
-            LocalDate.parse(value)
+            formatter.parse(value)
             true
-        } catch (_: DateTimeParseException) {
+        } catch (_: ParseException) {
             false
         }
+    }
+
+    companion object {
+        const val MAX_TITLE_LENGTH: Int = 60
+        const val MAX_MEMO_LENGTH: Int = 1000
     }
 }
 

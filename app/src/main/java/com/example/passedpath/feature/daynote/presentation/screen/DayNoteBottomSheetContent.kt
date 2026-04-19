@@ -4,146 +4,139 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.passedpath.R
-import com.example.passedpath.app.appContainer
-import com.example.passedpath.feature.daynote.presentation.viewmodel.DayNoteViewModel
-import com.example.passedpath.feature.daynote.presentation.viewmodel.DayNoteViewModelFactory
+import com.example.passedpath.feature.daynote.presentation.state.DayNoteUiState
+import com.example.passedpath.ui.component.BaseInputField
+import com.example.passedpath.ui.theme.Gray100
+import com.example.passedpath.ui.theme.Gray400
+import com.example.passedpath.ui.theme.Gray500
+import com.example.passedpath.ui.theme.Green500
 
 @Composable
 fun DayNoteBottomSheetContent(
-    modifier: Modifier = Modifier,
-    viewModel: DayNoteViewModel = viewModel(
-        factory = DayNoteViewModelFactory(LocalContext.current.appContainer)
-    )
+    uiState: DayNoteUiState,
+    onTitleChanged: (String) -> Unit,
+    onMemoChanged: (String) -> Unit,
+    onSaveClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-
     Column(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        DayNoteFieldSection(
+            label = "ì œëª©",
+            placeholder = "ì˜¤ëŠ˜ì˜ ì§€ë‚˜ì˜¨ ê¸¸ì„ ì§§ê²Œ ì ì–´ë³´ì„¸ìš”.",
+            value = uiState.title,
+            onValueChange = onTitleChanged,
+            countText = "${uiState.titleCount}/60",
+            singleLine = true,
+            minLines = 1,
+            imeAction = ImeAction.Next
+        )
+
+        DayNoteFieldSection(
+            label = "ë©”ëª¨",
+            placeholder = "ê¸°ì–µí•˜ê³  ì‹¶ì€ ìž¥ë©´, ê°ì •, ìž¥ì†Œë¥¼ ì ì–´ë³´ì„¸ìš”.",
+            value = uiState.memo,
+            onValueChange = onMemoChanged,
+            countText = "${uiState.memoCount}/1000",
+            singleLine = false,
+            minLines = 6,
+            imeAction = ImeAction.Default
+        )
+
+        Button(
+            onClick = onSaveClick,
+            enabled = uiState.isSaveEnabled,
+            shape = RoundedCornerShape(22.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Green500,
+                disabledContainerColor = Gray100,
+                contentColor = Color.White,
+                disabledContentColor = Gray400
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp)
+        ) {
+            if (uiState.isSubmitting) {
+                CircularProgressIndicator(
+                    color = Color.White,
+                    strokeWidth = 2.dp,
+                    modifier = Modifier.height(20.dp)
+                )
+            } else {
+                Text(
+                    text = if (uiState.isDirty) "ì €ìž¥í•˜ê¸°" else "ë³€ê²½ ì‚¬í•­ ì—†ìŒ",
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+        }
+
+    }
+}
+
+@Composable
+private fun DayNoteFieldSection(
+    label: String,
+    placeholder: String,
+    value: String,
+    onValueChange: (String) -> Unit,
+    countText: String,
+    singleLine: Boolean,
+    minLines: Int,
+    imeAction: ImeAction
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 2.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        Text(
-            text = androidx.compose.ui.res.stringResource(R.string.daynote_sheet_title),
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.SemiBold
-        )
-        Text(
-            text = "main selected date°¡ ¾ÆÁ÷ ¿¬°áµÇÁö ¾Ê¾Æ ³¯Â¥¸¦ Á÷Á¢ ÀÔ·ÂÇÕ´Ï´Ù.",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Text(
-            text = "Á¦¸ñ°ú ¸Þ¸ð´Â PATCH overwrite semanticsÀÔ´Ï´Ù. ºó°ªÀÌ³ª °ø¹éµµ ¼­¹ö¿¡¼­ »èÁ¦·Î °£ÁÖµÉ ¼ö ÀÖ½À´Ï´Ù.",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        OutlinedTextField(
-            value = uiState.dateKey,
-            onValueChange = viewModel::updateDateKey,
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text("³¯Â¥") },
-            placeholder = { Text("yyyy-MM-dd") },
-            singleLine = true
-        )
-        OutlinedTextField(
-            value = uiState.title,
-            onValueChange = viewModel::updateTitle,
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text("Á¦¸ñ") },
-            placeholder = { Text("ºó°ªÀÌ¸é »èÁ¦ Ã³¸® °¡´É") },
-            singleLine = true
-        )
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Button(
-                onClick = viewModel::submitTitle,
-                enabled = uiState.isSubmitEnabled,
-                modifier = Modifier.weight(1f)
-            ) {
-                if (uiState.isSubmitting) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.padding(vertical = 2.dp),
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        strokeWidth = 2.dp
-                    )
-                } else {
-                    Text("Á¦¸ñ ÀúÀå")
-                }
-            }
-            Button(
-                onClick = viewModel::clearTitle,
-                enabled = !uiState.isSubmitting,
-                modifier = Modifier.weight(1f)
-            ) {
-                Text("Á¦¸ñ ºñ¿ì±â")
-            }
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyMedium,
+                color = Gray500,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                text = countText,
+                style = MaterialTheme.typography.bodySmall,
+                color = Gray400
+            )
         }
-        OutlinedTextField(
-            value = uiState.memo,
-            onValueChange = viewModel::updateMemo,
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text("¸Þ¸ð") },
-            placeholder = { Text("ºó°ªÀÌ¸é »èÁ¦ Ã³¸® °¡´É") },
-            minLines = 4
+        BaseInputField(
+            value = value,
+            onValueChange = onValueChange,
+            placeholder = placeholder,
+            singleLine = singleLine,
+            minLines = minLines,
+            imeAction = imeAction
         )
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Button(
-                onClick = viewModel::submitMemo,
-                enabled = uiState.isSubmitEnabled,
-                modifier = Modifier.weight(1f)
-            ) {
-                if (uiState.isSubmitting) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.padding(vertical = 2.dp),
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        strokeWidth = 2.dp
-                    )
-                } else {
-                    Text("¸Þ¸ð ÀúÀå")
-                }
-            }
-            Button(
-                onClick = viewModel::clearMemo,
-                enabled = !uiState.isSubmitting,
-                modifier = Modifier.weight(1f)
-            ) {
-                Text("¸Þ¸ð ºñ¿ì±â")
-            }
-        }
-
-        uiState.errorMessage?.let { message ->
-            Text(
-                text = message,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.error
-            )
-        }
-
-        uiState.successMessage?.let { message ->
-            Text(
-                text = message,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.primary
-            )
-        }
     }
 }

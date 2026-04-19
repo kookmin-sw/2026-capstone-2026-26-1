@@ -8,7 +8,13 @@ import com.example.passedpath.feature.locationtracking.domain.model.RoutePoint
 import com.example.passedpath.feature.locationtracking.domain.model.TrackedLocation
 import com.example.passedpath.feature.locationtracking.domain.repository.DayRouteRepository
 import com.example.passedpath.feature.locationtracking.domain.repository.RemoteDayRouteResult
+import com.example.passedpath.feature.locationtracking.domain.repository.TrackingDebugLogRepository
+import com.example.passedpath.feature.locationtracking.domain.usecase.ObserveRecentTrackingEventsUseCase
+import com.example.passedpath.feature.main.presentation.state.MainCameraIntent
+import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiState
 import com.example.passedpath.feature.permission.presentation.mapper.createPermissionOverlayUiModel
+import com.example.passedpath.feature.place.domain.model.PlaceSourceType
+import com.example.passedpath.feature.place.domain.model.VisitedPlace
 import com.example.passedpath.feature.permission.presentation.state.LocationPermissionUiState
 import com.example.passedpath.feature.permission.data.manager.LocationPermissionStatusReader
 import com.example.passedpath.feature.permission.data.manager.LocationServiceStatusReader
@@ -21,6 +27,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -45,6 +52,8 @@ class MainViewModelTest {
                     routeDetail = DayRouteDetail(
                         dateKey = "2026-03-29",
                         totalDistanceKm = 12.3,
+                        title = "Han River",
+                        memo = "Windy evening walk",
                         pathPointCount = 3,
                         polylinePoints = listOf(
                             RoutePoint(37.1, 127.1),
@@ -74,7 +83,10 @@ class MainViewModelTest {
         assertFalse(state.isRouteEmpty)
         assertNull(state.routeErrorMessage)
         assertTrue(state.selectedRoute.hasLocationData)
+        assertEquals("Han River", state.selectedRoute.title)
+        assertEquals("Windy evening walk", state.selectedRoute.memo)
         assertEquals(3, state.selectedRoute.polylinePoints.size)
+        assertTrue(state.mapPlaces.isEmpty())
         assertEquals(1, state.selectedRoute.places.size)
         assertEquals(listOf("2026-03-29"), repository.requestedRemoteDates)
         assertTrue(repository.observedLocalDates.isEmpty())
@@ -115,7 +127,7 @@ class MainViewModelTest {
         assertEquals(2, state.selectedRoute.polylinePoints.size)
         assertEquals(1.5, state.selectedRoute.totalDistanceKm, 0.0)
         assertEquals(listOf("2026-03-31"), repository.observedLocalDates)
-        assertTrue(repository.requestedRemoteDates.isEmpty())
+        assertEquals(listOf("2026-03-31"), repository.requestedRemoteDates)
     }
 
     @Test
@@ -151,6 +163,73 @@ class MainViewModelTest {
         assertNull(state.routeErrorMessage)
         assertEquals(3, state.selectedRoute.polylinePoints.size)
         assertEquals(2.3, state.selectedRoute.totalDistanceKm, 0.0)
+    }
+
+    @Test
+    fun `first current location requests current location camera intent when route is empty`() = runTest {
+        val viewModel = createViewModel(
+            repository = FakeDayRouteRepository(),
+            initialDateKey = "2026-03-31",
+            todayDateKey = "2026-03-31",
+            backgroundGranted = true
+        )
+        advanceUntilIdle()
+
+        viewModel.updateCurrentLocation(
+            MainCoordinateUiState(latitude = 37.1, longitude = 127.1)
+        )
+
+        assertEquals(
+            MainCameraIntent.CenterCurrentLocation,
+            viewModel.uiState.value.pendingCameraIntent
+        )
+    }
+
+    @Test
+    fun `consumed camera intent is not recreated by later today route updates on same date`() = runTest {
+        val localFlow = MutableStateFlow<DailyPath?>(null)
+        val viewModel = createViewModel(
+            repository = FakeDayRouteRepository(
+                localRouteByDate = mutableMapOf("2026-03-31" to localFlow)
+            ),
+            initialDateKey = "2026-03-31",
+            todayDateKey = "2026-03-31",
+            backgroundGranted = true
+        )
+        advanceUntilIdle()
+
+        viewModel.updateCurrentLocation(
+            MainCoordinateUiState(latitude = 37.1, longitude = 127.1)
+        )
+        viewModel.consumeCameraIntent()
+
+        localFlow.value = DailyPath(
+            dateKey = "2026-03-31",
+            points = listOf(
+                TrackedLocation(37.1, 127.1, 5f, 1L),
+                TrackedLocation(37.2, 127.2, 5f, 2L)
+            ),
+            totalDistanceMeters = 1500.0,
+            pathPointCount = 2
+        )
+        advanceUntilIdle()
+
+        assertEquals(MainCameraIntent.FitRoute, viewModel.uiState.value.pendingCameraIntent)
+        viewModel.consumeCameraIntent()
+
+        localFlow.value = DailyPath(
+            dateKey = "2026-03-31",
+            points = listOf(
+                TrackedLocation(37.1, 127.1, 5f, 1L),
+                TrackedLocation(37.2, 127.2, 5f, 2L),
+                TrackedLocation(37.3, 127.3, 5f, 3L)
+            ),
+            totalDistanceMeters = 2300.0,
+            pathPointCount = 3
+        )
+        advanceUntilIdle()
+
+        assertNull(viewModel.uiState.value.pendingCameraIntent)
     }
 
     @Test
@@ -444,6 +523,132 @@ class MainViewModelTest {
         assertEquals(listOf("2026-03-31"), repository.observedLocalDates)
     }
 
+    @Test
+    fun `updateFetchedMapPlaces overrides route seed markers with fetched places`() = runTest {
+        val repository = FakeDayRouteRepository(
+            resultByDate = mutableMapOf(
+                "2026-03-29" to RemoteDayRouteResult.Success(
+                    routeDetail = DayRouteDetail(
+                        dateKey = "2026-03-29",
+                        totalDistanceKm = 12.3,
+                        title = "Han River",
+                        memo = "Windy evening walk",
+                        pathPointCount = 3,
+                        polylinePoints = listOf(
+                            RoutePoint(37.1, 127.1),
+                            RoutePoint(37.2, 127.2),
+                            RoutePoint(37.3, 127.3)
+                        ),
+                        places = listOf(
+                            DayRoutePlace(1L, "Seed Place", "Road", 37.1, 127.1, 1)
+                        )
+                    )
+                )
+            )
+        )
+        val viewModel = createViewModel(
+            repository = repository,
+            initialDateKey = "2026-03-29",
+            todayDateKey = "2026-03-31",
+            backgroundGranted = true
+        )
+        advanceUntilIdle()
+
+        viewModel.updateFetchedMapPlaces(
+            dateKey = "2026-03-29",
+            places = listOf(
+                VisitedPlace(
+                    placeId = 4L,
+                    placeName = "Fetched B",
+                    type = PlaceSourceType.MANUAL,
+                    roadAddress = "Address B",
+                    latitude = 37.4,
+                    longitude = 127.4,
+                    orderIndex = 2
+                ),
+                VisitedPlace(
+                    placeId = 3L,
+                    placeName = "Fetched A",
+                    type = PlaceSourceType.AUTO,
+                    roadAddress = "Address A",
+                    latitude = 37.3,
+                    longitude = 127.3,
+                    orderIndex = 1
+                )
+            )
+        )
+
+        val state = viewModel.uiState.value
+        assertEquals(2, state.mapPlaces.size)
+        assertEquals(listOf(3L, 4L), state.mapPlaces.map { it.placeId })
+        assertEquals("Fetched A", state.mapPlaces.first().placeName)
+    }
+
+    @Test
+    fun `selectDate clears fetched markers until places are fetched again`() = runTest {
+        val repository = FakeDayRouteRepository(
+            resultByDate = mutableMapOf(
+                "2026-03-29" to RemoteDayRouteResult.Success(
+                    routeDetail = DayRouteDetail(
+                        dateKey = "2026-03-29",
+                        totalDistanceKm = 1.0,
+                        title = "",
+                        memo = "",
+                        pathPointCount = 1,
+                        polylinePoints = listOf(RoutePoint(37.1, 127.1)),
+                        places = listOf(
+                            DayRoutePlace(1L, "Seed A", "Road A", 37.1, 127.1, 1)
+                        )
+                    )
+                ),
+                "2026-03-30" to RemoteDayRouteResult.Success(
+                    routeDetail = DayRouteDetail(
+                        dateKey = "2026-03-30",
+                        totalDistanceKm = 2.0,
+                        title = "",
+                        memo = "",
+                        pathPointCount = 1,
+                        polylinePoints = listOf(RoutePoint(37.2, 127.2)),
+                        places = listOf(
+                            DayRoutePlace(2L, "Seed B", "Road B", 37.2, 127.2, 1)
+                        )
+                    )
+                )
+            )
+        )
+        val viewModel = createViewModel(
+            repository = repository,
+            initialDateKey = "2026-03-29",
+            todayDateKey = "2026-03-31",
+            backgroundGranted = true
+        )
+        advanceUntilIdle()
+
+        viewModel.updateFetchedMapPlaces(
+            dateKey = "2026-03-29",
+            places = listOf(
+                VisitedPlace(
+                    placeId = 9L,
+                    placeName = "Fetched Place",
+                    type = PlaceSourceType.MANUAL,
+                    roadAddress = "Fetched Road",
+                    latitude = 37.9,
+                    longitude = 127.9,
+                    orderIndex = 1
+                )
+            )
+        )
+        assertEquals(listOf(9L), viewModel.uiState.value.mapPlaces.map { it.placeId })
+
+        viewModel.selectDate("2026-03-30")
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertEquals("2026-03-30", state.selectedDateKey)
+        assertTrue(state.mapPlaces.isEmpty())
+        assertNull(state.fetchedMapPlaces)
+    }
+
     private fun createViewModel(
         repository: FakeDayRouteRepository,
         initialDateKey: String,
@@ -466,6 +671,7 @@ class MainViewModelTest {
                 dayRouteRepository = repository,
                 todayDateKeyProvider = { todayDateKey }
             ),
+            observeRecentTrackingEvents = FakeObserveRecentTrackingEventsUseCase(),
             trackingServiceStateReader = FakeLocationTrackingServiceStateReader(trackingState),
             startTracking = onStartTracking,
             stopTracking = onStopTracking
@@ -521,7 +727,21 @@ class MainViewModelTest {
         override suspend fun fetchRemoteDayRoute(dateKey: String): RemoteDayRouteResult {
             requestedRemoteDates += dateKey
             return resultByDate[dateKey]
-                ?: error("No fake result prepared for $dateKey")
+                ?: RemoteDayRouteResult.Empty
+        }
+    }
+
+    private class FakeObserveRecentTrackingEventsUseCase : ObserveRecentTrackingEventsUseCase(
+        trackingDebugLogRepository = FakeTrackingDebugLogRepository()
+    ) {
+        override fun invoke(limit: Int): Flow<List<String>> = flowOf(emptyList())
+    }
+
+    private class FakeTrackingDebugLogRepository : TrackingDebugLogRepository {
+        override suspend fun append(category: String, message: String, dateKey: String?) = Unit
+
+        override fun observeRecent(limit: Int): Flow<List<com.example.passedpath.feature.locationtracking.domain.model.TrackingDebugLog>> {
+            return flowOf(emptyList())
         }
     }
 }

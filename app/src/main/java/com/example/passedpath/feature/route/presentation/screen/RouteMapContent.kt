@@ -13,8 +13,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -30,27 +28,37 @@ import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiSt
 import com.example.passedpath.feature.route.presentation.state.MainRouteModeUiState
 import com.example.passedpath.feature.route.presentation.state.PlaceMarkerUiState
 import com.example.passedpath.feature.route.presentation.state.RouteUiAction
+import com.google.android.gms.maps.model.Dash
+import com.google.android.gms.maps.model.Gap
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.PatternItem
 import com.google.maps.android.compose.MarkerComposable
 import com.google.maps.android.compose.Polyline
+
+private val DashedRoutePattern: List<PatternItem> = listOf(
+    Dash(24f),
+    Gap(18f)
+)
 
 @Composable
 fun RouteMapContent(
     routeModeUiState: MainRouteModeUiState,
-    routeAccentColor: Color
+    markerPlaces: List<PlaceMarkerUiState>,
+    routeAccentColor: Color,
+    onPlaceMarkerClick: (Long) -> Unit = {}
 ) {
     val selectedRoute = routeModeUiState.route
-    val routePoints = selectedRoute.polylinePoints.map(MainCoordinateUiState::toLatLng)
-    if (routePoints.size >= 2) {
+    selectedRoute.routeSegments.forEach { segment ->
         Polyline(
-            points = routePoints,
+            points = listOf(segment.start.toLatLng(), segment.end.toLatLng()),
             color = routeAccentColor,
-            width = 14f
+            width = 14f,
+            pattern = if (segment.isDashed) DashedRoutePattern else null
         )
     }
 
-    if (selectedRoute.hasLocationData) {
-        selectedRoute.places.forEach { place ->
+    if (markerPlaces.isNotEmpty()) {
+        markerPlaces.forEach { place ->
             MarkerComposable(
                 state = com.google.maps.android.compose.MarkerState(
                     position = LatLng(place.latitude, place.longitude)
@@ -58,7 +66,12 @@ fun RouteMapContent(
                 title = place.placeName.ifBlank {
                     stringResource(R.string.route_place_fallback_title, place.orderIndex)
                 },
-                anchor = androidx.compose.ui.geometry.Offset(0.5f, 0.5f)
+                anchor = androidx.compose.ui.geometry.Offset(0.5f, 0.5f),
+                zIndex = 0f,
+                onClick = {
+                    onPlaceMarkerClick(place.placeId)
+                    true
+                }
             ) {
                 PlaceOrderMarker(place = place, routeAccentColor = routeAccentColor)
             }
@@ -89,15 +102,10 @@ private fun PlaceOrderMarker(
 @Composable
 fun RouteStatusOverlay(
     routeModeUiState: MainRouteModeUiState,
-    hasRouteLocationData: Boolean,
     onRouteAction: (RouteUiAction) -> Unit
 ) {
     val routeErrorMessage = routeModeUiState.routeErrorMessage
-    val routeEmptyMessage = routeModeUiState.routeEmptyMessage
-    val routeAccentColor = MaterialTheme.colorScheme.primary
-    val shouldShowNoLocationData =
-        !routeModeUiState.isRouteLoading && routeErrorMessage == null && !hasRouteLocationData
-    if (!routeModeUiState.isRouteLoading && routeErrorMessage == null && !shouldShowNoLocationData) {
+    if (routeErrorMessage == null) {
         return
     }
 
@@ -118,86 +126,24 @@ fun RouteStatusOverlay(
                     .padding(horizontal = 24.dp, vertical = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                when {
-                    routeModeUiState.isRouteLoading -> {
-                        CircularProgressIndicator(color = routeAccentColor)
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = loadingTitle(routeModeUiState),
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = loadingMessage(routeModeUiState),
-                            color = Color(0xFF4B5563),
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                    routeErrorMessage != null -> {
-                        Text(
-                            text = stringResource(R.string.route_error_title),
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = routeErrorMessage,
-                            color = Color(0xFF9D1C1C),
-                            textAlign = TextAlign.Center
-                        )
-                        if (routeModeUiState is MainRouteModeUiState.Past) {
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Button(onClick = { onRouteAction(RouteUiAction.RetryPastRoute) }) {
-                                Text(text = stringResource(R.string.route_retry))
-                            }
-                        }
-                    }
-                    else -> {
-                        Text(
-                            text = emptyTitle(routeModeUiState),
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = routeEmptyMessage ?: emptyMessage(routeModeUiState),
-                            color = Color(0xFF4B5563),
-                            textAlign = TextAlign.Center
-                        )
+                Text(
+                    text = stringResource(R.string.route_error_title),
+                    fontWeight = FontWeight.SemiBold
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = routeErrorMessage,
+                    color = Color(0xFF9D1C1C),
+                    textAlign = TextAlign.Center
+                )
+                if (routeModeUiState is MainRouteModeUiState.Past) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(onClick = { onRouteAction(RouteUiAction.RetryPastRoute) }) {
+                        Text(text = stringResource(R.string.route_retry))
                     }
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun loadingTitle(routeModeUiState: MainRouteModeUiState): String {
-    return when (routeModeUiState) {
-        is MainRouteModeUiState.Today -> stringResource(R.string.route_loading_today_title)
-        is MainRouteModeUiState.Past -> stringResource(R.string.route_loading_past_title)
-    }
-}
-
-@Composable
-private fun loadingMessage(routeModeUiState: MainRouteModeUiState): String {
-    return when (routeModeUiState) {
-        is MainRouteModeUiState.Today -> stringResource(R.string.route_loading_today_message)
-        is MainRouteModeUiState.Past -> stringResource(R.string.route_loading_past_message)
-    }
-}
-
-@Composable
-private fun emptyTitle(routeModeUiState: MainRouteModeUiState): String {
-    return when (routeModeUiState) {
-        is MainRouteModeUiState.Today -> stringResource(R.string.route_empty_today_title)
-        is MainRouteModeUiState.Past -> stringResource(R.string.route_empty_past_title)
-    }
-}
-
-@Composable
-private fun emptyMessage(routeModeUiState: MainRouteModeUiState): String {
-    return when (routeModeUiState) {
-        is MainRouteModeUiState.Today -> stringResource(R.string.route_empty_today_message)
-        is MainRouteModeUiState.Past -> stringResource(R.string.route_empty_past_message)
     }
 }
 

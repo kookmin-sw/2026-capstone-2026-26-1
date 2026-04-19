@@ -11,7 +11,7 @@ import androidx.core.content.ContextCompat
 
 object LocationPermissionGate {
 
-    // 포그라운드 위치 권한 허용 여부 확인
+    // ACCESS_FINE_LOACTION 허용 여부
     fun isForegroundGranted(context: Context): Boolean {
         return ContextCompat.checkSelfPermission(
             context,
@@ -19,7 +19,7 @@ object LocationPermissionGate {
         ) == PackageManager.PERMISSION_GRANTED
     }
 
-    // 백그라운드 위치가 ALWAYS 상태인지 확인
+    // ACCESS_BACKGROUND_LOACTION 허용 여부
     fun isBackgroundAlwaysGranted(context: Context): Boolean {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             ContextCompat.checkSelfPermission(

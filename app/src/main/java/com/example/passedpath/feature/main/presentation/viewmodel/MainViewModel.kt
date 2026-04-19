@@ -7,15 +7,26 @@ import com.example.passedpath.app.AppContainer
 import com.example.passedpath.debug.AppDebugLogger
 import com.example.passedpath.debug.DebugLogTag
 import com.example.passedpath.feature.locationtracking.data.manager.LocationTrackingServiceStateReader
+import com.example.passedpath.feature.locationtracking.domain.usecase.ObserveRecentTrackingEventsUseCase
+import com.example.passedpath.feature.main.presentation.policy.MainRouteActionRequest
+import com.example.passedpath.feature.main.presentation.policy.RouteReloadTrigger
 import com.example.passedpath.feature.main.presentation.policy.TrackingToggleDecision
+import com.example.passedpath.feature.main.presentation.policy.createRouteReloadRequest
 import com.example.passedpath.feature.main.presentation.policy.decideTrackingToggle
+import com.example.passedpath.feature.main.presentation.policy.resolveCameraIntentAfterRouteState
+import com.example.passedpath.feature.main.presentation.policy.resolveMainRouteActionRequest
+import com.example.passedpath.feature.main.presentation.policy.shouldRequestCurrentLocationCamera
+import com.example.passedpath.feature.main.presentation.state.MainCameraIntent
 import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiState
 import com.example.passedpath.feature.main.presentation.state.MainUiState
+import com.example.passedpath.feature.main.presentation.state.toPlaceMarkerUiState
 import com.example.passedpath.feature.main.presentation.state.withDebugState
+import com.example.passedpath.feature.place.domain.model.VisitedPlace
 import com.example.passedpath.feature.permission.data.manager.LocationPermissionStatusReader
 import com.example.passedpath.feature.permission.data.manager.LocationServiceStatusReader
 import com.example.passedpath.feature.permission.presentation.policy.resolveLocationPermissionUiState
 import com.example.passedpath.feature.permission.presentation.state.LocationPermissionUiState
+import com.example.passedpath.feature.route.presentation.coordinator.RouteLoadState
 import com.example.passedpath.feature.route.presentation.coordinator.RouteStateCoordinator
 import com.example.passedpath.feature.route.presentation.state.MainRouteModeUiState
 import com.example.passedpath.feature.route.presentation.state.RouteUiAction
@@ -24,6 +35,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -35,6 +47,7 @@ class MainViewModel(
     private val locationServiceStatusReader: LocationServiceStatusReader,
     initialDateKeyProvider: () -> String = ::todayDateKey,
     private val routeStateCoordinator: RouteStateCoordinator,
+    private val observeRecentTrackingEvents: ObserveRecentTrackingEventsUseCase,
     private val trackingServiceStateReader: LocationTrackingServiceStateReader,
     private val startTracking: () -> Unit,
     private val stopTracking: () -> Unit
@@ -61,7 +74,13 @@ class MainViewModel(
         refreshPermissionState()
         refreshLocationServiceState()
         observeTrackingState()
-        loadDayRoute(initialDateKey)
+        observeTrackingDebugLogs()
+        reloadRoute(
+            createRouteReloadRequest(
+                dateKey = initialDateKey,
+                trigger = RouteReloadTrigger.InitialLoad
+            )
+        )
     }
 
     fun refreshPermissionState() {
@@ -79,7 +98,7 @@ class MainViewModel(
                 currentState.copy(
                     permissionState = permissionState,
                     currentLocation = null,
-                    hasCenteredOnCurrentLocation = false
+                    pendingCameraIntent = null
                 )
             } else {
                 currentState.copy(permissionState = permissionState)
@@ -103,13 +122,23 @@ class MainViewModel(
 
     fun updateCurrentLocation(location: MainCoordinateUiState) {
         _uiState.update { currentState ->
-            currentState.copy(currentLocation = location)
+            currentState.copy(
+                currentLocation = location,
+                pendingCameraIntent = when {
+                    shouldRequestCurrentLocationCamera(
+                        currentRouteHasLocationData = currentState.selectedRoute.hasLocationData,
+                        previousLocation = currentState.currentLocation
+                    ) -> MainCameraIntent.CenterCurrentLocation
+
+                    else -> currentState.pendingCameraIntent
+                }
+            )
         }
     }
 
-    fun markInitialCameraCentered() {
+    fun consumeCameraIntent() {
         _uiState.update { currentState ->
-            currentState.copy(hasCenteredOnCurrentLocation = true)
+            currentState.copy(pendingCameraIntent = null)
         }
     }
 
@@ -118,16 +147,45 @@ class MainViewModel(
             DebugLogTag.MAIN_FLOW,
             "selectDate dateKey=$dateKey previous=${_uiState.value.selectedDateKey}"
         )
-        loadDayRoute(dateKey)
+        reloadRoute(
+            createRouteReloadRequest(
+                dateKey = dateKey,
+                trigger = RouteReloadTrigger.DateSelection
+            )
+        )
+    }
+
+    fun updateFetchedMapPlaces(dateKey: String, places: List<VisitedPlace>) {
+        _uiState.update { currentState ->
+            if (currentState.selectedDateKey != dateKey) {
+                currentState
+            } else {
+                currentState.copy(
+                    fetchedMapPlaces = places
+                        .sortedBy(VisitedPlace::orderIndex)
+                        .map(VisitedPlace::toPlaceMarkerUiState)
+                )
+            }
+        }
+    }
+
+    fun clearFetchedMapPlaces(dateKey: String) {
+        _uiState.update { currentState ->
+            if (currentState.selectedDateKey != dateKey) {
+                currentState
+            } else {
+                currentState.copy(fetchedMapPlaces = null)
+            }
+        }
     }
 
     fun handleRouteAction(action: RouteUiAction) {
-        when (action) {
-            RouteUiAction.RefreshTodayRoute -> loadDayRoute(_uiState.value.selectedDateKey)
-            RouteUiAction.RetryPastRoute -> loadDayRoute(_uiState.value.selectedDateKey)
-            RouteUiAction.ToggleTracking -> toggleTracking()
-            RouteUiAction.EnterPastPlayback -> Unit
-        }
+        executeRouteAction(
+            resolveMainRouteActionRequest(
+                action = action,
+                selectedDateKey = _uiState.value.selectedDateKey
+            )
+        )
     }
 
     fun dismissTrackingPermissionDialog() {
@@ -138,7 +196,26 @@ class MainViewModel(
         }
     }
 
-    private fun loadDayRoute(dateKey: String) {
+    private fun executeRouteAction(request: MainRouteActionRequest) {
+        when (request) {
+            is MainRouteActionRequest.ReloadRoute -> reloadRoute(request)
+            MainRouteActionRequest.ToggleTracking -> toggleTracking()
+            MainRouteActionRequest.OpenPastPlayback -> Unit
+        }
+    }
+
+    private fun reloadRoute(request: MainRouteActionRequest.ReloadRoute) {
+        cancelPreviousRouteReloadIfNeeded()
+        routeLoadJob = viewModelScope.launch {
+            AppDebugLogger.debug(
+                DebugLogTag.MAIN_FLOW,
+                "reloadRoute begin dateKey=${request.dateKey} trigger=${request.trigger}"
+            )
+            collectRouteState(request)
+        }
+    }
+
+    private fun cancelPreviousRouteReloadIfNeeded() {
         if (routeLoadJob != null) {
             AppDebugLogger.debug(
                 DebugLogTag.MAIN_FLOW,
@@ -146,28 +223,46 @@ class MainViewModel(
             )
         }
         routeLoadJob?.cancel()
-        routeLoadJob = viewModelScope.launch {
+    }
+
+    private suspend fun collectRouteState(request: MainRouteActionRequest.ReloadRoute) {
+        routeLoadFlow(request.dateKey).collect { routeState ->
             AppDebugLogger.debug(
                 DebugLogTag.MAIN_FLOW,
-                "loadDayRoute begin dateKey=$dateKey"
+                "reloadRoute update dateKey=${routeState.selectedDateKey} trigger=${request.trigger} status=${routeState.debugSnapshot?.status ?: "unknown"}"
             )
-            routeStateCoordinator.loadRoute(dateKey).collect { routeState ->
-                AppDebugLogger.debug(
-                    DebugLogTag.MAIN_FLOW,
-                    "loadDayRoute update dateKey=${routeState.selectedDateKey} status=${routeState.debugSnapshot?.status ?: "unknown"}"
-                )
-                _uiState.update { currentState ->
-                    currentState.copy(
-                        selectedDateKey = routeState.selectedDateKey,
-                        routeModeUiState = routeState.routeModeUiState
-                            .withTrackingState(trackingServiceStateReader.isTracking.value),
-                        hasCenteredOnCurrentLocation = false
-                    ).withDebugState(
-                        isTrackingEnabledByUser = userTrackingEnabled(),
-                        routeDebugSnapshot = routeState.debugSnapshot
-                    )
-                }
-            }
+            applyLoadedRouteState(routeState)
+        }
+    }
+
+    private fun routeLoadFlow(dateKey: String): Flow<RouteLoadState> {
+        return routeStateCoordinator.loadRoute(dateKey)
+    }
+
+    private fun applyLoadedRouteState(
+        routeState: RouteLoadState
+    ) {
+        _uiState.update { currentState ->
+            val nextCameraIntent = resolveCameraIntentAfterRouteState(
+                currentDateKey = currentState.selectedDateKey,
+                currentRouteHasLocationData = currentState.selectedRoute.hasLocationData,
+                currentLocation = currentState.currentLocation,
+                routeState = routeState
+            )
+            currentState.copy(
+                selectedDateKey = routeState.selectedDateKey,
+                fetchedMapPlaces = if (currentState.selectedDateKey == routeState.selectedDateKey) {
+                    currentState.fetchedMapPlaces
+                } else {
+                    null
+                },
+                routeModeUiState = routeState.routeModeUiState
+                    .withTrackingState(trackingServiceStateReader.isTracking.value),
+                pendingCameraIntent = nextCameraIntent ?: currentState.pendingCameraIntent
+            ).withDebugState(
+                isTrackingEnabledByUser = userTrackingEnabled(),
+                routeDebugSnapshot = routeState.debugSnapshot
+            )
         }
     }
 
@@ -184,6 +279,19 @@ class MainViewModel(
                         routeModeUiState = currentState.routeModeUiState.withTrackingState(isTracking)
                     ).withDebugState(
                         isTrackingEnabledByUser = userTrackingEnabled()
+                    )
+                }
+            }
+        }
+    }
+
+    private fun observeTrackingDebugLogs() {
+        viewModelScope.launch {
+            observeRecentTrackingEvents(limit = 5).collectLatest { recentEvents ->
+                _uiState.update { currentState ->
+                    currentState.withDebugState(
+                        isTrackingEnabledByUser = userTrackingEnabled(),
+                        recentTrackingEvents = recentEvents
                     )
                 }
             }
@@ -243,6 +351,7 @@ class MainViewModelFactory(
                     dayRouteRepository = appContainer.dayRouteRepository,
                     todayDateKeyProvider = ::todayDateKey
                 ),
+                observeRecentTrackingEvents = appContainer.observeRecentTrackingEventsUseCase,
                 trackingServiceStateReader = appContainer.locationTrackingServiceStateReader,
                 startTracking = appContainer.startLocationTrackingUseCase::invoke,
                 stopTracking = appContainer.stopLocationTrackingUseCase::invoke

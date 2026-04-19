@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Looper
 import com.example.passedpath.feature.locationtracking.domain.model.TrackedLocation
+import com.example.passedpath.feature.locationtracking.domain.policy.TrackingLocationMode
 import com.example.passedpath.feature.locationtracking.domain.tracker.LocationTracker
 import com.example.passedpath.feature.locationtracking.domain.tracker.LocationTrackingSession
 import com.google.android.gms.location.LocationCallback
@@ -105,4 +106,6 @@ private class GoogleLocationTrackingSession(
     override fun stop() {
         fusedLocationClient.removeLocationUpdates(locationCallback)
     }
+
+    override fun updateMode(mode: TrackingLocationMode) = Unit
 }

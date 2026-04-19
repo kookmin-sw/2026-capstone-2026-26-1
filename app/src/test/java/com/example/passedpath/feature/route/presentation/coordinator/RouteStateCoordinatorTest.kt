@@ -51,7 +51,20 @@ class RouteStateCoordinatorTest {
             )
         )
         val repository = FakeDayRouteRepository(
-            localRouteByDate = mutableMapOf("2026-04-01" to localFlow)
+            localRouteByDate = mutableMapOf("2026-04-01" to localFlow),
+            resultByDate = mutableMapOf(
+                "2026-04-01" to RemoteDayRouteResult.Success(
+                    DayRouteDetail(
+                        dateKey = "2026-04-01",
+                        totalDistanceKm = 0.0,
+                        title = "Today Title",
+                        memo = "Today Memo",
+                        places = listOf(
+                            DayRoutePlace(1L, "Seed Place", "Road", 37.3, 127.3, 1)
+                        )
+                    )
+                )
+            )
         )
         val coordinator = RouteStateCoordinator(
             dayRouteRepository = repository,
@@ -66,8 +79,10 @@ class RouteStateCoordinatorTest {
         assertFalse(states[1].routeModeUiState.isRouteLoading)
         assertTrue(states[1].routeModeUiState is MainRouteModeUiState.Today)
         assertEquals(2, states[1].routeModeUiState.route.polylinePoints.size)
+        assertEquals("Today Title", states[1].routeModeUiState.route.title)
+        assertEquals(1, states[1].routeModeUiState.route.markerPlaces.size)
         assertEquals(listOf("2026-04-01"), repository.observedLocalDates)
-        assertTrue(repository.requestedRemoteDates.isEmpty())
+        assertEquals(listOf("2026-04-01"), repository.requestedRemoteDates)
     }
 
     @Test
@@ -161,6 +176,39 @@ class RouteStateCoordinatorTest {
         assertEquals("선택한 날짜의 경로를 불러오지 못했습니다.", finalState.routeErrorMessage)
     }
 
+    @Test
+    fun `loadRoute emits today read data even when local path is empty`() = runTest {
+        val repository = FakeDayRouteRepository(
+            localRouteByDate = mutableMapOf("2026-04-01" to MutableStateFlow<DailyPath?>(null)),
+            resultByDate = mutableMapOf(
+                "2026-04-01" to RemoteDayRouteResult.Success(
+                    DayRouteDetail(
+                        dateKey = "2026-04-01",
+                        totalDistanceKm = 0.0,
+                        title = "Today Title",
+                        memo = "Today Memo",
+                        places = listOf(
+                            DayRoutePlace(1L, "Seed Place", "Road", 37.3, 127.3, 1)
+                        )
+                    )
+                )
+            )
+        )
+        val coordinator = RouteStateCoordinator(
+            dayRouteRepository = repository,
+            todayDateKeyProvider = { "2026-04-01" }
+        )
+
+        val states = coordinator.loadRoute("2026-04-01").take(2).toList()
+        val finalState = states.last().routeModeUiState as MainRouteModeUiState.Today
+
+        assertFalse(finalState.isRouteEmpty)
+        assertEquals("Today Title", finalState.route.title)
+        assertEquals("Today Memo", finalState.route.memo)
+        assertEquals(1, finalState.route.markerPlaces.size)
+        assertTrue(finalState.route.polylinePoints.isEmpty())
+    }
+
     private class FakeDayRouteRepository(
         private val resultByDate: MutableMap<String, RemoteDayRouteResult> = mutableMapOf(),
         private val localRouteByDate: MutableMap<String, MutableStateFlow<DailyPath?>> = mutableMapOf()
@@ -179,7 +227,7 @@ class RouteStateCoordinatorTest {
 
         override suspend fun fetchRemoteDayRoute(dateKey: String): RemoteDayRouteResult {
             requestedRemoteDates += dateKey
-            return resultByDate[dateKey] ?: error("No fake result prepared for $dateKey")
+            return resultByDate[dateKey] ?: RemoteDayRouteResult.Empty
         }
     }
 }

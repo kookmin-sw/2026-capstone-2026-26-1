@@ -28,16 +28,24 @@ class RouteUiMapperTest {
         val uiState = dailyPath.toSelectedDayRouteUiState()
 
         assertEquals("2026-04-01", uiState.dateKey)
+        assertEquals("", uiState.title)
+        assertEquals("", uiState.memo)
         assertEquals(2, uiState.polylinePoints.size)
+        assertEquals(1, uiState.routeSegments.size)
+        assertEquals(1L, uiState.polylinePoints.first().recordedAtEpochMillis)
+        assertEquals(2L, uiState.polylinePoints.last().recordedAtEpochMillis)
         assertEquals(2.45, uiState.totalDistanceKm, 0.0)
+        assertTrue(uiState.markerPlaces.isEmpty())
         assertTrue(uiState.places.isEmpty())
     }
 
     @Test
-    fun `day route detail maps to selected route ui state with place markers`() {
+    fun `day route detail maps to selected route ui state with title memo and places`() {
         val routeDetail = DayRouteDetail(
             dateKey = "2026-03-31",
             totalDistanceKm = 7.8,
+            title = "Spring walk",
+            memo = "Warm and clear",
             pathPointCount = 3,
             polylinePoints = listOf(
                 RoutePoint(37.1, 127.1),
@@ -45,19 +53,23 @@ class RouteUiMapperTest {
                 RoutePoint(37.3, 127.3)
             ),
             places = listOf(
-                DayRoutePlace(10L, "집", "도로명", 37.4, 127.4, 1),
-                DayRoutePlace(11L, "회사", "도로명", 37.5, 127.5, 2)
+                DayRoutePlace(10L, "Seoul Forest", "Ttukseom-ro", 37.4, 127.4, 1),
+                DayRoutePlace(11L, "Cafe", "Seoul Forest 2-gil", 37.5, 127.5, 2)
             )
         )
 
         val uiState = routeDetail.toSelectedDayRouteUiState()
 
         assertEquals("2026-03-31", uiState.dateKey)
+        assertEquals("Spring walk", uiState.title)
+        assertEquals("Warm and clear", uiState.memo)
         assertEquals(3, uiState.polylinePoints.size)
+        assertEquals(2, uiState.routeSegments.size)
         assertEquals(7.8, uiState.totalDistanceKm, 0.0)
+        assertEquals(2, uiState.markerPlaces.size)
         assertEquals(2, uiState.places.size)
-        assertEquals("집", uiState.places.first().placeName)
-        assertEquals(2, uiState.places.last().orderIndex)
+        assertEquals("Seoul Forest", uiState.markerPlaces.first().placeName)
+        assertEquals(2, uiState.markerPlaces.last().orderIndex)
     }
 
     @Test
@@ -91,5 +103,42 @@ class RouteUiMapperTest {
         assertEquals("2026-03-31", state.route.dateKey)
         assertEquals("선택한 날짜의 경로를 불러오지 못했습니다.", state.routeErrorMessage)
         assertFalse(state.isRouteLoading)
+    }
+
+    @Test
+    fun `today route ui state combines local path with remote read data`() {
+        val dailyPath = DailyPath(
+            dateKey = "2026-04-01",
+            points = listOf(
+                TrackedLocation(37.1, 127.1, 5f, 1L),
+                TrackedLocation(37.2, 127.2, 5f, 2L)
+            ),
+            totalDistanceMeters = 2450.0,
+            pathPointCount = 2
+        )
+        val routeDetail = DayRouteDetail(
+            dateKey = "2026-04-01",
+            totalDistanceKm = 0.0,
+            title = "Today Title",
+            memo = "Today Memo",
+            places = listOf(
+                DayRoutePlace(10L, "Seed Place", "Road", 37.3, 127.3, 1)
+            )
+        )
+
+        val uiState = createTodaySelectedDayRouteUiState(
+            dateKey = "2026-04-01",
+            dailyPath = dailyPath,
+            remoteRouteDetail = routeDetail
+        )
+
+        assertEquals("2026-04-01", uiState.dateKey)
+        assertEquals("Today Title", uiState.title)
+        assertEquals("Today Memo", uiState.memo)
+        assertEquals(2, uiState.polylinePoints.size)
+        assertEquals(1, uiState.routeSegments.size)
+        assertEquals(1L, uiState.polylinePoints.first().recordedAtEpochMillis)
+        assertEquals(2.45, uiState.totalDistanceKm, 0.0)
+        assertEquals(1, uiState.markerPlaces.size)
     }
 }

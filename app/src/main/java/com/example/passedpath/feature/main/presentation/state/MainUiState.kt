@@ -1,23 +1,33 @@
 ﻿package com.example.passedpath.feature.main.presentation.state
 
 import com.example.passedpath.feature.permission.presentation.state.LocationPermissionUiState
+import com.example.passedpath.feature.place.domain.model.VisitedPlace
 import com.example.passedpath.feature.route.presentation.coordinator.RouteDebugSnapshot
 import com.example.passedpath.feature.route.presentation.state.MainRouteModeUiState
+import com.example.passedpath.feature.route.presentation.state.PlaceMarkerUiState
 import com.example.passedpath.feature.route.presentation.state.SelectedDayRouteUiState
 
 data class MainCoordinateUiState(
     val latitude: Double,
-    val longitude: Double
+    val longitude: Double,
+    val recordedAtEpochMillis: Long? = null
 )
+
+sealed interface MainCameraIntent {
+    data object CenterCurrentLocation : MainCameraIntent
+
+    data object FitRoute : MainCameraIntent
+}
 
 data class MainUiState(
     val permissionState: LocationPermissionUiState = LocationPermissionUiState.DENIED,
     val isLocationServiceEnabled: Boolean = true,
     val isTrackingActive: Boolean = false,
     val currentLocation: MainCoordinateUiState? = null,
-    val hasCenteredOnCurrentLocation: Boolean = false,
+    val pendingCameraIntent: MainCameraIntent? = null,
     val showTrackingPermissionDialog: Boolean = false,
     val selectedDateKey: String = "",
+    val fetchedMapPlaces: List<PlaceMarkerUiState>? = null,
     val routeModeUiState: MainRouteModeUiState = MainRouteModeUiState.Today(
         route = SelectedDayRouteUiState(dateKey = "")
     ),
@@ -25,6 +35,9 @@ data class MainUiState(
 ) {
     val selectedRoute: SelectedDayRouteUiState
         get() = routeModeUiState.route
+
+    val mapPlaces: List<PlaceMarkerUiState>
+        get() = fetchedMapPlaces.orEmpty()
 
     val isRouteLoading: Boolean
         get() = routeModeUiState.isRouteLoading
@@ -48,7 +61,8 @@ data class MainDebugUiState(
     val isLocationServiceEnabled: Boolean = false,
     val isTrackingActive: Boolean = false,
     val isTrackingEnabledByUser: Boolean = true,
-    val lastRouteMessage: String? = null
+    val lastRouteMessage: String? = null,
+    val recentTrackingEvents: List<String> = emptyList()
 )
 
 internal fun createMainDebugUiState(
@@ -58,7 +72,8 @@ internal fun createMainDebugUiState(
     isLocationServiceEnabled: Boolean,
     isTrackingActive: Boolean,
     isTrackingEnabledByUser: Boolean,
-    routeDebugSnapshot: RouteDebugSnapshot?
+    routeDebugSnapshot: RouteDebugSnapshot?,
+    recentTrackingEvents: List<String> = emptyList()
 ): MainDebugUiState {
     val defaultSource = when (routeModeUiState) {
         is MainRouteModeUiState.Today -> "local"
@@ -85,6 +100,18 @@ internal fun createMainDebugUiState(
         isLocationServiceEnabled = isLocationServiceEnabled,
         isTrackingActive = isTrackingActive,
         isTrackingEnabledByUser = isTrackingEnabledByUser,
-        lastRouteMessage = routeDebugSnapshot?.message
+        lastRouteMessage = routeDebugSnapshot?.message,
+        recentTrackingEvents = recentTrackingEvents
+    )
+}
+
+fun VisitedPlace.toPlaceMarkerUiState(): PlaceMarkerUiState {
+    return PlaceMarkerUiState(
+        placeId = placeId,
+        placeName = placeName,
+        roadAddress = roadAddress,
+        latitude = latitude,
+        longitude = longitude,
+        orderIndex = orderIndex
     )
 }

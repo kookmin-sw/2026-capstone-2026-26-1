@@ -1,22 +1,24 @@
 package com.example.passedpath.feature.locationtracking.domain.usecase
 
 import android.util.Log
+import com.example.passedpath.debug.TrackingDiagnosticsLogger
 import com.example.passedpath.feature.locationtracking.data.local.mapper.metersToKilometers
 import com.example.passedpath.feature.locationtracking.data.local.mapper.toGpsPointRequestDto
 import com.example.passedpath.feature.locationtracking.data.remote.api.DayRouteApi
 import com.example.passedpath.feature.locationtracking.data.remote.dto.GpsPointBatchUploadRequestDto
-import com.example.passedpath.feature.locationtracking.domain.policy.LocationTrackingPolicy
+import com.example.passedpath.feature.locationtracking.domain.policy.LocationUploadPolicy
 import com.example.passedpath.feature.locationtracking.domain.repository.DayRouteRepository
 import com.example.passedpath.feature.locationtracking.domain.repository.LocationTrackingRepository
 
 class UploadGpsPointsBatchUseCase(
     private val dayRouteApi: DayRouteApi,
     private val locationTrackingRepository: LocationTrackingRepository,
-    private val dayRouteRepository: DayRouteRepository
+    private val dayRouteRepository: DayRouteRepository,
+    private val diagnosticsLogger: TrackingDiagnosticsLogger
 ) {
     suspend operator fun invoke(
         dateKey: String,
-        limit: Int = LocationTrackingPolicy.UPLOAD_BATCH_SIZE
+        limit: Int = LocationUploadPolicy.BATCH_SIZE
     ): Boolean {
         val pendingLocations = locationTrackingRepository.getPendingUploadLocations(
             dateKey = dateKey,
@@ -24,6 +26,11 @@ class UploadGpsPointsBatchUseCase(
         )
         if (pendingLocations.isEmpty()) {
             Log.d(TAG, "Skip upload for dateKey=$dateKey because there are no pending points")
+            diagnosticsLogger.log(
+                category = TrackingDiagnosticsLogger.CATEGORY_UPLOAD,
+                message = "skip_no_pending_points",
+                dateKey = dateKey
+            )
             return false
         }
 
@@ -35,6 +42,11 @@ class UploadGpsPointsBatchUseCase(
         Log.i(
             TAG,
             "Uploading ${pendingLocations.size} gps points for dateKey=$dateKey distanceKm=${request.distance}"
+        )
+        diagnosticsLogger.log(
+            category = TrackingDiagnosticsLogger.CATEGORY_UPLOAD,
+            message = "attempt count=${pendingLocations.size} distanceKm=${request.distance}",
+            dateKey = dateKey
         )
 
         dayRouteApi.uploadGpsPointsBatch(
@@ -50,6 +62,11 @@ class UploadGpsPointsBatchUseCase(
             syncedAtEpochMillis = System.currentTimeMillis()
         )
         Log.i(TAG, "Upload completed for dateKey=$dateKey")
+        diagnosticsLogger.log(
+            category = TrackingDiagnosticsLogger.CATEGORY_UPLOAD,
+            message = "success count=${pendingLocations.size}",
+            dateKey = dateKey
+        )
         return true
     }
 

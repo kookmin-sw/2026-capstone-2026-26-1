@@ -5,20 +5,34 @@ import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiSt
 data class PlaceMarkerUiState(
     val placeId: Long,
     val placeName: String,
+    val roadAddress: String,
     val latitude: Double,
     val longitude: Double,
     val orderIndex: Int
 )
 
+data class RoutePolylineSegmentUiState(
+    val start: MainCoordinateUiState,
+    val end: MainCoordinateUiState,
+    val isDashed: Boolean
+)
+
 data class SelectedDayRouteUiState(
     val dateKey: String,
+    val title: String = "",
+    val memo: String = "",
     val polylinePoints: List<MainCoordinateUiState> = emptyList(),
+    val routeSegments: List<RoutePolylineSegmentUiState> = emptyList(),
     val totalDistanceKm: Double = 0.0,
     val pathPointCount: Int = 0,
-    val places: List<PlaceMarkerUiState> = emptyList()
+    val markerPlaces: List<PlaceMarkerUiState> = emptyList()
 ) {
     val hasLocationData: Boolean
         get() = polylinePoints.isNotEmpty()
+
+    // Route owns the initial marker seed. Place-sheet-specific read state will split later.
+    val places: List<PlaceMarkerUiState>
+        get() = markerPlaces
 }
 
 sealed interface MainRouteModeUiState {

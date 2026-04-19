@@ -1,5 +1,6 @@
 ﻿package com.example.passedpath.ui.component.banner
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -8,14 +9,15 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.passedpath.ui.theme.Gray100
+import com.example.passedpath.ui.theme.Green100
+import com.example.passedpath.ui.theme.Green50
 
 @Composable
 fun BaseBottomBanner(
     modifier: Modifier = Modifier,
-    containerColor: Color = Color.White,
     content: @Composable () -> Unit
 ) {
     Box(
@@ -25,9 +27,10 @@ fun BaseBottomBanner(
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(22.dp),
-            color = containerColor,
+            color = Green50,
             tonalElevation = 0.dp,
-            shadowElevation = 10.dp
+            shadowElevation = 10.dp,
+            border = BorderStroke(1.dp, Gray100)
         ) {
             Box(
                 modifier = Modifier.padding(horizontal = 18.dp, vertical = 4.dp)
@@ -42,7 +45,7 @@ fun BaseBottomBanner(
 @Composable
 private fun BaseBottomBannerPreview() {
     com.example.passedpath.ui.theme.PassedPathTheme {
-        BaseBottomBanner(containerColor = Color(0xFFEAF8F7)) {
+        BaseBottomBanner() {
             Box(modifier = Modifier.padding(vertical = 12.dp))
         }
     }

@@ -18,9 +18,9 @@ import com.example.passedpath.ui.theme.PassedPathTheme
 fun BaseCircleButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    size: Dp = 56.dp,
+    size: Dp = 40.dp,
     containerColor: Color = Color.White,
-    tonalElevation: Dp = 2.dp,
+    tonalElevation: Dp = 0.dp,
     shadowElevation: Dp = 6.dp,
     content: @Composable BoxScope.() -> Unit
 ) {

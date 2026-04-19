@@ -35,6 +35,34 @@ interface DayRouteDao {
     )
     suspend fun updateLastSyncedAt(dateKey: String, syncedAtEpochMillis: Long)
 
+    @Query(
+        """
+        SELECT dateKey FROM day_routes
+        WHERE lastSyncedAtEpochMillis IS NOT NULL
+          AND dateKey < :cutoffDateKey
+        ORDER BY dateKey ASC
+        """
+    )
+    suspend fun getSyncedDateKeysOlderThan(cutoffDateKey: String): List<String>
+
+    @Query(
+        """
+        SELECT dateKey FROM day_routes
+        WHERE lastSyncedAtEpochMillis IS NULL
+          AND dateKey < :cutoffDateKey
+        ORDER BY dateKey ASC
+        """
+    )
+    suspend fun getUnsyncedDateKeysOlderThan(cutoffDateKey: String): List<String>
+
+    @Query(
+        """
+        DELETE FROM day_routes
+        WHERE dateKey = :dateKey
+        """
+    )
+    suspend fun deleteByDate(dateKey: String): Int
+
     @Upsert
     suspend fun upsert(route: DayRouteEntity)
 }

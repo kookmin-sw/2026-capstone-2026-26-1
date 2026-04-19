@@ -4,7 +4,8 @@ import com.example.passedpath.feature.route.presentation.coordinator.RouteDebugS
 
 internal fun MainUiState.withDebugState(
     isTrackingEnabledByUser: Boolean,
-    routeDebugSnapshot: RouteDebugSnapshot? = debugUiState.toRouteDebugSnapshot()
+    routeDebugSnapshot: RouteDebugSnapshot? = debugUiState.toRouteDebugSnapshot(),
+    recentTrackingEvents: List<String> = debugUiState.recentTrackingEvents
 ): MainUiState {
     return copy(
         debugUiState = createMainDebugUiState(
@@ -14,7 +15,8 @@ internal fun MainUiState.withDebugState(
             isLocationServiceEnabled = isLocationServiceEnabled,
             isTrackingActive = isTrackingActive,
             isTrackingEnabledByUser = isTrackingEnabledByUser,
-            routeDebugSnapshot = routeDebugSnapshot
+            routeDebugSnapshot = routeDebugSnapshot,
+            recentTrackingEvents = recentTrackingEvents
         )
     )
 }

@@ -10,6 +10,8 @@ import com.example.passedpath.app.AppContainer
 import com.example.passedpath.feature.auth.data.manager.KakaoAuthManager
 import com.example.passedpath.feature.auth.data.repository.AuthRepository
 import com.example.passedpath.feature.permission.data.manager.LocationPermissionStatusReader
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 
 enum class LoginDestination {
@@ -17,16 +19,20 @@ enum class LoginDestination {
     PERMISSION_INTRO
 }
 
+sealed interface LoginEffect {
+    data class Navigate(val destination: LoginDestination) : LoginEffect
+    data class ShowError(val messageResId: Int) : LoginEffect
+}
+
 class LoginViewModel(
     private val authRepository: AuthRepository,
     private val locationPermissionStatusReader: LocationPermissionStatusReader
 ) : ViewModel() {
 
-    fun kakaoLogin(
-        context: Context,
-        onLoginSuccess: (LoginDestination) -> Unit,
-        onLoginError: (Int) -> Unit
-    ) {
+    private val _effect = MutableSharedFlow<LoginEffect>()
+    val effect = _effect.asSharedFlow()
+
+    fun kakaoLogin(context: Context) {
         KakaoAuthManager.login(
             context = context,
             onSuccess = { kakaoAccessToken ->
@@ -45,16 +51,18 @@ class LoginViewModel(
                                 LoginDestination.PERMISSION_INTRO
                             }
 
-                        onLoginSuccess(destination)
+                        _effect.emit(LoginEffect.Navigate(destination))
                     } catch (e: Exception) {
                         Log.e("LOGIN", "Server login failed", e)
-                        onLoginError(R.string.login_error_server_connection)
+                        _effect.emit(LoginEffect.ShowError(R.string.login_error_server_connection))
                     }
                 }
             },
             onError = { error ->
-                Log.e("LOGIN", "Kakao login failed", error)
-                onLoginError(R.string.login_error_kakao_failed)
+                viewModelScope.launch {
+                    Log.e("LOGIN", "Kakao login failed", error)
+                    _effect.emit(LoginEffect.ShowError(R.string.login_error_kakao_failed))
+                }
             }
         )
     }

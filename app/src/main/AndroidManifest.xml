@@ -4,14 +4,18 @@
     <!-- 앱의 인터넷 사용 권한 설정-->
     <uses-permission android:name="android.permission.INTERNET" />
 
+
     <!-- 포그라운드 위치 추적 권한 설정-->
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
     <!-- 백그라운드 위치 추적 권한 설정-->
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+
+    <!-- 서비스 실행 방식 설정-->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+
     <application
         android:name=".GlobalApplication"
         android:allowBackup="true"
@@ -40,6 +44,7 @@
             </intent-filter>
         </activity>
 
+        <!-- foreground service임을 OS에게 알림  -->
         <service
             android:name=".feature.locationtracking.service.LocationTrackingService"
             android:enabled="true"

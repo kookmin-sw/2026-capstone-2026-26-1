@@ -22,6 +22,8 @@ internal fun MainDebugPanel(
     debugUiState: MainDebugUiState,
     onRefreshSystemState: () -> Unit,
     onReloadRoute: () -> Unit,
+    isExpanded: Boolean,
+    onToggleExpanded: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -34,11 +36,24 @@ internal fun MainDebugPanel(
             .padding(horizontal = 14.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        Text(
-            text = stringResource(R.string.debug_panel_title),
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.onSurface
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = stringResource(R.string.debug_panel_title),
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            TextButton(onClick = onToggleExpanded) {
+                Text(
+                    text = stringResource(
+                        if (isExpanded) R.string.debug_panel_collapse else R.string.debug_panel_expand
+                    )
+                )
+            }
+        }
+        if (!isExpanded) return@Column
         Text(
             text = stringResource(R.string.debug_panel_date, debugUiState.selectedDateKey),
             style = MaterialTheme.typography.bodySmall
@@ -72,6 +87,13 @@ internal fun MainDebugPanel(
             Text(
                 text = stringResource(R.string.debug_panel_last_event, message),
                 style = MaterialTheme.typography.bodySmall
+            )
+        }
+        debugUiState.recentTrackingEvents.forEach { event ->
+            Text(
+                text = event,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
         Row(

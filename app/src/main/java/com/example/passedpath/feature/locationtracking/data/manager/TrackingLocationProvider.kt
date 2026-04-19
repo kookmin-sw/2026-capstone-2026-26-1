@@ -4,9 +4,11 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Looper
 import com.example.passedpath.feature.locationtracking.domain.model.TrackedLocation
-import com.example.passedpath.feature.locationtracking.domain.policy.LocationTrackingPolicy
+import com.example.passedpath.feature.locationtracking.domain.policy.TrackingLocationMode
+import com.example.passedpath.feature.locationtracking.domain.policy.TrackingModePolicy
 import com.example.passedpath.feature.locationtracking.domain.tracker.LocationTracker
 import com.example.passedpath.feature.locationtracking.domain.tracker.LocationTrackingSession
+import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
@@ -20,14 +22,6 @@ class TrackingLocationProvider(
     context: Context
 ) : LocationTracker {
     private val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
-    private val locationRequest = LocationRequest.Builder(
-        Priority.PRIORITY_BALANCED_POWER_ACCURACY,
-        LocationTrackingPolicy.LOCATION_UPDATE_INTERVAL_MS
-    )
-        .setMinUpdateIntervalMillis(LocationTrackingPolicy.LOCATION_MIN_UPDATE_INTERVAL_MS)
-        .setMinUpdateDistanceMeters(LocationTrackingPolicy.LOCATION_MIN_UPDATE_DISTANCE_METERS)
-        .setWaitForAccurateLocation(false)
-        .build()
 
     @SuppressLint("MissingPermission")
     override suspend fun getCurrentLocation(): TrackedLocation? = suspendCoroutine { continuation ->
@@ -35,7 +29,7 @@ class TrackingLocationProvider(
 
         fusedLocationClient
             .getCurrentLocation(
-                Priority.PRIORITY_BALANCED_POWER_ACCURACY,
+                Priority.PRIORITY_HIGH_ACCURACY,
                 cancellationTokenSource.token
             )
             .addOnSuccessListener { location ->
@@ -56,16 +50,13 @@ class TrackingLocationProvider(
             }
         }
 
-        fusedLocationClient.requestLocationUpdates(
-            locationRequest,
-            locationCallback,
-            Looper.getMainLooper()
-        )
-
         return GoogleTrackingLocationSession(
             fusedLocationClient = fusedLocationClient,
-            locationCallback = locationCallback
-        )
+            locationCallback = locationCallback,
+            currentMode = TrackingModePolicy.initialMode()
+        ).also { session ->
+            session.start()
+        }
     }
 
     private fun android.location.Location.toTrackedLocation(): TrackedLocation {
@@ -79,10 +70,45 @@ class TrackingLocationProvider(
 }
 
 private class GoogleTrackingLocationSession(
-    private val fusedLocationClient: com.google.android.gms.location.FusedLocationProviderClient,
-    private val locationCallback: LocationCallback
+    private val fusedLocationClient: FusedLocationProviderClient,
+    private val locationCallback: LocationCallback,
+    private var currentMode: TrackingLocationMode
 ) : LocationTrackingSession {
+
+    @SuppressLint("MissingPermission")
+    fun start() {
+        fusedLocationClient.requestLocationUpdates(
+            buildLocationRequest(currentMode),
+            locationCallback,
+            Looper.getMainLooper()
+        )
+    }
+
     override fun stop() {
         fusedLocationClient.removeLocationUpdates(locationCallback)
+    }
+
+    @SuppressLint("MissingPermission")
+    override fun updateMode(mode: TrackingLocationMode) {
+        if (currentMode == mode) return
+        currentMode = mode
+        fusedLocationClient.removeLocationUpdates(locationCallback)
+        fusedLocationClient.requestLocationUpdates(
+            buildLocationRequest(currentMode),
+            locationCallback,
+            Looper.getMainLooper()
+        )
+    }
+
+    private fun buildLocationRequest(mode: TrackingLocationMode): LocationRequest {
+        val config = TrackingModePolicy.requestConfigFor(mode)
+        return LocationRequest.Builder(
+            Priority.PRIORITY_HIGH_ACCURACY,
+            config.updateIntervalMs
+        )
+            .setMinUpdateIntervalMillis(config.minUpdateIntervalMs)
+            .setMinUpdateDistanceMeters(config.minUpdateDistanceMeters)
+            .setWaitForAccurateLocation(false)
+            .build()
     }
 }

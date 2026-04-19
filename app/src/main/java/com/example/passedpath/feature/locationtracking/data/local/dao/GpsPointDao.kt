@@ -66,4 +66,12 @@ interface GpsPointDao {
         """
     )
     suspend fun markUploaded(recordedAtEpochMillis: List<Long>)
+
+    @Query(
+        """
+        DELETE FROM gps_points
+        WHERE dateKey = :dateKey
+        """
+    )
+    suspend fun deleteByDate(dateKey: String): Int
 }
