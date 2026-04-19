@@ -1,5 +1,7 @@
 package com.example.passedpath.feature.place.presentation.screen
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -8,22 +10,21 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -31,16 +32,18 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import com.example.passedpath.R
 import com.example.passedpath.feature.place.domain.model.VisitedPlace
 import com.example.passedpath.feature.place.presentation.state.PlaceListUiState
@@ -65,6 +68,7 @@ fun PlaceBottomSheetContent(
     var animatedPlaceId by remember { mutableStateOf<Long?>(null) }
     val sortedPlaces = placeListUiState.places.sortedBy(VisitedPlace::orderIndex)
     val listState = rememberLazyListState()
+    val placeSectionStartIndex = (if (isBannerVisible) 1 else 0) + 1
 
     LaunchedEffect(selectedPlaceId, sortedPlaces) {
         val placeId = selectedPlaceId ?: return@LaunchedEffect
@@ -74,62 +78,88 @@ fun PlaceBottomSheetContent(
             return@LaunchedEffect
         }
 
-        listState.animateScrollToItem(selectedIndex)
+        listState.animateScrollToItem(placeSectionStartIndex + selectedIndex)
         animatedPlaceId = placeId
         delay(320)
         animatedPlaceId = null
         onSelectedPlaceHandled()
     }
 
-    Column(
-        modifier = modifier.fillMaxWidth(),
+    LazyColumn(
+        modifier = modifier
+            .fillMaxSize()
+            .graphicsLayer {
+                clip = true
+                shape = RectangleShape
+            },
+        state = listState,
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         if (isBannerVisible) {
-            PlaceGuideBanner(onClose = { isBannerVisible = false })
+            item(key = "banner") {
+                PlaceGuideBanner(onClose = { isBannerVisible = false })
+            }
         }
 
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(
-                text = stringResource(R.string.place_sheet_selected_date, selectedDateKey),
-                style = MaterialTheme.typography.bodySmall,
-                color = Gray400
-            )
-            Text(
-                text = stringResource(R.string.place_sheet_visit_count, placeListUiState.placeCount),
-                style = MaterialTheme.typography.bodyLarge,
-                color = Gray700,
-                fontWeight = FontWeight.SemiBold
+        item(key = "summary") {
+            PlaceSummarySection(
+                selectedDateKey = selectedDateKey,
+                placeCount = placeListUiState.placeCount
             )
         }
 
         when {
-            placeListUiState.isLoading -> LoadingPlaceSection()
-            placeListUiState.errorMessage != null -> ErrorPlaceSection(placeListUiState.errorMessage)
-            sortedPlaces.isEmpty() -> EmptyPlaceSection()
+            placeListUiState.isLoading -> {
+                item(key = "loading") { LoadingPlaceSection() }
+            }
+            placeListUiState.errorMessage != null -> {
+                item(key = "error") { ErrorPlaceSection(placeListUiState.errorMessage) }
+            }
+            sortedPlaces.isEmpty() -> {
+                item(key = "empty") { EmptyPlaceSection() }
+            }
             else -> {
-                LazyColumn(
-                    modifier = Modifier.fillMaxWidth(),
-                    state = listState,
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    itemsIndexed(
-                        items = sortedPlaces,
-                        key = { _, place -> place.placeId }
-                    ) { index, place ->
-                        PlaceTimelineItem(
-                            place = place,
-                            shouldAnimate = place.placeId == animatedPlaceId,
-                            isFirst = index == 0,
-                            isLast = index == sortedPlaces.lastIndex
-                        )
-                    }
+                itemsIndexed(
+                    items = sortedPlaces,
+                    key = { _, place -> place.placeId }
+                ) { index, place ->
+                    PlaceTimelineItem(
+                        place = place,
+                        shouldAnimate = place.placeId == animatedPlaceId,
+                        isFirst = index == 0,
+                        isLast = index == sortedPlaces.lastIndex
+                    )
                 }
             }
         }
 
-        PlaceAddButton(onClick = onAddPlaceClick)
-        Spacer(modifier = Modifier.height(4.dp))
+        item(key = "footer") {
+            PlaceAddButton(onClick = onAddPlaceClick)
+        }
+
+        item(key = "bottom_spacer") {
+            Spacer(modifier = Modifier.height(4.dp))
+        }
+    }
+}
+
+@Composable
+private fun PlaceSummarySection(
+    selectedDateKey: String,
+    placeCount: Int
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            text = stringResource(R.string.place_sheet_selected_date, selectedDateKey),
+            style = MaterialTheme.typography.bodySmall,
+            color = Gray400
+        )
+        Text(
+            text = stringResource(R.string.place_sheet_visit_count, placeCount),
+            style = MaterialTheme.typography.bodyLarge,
+            color = Gray700,
+            fontWeight = FontWeight.SemiBold
+        )
     }
 }
 
@@ -173,67 +203,6 @@ private fun ErrorPlaceSection(
         }
     }
 }
-
-@Composable
-private fun PlaceTimelineItem(
-    place: VisitedPlace,
-    shouldAnimate: Boolean,
-    isFirst: Boolean,
-    isLast: Boolean
-) {
-    val horizontalOffset = androidx.compose.runtime.remember(place.placeId) {
-        Animatable(0f)
-    }
-
-    LaunchedEffect(shouldAnimate) {
-        if (!shouldAnimate) {
-            horizontalOffset.snapTo(0f)
-            return@LaunchedEffect
-        }
-
-        horizontalOffset.snapTo(0f)
-        horizontalOffset.animateTo(10f, animationSpec = tween(durationMillis = 70))
-        horizontalOffset.animateTo(-8f, animationSpec = tween(durationMillis = 90))
-        horizontalOffset.animateTo(6f, animationSpec = tween(durationMillis = 80))
-        horizontalOffset.animateTo(0f, animationSpec = tween(durationMillis = 70))
-    }
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .offset(x = horizontalOffset.value.toCardOffset()),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalAlignment = Alignment.Top
-    ) {
-        TimelineDecoration(
-            orderIndex = place.orderIndex,
-            isFirst = isFirst,
-            isLast = isLast
-        )
-        PlaceCard(
-            title = place.placeName.ifBlank {
-                stringResource(R.string.route_place_fallback_title, place.orderIndex)
-            },
-            subtitle = place.roadAddress.ifBlank {
-                stringResource(
-                    R.string.place_card_coordinate,
-                    place.latitude,
-                    place.longitude
-                )
-            },
-            tertiaryText = place.roadAddress.takeIf { it.isNotBlank() }?.let {
-                stringResource(
-                    R.string.place_card_coordinate,
-                    place.latitude,
-                    place.longitude
-                )
-            },
-            modifier = Modifier.weight(1f)
-        )
-    }
-}
-
-private fun Float.toCardOffset(): Dp = this.dp
 
 @Composable
 private fun EmptyPlaceSection() {
@@ -301,6 +270,67 @@ private fun PlaceGuideBanner(
         }
     }
 }
+
+@Composable
+private fun PlaceTimelineItem(
+    place: VisitedPlace,
+    shouldAnimate: Boolean,
+    isFirst: Boolean,
+    isLast: Boolean
+) {
+    val horizontalOffset = remember(place.placeId) {
+        Animatable(0f)
+    }
+
+    LaunchedEffect(shouldAnimate) {
+        if (!shouldAnimate) {
+            horizontalOffset.snapTo(0f)
+            return@LaunchedEffect
+        }
+
+        horizontalOffset.snapTo(0f)
+        horizontalOffset.animateTo(10f, animationSpec = tween(durationMillis = 70))
+        horizontalOffset.animateTo(-8f, animationSpec = tween(durationMillis = 90))
+        horizontalOffset.animateTo(6f, animationSpec = tween(durationMillis = 80))
+        horizontalOffset.animateTo(0f, animationSpec = tween(durationMillis = 70))
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .offset(x = horizontalOffset.value.toCardOffset()),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.Top
+    ) {
+        TimelineDecoration(
+            orderIndex = place.orderIndex,
+            isFirst = isFirst,
+            isLast = isLast
+        )
+        PlaceCard(
+            title = place.placeName.ifBlank {
+                stringResource(R.string.route_place_fallback_title, place.orderIndex)
+            },
+            subtitle = place.roadAddress.ifBlank {
+                stringResource(
+                    R.string.place_card_coordinate,
+                    place.latitude,
+                    place.longitude
+                )
+            },
+            tertiaryText = place.roadAddress.takeIf { it.isNotBlank() }?.let {
+                stringResource(
+                    R.string.place_card_coordinate,
+                    place.latitude,
+                    place.longitude
+                )
+            },
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+private fun Float.toCardOffset(): Dp = this.dp
 
 @Composable
 private fun TimelineDecoration(

@@ -27,6 +27,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
@@ -81,22 +82,33 @@ internal fun MainBottomSheet(
                 onTabSelected = onTabSelected
             )
             Spacer(modifier = Modifier.height(16.dp))
-            when (selectedTab) {
-                MainBottomSheetTab.PLACE -> PlaceBottomSheetContent(
-                    selectedDateKey = selectedDateKey,
-                    placeListUiState = placeUiState.placeList,
-                    selectedPlaceId = selectedPlaceId,
-                    onSelectedPlaceHandled = onSelectedPlaceHandled,
-                    onAddPlaceClick = onAddPlaceClick,
-                    modifier = Modifier.padding(horizontal = 20.dp)
-                )
-                MainBottomSheetTab.DAYNOTE -> DayNoteBottomSheetContent(
-                    uiState = dayNoteUiState,
-                    onTitleChanged = onDayNoteTitleChanged,
-                    onMemoChanged = onDayNoteMemoChanged,
-                    onSaveClick = onDayNoteSaveClick,
-                    modifier = Modifier.padding(horizontal = 20.dp)
-                )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .clipToBounds()
+            ) {
+                when (selectedTab) {
+                    MainBottomSheetTab.PLACE -> PlaceBottomSheetContent(
+                        selectedDateKey = selectedDateKey,
+                        placeListUiState = placeUiState.placeList,
+                        selectedPlaceId = selectedPlaceId,
+                        onSelectedPlaceHandled = onSelectedPlaceHandled,
+                        onAddPlaceClick = onAddPlaceClick,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 20.dp)
+                    )
+                    MainBottomSheetTab.DAYNOTE -> DayNoteBottomSheetContent(
+                        uiState = dayNoteUiState,
+                        onTitleChanged = onDayNoteTitleChanged,
+                        onMemoChanged = onDayNoteMemoChanged,
+                        onSaveClick = onDayNoteSaveClick,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 20.dp)
+                    )
+                }
             }
         }
     }

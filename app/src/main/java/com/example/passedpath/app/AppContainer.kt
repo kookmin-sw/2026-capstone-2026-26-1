@@ -36,6 +36,7 @@ import com.example.passedpath.feature.locationtracking.domain.repository.Locatio
 import com.example.passedpath.feature.locationtracking.domain.repository.TrackingDebugLogRepository
 import com.example.passedpath.feature.locationtracking.domain.tracker.LocationTracker
 import com.example.passedpath.feature.locationtracking.domain.usecase.CleanupTrackingLocalDataUseCase
+import com.example.passedpath.feature.locationtracking.domain.usecase.HandleTrackedLocationUseCase
 import com.example.passedpath.feature.locationtracking.domain.usecase.ObserveRecentTrackingEventsUseCase
 import com.example.passedpath.feature.locationtracking.domain.usecase.StartLocationTrackingUseCase
 import com.example.passedpath.feature.locationtracking.domain.usecase.StopLocationTrackingUseCase
@@ -261,6 +262,13 @@ class AppContainer(
             locationTrackingRepository = locationTrackingRepository,
             dayRouteRepository = dayRouteRepository,
             diagnosticsLogger = trackingDiagnosticsLogger
+        )
+    }
+
+    val handleTrackedLocationUseCase: HandleTrackedLocationUseCase by lazy {
+        HandleTrackedLocationUseCase(
+            locationTrackingRepository = locationTrackingRepository,
+            dateKeyResolver = trackingDateKeyResolver
         )
     }
 
