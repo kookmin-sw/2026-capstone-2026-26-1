@@ -75,7 +75,7 @@ internal fun MainMapSection(
 ) {
     val routeAccentColor = MaterialTheme.colorScheme.primary
     val fallbackPosition = LatLng(37.5662952, 126.9779451)
-    val mapCameraBottomPadding = floatingBottomPadding * 0.3f
+    val mapCameraBottomPadding = (BottomSheetMiddleVisibleHeight + BottomSheetFloatingPadding) * 0.3f
     val currentLocation = if (uiState.permissionState == LocationPermissionUiState.DENIED) {
         null
     } else {

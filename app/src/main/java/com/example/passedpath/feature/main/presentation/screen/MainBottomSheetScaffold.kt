@@ -23,14 +23,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.dp
 import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
-
-private val BottomSheetCollapsedVisibleHeight = 92.dp
-private val BottomSheetMiddleVisibleHeight = 332.dp
-private val BottomSheetExpandedTopInset = 92.dp
 
 private data class SheetAnchors(
     val expanded: Float,
@@ -101,7 +96,7 @@ internal fun MainBottomSheetScaffold(
         }
 
         val visibleSheetHeightDp = with(density) { (containerHeightPx - sheetOffset).toDp() }
-        val floatingBottomPadding = visibleSheetHeightDp + 16.dp
+        val floatingBottomPadding = visibleSheetHeightDp + BottomSheetFloatingPadding
         val currentSheetValue = nearestSheetValue(sheetOffset, sheetAnchors)
 
         LaunchedEffect(currentSheetValue) {
