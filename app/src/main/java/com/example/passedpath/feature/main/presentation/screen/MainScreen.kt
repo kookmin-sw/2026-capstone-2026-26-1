@@ -120,6 +120,8 @@ fun MainScreen(
                     onDateSelected = onDateSelectionRequested,
                     onBookmarkClick = onBookmarkClick,
                     onRouteAction = onRouteAction,
+                    onStatsClick = {},
+                    onMoreClick = {},
                     onMapClick = {
                         focusManager.clearFocus(force = true)
                         dispatchInteraction(reduceForSheetHideRequest(localUiState))

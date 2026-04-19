@@ -22,7 +22,7 @@ import com.example.passedpath.ui.theme.Primary
 
 @Composable
 internal fun RoutePlaybackButton(onClick: () -> Unit) {
-    FloatingPillButton(
+    RouteFloatingPillButton(
         text = stringResource(R.string.route_open_playback),
         onClick = onClick
     )
@@ -67,7 +67,7 @@ internal fun TrackingToggleButton(
 }
 
 @Composable
-internal fun FloatingPillButton(text: String, onClick: () -> Unit) {
+internal fun RouteFloatingPillButton(text: String, onClick: () -> Unit) {
     BasePillButton(onClick = onClick, shadowElevation = 6.dp) {
         Text(text = text, color = Gray700, fontWeight = FontWeight.Medium)
     }

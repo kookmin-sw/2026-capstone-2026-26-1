@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -22,13 +24,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.passedpath.R
 import com.example.passedpath.feature.route.presentation.screen.formatDistanceKm
 import com.example.passedpath.feature.route.presentation.state.SelectedDayRouteUiState
+import com.example.passedpath.ui.theme.Gray300
+import com.example.passedpath.ui.theme.Gray400
+import com.example.passedpath.ui.theme.Gray900
+import com.example.passedpath.ui.theme.PassedPathTheme
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -37,16 +46,11 @@ private val DateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy
 private val TopBarDateFormatter: DateTimeFormatter =
     DateTimeFormatter.ofPattern("yyyy.MM.dd. EEE", Locale.KOREAN)
 
-private val DateNavigationBarHeight = 56.dp
-private val DaySummaryBarHeight = 42.dp
+private val DateNavigationBarHeight = 40.dp
+private val DaySummaryBarHeight = 36.dp
 internal val RouteTopBarsHeight = DateNavigationBarHeight + DaySummaryBarHeight
-private val TopBarBackground = Color(0xFFFDFDFD)
-private val SummaryBarBackground = Color(0xFFF6F7F9)
-private val BorderColor = Color(0xFFE5E7EB)
-private val PrimaryTextColor = Color(0xFF111827)
 private val SecondaryTextColor = Color(0xFF4B5563)
-private val MutedIconColor = Color(0xFF9CA3AF)
-private val ActiveBookmarkColor = Color(0xFFF4B400)
+private val RouteTopBarsPreviewBackground = Color(0xFFEFF3F8)
 
 @Composable
 internal fun RouteTopBars(
@@ -60,7 +64,7 @@ internal fun RouteTopBars(
             .fillMaxWidth()
             .background(Color.Transparent)
     ) {
-        androidx.compose.foundation.layout.Column(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .statusBarsPadding()
@@ -96,14 +100,14 @@ internal fun DateNavigationBar(
 
     Surface(
         modifier = modifier,
-        color = TopBarBackground,
+        color = Color.White,
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
     ) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 4.dp)
+                .padding(horizontal = 16.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxSize(),
@@ -111,11 +115,11 @@ internal fun DateNavigationBar(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 NavigationArrowButton(
-                    arrow = "<",
+                    iconResId = R.drawable.ic_arrow_left,
                     onClick = { onDateSelected(shiftDate(route.dateKey, -1)) }
                 )
                 NavigationArrowButton(
-                    arrow = ">",
+                    iconResId = R.drawable.ic_arrow_right,
                     onClick = { onDateSelected(shiftDate(route.dateKey, 1)) }
                 )
             }
@@ -138,16 +142,25 @@ internal fun DateNavigationBar(
                     Text(
                         text = selectedDate.format(TopBarDateFormatter),
                         style = MaterialTheme.typography.titleMedium,
+                        fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
-                        color = PrimaryTextColor,
+                        color = Gray900,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
-                    Text(
-                        text = "v",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = PrimaryTextColor
-                    )
+                    Box(
+                        modifier = Modifier.size(24.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            painter = painterResource(id =
+                                R.drawable.ic_arrow_down),
+                            contentDescription = null,
+                            tint = Gray900,
+                            modifier = Modifier.size(width = 12.dp,
+                                height = 7.dp)
+                        )
+                    }
                 }
             }
         }
@@ -156,20 +169,22 @@ internal fun DateNavigationBar(
 
 @Composable
 private fun NavigationArrowButton(
-    arrow: String,
-    onClick: () -> Unit
+    iconResId: Int,
+    onClick: () -> Unit,
 ) {
     IconButton(
         onClick = onClick,
-        modifier = Modifier.size(48.dp)
+        modifier = Modifier.size(24.dp)
     ) {
-        Text(
-            text = arrow,
-            style = MaterialTheme.typography.titleMedium,
-            color = MutedIconColor
+        Icon(
+            painter = painterResource(id = iconResId),
+            contentDescription = null,
+            tint = Gray400,
+            modifier = Modifier.size(width = 7.dp, height = 12.dp)
         )
     }
 }
+
 
 @Composable
 private fun BookmarkToggleButton(
@@ -180,11 +195,17 @@ private fun BookmarkToggleButton(
         onClick = onClick,
         modifier = Modifier.size(40.dp)
     ) {
-        Text(
-            text = if (isBookmarked) "*" else "o",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = if (isBookmarked) ActiveBookmarkColor else MutedIconColor
+        Icon(
+            painter = painterResource(
+                id = if (isBookmarked) {
+                    R.drawable.ic_bookmark_star_filled
+                } else {
+                    R.drawable.ic_bookmark_star_outline
+                }
+            ),
+            contentDescription = stringResource(R.string.main_toggle_bookmark),
+            tint = Color.Unspecified,
+            modifier = Modifier.size(18.dp)
         )
     }
 }
@@ -197,16 +218,16 @@ internal fun DaySummaryBar(
 ) {
     Surface(
         modifier = modifier,
-        color = SummaryBarBackground,
+        color = Color.White,
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
     ) {
-        androidx.compose.foundation.layout.Column(
+        Column(
             modifier = Modifier.fillMaxSize()
         ) {
             HorizontalDivider(
                 thickness = 1.dp,
-                color = BorderColor
+                color = Gray300
             )
             Row(
                 modifier = Modifier
@@ -224,8 +245,8 @@ internal fun DaySummaryBar(
                 )
                 Text(
                     text = "|",
-                    color = BorderColor,
-                    modifier = Modifier.padding(horizontal = 12.dp)
+                    color = Gray300,
+                    modifier = Modifier.padding(horizontal = 16.dp)
                 )
                 SummaryItem(
                     text = stringResource(R.string.main_path_points_value, pathPointCount)
@@ -271,4 +292,26 @@ private fun parseDateOrToday(dateKey: String): LocalDate {
 
 private fun shiftDate(dateKey: String, days: Long): String {
     return parseDateOrToday(dateKey).plusDays(days).format(DateFormatter)
+}
+
+@Preview(showBackground = true, name = "Route Top Bars")
+@Composable
+private fun RouteTopBarsPreview() {
+    PassedPathTheme {
+        RouteTopBars(
+            route = previewRouteTopBarsState(),
+            onDateSelected = {},
+            onBookmarkClick = {},
+            modifier = Modifier.background(RouteTopBarsPreviewBackground)
+        )
+    }
+}
+
+private fun previewRouteTopBarsState(): SelectedDayRouteUiState {
+    return SelectedDayRouteUiState(
+        dateKey = "2026-01-20",
+        isBookmarked = true,
+        totalDistanceKm = 3.4,
+        pathPointCount = 1274
+    )
 }

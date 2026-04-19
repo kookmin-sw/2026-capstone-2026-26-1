@@ -2,7 +2,6 @@ package com.example.passedpath.feature.main.presentation.screen
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxScope
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -18,6 +17,7 @@ import com.example.passedpath.feature.permission.presentation.mapper.createPermi
 import com.example.passedpath.feature.route.presentation.screen.RouteFloatingControls
 import com.example.passedpath.feature.route.presentation.screen.RouteStatusOverlay
 import com.example.passedpath.feature.route.presentation.state.RouteUiAction
+import com.example.passedpath.ui.component.FloatingButtonColumn
 import com.example.passedpath.ui.component.banner.PermissionBanner
 
 @Composable
@@ -31,7 +31,7 @@ internal fun BoxScope.MainMapOverlayContent(
     floatingBottomPadding: Dp,
     isDebugPanelExpanded: Boolean,
     onToggleDebugPanelExpanded: () -> Unit,
-    currentLocationButton: @Composable (() -> Unit)? = null
+    floatingControls: @Composable (() -> Unit)? = null
 ) {
     val permissionOverlayUiModel = createPermissionOverlayUiModel(
         permissionState = uiState.permissionState,
@@ -52,7 +52,7 @@ internal fun BoxScope.MainMapOverlayContent(
             .fillMaxWidth()
     )
 
-    Column(
+    androidx.compose.foundation.layout.Column(
         modifier = Modifier
             .align(Alignment.TopCenter)
             .fillMaxWidth()
@@ -76,13 +76,12 @@ internal fun BoxScope.MainMapOverlayContent(
         }
     }
 
-    Column(
+    FloatingButtonColumn(
         modifier = Modifier
             .align(Alignment.BottomEnd)
-            .padding(end = 16.dp, bottom = floatingBottomPadding),
-        horizontalAlignment = Alignment.End
+            .padding(end = 16.dp, bottom = floatingBottomPadding)
     ) {
-        currentLocationButton?.invoke()
+        floatingControls?.invoke()
     }
 
     permissionOverlayUiModel?.let { overlayUiModel ->
