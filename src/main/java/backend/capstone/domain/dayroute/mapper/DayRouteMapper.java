@@ -2,11 +2,8 @@ package backend.capstone.domain.dayroute.mapper;
 
 import backend.capstone.domain.dayroute.dto.DayRouteDetailResponse;
 import backend.capstone.domain.dayroute.dto.DayRouteMonthlyResponse;
-import backend.capstone.domain.dayroute.dto.GpsPointsResponse;
 import backend.capstone.domain.dayroute.entity.DayRoute;
 import backend.capstone.domain.gpspoint.entity.GpsPoint;
-import backend.capstone.domain.place.entity.Place;
-import backend.capstone.domain.place.mapper.PlaceMapper;
 import backend.capstone.domain.user.entity.User;
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -27,31 +24,22 @@ public class DayRouteMapper {
             .build();
     }
 
-    public static GpsPointsResponse toGpsPointsResponse(List<GpsPoint> gpsPoints) {
-        return GpsPointsResponse.builder()
-            .gpsPoints(gpsPoints.stream()
-                .map(gp -> new GpsPointsResponse.GpsPointItem(
-                    gp.getRecordedAt(),
-                    gp.getLatitude(),
-                    gp.getLongitude()
-                ))
-                .toList())
-            .build();
-    }
-
     public static DayRouteDetailResponse toDayRouteDetailResponse(DayRoute dayRoute,
-        List<Place> places) {
+        List<GpsPoint> gpsPoints) {
         return DayRouteDetailResponse.builder()
             .date(dayRoute.getDate())
             .totalDistance(dayRoute.getTotalDistance())
             .title(dayRoute.getTitle())
             .memo(dayRoute.getMemo())
             .isBookmarked(dayRoute.isBookmarked())
-            .encodedPath(dayRoute.getEncodedPath())
-            .pathPointCount(dayRoute.getPathPointCount())
-            .placeCount(places.size())
-            .places(places.stream()
-                .map(PlaceMapper::toPlaceItem)
+//            .encodedPath(dayRoute.getEncodedPath())
+//            .pathPointCount(dayRoute.getPathPointCount())
+            .gpsPoints(gpsPoints.stream()
+                .map(gp -> new DayRouteDetailResponse.GpsPointItem(
+                    gp.getRecordedAt(),
+                    gp.getLatitude(),
+                    gp.getLongitude()
+                ))
                 .toList())
             .build();
     }

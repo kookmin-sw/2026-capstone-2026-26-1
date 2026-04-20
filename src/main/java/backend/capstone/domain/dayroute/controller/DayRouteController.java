@@ -44,15 +44,6 @@ public class DayRouteController implements DayRouteControllerSpec {
         return dayRouteFacade.uploadGpsPoint(date, principal.userId(), request);
     }
 
-//    @Override
-//    @GetMapping("/{date}/gps-points")
-//    public GpsPointsResponse getGpsPoints(
-//        @PathVariable LocalDate date,
-//        @AuthenticationPrincipal UserPrincipal principal
-//    ) {
-//        return dayRouteFacade.getGpsPoints(date, principal.userId());
-//    }
-
     @Override
     @GetMapping
     public DayRouteMonthlyResponse getDayRoutesByMonth(
