@@ -1,0 +1,59 @@
+# =========================
+# Monorepo common
+# =========================
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Logs
+*.log
+
+# Temp
+*~
+*.swp
+
+# =========================
+# Android module (root-level safety)
+# =========================
+
+android/local.properties
+android/.gradle/
+android/.kotlin/
+android/build/
+android/**/build/
+android/out/
+android/captures/
+android/.externalNativeBuild/
+android/.cxx/
+
+# Android signing / secret files
+android/**/*.jks
+android/**/*.keystore
+
+# Android build outputs
+android/**/*.apk
+android/**/*.ap_
+android/**/*.aab
+android/**/*.dex
+
+# =========================
+# Backend module (generic placeholders)
+# Adjust later to actual backend stack
+# =========================
+
+backend/.env
+backend/.env.*
+backend/build/
+backend/out/
+backend/target/
+backend/node_modules/
+
+# Keep placeholder
+!backend/.gitkeep
