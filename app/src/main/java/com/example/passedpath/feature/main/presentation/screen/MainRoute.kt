@@ -152,6 +152,7 @@ fun MainRoute(
         onCameraIntentConsumed = viewModel::consumeCameraIntent,
         onDateSelected = viewModel::selectDate,
         onDateSelectionRequested = ::requestDateSelection,
+        onBookmarkClick = viewModel::toggleSelectedRouteBookmark,
         onRouteAction = viewModel::handleRouteAction,
         onDayNoteTitleChanged = dayNoteViewModel::updateTitle,
         onDayNoteMemoChanged = dayNoteViewModel::updateMemo,

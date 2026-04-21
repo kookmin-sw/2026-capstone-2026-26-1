@@ -42,6 +42,13 @@
     <string name="tracking_notification_stop">Stop tracking</string>
     <string name="main_pick_date">날짜 선택</string>
     <string name="main_selected_date">선택한 날짜: %1$s</string>
+    <string name="main_previous_date">이전 날짜</string>
+    <string name="main_next_date">다음 날짜</string>
+    <string name="main_toggle_bookmark">경로 즐겨찾기 토글</string>
+    <string name="main_total_distance_value">총 이동 거리 %1$s</string>
+    <string name="main_path_points_value">%1$d 포인트</string>
+    <string name="main_stats">통계</string>
+    <string name="main_more">더보기</string>
     <string name="main_move_to_current_location">현재 위치로 이동</string>
     <string name="main_permission_off_title">위치 권한이 꺼져 있습니다</string>
     <string name="main_permission_off_message">정확한 위치 권한을 허용하면 현재 위치를 지도에서 볼 수 있습니다.</string>

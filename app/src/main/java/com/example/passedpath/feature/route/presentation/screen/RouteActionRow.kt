@@ -1,13 +1,10 @@
 package com.example.passedpath.feature.route.presentation.screen
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import com.example.passedpath.feature.route.presentation.action.RouteActionUiState
 import com.example.passedpath.feature.route.presentation.state.RouteUiAction
+import com.example.passedpath.ui.component.FloatingButtonRow
 
 @Composable
 internal fun RouteActionRow(
@@ -15,11 +12,7 @@ internal fun RouteActionRow(
     onRouteAction: (RouteUiAction) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
+    FloatingButtonRow(modifier = modifier) {
         if (actionUiState.showTrackingToggle) {
             TrackingToggleButton(
                 isTracking = actionUiState.isTrackingEnabled,

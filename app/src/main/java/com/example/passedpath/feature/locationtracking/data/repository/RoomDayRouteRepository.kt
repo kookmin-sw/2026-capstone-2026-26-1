@@ -1,5 +1,7 @@
 package com.example.passedpath.feature.locationtracking.data.repository
 
+import com.example.passedpath.debug.AppDebugLogger
+import com.example.passedpath.debug.DebugLogTag
 import com.example.passedpath.feature.locationtracking.data.local.dao.DayRouteDao
 import com.example.passedpath.feature.locationtracking.data.local.dao.GpsPointDao
 import com.example.passedpath.feature.locationtracking.data.local.mapper.toDailyPath
@@ -54,8 +56,18 @@ class RoomDayRouteRepository(
 
     override suspend fun fetchRemoteDayRoute(dateKey: String): RemoteDayRouteResult {
         return try {
+            val response = dayRouteApi.getDayRoute(dateKey)
+            AppDebugLogger.debug(
+                DebugLogTag.ROUTE_LOAD,
+                "remote route dto dateKey=$dateKey responseDate=${response.date} totalDistance=${response.totalDistance} pathPointCount=${response.pathPointCount} encodedLength=${response.encodedPath?.length ?: 0}"
+            )
+            val routeDetail = response.toDayRouteDetail(requestedDateKey = dateKey)
+            AppDebugLogger.debug(
+                DebugLogTag.ROUTE_LOAD,
+                "remote route mapped dateKey=$dateKey decodedPoints=${routeDetail.polylinePoints.size} places=${routeDetail.places.size}"
+            )
             RemoteDayRouteResult.Success(
-                routeDetail = dayRouteApi.getDayRoute(dateKey).toDayRouteDetail(requestedDateKey = dateKey)
+                routeDetail = routeDetail
             )
         } catch (throwable: Throwable) {
             if (throwable.isDayRouteNotFound()) {

@@ -21,6 +21,7 @@ data class SelectedDayRouteUiState(
     val dateKey: String,
     val title: String = "",
     val memo: String = "",
+    val isBookmarked: Boolean = false,
     val polylinePoints: List<MainCoordinateUiState> = emptyList(),
     val routeSegments: List<RoutePolylineSegmentUiState> = emptyList(),
     val totalDistanceKm: Double = 0.0,

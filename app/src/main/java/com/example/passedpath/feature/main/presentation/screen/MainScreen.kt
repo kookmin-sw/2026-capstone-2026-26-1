@@ -40,6 +40,7 @@ fun MainScreen(
     onCameraIntentConsumed: () -> Unit,
     onDateSelected: (String) -> Unit,
     onDateSelectionRequested: (String) -> Unit,
+    onBookmarkClick: () -> Unit,
     onRouteAction: (RouteUiAction) -> Unit,
     onDayNoteTitleChanged: (String) -> Unit,
     onDayNoteMemoChanged: (String) -> Unit,
@@ -117,7 +118,10 @@ fun MainScreen(
                     uiState = uiState,
                     onCameraIntentConsumed = onCameraIntentConsumed,
                     onDateSelected = onDateSelectionRequested,
+                    onBookmarkClick = onBookmarkClick,
                     onRouteAction = onRouteAction,
+                    onStatsClick = {},
+                    onMoreClick = {},
                     onMapClick = {
                         focusManager.clearFocus(force = true)
                         dispatchInteraction(reduceForSheetHideRequest(localUiState))

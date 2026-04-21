@@ -53,6 +53,7 @@ internal fun MainBottomSheetScaffold(
         val middleOffset = (containerHeightPx - middleVisibleHeightPx)
             .coerceIn(expandedTopInsetPx, hiddenOffset)
         val expandedOffset = expandedTopInsetPx.coerceAtMost(middleOffset)
+        val expandedVisibleHeightDp = with(density) { (containerHeightPx - expandedOffset).toDp() }
         val sheetAnchors = remember(expandedOffset, middleOffset, hiddenOffset) {
             SheetAnchors(
                 expanded = expandedOffset,
@@ -106,7 +107,7 @@ internal fun MainBottomSheetScaffold(
         val sheetModifier = Modifier
             .align(Alignment.TopCenter)
             .fillMaxWidth()
-            .height(visibleSheetHeightDp)
+            .height(expandedVisibleHeightDp)
             .offset { IntOffset(0, sheetOffset.roundToInt()) }
             .draggable(
                 state = draggableState,
