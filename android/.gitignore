@@ -4,6 +4,7 @@
 /.idea/workspace.xml
 /.idea/navEditor.xml
 /.idea/assetWizardSettings.xml
+/.idea
 .DS_Store
 /build
 /captures
@@ -11,10 +12,7 @@
 .gradle-user-home/
 .gradle-home/
 .android-user-home/
-app/src/main/res/drawable/img_*
-
-# Created by https://www.toptal.com/developers/gitignore/api/androidstudio,kotlin
-# Edit at https://www.toptal.com/developers/gitignore?templates=androidstudio,kotlin
+app/src/main/res/drawable/img_
 
 ### Kotlin ###
 .kotlin/
