@@ -21,8 +21,10 @@ import com.example.passedpath.feature.daynote.domain.repository.DayRouteTitleRep
 import com.example.passedpath.feature.daynote.domain.usecase.PatchDayRouteMemoUseCase
 import com.example.passedpath.feature.daynote.domain.usecase.PatchDayRouteTitleUseCase
 import com.example.passedpath.feature.locationtracking.data.local.PassedPathDatabase
+import com.example.passedpath.feature.locationtracking.data.manager.AndroidNetworkConnectivityObserver
 import com.example.passedpath.feature.locationtracking.data.manager.LocationTrackingServiceStateReader
 import com.example.passedpath.feature.locationtracking.data.manager.LocationTrackingServiceStateWriter
+import com.example.passedpath.feature.locationtracking.data.manager.NetworkConnectivityObserver
 import com.example.passedpath.feature.locationtracking.data.manager.PersistentLocationTrackingServiceStateHolder
 import com.example.passedpath.feature.locationtracking.data.manager.TrackingLocationProvider
 import com.example.passedpath.feature.locationtracking.data.remote.api.DayRouteApi
@@ -82,6 +84,10 @@ class AppContainer(
 
     val trackingLocationTracker: LocationTracker by lazy {
         TrackingLocationProvider(appContext)
+    }
+
+    val networkConnectivityObserver: NetworkConnectivityObserver by lazy {
+        AndroidNetworkConnectivityObserver(appContext)
     }
 
     private val locationTrackingServiceStateHolder by lazy {

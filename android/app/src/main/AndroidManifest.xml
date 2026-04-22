@@ -3,6 +3,7 @@
 
     <!-- 앱의 인터넷 사용 권한 설정-->
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
 
     <!-- 포그라운드 위치 추적 권한 설정-->

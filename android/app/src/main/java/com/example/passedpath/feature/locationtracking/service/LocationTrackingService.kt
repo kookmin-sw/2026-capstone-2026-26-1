@@ -21,6 +21,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
@@ -36,6 +37,7 @@ class LocationTrackingService : Service() {
     private var trackingSession: LocationTrackingSession? = null
     private var periodicUploadJob: Job? = null
     private var preBoundaryUploadJob: Job? = null
+    private var networkConnectivityUploadJob: Job? = null
     private var idleModeFallbackJob: Job? = null
     private var lastLocationCallbackAtEpochMillis: Long? = null
     private var currentTrackingMode: TrackingLocationMode = TrackingModePolicy.initialMode()
@@ -87,6 +89,7 @@ class LocationTrackingService : Service() {
         }
         startPeriodicUploadLoop()
         startPreBoundaryUploadLoop()
+        startNetworkConnectivityUploadLoop()
         scheduleIdleModeFallback()
         trackingSession = appContainer.trackingLocationTracker.startLocationUpdates { trackedLocation ->
             serviceScope.launch {
@@ -129,6 +132,8 @@ class LocationTrackingService : Service() {
         periodicUploadJob = null
         preBoundaryUploadJob?.cancel()
         preBoundaryUploadJob = null
+        networkConnectivityUploadJob?.cancel()
+        networkConnectivityUploadJob = null
         idleModeFallbackJob?.cancel()
         idleModeFallbackJob = null
         serviceStateWriter.update(isTracking = false)
@@ -200,6 +205,42 @@ class LocationTrackingService : Service() {
         }
     }
 
+    private fun startNetworkConnectivityUploadLoop() {
+        networkConnectivityUploadJob?.cancel()
+        networkConnectivityUploadJob = serviceScope.launch {
+            applicationContext.appContainer.networkConnectivityObserver
+                .observeIsNetworkAvailable()
+                .collectLatest { isNetworkAvailable ->
+                    if (!isNetworkAvailable) {
+                        diagnosticsLogger.log(
+                            category = TrackingDiagnosticsLogger.CATEGORY_UPLOAD,
+                            message = "network_unavailable"
+                        )
+                        return@collectLatest
+                    }
+
+                    val currentDateKey = applicationContext.appContainer.trackingDateKeyResolver.resolveCurrentDateKey()
+                    val previousDateKey = applicationContext.appContainer.trackingDateKeyResolver.resolvePreviousDateKey()
+                    Log.i(
+                        TAG,
+                        "Network available. Uploading pending points currentDateKey=$currentDateKey previousDateKey=$previousDateKey"
+                    )
+                    diagnosticsLogger.log(
+                        category = TrackingDiagnosticsLogger.CATEGORY_UPLOAD,
+                        message = "network_available_flush",
+                        dateKey = currentDateKey
+                    )
+
+                    val didUploadPrevious = uploadAllPendingPoints(previousDateKey)
+                    val didUploadCurrent = uploadAllPendingPoints(currentDateKey)
+                    if (didUploadPrevious || didUploadCurrent) {
+                        Log.i(TAG, "Network recovery upload succeeded previous=$didUploadPrevious current=$didUploadCurrent")
+                        resetPeriodicUploadLoop()
+                    }
+                }
+        }
+    }
+
     private fun resetPeriodicUploadLoop() {
         startPeriodicUploadLoop()
     }
@@ -261,6 +302,14 @@ class LocationTrackingService : Service() {
                 false
             }
         }
+    }
+
+    private suspend fun uploadAllPendingPoints(dateKey: String): Boolean {
+        var didUploadAny = false
+        while (uploadPendingPoints(dateKey)) {
+            didUploadAny = true
+        }
+        return didUploadAny
     }
 
     companion object {
