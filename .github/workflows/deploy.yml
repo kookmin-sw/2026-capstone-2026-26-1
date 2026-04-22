@@ -44,7 +44,7 @@ jobs:
           ECR_REPO_URI: ${{ secrets.ECR_REPO_URI }}
           GIT_SHA: ${{ github.sha }} #롤백을 위해 sha 태그 설정 (github actions가 자동으로 제공하는 메타데이터)
         run: |
-          docker build -t myapp:${GIT_SHA} .
+          docker build -t myapp:${GIT_SHA} ./backend
           docker tag myapp:${GIT_SHA} ${ECR_REPO_URI}:${GIT_SHA}
           docker tag myapp:${GIT_SHA} ${ECR_REPO_URI}:latest
           docker push ${ECR_REPO_URI}:${GIT_SHA}
