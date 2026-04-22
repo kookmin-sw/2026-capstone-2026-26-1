@@ -1,0 +1,95 @@
+name: Deploy (ECR + EC2 + Env upload)
+
+on:
+  push:
+    branches: [ "main" ] # main 브랜치에 푸시될 때마다 실행
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4 # 러너에 레포 소스코드를 내려받음
+
+      #러너에 jdk 설치 및 테스트
+      #      - name: Set up JDK 21
+      #        uses: actions/setup-java@v4
+      #        with:
+      #          distribution: temurin
+      #          java-version: "21"
+      #
+      #      - name: Grant execute permission for gradlew
+      #        run: chmod +x gradlew
+      #
+      #      - name: Test
+      #        run: ./gradlew test --no-daemon  # 테스트 실행
+
+      # AWS 인증 (러너가 aws에 접근할 수 있도록)
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: "ap-northeast-2"
+
+      # 앞서 설정한 aws credential로 ECR 로그인
+      - name: Login to ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # 이미지 빌드 & 푸시
+      - name: Build & Push Docker image
+        env:
+          ECR_REPO_URI: ${{ secrets.ECR_REPO_URI }}
+          GIT_SHA: ${{ github.sha }} #롤백을 위해 sha 태그 설정 (github actions가 자동으로 제공하는 메타데이터)
+        run: |
+          docker build -t myapp:${GIT_SHA} .
+          docker tag myapp:${GIT_SHA} ${ECR_REPO_URI}:${GIT_SHA}
+          docker tag myapp:${GIT_SHA} ${ECR_REPO_URI}:latest
+          docker push ${ECR_REPO_URI}:${GIT_SHA}
+          docker push ${ECR_REPO_URI}:latest
+
+      # .env 파일 생성 (runner에서 임시 생성)
+      - name: Create .env
+        shell: bash
+        run: |
+          cat > .env << 'EOF'
+          DB_URL=${{ secrets.DB_URL }}
+          DB_USERNAME=${{ secrets.DB_USERNAME }}
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          REDIS_HOST=${{ secrets.REDIS_HOST }}
+          REDIS_PORT=${{ secrets.REDIS_PORT }}
+          KAKAO_REST_API_KEY=${{ secrets.KAKAO_REST_API_KEY }}
+          EOF
+
+      # EC2로 .env 업로드
+      - name: Upload .env to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: ".env"
+          target: "/home/${{ secrets.EC2_USER }}/app"
+          overwrite: true
+
+      # EC2에서 최신 이미지 pull + 재기동
+      - name: Deploy on EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -e
+            cd /home/${{ secrets.EC2_USER }}/app
+
+            # ECR login (EC2에 AWS CLI 설치되어 있어야 함)
+            aws ecr get-login-password --region ap-northeast-2 \
+              | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}
+
+            docker pull ${{ secrets.ECR_REPO_URI }}:latest
+            docker compose up -d --pull always --force-recreate
+            docker image prune -f

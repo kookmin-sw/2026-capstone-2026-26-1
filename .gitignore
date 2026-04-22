@@ -57,3 +57,7 @@ backend/node_modules/
 
 # Keep placeholder
 !backend/.gitkeep
+
+# env files
+.env
+.env.*
