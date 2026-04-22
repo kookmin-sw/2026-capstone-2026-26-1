@@ -11,6 +11,7 @@ import com.example.passedpath.feature.place.domain.usecase.ReorderPlacesUseCase
 import com.example.passedpath.feature.place.domain.usecase.UpdatePlaceUseCase
 import com.example.passedpath.feature.place.presentation.state.PlaceListUiState
 import com.example.passedpath.feature.place.presentation.state.PlaceUiState
+import com.example.passedpath.ui.state.ApiFailureMessage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -173,7 +174,7 @@ class PlaceViewModel(
                 _uiState.update {
                     it.copy(
                         isSubmitting = false,
-                        errorMessage = throwable.message ?: mutationFailureMessage(placeId == null),
+                        errorMessage = ApiFailureMessage.fromThrowable(throwable),
                         successMessage = null
                     )
                 }
@@ -238,7 +239,7 @@ class PlaceViewModel(
                 _uiState.update {
                     it.copy(
                         isSubmitting = false,
-                        errorMessage = throwable.message ?: "장소 순서 변경에 실패했습니다.",
+                        errorMessage = ApiFailureMessage.fromThrowable(throwable),
                         successMessage = null
                     )
                 }
@@ -300,7 +301,7 @@ class PlaceViewModel(
                 _uiState.update {
                     it.copy(
                         isSubmitting = false,
-                        errorMessage = throwable.message ?: "장소 삭제에 실패했습니다.",
+                        errorMessage = ApiFailureMessage.fromThrowable(throwable),
                         successMessage = null
                     )
                 }
@@ -348,15 +349,6 @@ class PlaceViewModel(
         return normalized.isNotEmpty() && normalized.size == parsedIds.size
     }
 
-    // 추가/수정 실패 메시지를 만든다.
-    private fun mutationFailureMessage(isCreate: Boolean): String {
-        return if (isCreate) {
-            "장소 등록에 실패했습니다."
-        } else {
-            "장소 수정에 실패했습니다."
-        }
-    }
-
     // 목록 재조회 로직을 한 곳에서 처리한다.
     private suspend fun refreshVisitedPlaces(
         dateKey: String,
@@ -396,7 +388,7 @@ class PlaceViewModel(
                 )
             }
         } catch (throwable: Throwable) {
-            val errorMessage = throwable.message ?: "방문 장소 목록 조회에 실패했습니다."
+            val errorMessage = ApiFailureMessage.fromThrowable(throwable)
             _uiState.update {
                 val currentPlaceList = it.placeList
                 val hasRetainedContent = currentPlaceList.hasRetainedContent

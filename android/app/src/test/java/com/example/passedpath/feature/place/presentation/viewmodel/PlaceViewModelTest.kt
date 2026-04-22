@@ -14,6 +14,7 @@ import com.example.passedpath.feature.place.domain.usecase.GetVisitedPlacesUseCa
 import com.example.passedpath.feature.place.domain.usecase.ReorderPlacesUseCase
 import com.example.passedpath.feature.place.domain.usecase.UpdatePlaceUseCase
 import com.example.passedpath.testutil.MainDispatcherRule
+import com.example.passedpath.ui.state.ApiFailureMessage
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -85,8 +86,8 @@ class PlaceViewModelTest {
 
         val state = viewModel.uiState.value
         assertFalse(state.placeList.isLoading)
-        assertEquals("boom", state.placeList.errorMessage)
-        assertEquals("boom", state.errorMessage)
+        assertEquals(ApiFailureMessage.NETWORK_REQUEST_FAILED, state.placeList.errorMessage)
+        assertEquals(ApiFailureMessage.NETWORK_REQUEST_FAILED, state.errorMessage)
     }
 
     @Test
@@ -123,7 +124,7 @@ class PlaceViewModelTest {
         assertEquals(1, state.placeList.placeCount)
         assertEquals("Seoul Forest", state.placeList.places.first().placeName)
         assertTrue(state.placeList.isStale)
-        assertEquals("boom", state.placeList.errorMessage)
+        assertEquals(ApiFailureMessage.NETWORK_REQUEST_FAILED, state.placeList.errorMessage)
     }
 
     @Test

@@ -67,6 +67,7 @@ fun MainScreen(
         }
     }
     val dayNoteToastMessage = dayNoteUiState.errorMessage ?: dayNoteUiState.successMessage
+    val bookmarkToastMessage = uiState.bookmarkToggleUiState.feedbackMessage
     val shouldShowPastEmptyToast =
         uiState.routeModeUiState is MainRouteModeUiState.Past &&
             uiState.routeModeUiState.isRouteEmpty &&
@@ -78,6 +79,14 @@ fun MainScreen(
                 ToastOverlayItem(
                     message = dayNoteToastMessage,
                     triggerKey = "daynote:${dayNoteUiState.feedbackEventId}:$dayNoteToastMessage"
+                )
+            )
+        }
+        if (bookmarkToastMessage != null) {
+            add(
+                ToastOverlayItem(
+                    message = bookmarkToastMessage,
+                    triggerKey = "bookmark:${uiState.bookmarkToggleUiState.feedbackEventId}:$bookmarkToastMessage"
                 )
             )
         }

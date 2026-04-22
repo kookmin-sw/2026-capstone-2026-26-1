@@ -49,6 +49,7 @@ internal fun BoxScope.MainMapOverlayContent(
 
     RouteTopBars(
         route = uiState.selectedRoute,
+        isBookmarkUpdating = uiState.bookmarkToggleUiState.isUpdating(uiState.selectedDateKey),
         onDateSelected = onDateSelected,
         onBookmarkClick = onBookmarkClick,
         modifier = Modifier

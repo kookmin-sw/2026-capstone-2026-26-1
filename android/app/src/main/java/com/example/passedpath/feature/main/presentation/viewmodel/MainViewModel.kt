@@ -20,6 +20,7 @@ import com.example.passedpath.feature.main.presentation.policy.shouldRequestCurr
 import com.example.passedpath.feature.main.presentation.state.MainCameraIntent
 import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiState
 import com.example.passedpath.feature.main.presentation.state.MainUiState
+import com.example.passedpath.feature.main.presentation.state.BookmarkToggleUiState
 import com.example.passedpath.feature.main.presentation.state.toPlaceMarkerUiState
 import com.example.passedpath.feature.main.presentation.state.withDebugState
 import com.example.passedpath.feature.place.domain.model.VisitedPlace
@@ -32,6 +33,7 @@ import com.example.passedpath.feature.route.presentation.coordinator.RouteStateC
 import com.example.passedpath.feature.route.presentation.state.MainRouteModeUiState
 import com.example.passedpath.feature.route.presentation.state.RouteUiAction
 import com.example.passedpath.feature.route.presentation.state.SelectedDayRouteUiState
+import com.example.passedpath.ui.state.ApiFailureMessage
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -218,19 +220,62 @@ class MainViewModel(
 
     fun toggleSelectedRouteBookmark() {
         val selectedDateKey = _uiState.value.selectedDateKey
+        if (_uiState.value.bookmarkToggleUiState.isUpdating(selectedDateKey)) return
+
+        _uiState.update { currentState ->
+            currentState.copy(
+                bookmarkToggleUiState = currentState.bookmarkToggleUiState.copy(
+                    updatingDateKey = selectedDateKey,
+                    feedbackMessage = null
+                )
+            )
+        }
+
         viewModelScope.launch {
-            val bookmark = toggleDayRouteBookmarkUseCase(selectedDateKey)
-            _uiState.update { currentState ->
-                if (currentState.selectedDateKey != selectedDateKey) {
-                    currentState
-                } else {
+            runCatching {
+                toggleDayRouteBookmarkUseCase(selectedDateKey)
+            }.onSuccess { bookmark ->
+                _uiState.update { currentState ->
+                    if (currentState.selectedDateKey != selectedDateKey) {
+                        currentState.copy(
+                            bookmarkToggleUiState = currentState.bookmarkToggleUiState
+                                .clearUpdatingDate(selectedDateKey)
+                        )
+                    } else {
+                        currentState.copy(
+                            bookmarkToggleUiState = currentState.bookmarkToggleUiState
+                                .clearUpdatingDate(selectedDateKey),
+                            routeModeUiState = currentState.routeModeUiState.updateRouteSnapshot { route ->
+                                route.copy(isBookmarked = bookmark.isBookmarked)
+                            }
+                        )
+                    }
+                }
+            }.onFailure { throwable ->
+                _uiState.update { currentState ->
                     currentState.copy(
-                        routeModeUiState = currentState.routeModeUiState.updateRouteSnapshot { route ->
-                            route.copy(isBookmarked = bookmark.isBookmarked)
-                        }
+                        bookmarkToggleUiState = currentState.bookmarkToggleUiState.copy(
+                            updatingDateKey = if (
+                                currentState.bookmarkToggleUiState.updatingDateKey == selectedDateKey
+                            ) {
+                                null
+                            } else {
+                                currentState.bookmarkToggleUiState.updatingDateKey
+                            },
+                            feedbackMessage = ApiFailureMessage.fromThrowable(throwable),
+                            feedbackEventId = currentState.bookmarkToggleUiState.feedbackEventId + 1
+                        )
                     )
                 }
             }
+        }
+    }
+
+    private fun BookmarkToggleUiState.clearUpdatingDate(dateKey: String): BookmarkToggleUiState {
+        return if (updatingDateKey == dateKey) {
+            copy(updatingDateKey = null)
+        } else {
+            this
         }
     }
 
