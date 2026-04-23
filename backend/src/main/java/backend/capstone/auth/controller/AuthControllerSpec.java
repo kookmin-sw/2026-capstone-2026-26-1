@@ -44,4 +44,13 @@ public interface AuthControllerSpec {
             """
     )
     TokenPair issueTestJwt();
+
+    @Operation(
+        summary = "혜원이 계정 전용 토큰 발급",
+        description = """
+            혜원이 카카오 계정에 전용 엑세스 토큰과 리프레시 토큰을 발급합니다.<br>
+            리프레시 토큰을 활용한 토큰 재발급 또한 가능합니다.
+            """
+    )
+    TokenPair issueHyewonJwt();
 }

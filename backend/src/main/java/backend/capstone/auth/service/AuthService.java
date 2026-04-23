@@ -56,10 +56,10 @@ public class AuthService {
     }
 
     @Transactional
-    public TokenPair testIssue() {
-        String refreshToken = jwtTokenProvider.createRefreshToken(1L);
-        refreshTokenService.save(1L, refreshToken);
-        return new TokenPair(jwtTokenProvider.createAccessToken(1L),
+    public TokenPair testIssue(Long userId) {
+        String refreshToken = jwtTokenProvider.createRefreshToken(userId);
+        refreshTokenService.save(userId, refreshToken);
+        return new TokenPair(jwtTokenProvider.createAccessToken(userId),
             refreshToken);
     }
 
