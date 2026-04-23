@@ -93,7 +93,7 @@ public class StayAnalysisService {
 
         try {
             searchResult = placeSearchByCoordService.searchByCoordinate(stay.getCenterLatitude(),
-                stay.getCenterLongitude());
+                stay.getCenterLongitude(), dayRoute.getUser().getId());
         } catch (WebClientException e) {
             log.error(
                 "카카오 장소 조회에 실패했습니다. 이름 없는 장소로 저장합니다. dayRouteId={}, lat={}, lon={}",
