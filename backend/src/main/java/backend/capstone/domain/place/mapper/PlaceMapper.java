@@ -11,9 +11,10 @@ import backend.capstone.domain.place.dto.PlaceSearchResponse.PlaceSearchItem;
 import backend.capstone.domain.place.dto.PlaceUpdateResponse;
 import backend.capstone.domain.place.entity.Place;
 import backend.capstone.domain.place.entity.PlaceSource;
-import backend.capstone.domain.place.service.dto.NaverLocalSearchResponse;
+import backend.capstone.domain.place.service.dto.NaverLocalSearchResult;
 import java.util.List;
 import lombok.NoArgsConstructor;
+import org.jsoup.Jsoup;
 
 @NoArgsConstructor(access = lombok.AccessLevel.PRIVATE)
 public class PlaceMapper {
@@ -104,13 +105,13 @@ public class PlaceMapper {
     }
 
     public static PlaceSearchResponse toPlaceSearchResponse(
-        NaverLocalSearchResponse naverLocalSearchResponse
+        NaverLocalSearchResult naverLocalSearchResult
     ) {
-        List<PlaceSearchItem> items = naverLocalSearchResponse.items() == null
+        List<PlaceSearchItem> items = naverLocalSearchResult.items() == null
             ? List.of()
-            : naverLocalSearchResponse.items().stream()
+            : naverLocalSearchResult.items().stream()
                 .map(item -> new PlaceSearchItem(
-                    item.title(),
+                    sanitizeTitle(item.title()),
                     item.category(),
                     item.roadAddress(),
                     item.mapx(),
@@ -119,6 +120,13 @@ public class PlaceMapper {
                 .toList();
 
         return new PlaceSearchResponse(items.size(), items);
+    }
+
+    public static String sanitizeTitle(String title) {
+        if (title == null) {
+            return null;
+        }
+        return Jsoup.parse(title).text();
     }
 
     public static String firstNonBlank(String... values) {

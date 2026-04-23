@@ -2,7 +2,7 @@ package backend.capstone.domain.place.service.dto;
 
 import java.util.List;
 
-public record NaverLocalSearchResponse(
+public record NaverLocalSearchResult(
     List<NaverLocalSearchItem> items
 ) {
 
