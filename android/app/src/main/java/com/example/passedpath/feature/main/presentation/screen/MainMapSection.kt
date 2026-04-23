@@ -28,7 +28,7 @@ import com.example.passedpath.feature.route.presentation.state.PlaceMarkerUiStat
 import com.example.passedpath.feature.route.presentation.state.RouteUiAction
 import com.example.passedpath.ui.component.floating.FloatingButtonColumn
 import com.example.passedpath.ui.component.floating.FloatingCircleIconButton
-import com.example.passedpath.ui.component.menu.MainMorePopupMenu
+import com.example.passedpath.feature.main.presentation.component.MainMorePopupMenu
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng

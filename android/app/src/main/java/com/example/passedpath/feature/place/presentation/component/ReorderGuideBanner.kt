@@ -1,4 +1,4 @@
-﻿package com.example.passedpath.ui.component.banner
+package com.example.passedpath.feature.place.presentation.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -25,6 +25,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.passedpath.R
+import com.example.passedpath.ui.component.banner.BaseBottomBanner
 
 @Composable
 fun ReorderGuideBanner(

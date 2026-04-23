@@ -1,4 +1,4 @@
-package com.example.passedpath.ui.component.place
+package com.example.passedpath.feature.place.presentation.component
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
