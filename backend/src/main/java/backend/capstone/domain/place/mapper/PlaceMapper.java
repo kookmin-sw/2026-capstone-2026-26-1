@@ -10,7 +10,6 @@ import backend.capstone.domain.place.dto.PlaceUpdateResponse;
 import backend.capstone.domain.place.entity.Place;
 import backend.capstone.domain.place.entity.PlaceSource;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.List;
 import lombok.NoArgsConstructor;
 
@@ -35,6 +34,7 @@ public class PlaceMapper {
             .placeId(place.getId())
             .placeName(place.getName())
             .source(place.getSource())
+            .type(place.getType())
             .roadAddress(place.getRoadAddress())
             .latitude(place.getLatitude())
             .longitude(place.getLongitude())
@@ -49,6 +49,7 @@ public class PlaceMapper {
             .placeId(place.getId())
             .placeName(place.getName())
             .source(place.getSource())
+            .type(place.getType())
             .roadAddress(place.getRoadAddress())
             .latitude(place.getLatitude())
             .longitude(place.getLongitude())
@@ -74,6 +75,7 @@ public class PlaceMapper {
             .roadAddress(place.getRoadAddress())
             .placeName(place.getName())
             .source(place.getSource())
+            .type(place.getType())
             .latitude(place.getLatitude())
             .longitude(place.getLongitude())
             .startTime(place.getStartTime())

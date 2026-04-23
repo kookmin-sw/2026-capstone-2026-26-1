@@ -37,9 +37,12 @@ public class PlaceService {
     public PlaceAddResponse addPlace(DayRoute dayRoute, PlaceAddRequest request) {
         int newOrder = getNewOrder(dayRoute);
 
-        Place savedPlace = placeRepository.save(
-            PlaceMapper.toEntityByManual(dayRoute, request, newOrder));
+        Place place = PlaceMapper.toEntityByManual(dayRoute, request, newOrder);
+        applyBookmarkPlaceType(dayRoute, place);
+
+        Place savedPlace = placeRepository.save(place);
         dayRouteService.refreshHasManualData(dayRoute);
+
         return PlaceMapper.toPlaceAddResponse(savedPlace);
     }
 
@@ -56,6 +59,7 @@ public class PlaceService {
 
         place.update(request.roadAddress(), request.placeName(), request.latitude(),
             request.longitude());
+        applyBookmarkPlaceType(dayRoute, place);
 
         return PlaceMapper.toPlaceUpdateResponse(place);
     }
@@ -131,15 +135,14 @@ public class PlaceService {
 
     private void applyBookmarkPlaceType(DayRoute dayRoute, Place place) {
         String roadAddress = emptyToNull(place.getRoadAddress());
-        if (roadAddress == null) {
-            return;
-        }
-
-        bookmarkPlaceService.getBookmarkPlaceByUserId(dayRoute.getUser().getId()).stream()
-            .filter(bookmarkPlace -> roadAddress.equals(bookmarkPlace.getRoadAddress()))
-            .findFirst()
-            .map(BookmarkPlace::getType)
-            .ifPresent(place::changeType);
+        place.changeType(
+            roadAddress == null ? null
+                : bookmarkPlaceService.getBookmarkPlaceByUserId(dayRoute.getUser().getId()).stream()
+                    .filter(bookmarkPlace -> roadAddress.equals(bookmarkPlace.getRoadAddress()))
+                    .findFirst()
+                    .map(BookmarkPlace::getType)
+                    .orElse(null)
+        );
     }
 
     private String emptyToNull(String value) {

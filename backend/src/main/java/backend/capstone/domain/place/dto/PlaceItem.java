@@ -1,10 +1,9 @@
 package backend.capstone.domain.place.dto;
 
+import backend.capstone.domain.bookmarkplace.entity.BookmarkPlaceType;
 import backend.capstone.domain.place.entity.PlaceSource;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import lombok.Builder;
 
 @Builder
@@ -18,6 +17,8 @@ public record PlaceItem(
 
     @Schema(example = "AUTO", description = "장소 생성 유형")
     PlaceSource source,
+
+    BookmarkPlaceType type,
 
     @Schema(example = "서울 강남구 테헤란로 123", description = "도로명 주소")
     String roadAddress,
