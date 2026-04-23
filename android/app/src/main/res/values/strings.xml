@@ -5,9 +5,9 @@
     <string name="login_with_kakao">Login with Kakao</string>
     <string name="login_error_server_connection">Server connection failed. Please try again.</string>
     <string name="login_error_kakao_failed">Kakao login failed.</string>
-    <string name="bottom_nav_friends">Friends</string>
-    <string name="bottom_nav_main">My Walk Log</string>
-    <string name="bottom_nav_profile">Profile</string>
+    <string name="bottom_nav_friends">함께 가는 길</string>
+    <string name="bottom_nav_main">나의 길</string>
+    <string name="bottom_nav_profile">프로필</string>
     <string name="friends_title">Friends</string>
     <string name="friends_placeholder">Friends screen is under preparation.</string>
     <string name="main_title">My Walk Log</string>
