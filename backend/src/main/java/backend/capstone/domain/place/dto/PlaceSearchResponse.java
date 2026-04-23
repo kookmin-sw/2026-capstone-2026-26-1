@@ -9,7 +9,6 @@ public record PlaceSearchResponse(
     public record PlaceSearchItem(
         String placeName,
         String category,
-        String address,
         String roadAddress,
         Integer longitude,
         Integer latitude

@@ -112,7 +112,6 @@ public class PlaceMapper {
                 .map(item -> new PlaceSearchItem(
                     item.title(),
                     item.category(),
-                    item.address(),
                     item.roadAddress(),
                     item.mapx(),
                     item.mapy()
