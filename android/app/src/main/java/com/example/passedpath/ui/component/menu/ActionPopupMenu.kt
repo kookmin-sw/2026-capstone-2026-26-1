@@ -1,6 +1,5 @@
 package com.example.passedpath.ui.component.menu
 
-import android.R.attr.thickness
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -11,9 +10,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
@@ -22,9 +18,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.passedpath.R
 import com.example.passedpath.ui.theme.Gray300
 import com.example.passedpath.ui.theme.Gray500
 import com.example.passedpath.ui.theme.PassedPathTheme
@@ -74,7 +72,7 @@ private fun ActionPopupMenuItem(
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Icon(
-            imageVector = item.icon,
+            painter = painterResource(id = item.iconResId),
             contentDescription = null,
             modifier = Modifier.size(20.dp),
             tint = Gray500,
@@ -107,7 +105,7 @@ private fun ActionPopupMenuItemPreview() {
             ActionPopupMenuItem(
                 item = MenuActionItem(
                     text = "장소 즐겨찾기",
-                    icon = Icons.Outlined.StarBorder,
+                    iconResId = R.drawable.ic_star_checked,
                     onClick = {},
                 ),
             )
@@ -119,12 +117,12 @@ private fun previewMenuItems(): List<MenuActionItem> {
     return listOf(
         MenuActionItem(
             text = "장소 즐겨찾기",
-            icon = Icons.Outlined.StarBorder,
+            iconResId = R.drawable.ic_star_checked,
             onClick = {},
         ),
         MenuActionItem(
             text = "기록 삭제",
-            icon = Icons.Outlined.Delete,
+            iconResId = R.drawable.ic_trash,
             onClick = {},
         ),
     )
