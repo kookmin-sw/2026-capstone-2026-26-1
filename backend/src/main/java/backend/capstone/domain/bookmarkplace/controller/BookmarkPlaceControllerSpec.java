@@ -23,9 +23,10 @@ public interface BookmarkPlaceControllerSpec {
     BookmarkPlaceListResponse getBookmarkPlaces(UserPrincipal principal);
 
     @Operation(
-        summary = "즐겨찾기 장소 생성 API",
+        summary = "즐겨찾기 장소 등록 API",
         description = """
-            type 필드의 값은 HOME/COMPANY/SCHOOL/ETC 중 하나를 선택해 주세요.
+            type 필드의 값은 HOME/COMPANY/SCHOOL/ETC 중 하나를 선택해 주세요.<br>
+            카카오 장소 검색 api에서 받은 longitude와 latitude 값을 요청값에 넣어주세요.
             """
     )
     BookmarkPlaceCreateResponse createBookmarkPlace(

@@ -28,13 +28,10 @@ public interface PlaceControllerSpec {
             source 필드는 장소 생성 유형을 나타냅니다.<br>
              - AUTO: 자동 생성된 장소 (GPS 기반)<br>
              - MANUAL: 사용자가 직접 추가한 장소<br>
+
             수기 장소는 startTime과 endTime 값이 null이 되고, 자동 저장 장소는 startTime과 endTime 값이 기록됩니다.<br>
-            방문 장소가 사용자의 즐찾 장소와 같다면 (도로명 주소 기준) 즐찾 장소의 type 필드도 함께 반환됩니다.<br>
-            즐찾 장소와 일치하지 않다면 type 필드는 null이 됩니다.<br>
-             - HOME,<br>
-             - COMPANY,<br>
-             - SCHOOL,<br>
-             - ETC
+            수정된 장소가 즐찾 장소 중 하나와 도로명 주소 기준으로 일치한다면 해당 즐찾 장소의 type 필드도 함께 반환됩니다.<br>
+            해당 방문 장소가 즐찾 장소가 아니라면 type 필드 값은 null이 되고 즐찾 장소라면 type 값은 HOME/COMPANY/SCHOOL/ETC 중 하나가 됩니다.
             """
     )
     PlaceListResponse getPlaces(
@@ -45,12 +42,10 @@ public interface PlaceControllerSpec {
     @Operation(
         summary = "수기 장소 등록 API",
         description = """
+           카카오 장소 검색 API에서 받은 longitude와 latitude 값을 요청값에 넣어주세요.<br>
            place의 startTime과 endTime은 null이 됩니다.<br>
-           등록 장소가 즐찾 장소 중 하나와 도로명 주소 기준으로 일치한다면 해당 즐찾 장소의 type 필드도 함께 반환됩니다. (일치하지 않으면 null)<br>
-             - HOME,<br>
-             - COMPANY,<br>
-             - SCHOOL,<br>
-             - ETC
+           수정된 장소가 즐찾 장소 중 하나와 도로명 주소 기준으로 일치한다면 해당 즐찾 장소의 type 필드도 함께 반환됩니다.<br>
+           해당 방문 장소가 즐찾 장소가 아니라면 type 필드 값은 null이 되고 즐찾 장소라면 type 값은 HOME/COMPANY/SCHOOL/ETC 중 하나가 됩니다.
           """
     )
     PlaceAddResponse addPlaceToDayRoute(
@@ -65,11 +60,8 @@ public interface PlaceControllerSpec {
             수정하지 않는 필드도 함께 요청값으로 전달해야 합니다.<br>
             PUT 요청으로 장소 정보를 전체 교체합니다.<br>
             startTime, endTime, source는 수정할 수 없으므로 요청 값에서 제외됩니다.<br>
-            수정된 장소가 즐찾 장소 중 하나와 도로명 주소 기준으로 일치한다면 해당 즐찾 장소의 type 필드도 함께 반환됩니다. (일치하지 않으면 null)<br>
-             - HOME,<br>
-             - COMPANY,<br>
-             - SCHOOL,<br>
-             - ETC
+            수정된 장소가 즐찾 장소 중 하나와 도로명 주소 기준으로 일치한다면 해당 즐찾 장소의 type 필드도 함께 반환됩니다.<br>
+            해당 방문 장소가 즐찾 장소가 아니라면 type 필드 값은 null이 되고 즐찾 장소라면 type 값은 HOME/COMPANY/SCHOOL/ETC 중 하나가 됩니다.
             """
     )
     PlaceUpdateResponse updatePlace(
