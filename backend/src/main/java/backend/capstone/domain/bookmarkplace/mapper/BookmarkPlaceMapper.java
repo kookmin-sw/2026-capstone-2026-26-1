@@ -6,7 +6,6 @@ import backend.capstone.domain.bookmarkplace.dto.BookmarkPlaceListResponse;
 import backend.capstone.domain.bookmarkplace.dto.BookmarkPlaceSummaryResponse;
 import backend.capstone.domain.bookmarkplace.dto.BookmarkPlaceUpdateResponse;
 import backend.capstone.domain.bookmarkplace.entity.BookmarkPlace;
-import backend.capstone.domain.place.service.dto.Wgs84Coordinate;
 import backend.capstone.domain.user.entity.User;
 import java.util.List;
 import lombok.AccessLevel;
@@ -17,16 +16,15 @@ public class BookmarkPlaceMapper {
 
     public static BookmarkPlace toEntity(
         User user,
-        BookmarkPlaceCreateRequest request,
-        Wgs84Coordinate coordinate
+        BookmarkPlaceCreateRequest request
     ) {
         return BookmarkPlace.builder()
             .user(user)
             .type(request.type())
             .name(request.placeName())
             .roadAddress(request.roadAddress())
-            .latitude(coordinate.latitude())
-            .longitude(coordinate.longitude())
+            .latitude(request.latitude())
+            .longitude(request.longitude())
             .build();
     }
 

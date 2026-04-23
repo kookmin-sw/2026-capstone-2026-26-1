@@ -4,7 +4,7 @@ import java.util.List;
 
 public record PlaceSearchResponse(
     int placeCount,
-    List<PlaceSearchItem> items
+    List<PlaceSearchItem> places
 ) {
     public record PlaceSearchItem(
         String placeName,

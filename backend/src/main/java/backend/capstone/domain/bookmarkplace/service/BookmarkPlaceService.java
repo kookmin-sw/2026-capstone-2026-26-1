@@ -9,8 +9,6 @@ import backend.capstone.domain.bookmarkplace.entity.BookmarkPlace;
 import backend.capstone.domain.bookmarkplace.exception.BookmarkPlaceErrorCode;
 import backend.capstone.domain.bookmarkplace.mapper.BookmarkPlaceMapper;
 import backend.capstone.domain.bookmarkplace.repository.BookmarkPlaceRepository;
-import backend.capstone.domain.place.service.KakaoCoordinateConversionService;
-import backend.capstone.domain.place.service.dto.Wgs84Coordinate;
 import backend.capstone.domain.user.entity.User;
 import backend.capstone.domain.user.service.UserService;
 import backend.capstone.global.exception.BusinessException;
@@ -25,17 +23,12 @@ public class BookmarkPlaceService {
 
     private final BookmarkPlaceRepository bookmarkPlaceRepository;
     private final UserService userService;
-    private final KakaoCoordinateConversionService kakaoCoordinateConversionService;
 
     @Transactional
     public BookmarkPlaceCreateResponse createBookmarkPlace(Long userId,
         BookmarkPlaceCreateRequest request) {
         User user = userService.findById(userId);
-        Wgs84Coordinate coordinate = kakaoCoordinateConversionService.convertTm128ToWgs84(
-            request.longitude(),
-            request.latitude()
-        );
-        BookmarkPlace bookmarkPlace = BookmarkPlaceMapper.toEntity(user, request, coordinate);
+        BookmarkPlace bookmarkPlace = BookmarkPlaceMapper.toEntity(user, request);
         BookmarkPlace savedBookmarkPlace = bookmarkPlaceRepository.save(bookmarkPlace);
 
         return BookmarkPlaceMapper.toCreateResponse(savedBookmarkPlace);
