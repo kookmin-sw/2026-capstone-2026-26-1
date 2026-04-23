@@ -19,13 +19,14 @@ public class KakaoLocalSearchService {
     private final WebClient kakaoLocalWebClient;
 
     @Transactional(readOnly = true)
-    public PlaceSearchResponse searchPlaces(String query) {
+    public PlaceSearchResponse searchPlaces(String query, int page, int size) {
         try {
             KakaoLocalSearchResult result = kakaoLocalWebClient.get()
                 .uri(uriBuilder -> uriBuilder
                     .path("/v2/local/search/keyword.json")
                     .queryParam("query", query)
-                    .queryParam("size", 10)
+                    .queryParam("page", page)
+                    .queryParam("size", size)
                     .build())
                 .retrieve()
                 .bodyToMono(KakaoLocalSearchResult.class)
@@ -35,7 +36,7 @@ public class KakaoLocalSearchService {
                 throw new BusinessException(KakaoPlaceErrorCode.KAKAO_PLACE_SEARCH_FAILED);
             }
 
-            return KakaoPlaceMapper.toPlaceSearchResponse(result);
+            return KakaoPlaceMapper.toPlaceSearchResponse(page, size, result);
         } catch (WebClientException e) {
             throw new BusinessException(KakaoPlaceErrorCode.KAKAO_PLACE_SEARCH_FAILED);
         }

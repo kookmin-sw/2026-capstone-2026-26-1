@@ -1,9 +1,14 @@
 package backend.capstone.domain.kakaoplace.dto;
 
 import java.util.List;
+import lombok.Builder;
 
+@Builder
 public record PlaceSearchResponse(
-    int placeCount,
+    int page,
+    int size,
+    boolean isEnd,
+    int pageableCount,
     List<PlaceSearchItem> places
 ) {
     public record PlaceSearchItem(

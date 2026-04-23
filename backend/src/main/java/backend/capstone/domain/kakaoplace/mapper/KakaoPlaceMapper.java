@@ -10,11 +10,11 @@ import lombok.NoArgsConstructor;
 public class KakaoPlaceMapper {
 
     public static PlaceSearchResponse toPlaceSearchResponse(
-        KakaoLocalSearchResult kakaoLocalSearchResult
+        int page, int size,KakaoLocalSearchResult result
     ) {
-        List<PlaceSearchItem> items = kakaoLocalSearchResult.documents() == null
+        List<PlaceSearchItem> items = result.documents() == null
             ? List.of()
-            : kakaoLocalSearchResult.documents().stream()
+            : result.documents().stream()
                 .map(document -> new PlaceSearchItem(
                     document.place_name(),
                     document.category_name(),
@@ -24,7 +24,8 @@ public class KakaoPlaceMapper {
                 ))
                 .toList();
 
-        return new PlaceSearchResponse(items.size(), items);
+        return new PlaceSearchResponse(page, size, result.meta().is_end(), result.meta()
+            .pageable_count(), items);
     }
 
     private static Double parseDouble(String value) {
