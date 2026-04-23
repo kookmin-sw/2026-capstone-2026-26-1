@@ -33,7 +33,7 @@ fun ActionPopupMenu(
     modifier: Modifier = Modifier,
 ) {
     Surface(
-        modifier = modifier.widthIn(min = 122.dp),
+        modifier = modifier.widthIn(min = 122.dp, max = 160.dp),
         shape = RoundedCornerShape(10.dp),
         color = Color.White,
         shadowElevation = 10.dp,
