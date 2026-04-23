@@ -28,17 +28,9 @@ import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiSt
 import com.example.passedpath.feature.route.presentation.state.MainRouteModeUiState
 import com.example.passedpath.feature.route.presentation.state.PlaceMarkerUiState
 import com.example.passedpath.feature.route.presentation.state.RouteUiAction
-import com.google.android.gms.maps.model.Dash
-import com.google.android.gms.maps.model.Gap
 import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.PatternItem
 import com.google.maps.android.compose.MarkerComposable
 import com.google.maps.android.compose.Polyline
-
-private val DashedRoutePattern: List<PatternItem> = listOf(
-    Dash(24f),
-    Gap(18f)
-)
 
 @Composable
 fun RouteMapContent(
@@ -52,8 +44,7 @@ fun RouteMapContent(
         Polyline(
             points = listOf(segment.start.toLatLng(), segment.end.toLatLng()),
             color = routeAccentColor,
-            width = 14f,
-            pattern = if (segment.isDashed) DashedRoutePattern else null
+            width = 14f
         )
     }
 

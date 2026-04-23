@@ -13,8 +13,7 @@ data class PlaceMarkerUiState(
 
 data class RoutePolylineSegmentUiState(
     val start: MainCoordinateUiState,
-    val end: MainCoordinateUiState,
-    val isDashed: Boolean
+    val end: MainCoordinateUiState
 )
 
 data class SelectedDayRouteUiState(
