@@ -262,7 +262,7 @@ private fun CurrentLocationButton(
 ) {
     FloatingCircleIconButton(
         onClick = onClick,
-        iconResId = R.drawable.ic_bottom_my_location,
+        iconResId = R.drawable.ic_current_location,
         contentDescriptionResId = R.string.main_move_to_current_location,
         modifier = modifier
     )

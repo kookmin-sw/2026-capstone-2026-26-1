@@ -40,7 +40,7 @@ fun ReorderGuideBanner(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
-                painter = painterResource(id = R.drawable.ic_leading),
+                painter = painterResource(id = R.drawable.ic_info_circle),
                 contentDescription = null,
                 tint = Color.Unspecified,
                 modifier = Modifier.size(16.dp)

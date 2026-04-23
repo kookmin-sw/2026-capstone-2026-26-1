@@ -45,7 +45,7 @@ fun LocationPermissionIntroScreen(
         }
 
         Image(
-            painter = painterResource(id = R.drawable.location_perrmission_intro_image),
+            painter = painterResource(id = R.drawable.location_permission_intro_image),
             contentDescription = stringResource(R.string.permission_intro_image_content_description),
             modifier = Modifier
                 .fillMaxWidth(0.8f)
