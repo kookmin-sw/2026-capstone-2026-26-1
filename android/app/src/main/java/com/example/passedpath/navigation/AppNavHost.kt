@@ -14,6 +14,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
 import com.example.passedpath.feature.auth.presentation.screen.LoginRoute
 import com.example.passedpath.feature.auth.presentation.state.AuthEvent
@@ -36,6 +37,8 @@ fun AppNavHost(
     var loginToastTrigger by remember { mutableStateOf(0) }
     var mainTabReselectionEvent by remember { mutableStateOf(0) }
     var placeCreatedEvent by remember { mutableStateOf(0) }
+    val navBackStackEntry = navController.currentBackStackEntryAsState().value
+    val currentRoute = navBackStackEntry?.destination?.route
 
     LaunchedEffect(Unit) {
         AuthEvent.logoutEvent.collect { event ->
@@ -50,95 +53,44 @@ fun AppNavHost(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        AppScaffold(
-            navController = navController,
-            onBottomBarReselected = { route ->
-                if (route == NavRoute.MAIN) {
-                    mainTabReselectionEvent++
-                }
-            }
-        ) { modifier: Modifier ->
-            NavHost(
+        if (!shouldUseAppScaffold(currentRoute)) {
+            AppNavigationGraph(
                 navController = navController,
-                startDestination = NavRoute.ENTRY,
-                modifier = modifier
-            ) {
-                composable(NavRoute.ENTRY) {
-                    AppEntryRoute(
-                        viewModel = appEntryViewModel,
-                        onResolved = { destination ->
-                            navController.navigate(destination) {
-                                popUpTo(NavRoute.ENTRY) { inclusive = true }
-                            }
-                        }
-                    )
+                appEntryViewModel = appEntryViewModel,
+                mainTabReselectionEvent = mainTabReselectionEvent,
+                placeCreatedEvent = placeCreatedEvent,
+                onLoginToastMessage = { message ->
+                    loginToastMessage = message
+                    loginToastTrigger++
+                },
+                onPlaceCreated = {
+                    placeCreatedEvent++
+                },
+                modifier = Modifier.fillMaxSize()
+            )
+        } else {
+            AppScaffold(
+                navController = navController,
+                onBottomBarReselected = { route ->
+                    if (route == NavRoute.MAIN) {
+                        mainTabReselectionEvent++
+                    }
                 }
-
-                composable(NavRoute.LOGIN) {
-                    LoginRoute(
-                        onNavigate = { destination ->
-                            navController.navigate(destination) {
-                                popUpTo(NavRoute.LOGIN) { inclusive = true }
-                            }
-                        },
-                        onShowToastMessage = { message ->
-                            loginToastMessage = message
-                            loginToastTrigger++
-                        }
-                    )
-                }
-
-                composable(NavRoute.PERMISSION_INTRO) {
-                    LocationPermissionIntroRoute(
-                        onPermissionResolved = {
-                            navController.navigate(NavRoute.MAIN) {
-                                popUpTo(NavRoute.PERMISSION_INTRO) { inclusive = true }
-                            }
-                        }
-                    )
-                }
-
-                composable(NavRoute.FRIENDS) {
-                    FriendsRoute()
-                }
-
-                composable(NavRoute.MAIN) {
-                    MainRoute(
-                        mainTabReselectionEvent = mainTabReselectionEvent,
-                        placeCreatedEvent = placeCreatedEvent,
-                        onNavigateToAddPlace = { dateKey ->
-                            navController.navigate(NavRoute.addPlace(dateKey))
-                        }
-                    )
-                }
-
-                composable(
-                    route = NavRoute.ADD_PLACE_WITH_DATE,
-                    arguments = listOf(
-                        navArgument(NavRoute.ADD_PLACE_DATE_KEY) {
-                            type = NavType.StringType
-                        }
-                    )
-                ) { backStackEntry ->
-                    val dateKey = backStackEntry.arguments
-                        ?.getString(NavRoute.ADD_PLACE_DATE_KEY)
-                        .orEmpty()
-
-                    AddPlaceScreen(
-                        dateKey = dateKey,
-                        onBackClick = {
-                            navController.popBackStack()
-                        },
-                        onPlaceCreated = {
-                            placeCreatedEvent++
-                            navController.popBackStack()
-                        }
-                    )
-                }
-
-                composable(NavRoute.MYPAGE) {
-                    MyPageRoute()
-                }
+            ) { modifier: Modifier ->
+                AppNavigationGraph(
+                    navController = navController,
+                    appEntryViewModel = appEntryViewModel,
+                    mainTabReselectionEvent = mainTabReselectionEvent,
+                    placeCreatedEvent = placeCreatedEvent,
+                    onLoginToastMessage = { message ->
+                        loginToastMessage = message
+                        loginToastTrigger++
+                    },
+                    onPlaceCreated = {
+                        placeCreatedEvent++
+                    },
+                    modifier = modifier
+                )
             }
         }
 
@@ -163,5 +115,102 @@ fun AppNavHost(
             },
             modifier = Modifier.align(Alignment.BottomCenter)
         )
+    }
+}
+
+private fun shouldUseAppScaffold(route: String?): Boolean {
+    return route == NavRoute.MAIN ||
+        route == NavRoute.FRIENDS ||
+        route == NavRoute.MYPAGE
+}
+
+@Composable
+private fun AppNavigationGraph(
+    navController: NavHostController,
+    appEntryViewModel: AppEntryViewModel,
+    mainTabReselectionEvent: Int,
+    placeCreatedEvent: Int,
+    onLoginToastMessage: (String) -> Unit,
+    onPlaceCreated: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    NavHost(
+        navController = navController,
+        startDestination = NavRoute.ENTRY,
+        modifier = modifier
+    ) {
+        composable(NavRoute.ENTRY) {
+            AppEntryRoute(
+                viewModel = appEntryViewModel,
+                onResolved = { destination ->
+                    navController.navigate(destination) {
+                        popUpTo(NavRoute.ENTRY) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        composable(NavRoute.LOGIN) {
+            LoginRoute(
+                onNavigate = { destination ->
+                    navController.navigate(destination) {
+                        popUpTo(NavRoute.LOGIN) { inclusive = true }
+                    }
+                },
+                onShowToastMessage = onLoginToastMessage
+            )
+        }
+
+        composable(NavRoute.PERMISSION_INTRO) {
+            LocationPermissionIntroRoute(
+                onPermissionResolved = {
+                    navController.navigate(NavRoute.MAIN) {
+                        popUpTo(NavRoute.PERMISSION_INTRO) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        composable(NavRoute.FRIENDS) {
+            FriendsRoute()
+        }
+
+        composable(NavRoute.MAIN) {
+            MainRoute(
+                mainTabReselectionEvent = mainTabReselectionEvent,
+                placeCreatedEvent = placeCreatedEvent,
+                onNavigateToAddPlace = { dateKey ->
+                    navController.navigate(NavRoute.addPlace(dateKey))
+                }
+            )
+        }
+
+        composable(
+            route = NavRoute.ADD_PLACE_WITH_DATE,
+            arguments = listOf(
+                navArgument(NavRoute.ADD_PLACE_DATE_KEY) {
+                    type = NavType.StringType
+                }
+            )
+        ) { backStackEntry ->
+            val dateKey = backStackEntry.arguments
+                ?.getString(NavRoute.ADD_PLACE_DATE_KEY)
+                .orEmpty()
+
+            AddPlaceScreen(
+                dateKey = dateKey,
+                onBackClick = {
+                    navController.popBackStack()
+                },
+                onPlaceCreated = {
+                    onPlaceCreated()
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable(NavRoute.MYPAGE) {
+            MyPageRoute()
+        }
     }
 }

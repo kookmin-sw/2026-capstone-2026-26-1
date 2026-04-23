@@ -33,6 +33,7 @@ import com.example.passedpath.R
 import com.example.passedpath.feature.auth.presentation.component.SocialLoginButton
 import com.example.passedpath.ui.theme.Black
 import com.example.passedpath.ui.theme.Gray900
+import com.example.passedpath.ui.theme.Green200
 import com.example.passedpath.ui.theme.Green300
 import com.example.passedpath.ui.theme.Green500
 import com.example.passedpath.ui.theme.PassedPathTheme
@@ -54,11 +55,11 @@ fun LoginScreen(
                     .background(
                         Brush.radialGradient(
                             colors = listOf(
-                                Green300,
+                                Green200,
                                 Color(0x00E2F8F6)
                             ),
                             center = Offset(0f, constraints.maxHeight.toFloat()),
-                            radius = 1400f
+                            radius = 1600f
                         )
                     )
             )
