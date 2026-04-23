@@ -2,7 +2,7 @@
     <string name="app_name">PassedPath</string>
     <string name="login_logo_content_description">Logo for login screen</string>
     <string name="login_hero_brand_name">길벗</string>
-    <string name="login_hero_description_first_line">은 당신의 모든 발걸음을</string>
+    <string name="login_hero_description_first_line">당신의 모든 발걸음을</string>
     <string name="login_hero_description_second_line">곁에서 함께합니다</string>
     <string name="login_with_kakao">카카오 로그인</string>
     <string name="login_error_server_connection">Server connection failed. Please try again.</string>
@@ -23,10 +23,10 @@
     <string name="main_test_error_generic">Request failed. Please try again.</string>
     <string name="mypage_title">My Page</string>
     <string name="mypage_profile_missing">Profile not loaded yet</string>
-    <string name="permission_intro_title">Location permission is needed</string>
-    <string name="permission_intro_description">To keep tracking your path in background, allow location access.</string>
+    <string name="permission_intro_title">위치 권한이 필요해요</string>
+    <string name="permission_intro_description">지나온 길을 정확히 기록할 수 있도록\n위치 접근을 허용해 주세요</string>
     <string name="permission_intro_image_content_description">Onboarding illustration for location permission</string>
-    <string name="permission_intro_continue">Continue</string>
+    <string name="permission_intro_continue">시작하기</string>
     <string name="permission_dialog_title">이렇게 설정해 주세요</string>
     <string name="permission_dialog_subtitle">앱이 종료되어도 지나온 길을 기록할 수 있어요</string>
     <string name="permission_dialog_image_content_description">Location permission setting guide</string>

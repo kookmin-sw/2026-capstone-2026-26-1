@@ -4,8 +4,8 @@
     <style name="Theme.PassedPath" parent="android:Theme.Material.Light.NoActionBar" />
 
     <style name="Theme.PassedPath.Splash" parent="Theme.SplashScreen">
-        <item name="windowSplashScreenBackground">@android:color/white</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/login_logo</item>
+        <item name="windowSplashScreenBackground">@drawable/bg_splash_gradient</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_logo_background_empty</item>
         <item name="postSplashScreenTheme">@style/Theme.PassedPath</item>
     </style>
 </resources>
