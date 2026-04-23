@@ -84,7 +84,7 @@ internal fun BoxScope.MainMapOverlayContent(
             .align(Alignment.TopCenter)
             .fillMaxWidth()
             .statusBarsPadding()
-            .padding(top = RouteTopBarsHeight + 200.dp, start = 16.dp, end = 16.dp),
+            .padding(top = RouteTopBarsHeight + 160.dp, start = 16.dp, end = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
