@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -56,8 +57,11 @@ fun PlaceCard(
     showMoreButton: Boolean = true,
     onMoreClick: (() -> Unit)? = null,
     isMenuVisible: Boolean = false,
-    menuItems: List<MenuActionItem> = emptyList()
+    menuItems: List<MenuActionItem> = emptyList(),
+    isCompact: Boolean = false
 ) {
+    val cardShape = RoundedCornerShape(if (isCompact) 18.dp else 24.dp)
+
     Box(modifier = modifier.fillMaxWidth()) {
         Surface(
             modifier = Modifier
@@ -65,9 +69,9 @@ fun PlaceCard(
                 .border(
                     width = if (isSelected) 1.dp else 0.dp,
                     color = if (isSelected) Green500.copy(alpha = 0.28f) else Color.Transparent,
-                    shape = RoundedCornerShape(24.dp)
+                    shape = cardShape
                 ),
-            shape = RoundedCornerShape(24.dp),
+            shape = cardShape,
             color = Gray50,
             tonalElevation = 0.dp
         ) {
@@ -79,7 +83,8 @@ fun PlaceCard(
                 isFavoritePlace = isFavoritePlace,
                 showMoreButton = showMoreButton,
                 onMoreClick = onMoreClick,
-                isMenuVisible = isMenuVisible
+                isMenuVisible = isMenuVisible,
+                isCompact = isCompact
             )
         }
 
@@ -88,7 +93,7 @@ fun PlaceCard(
                 items = menuItems,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .padding(top = 48.dp, end = 10.dp)
+                    .padding(top = if (isCompact) 46.dp else 48.dp, end = 10.dp)
             )
         }
     }
@@ -103,13 +108,20 @@ private fun PlaceCardContent(
     isFavoritePlace: Boolean,
     showMoreButton: Boolean,
     onMoreClick: (() -> Unit)?,
-    isMenuVisible: Boolean
+    isMenuVisible: Boolean,
+    isCompact: Boolean
 ) {
+    val contentPadding = if (isCompact) {
+        PaddingValues(start = 16.dp, top = 14.dp, end = 10.dp, bottom = 14.dp)
+    } else {
+        PaddingValues(start = 20.dp, top = 18.dp, end = 14.dp, bottom = 18.dp)
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start = 20.dp, top = 18.dp, end = 14.dp, bottom = 18.dp),
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
+            .padding(contentPadding),
+        horizontalArrangement = Arrangement.spacedBy(if (isCompact) 10.dp else 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         PlaceCardTextSection(
@@ -124,7 +136,8 @@ private fun PlaceCardContent(
             isFavoritePlace = isFavoritePlace,
             showMoreButton = showMoreButton,
             onMoreClick = onMoreClick,
-            isMenuVisible = isMenuVisible
+            isMenuVisible = isMenuVisible,
+            isCompact = isCompact
         )
     }
 }
@@ -198,16 +211,19 @@ private fun PlaceCardActionSection(
     isFavoritePlace: Boolean,
     showMoreButton: Boolean,
     onMoreClick: (() -> Unit)?,
-    isMenuVisible: Boolean
+    isMenuVisible: Boolean,
+    isCompact: Boolean
 ) {
     Row(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(if (isCompact) 4.dp else 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        val actionSize = if (isCompact) 32.dp else 36.dp
+
         if (isFavoritePlace) {
             Box(
                 modifier = Modifier
-                    .size(34.dp)
+                    .size(if (isCompact) 30.dp else 34.dp)
                     .clip(CircleShape)
                     .background(Green50),
                 contentAlignment = Alignment.Center
@@ -224,7 +240,7 @@ private fun PlaceCardActionSection(
         if (showMoreButton) {
             Box(
                 modifier = Modifier
-                    .size(36.dp)
+                    .size(actionSize)
                     .clip(CircleShape)
                     .background(if (isMenuVisible) Gray100 else Color.Transparent)
                     .clickable(enabled = onMoreClick != null) {
