@@ -8,9 +8,12 @@ data class PlaceListResponseDto(
 data class PlaceListItemDto(
     val placeId: Long?,
     val placeName: String?,
+    val source: String?,
     val type: String?,
     val roadAddress: String?,
     val latitude: Double?,
     val longitude: Double?,
-    val orderIndex: Int?
+    val orderIndex: Int?,
+    val startTime: String?,
+    val endTime: String?
 )

@@ -667,7 +667,7 @@ class MainViewModelTest {
                 VisitedPlace(
                     placeId = 4L,
                     placeName = "Fetched B",
-                    type = PlaceSourceType.MANUAL,
+                    source = PlaceSourceType.MANUAL,
                     roadAddress = "Address B",
                     latitude = 37.4,
                     longitude = 127.4,
@@ -676,7 +676,7 @@ class MainViewModelTest {
                 VisitedPlace(
                     placeId = 3L,
                     placeName = "Fetched A",
-                    type = PlaceSourceType.AUTO,
+                    source = PlaceSourceType.AUTO,
                     roadAddress = "Address A",
                     latitude = 37.3,
                     longitude = 127.3,
@@ -737,7 +737,7 @@ class MainViewModelTest {
                 VisitedPlace(
                     placeId = 9L,
                     placeName = "Fetched Place",
-                    type = PlaceSourceType.MANUAL,
+                    source = PlaceSourceType.MANUAL,
                     roadAddress = "Fetched Road",
                     latitude = 37.9,
                     longitude = 127.9,

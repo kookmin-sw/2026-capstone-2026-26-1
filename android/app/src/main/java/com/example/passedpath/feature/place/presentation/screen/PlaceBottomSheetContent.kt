@@ -1,8 +1,8 @@
 package com.example.passedpath.feature.place.presentation.screen
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -21,8 +21,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -34,8 +32,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.RectangleShape
@@ -45,30 +43,35 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.passedpath.R
+import com.example.passedpath.feature.place.domain.model.BookmarkPlaceType
 import com.example.passedpath.feature.place.domain.model.PlaceSourceType
 import com.example.passedpath.feature.place.domain.model.VisitedPlace
-import com.example.passedpath.feature.place.presentation.state.PlaceListUiState
 import com.example.passedpath.feature.place.presentation.component.PlaceCard
+import com.example.passedpath.feature.place.presentation.state.PlaceListUiState
 import com.example.passedpath.ui.component.button.BaseButton
 import com.example.passedpath.ui.component.button.BaseButtonVariant
 import com.example.passedpath.ui.theme.Gray100
 import com.example.passedpath.ui.theme.Gray400
 import com.example.passedpath.ui.theme.Gray500
 import com.example.passedpath.ui.theme.Gray700
-import com.example.passedpath.ui.theme.Green50
 import com.example.passedpath.ui.theme.Green100
 import com.example.passedpath.ui.theme.Green300
+import com.example.passedpath.ui.theme.Green50
 import com.example.passedpath.ui.theme.Green500
 import com.example.passedpath.ui.theme.Green600
 import com.example.passedpath.ui.theme.PassedPathTheme
 import kotlinx.coroutines.delay
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @Composable
 fun PlaceBottomSheetContent(
@@ -117,10 +120,7 @@ fun PlaceBottomSheetContent(
         }
 
         item(key = "summary") {
-            PlaceSummarySection(
-                selectedDateKey = selectedDateKey,
-                placeCount = placeListUiState.placeCount
-            )
+            PlaceSummarySection(placeCount = placeListUiState.placeCount)
         }
 
         if (placeListUiState.isStale && placeListUiState.errorMessage != null) {
@@ -136,6 +136,7 @@ fun PlaceBottomSheetContent(
             placeListUiState.isLoading && !placeListUiState.hasRetainedContent -> {
                 item(key = "loading") { LoadingPlaceNotice() }
             }
+
             placeListUiState.errorMessage != null && !placeListUiState.isStale -> {
                 item(key = "error") {
                     ErrorPlaceNotice(
@@ -144,7 +145,9 @@ fun PlaceBottomSheetContent(
                     )
                 }
             }
+
             sortedPlaces.isEmpty() -> Unit
+
             else -> {
                 itemsIndexed(
                     items = sortedPlaces,
@@ -170,13 +173,8 @@ fun PlaceBottomSheetContent(
     }
 }
 
-
-
 @Composable
-private fun PlaceSummarySection(
-    selectedDateKey: String,
-    placeCount: Int
-) {
+private fun PlaceSummarySection(placeCount: Int) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -185,16 +183,8 @@ private fun PlaceSummarySection(
         Text(
             text = buildAnnotatedString {
                 append(stringResource(R.string.place_sheet_visit_count_prefix))
-
-                withStyle(
-                    SpanStyle(color = Green300)
-                ) {
-                    append(
-                        stringResource(
-                            R.string.place_sheet_visit_count_suffix,
-                            placeCount
-                        )
-                    )
+                withStyle(SpanStyle(color = Green300)) {
+                    append(stringResource(R.string.place_sheet_visit_count_suffix, placeCount))
                 }
             },
             style = MaterialTheme.typography.bodyLarge.copy(
@@ -282,9 +272,7 @@ private fun StalePlaceSection(
 }
 
 @Composable
-private fun PlaceGuideBanner(
-    onClose: () -> Unit
-) {
+private fun PlaceGuideBanner(onClose: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -324,9 +312,7 @@ private fun PlaceTimelineItem(
     isFirst: Boolean,
     isLast: Boolean
 ) {
-    val horizontalOffset = remember(place.placeId) {
-        Animatable(0f)
-    }
+    val horizontalOffset = remember(place.placeId) { Animatable(0f) }
 
     LaunchedEffect(shouldAnimate) {
         if (!shouldAnimate) {
@@ -364,6 +350,9 @@ private fun PlaceTimelineItem(
                     place.longitude
                 )
             },
+            startTimeText = place.startTime.toPlaceCardTimeText(),
+            endTimeText = place.endTime.toPlaceCardTimeText(),
+            isFavoritePlace = place.bookmarkType != null,
             modifier = Modifier.weight(1f),
             isCompact = true
         )
@@ -371,6 +360,15 @@ private fun PlaceTimelineItem(
 }
 
 private fun Float.toCardOffset(): Dp = this.dp
+
+private fun String?.toPlaceCardTimeText(): String? {
+    val timestamp = this ?: return null
+    return runCatching {
+        Instant.parse(timestamp)
+            .atZone(ZoneId.systemDefault())
+            .format(PlaceCardTimeFormatter)
+    }.getOrNull()
+}
 
 @Composable
 private fun TimelineDecoration(
@@ -434,9 +432,7 @@ private fun TimelineDecoration(
 }
 
 @Composable
-private fun PlaceAddButton(
-    onClick: () -> Unit
-) {
+private fun PlaceAddButton(onClick: () -> Unit) {
     BaseButton(
         text = "+ ${stringResource(R.string.place_sheet_add)}",
         onClick = onClick,
@@ -494,8 +490,8 @@ private fun previewVisitedPlaces(): List<VisitedPlace> {
     return listOf(
         VisitedPlace(
             placeId = 1L,
-            placeName = "국민대학교 복지관",
-            type = PlaceSourceType.MANUAL,
+            placeName = "Campus Hall",
+            source = PlaceSourceType.MANUAL,
             roadAddress = "서울 성북구 정릉로 77",
             latitude = 37.6109,
             longitude = 126.9970,
@@ -503,17 +499,20 @@ private fun previewVisitedPlaces(): List<VisitedPlace> {
         ),
         VisitedPlace(
             placeId = 2L,
-            placeName = "메종아카이 혜화본점",
-            type = PlaceSourceType.AUTO,
+            placeName = "Memoir Bakery",
+            source = PlaceSourceType.AUTO,
+            bookmarkType = BookmarkPlaceType.HOME,
             roadAddress = "서울 종로구 대명길 34 2층",
             latitude = 37.5839,
             longitude = 127.0008,
-            orderIndex = 2
+            orderIndex = 2,
+            startTime = "2026-04-23T09:00:00Z",
+            endTime = "2026-04-23T10:10:00Z"
         ),
         VisitedPlace(
             placeId = 3L,
-            placeName = "동대문프라임시티2차",
-            type = PlaceSourceType.MANUAL,
+            placeName = "Dongdaemun Prime City",
+            source = PlaceSourceType.MANUAL,
             roadAddress = "서울 동대문구 왕산로 18",
             latitude = 37.5764,
             longitude = 127.0253,
@@ -521,3 +520,6 @@ private fun previewVisitedPlaces(): List<VisitedPlace> {
         )
     )
 }
+
+private val PlaceCardTimeFormatter: DateTimeFormatter =
+    DateTimeFormatter.ofPattern("a h:mm", Locale.KOREA)

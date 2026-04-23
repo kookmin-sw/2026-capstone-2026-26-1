@@ -88,7 +88,7 @@ internal fun BookmarkPlaceUpdateResponseDto.toBookmarkPlace(): BookmarkPlace {
 
 private fun PlaceListItemDto.toVisitedPlaceOrNull(): VisitedPlace? {
     val resolvedPlaceId = placeId ?: return null
-    val resolvedType = type?.toPlaceSourceTypeOrNull() ?: return null
+    val resolvedSource = source?.toPlaceSourceTypeOrNull() ?: return null
     val resolvedLatitude = latitude ?: return null
     val resolvedLongitude = longitude ?: return null
     val resolvedOrderIndex = orderIndex ?: return null
@@ -96,14 +96,21 @@ private fun PlaceListItemDto.toVisitedPlaceOrNull(): VisitedPlace? {
     return VisitedPlace(
         placeId = resolvedPlaceId,
         placeName = placeName.orEmpty(),
-        type = resolvedType,
+        source = resolvedSource,
+        bookmarkType = type?.toBookmarkPlaceTypeOrNull(),
         roadAddress = roadAddress.orEmpty(),
         latitude = resolvedLatitude,
         longitude = resolvedLongitude,
-        orderIndex = resolvedOrderIndex
+        orderIndex = resolvedOrderIndex,
+        startTime = startTime,
+        endTime = endTime
     )
 }
 
 private fun String.toPlaceSourceTypeOrNull(): PlaceSourceType? {
     return kotlin.runCatching { PlaceSourceType.valueOf(this) }.getOrElse { null }
+}
+
+private fun String.toBookmarkPlaceTypeOrNull(): BookmarkPlaceType? {
+    return kotlin.runCatching { BookmarkPlaceType.valueOf(this) }.getOrElse { null }
 }

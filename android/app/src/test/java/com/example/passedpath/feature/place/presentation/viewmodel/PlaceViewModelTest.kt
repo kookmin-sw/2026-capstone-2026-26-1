@@ -38,13 +38,13 @@ class PlaceViewModelTest {
                         visitedPlace(
                             placeId = 2L,
                             placeName = "Cafe",
-                            type = PlaceSourceType.MANUAL,
+                            source = PlaceSourceType.MANUAL,
                             orderIndex = 2
                         ),
                         visitedPlace(
                             placeId = 1L,
                             placeName = "Seoul Forest",
-                            type = PlaceSourceType.AUTO,
+                            source = PlaceSourceType.AUTO,
                             orderIndex = 1
                         )
                     )
@@ -136,7 +136,7 @@ class PlaceViewModelTest {
                 visitedPlace(
                     placeId = 2L,
                     placeName = "Cafe",
-                    type = PlaceSourceType.MANUAL,
+                    source = PlaceSourceType.MANUAL,
                     orderIndex = 2
                 )
             )
@@ -216,13 +216,13 @@ class PlaceViewModelTest {
     private fun visitedPlace(
         placeId: Long,
         placeName: String,
-        type: PlaceSourceType = PlaceSourceType.AUTO,
+        source: PlaceSourceType = PlaceSourceType.AUTO,
         orderIndex: Int = 1
     ): VisitedPlace {
         return VisitedPlace(
             placeId = placeId,
             placeName = placeName,
-            type = type,
+            source = source,
             roadAddress = "Ttukseom-ro",
             latitude = 37.4,
             longitude = 127.4,
