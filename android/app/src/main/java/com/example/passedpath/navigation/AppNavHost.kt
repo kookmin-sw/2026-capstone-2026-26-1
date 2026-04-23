@@ -11,14 +11,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import com.example.passedpath.feature.auth.presentation.screen.LoginRoute
 import com.example.passedpath.feature.auth.presentation.state.AuthEvent
 import com.example.passedpath.feature.friends.presentation.screen.FriendsRoute
 import com.example.passedpath.feature.main.presentation.screen.MainRoute
 import com.example.passedpath.feature.mypage.presentation.screen.MyPageRoute
 import com.example.passedpath.feature.permission.presentation.screen.LocationPermissionIntroRoute
+import com.example.passedpath.feature.place.presentation.screen.AddPlaceScreen
 import com.example.passedpath.ui.component.toast.ToastOverlayHost
 import com.example.passedpath.ui.component.toast.ToastOverlayItem
 
@@ -32,6 +35,7 @@ fun AppNavHost(
     var loginToastMessage by remember { mutableStateOf<String?>(null) }
     var loginToastTrigger by remember { mutableStateOf(0) }
     var mainTabReselectionEvent by remember { mutableStateOf(0) }
+    var placeCreatedEvent by remember { mutableStateOf(0) }
 
     LaunchedEffect(Unit) {
         AuthEvent.logoutEvent.collect { event ->
@@ -99,7 +103,37 @@ fun AppNavHost(
                 }
 
                 composable(NavRoute.MAIN) {
-                    MainRoute(mainTabReselectionEvent = mainTabReselectionEvent)
+                    MainRoute(
+                        mainTabReselectionEvent = mainTabReselectionEvent,
+                        placeCreatedEvent = placeCreatedEvent,
+                        onNavigateToAddPlace = { dateKey ->
+                            navController.navigate(NavRoute.addPlace(dateKey))
+                        }
+                    )
+                }
+
+                composable(
+                    route = NavRoute.ADD_PLACE_WITH_DATE,
+                    arguments = listOf(
+                        navArgument(NavRoute.ADD_PLACE_DATE_KEY) {
+                            type = NavType.StringType
+                        }
+                    )
+                ) { backStackEntry ->
+                    val dateKey = backStackEntry.arguments
+                        ?.getString(NavRoute.ADD_PLACE_DATE_KEY)
+                        .orEmpty()
+
+                    AddPlaceScreen(
+                        dateKey = dateKey,
+                        onBackClick = {
+                            navController.popBackStack()
+                        },
+                        onPlaceCreated = {
+                            placeCreatedEvent++
+                            navController.popBackStack()
+                        }
+                    )
                 }
 
                 composable(NavRoute.MYPAGE) {

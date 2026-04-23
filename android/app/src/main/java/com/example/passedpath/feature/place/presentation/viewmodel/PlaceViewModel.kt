@@ -4,11 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.passedpath.app.AppContainer
-import com.example.passedpath.feature.place.domain.usecase.AddPlaceUseCase
-import com.example.passedpath.feature.place.domain.usecase.DeletePlaceUseCase
 import com.example.passedpath.feature.place.domain.usecase.GetVisitedPlacesUseCase
 import com.example.passedpath.feature.place.domain.usecase.ReorderPlacesUseCase
-import com.example.passedpath.feature.place.domain.usecase.UpdatePlaceUseCase
 import com.example.passedpath.feature.place.presentation.state.PlaceListUiState
 import com.example.passedpath.feature.place.presentation.state.PlaceUiState
 import com.example.passedpath.ui.state.ApiFailureMessage
@@ -24,9 +21,6 @@ import java.util.Date
 import java.util.Locale
 
 class PlaceViewModel(
-    private val addPlaceUseCase: AddPlaceUseCase,
-    private val updatePlaceUseCase: UpdatePlaceUseCase,
-    private val deletePlaceUseCase: DeletePlaceUseCase,
     private val reorderPlacesUseCase: ReorderPlacesUseCase,
     private val getVisitedPlacesUseCase: GetVisitedPlacesUseCase,
     initialDateKey: String = todayDateKey()
@@ -56,10 +50,6 @@ class PlaceViewModel(
         }
     }
 
-    fun updatePlaceId(value: String) {
-        updateField { copy(placeId = value, errorMessage = null, successMessage = null) }
-    }
-
     fun updateReorderPlaceIdsInput(value: String) {
         updateField {
             copy(
@@ -68,22 +58,6 @@ class PlaceViewModel(
                 successMessage = null
             )
         }
-    }
-
-    fun updatePlaceName(value: String) {
-        updateField { copy(placeName = value, errorMessage = null, successMessage = null) }
-    }
-
-    fun updateRoadAddress(value: String) {
-        updateField { copy(roadAddress = value, errorMessage = null, successMessage = null) }
-    }
-
-    fun updateLatitude(value: String) {
-        updateField { copy(latitude = value, errorMessage = null, successMessage = null) }
-    }
-
-    fun updateLongitude(value: String) {
-        updateField { copy(longitude = value, errorMessage = null, successMessage = null) }
     }
 
     // 현재 날짜의 장소 목록을 다시 불러온다.
@@ -106,79 +80,6 @@ class PlaceViewModel(
 
         viewModelScope.launch {
             refreshVisitedPlaces(dateKey = dateKey, clearFeedbackMessage = true)
-        }
-    }
-
-    // 장소를 저장한다. placeId가 없으면 추가, 있으면 수정이다.
-    fun savePlace() {
-        val currentState = _uiState.value
-        val latitude = currentState.latitude.toDoubleOrNull()
-        val longitude = currentState.longitude.toDoubleOrNull()
-        val placeId = currentState.parsedPlaceId
-
-        val validationError = validateForMutation(
-            state = currentState,
-            latitude = latitude,
-            longitude = longitude
-        )
-        if (validationError != null) {
-            _uiState.update { it.copy(errorMessage = validationError, successMessage = null) }
-            return
-        }
-
-        viewModelScope.launch {
-            _uiState.update {
-                it.copy(
-                    isSubmitting = true,
-                    errorMessage = null,
-                    successMessage = null
-                )
-            }
-            try {
-                if (placeId == null) {
-                    val result = addPlaceUseCase(
-                        dateKey = currentState.dateKey,
-                        placeName = currentState.placeName,
-                        roadAddress = currentState.roadAddress,
-                        latitude = latitude!!,
-                        longitude = longitude!!
-                    )
-                    _uiState.update {
-                        it.copy(
-                            placeId = result.placeId.toString(),
-                            isSubmitting = false,
-                            errorMessage = null,
-                            successMessage = "장소가 등록되었습니다. placeId=${result.placeId}, 순서 ${result.orderIndex}번"
-                        )
-                    }
-                    refreshVisitedPlaces(dateKey = currentState.dateKey)
-                } else {
-                    updatePlaceUseCase(
-                        dateKey = currentState.dateKey,
-                        placeId = placeId,
-                        placeName = currentState.placeName,
-                        roadAddress = currentState.roadAddress,
-                        latitude = latitude!!,
-                        longitude = longitude!!
-                    )
-                    _uiState.update {
-                        it.copy(
-                            isSubmitting = false,
-                            errorMessage = null,
-                            successMessage = "장소가 수정되었습니다. placeId=$placeId"
-                        )
-                    }
-                    refreshVisitedPlaces(dateKey = currentState.dateKey)
-                }
-            } catch (throwable: Throwable) {
-                _uiState.update {
-                    it.copy(
-                        isSubmitting = false,
-                        errorMessage = ApiFailureMessage.fromThrowable(throwable),
-                        successMessage = null
-                    )
-                }
-            }
         }
     }
 
@@ -247,100 +148,15 @@ class PlaceViewModel(
         }
     }
 
-    // 장소를 삭제하고 목록을 다시 불러온다.
-    fun deletePlace() {
-        val currentState = _uiState.value
-        val placeId = currentState.parsedPlaceId
-
-        if (!isValidDateKey(currentState.dateKey)) {
-            _uiState.update {
-                it.copy(
-                    errorMessage = "날짜는 yyyy-MM-dd 형식이어야 합니다.",
-                    successMessage = null
-                )
-            }
-            return
-        }
-        if (placeId == null) {
-            _uiState.update {
-                it.copy(
-                    errorMessage = "삭제할 placeId를 입력해 주세요.",
-                    successMessage = null
-                )
-            }
-            return
-        }
-
-        viewModelScope.launch {
-            _uiState.update {
-                it.copy(
-                    isSubmitting = true,
-                    errorMessage = null,
-                    successMessage = null
-                )
-            }
-            try {
-                deletePlaceUseCase(
-                    dateKey = currentState.dateKey,
-                    placeId = placeId
-                )
-                _uiState.update {
-                    it.copy(
-                        placeId = "",
-                        placeName = "",
-                        roadAddress = "",
-                        latitude = "",
-                        longitude = "",
-                        isSubmitting = false,
-                        errorMessage = null,
-                        successMessage = "장소가 삭제되었습니다. placeId=$placeId"
-                    )
-                }
-                refreshVisitedPlaces(dateKey = currentState.dateKey)
-            } catch (throwable: Throwable) {
-                _uiState.update {
-                    it.copy(
-                        isSubmitting = false,
-                        errorMessage = ApiFailureMessage.fromThrowable(throwable),
-                        successMessage = null
-                    )
-                }
-            }
-        }
-    }
-
-    // 입력 폼만 초기화한다.
+    // 임시 순서 입력 상태만 초기화한다.
     fun resetForm() {
         _uiState.update {
             it.copy(
-                placeId = "",
                 reorderPlaceIdsInput = "",
-                placeName = "",
-                roadAddress = "",
-                latitude = "",
-                longitude = "",
                 errorMessage = null,
                 successMessage = null
             )
         }
-    }
-
-    // 저장 전에 입력값을 검사한다.
-    private fun validateForMutation(
-        state: PlaceUiState,
-        latitude: Double?,
-        longitude: Double?
-    ): String? {
-        if (!isValidDateKey(state.dateKey)) {
-            return "날짜는 yyyy-MM-dd 형식이어야 합니다."
-        }
-        if (latitude == null || longitude == null) {
-            return "위도와 경도는 숫자로 입력해야 합니다."
-        }
-        if (!state.hasCompleteForm) {
-            return "모든 필드를 입력해 주세요."
-        }
-        return null
     }
 
     // 순서 입력값 형태를 검사한다.
@@ -437,9 +253,6 @@ class PlaceViewModelFactory(
         if (modelClass.isAssignableFrom(PlaceViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
             return PlaceViewModel(
-                addPlaceUseCase = appContainer.addPlaceUseCase,
-                updatePlaceUseCase = appContainer.updatePlaceUseCase,
-                deletePlaceUseCase = appContainer.deletePlaceUseCase,
                 reorderPlacesUseCase = appContainer.reorderPlacesUseCase,
                 getVisitedPlacesUseCase = appContainer.getVisitedPlacesUseCase,
                 initialDateKey = initialDateKey

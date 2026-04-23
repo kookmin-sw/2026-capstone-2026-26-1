@@ -19,11 +19,9 @@ import com.example.passedpath.feature.main.presentation.policy.reduceForBottomSh
 import com.example.passedpath.feature.main.presentation.policy.reduceForDateChange
 import com.example.passedpath.feature.main.presentation.policy.reduceForPlaceMarkerClick
 import com.example.passedpath.feature.main.presentation.policy.reduceForSelectedPlaceHandled
-import com.example.passedpath.feature.main.presentation.policy.reduceForPlaceCreateSheetVisibility
 import com.example.passedpath.feature.main.presentation.policy.reduceForSheetHideRequest
 import com.example.passedpath.feature.main.presentation.policy.reduceForSheetValueChange
 import com.example.passedpath.feature.main.presentation.state.MainUiState
-import com.example.passedpath.feature.place.presentation.screen.PlaceCreateBottomSheet
 import com.example.passedpath.feature.place.presentation.state.PlaceUiState
 import com.example.passedpath.feature.route.presentation.state.MainRouteModeUiState
 import com.example.passedpath.feature.route.presentation.state.RouteUiAction
@@ -46,6 +44,7 @@ fun MainScreen(
     onDayNoteMemoChanged: (String) -> Unit,
     onDayNoteSaveClick: () -> Unit,
     onPlaceListRefreshRequested: (String) -> Unit,
+    onNavigateToAddPlace: (String) -> Unit,
     onTrackingPermissionDialogConfirm: () -> Unit,
     onTrackingPermissionDialogDismiss: () -> Unit,
     onPermissionBannerConfirm: () -> Unit,
@@ -170,10 +169,7 @@ fun MainScreen(
                         onPlaceListRefreshRequested(uiState.selectedDateKey)
                     },
                     onAddPlaceClick = {
-                        dispatchInteraction(reduceForPlaceCreateSheetVisibility(
-                            state = localUiState,
-                            isVisible = true
-                        ))
+                        onNavigateToAddPlace(uiState.selectedDateKey)
                     }
                 )
             }
@@ -182,24 +178,6 @@ fun MainScreen(
         ToastOverlayHost(
             toasts = overlayToasts,
             modifier = Modifier.align(Alignment.BottomCenter)
-        )
-    }
-
-    if (localUiState.isPlaceCreateSheetVisible) {
-        PlaceCreateBottomSheet(
-            selectedDateKey = uiState.selectedDateKey,
-            onDismiss = {
-                dispatchInteraction(reduceForPlaceCreateSheetVisibility(
-                    state = localUiState,
-                    isVisible = false
-                ))
-            },
-            onCreated = {
-                dispatchInteraction(reduceForPlaceCreateSheetVisibility(
-                    state = localUiState,
-                    isVisible = false
-                ))
-            }
         )
     }
 

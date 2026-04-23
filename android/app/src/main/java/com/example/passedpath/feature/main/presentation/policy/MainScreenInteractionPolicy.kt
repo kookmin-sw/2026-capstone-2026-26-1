@@ -90,12 +90,3 @@ internal fun reduceForSelectedPlaceHandled(
         state = state.copy(selectedPlaceId = null)
     )
 }
-
-internal fun reduceForPlaceCreateSheetVisibility(
-    state: MainScreenLocalUiState,
-    isVisible: Boolean
-): MainScreenInteractionResult {
-    return MainScreenInteractionResult(
-        state = state.copy(isPlaceCreateSheetVisible = isVisible)
-    )
-}

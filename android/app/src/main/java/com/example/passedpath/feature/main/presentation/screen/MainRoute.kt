@@ -24,6 +24,8 @@ import com.example.passedpath.util.AppSettingsNavigator
 @Composable
 fun MainRoute(
     mainTabReselectionEvent: Int = 0,
+    placeCreatedEvent: Int = 0,
+    onNavigateToAddPlace: (String) -> Unit = {},
     viewModel: MainViewModel = viewModel(
         factory = MainViewModelFactory(LocalContext.current.appContainer)
     )
@@ -71,6 +73,11 @@ fun MainRoute(
     LaunchedEffect(uiState.selectedDateKey) {
         viewModel.clearFetchedMapPlaces(uiState.selectedDateKey)
         placeViewModel.updateDateKey(uiState.selectedDateKey)
+        placeViewModel.fetchVisitedPlaces(uiState.selectedDateKey)
+    }
+
+    LaunchedEffect(placeCreatedEvent) {
+        if (placeCreatedEvent == 0) return@LaunchedEffect
         placeViewModel.fetchVisitedPlaces(uiState.selectedDateKey)
     }
 
@@ -158,6 +165,7 @@ fun MainRoute(
         onDayNoteMemoChanged = dayNoteViewModel::updateMemo,
         onDayNoteSaveClick = dayNoteViewModel::submitDayNote,
         onPlaceListRefreshRequested = placeViewModel::fetchVisitedPlaces,
+        onNavigateToAddPlace = onNavigateToAddPlace,
         onTrackingPermissionDialogConfirm = {
             viewModel.dismissTrackingPermissionDialog()
             AppSettingsNavigator.openAppSettings(context)

@@ -71,7 +71,7 @@ fun PlaceSearchCard(
         ) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_marker_empty),
-                contentDescription = "장소 아이콘",
+                contentDescription = "\uC7A5\uC18C \uC544\uC774\uCF58",
                 tint = Gray300,
                 modifier = Modifier.size(24.dp)
             )
@@ -130,17 +130,17 @@ private fun PlaceSearchCardPreview() {
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             PlaceSearchCard(
-                title = "국민대학교 본부관",
-                address = "서울특별시 성북구 정릉로 77",
+                title = "Kookmin University Main Hall",
+                address = "77 Jeongneung-ro, Seongbuk-gu, Seoul",
                 isSelected = false,
-                category = "대학교"
+                category = "University"
             )
 
             PlaceSearchCard(
-                title = "국민대학교 경영관",
-                address = "서울특별시 성북구 정릉로 77",
+                title = "Kookmin University Business Hall",
+                address = "77 Jeongneung-ro, Seongbuk-gu, Seoul",
                 isSelected = true,
-                category = "교육",
+                category = "Education",
                 onClick = {}
             )
         }
