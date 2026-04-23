@@ -43,9 +43,11 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.passedpath.R
+import com.example.passedpath.feature.place.domain.model.PlaceSourceType
 import com.example.passedpath.feature.place.domain.model.VisitedPlace
 import com.example.passedpath.feature.place.presentation.state.PlaceListUiState
 import com.example.passedpath.feature.place.presentation.component.PlaceCard
@@ -54,6 +56,7 @@ import com.example.passedpath.ui.theme.Gray400
 import com.example.passedpath.ui.theme.Gray700
 import com.example.passedpath.ui.theme.Green50
 import com.example.passedpath.ui.theme.Green500
+import com.example.passedpath.ui.theme.PassedPathTheme
 import kotlinx.coroutines.delay
 
 @Composable
@@ -358,17 +361,10 @@ private fun PlaceTimelineItem(
             isLast = isLast
         )
         PlaceCard(
-            title = place.placeName.ifBlank {
+            name = place.placeName.ifBlank {
                 stringResource(R.string.route_place_fallback_title, place.orderIndex)
             },
-            subtitle = place.roadAddress.ifBlank {
-                stringResource(
-                    R.string.place_card_coordinate,
-                    place.latitude,
-                    place.longitude
-                )
-            },
-            tertiaryText = place.roadAddress.takeIf { it.isNotBlank() }?.let {
+            address = place.roadAddress.ifBlank {
                 stringResource(
                     R.string.place_card_coordinate,
                     place.latitude,
@@ -469,4 +465,80 @@ private fun PlaceAddButton(
             )
         }
     }
+}
+
+@Preview(showBackground = true, heightDp = 620, name = "Place Sheet Content")
+@Composable
+private fun PlaceBottomSheetContentPreview() {
+    PassedPathTheme {
+        PlaceBottomSheetContent(
+            selectedDateKey = "2026-04-23",
+            placeListUiState = PlaceListUiState(
+                dateKey = "2026-04-23",
+                places = previewVisitedPlaces(),
+                placeCount = previewVisitedPlaces().size,
+                hasLoaded = true
+            ),
+            selectedPlaceId = null,
+            onSelectedPlaceHandled = {},
+            onRetryClick = {},
+            onAddPlaceClick = {},
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 20.dp)
+        )
+    }
+}
+
+@Preview(showBackground = true, heightDp = 620, name = "Place Sheet Empty")
+@Composable
+private fun PlaceBottomSheetContentEmptyPreview() {
+    PassedPathTheme {
+        PlaceBottomSheetContent(
+            selectedDateKey = "2026-04-23",
+            placeListUiState = PlaceListUiState(
+                dateKey = "2026-04-23",
+                hasLoaded = true
+            ),
+            selectedPlaceId = null,
+            onSelectedPlaceHandled = {},
+            onRetryClick = {},
+            onAddPlaceClick = {},
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 20.dp)
+        )
+    }
+}
+
+private fun previewVisitedPlaces(): List<VisitedPlace> {
+    return listOf(
+        VisitedPlace(
+            placeId = 1L,
+            placeName = "서울숲",
+            type = PlaceSourceType.MANUAL,
+            roadAddress = "서울 성동구 뚝섬로 273",
+            latitude = 37.5446,
+            longitude = 127.0374,
+            orderIndex = 1
+        ),
+        VisitedPlace(
+            placeId = 2L,
+            placeName = "성수 카페거리",
+            type = PlaceSourceType.AUTO,
+            roadAddress = "서울 성동구 연무장길",
+            latitude = 37.5431,
+            longitude = 127.0565,
+            orderIndex = 2
+        ),
+        VisitedPlace(
+            placeId = 3L,
+            placeName = "뚝섬한강공원",
+            type = PlaceSourceType.MANUAL,
+            roadAddress = "서울 광진구 강변북로 139",
+            latitude = 37.5294,
+            longitude = 127.0701,
+            orderIndex = 3
+        )
+    )
 }
