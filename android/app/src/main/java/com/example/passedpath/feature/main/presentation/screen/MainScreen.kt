@@ -47,7 +47,7 @@ fun MainScreen(
     onNavigateToAddPlace: (String) -> Unit,
     onTrackingPermissionDialogConfirm: () -> Unit,
     onTrackingPermissionDialogDismiss: () -> Unit,
-    onPermissionBannerConfirm: () -> Unit,
+    onPermissionActionClick: () -> Unit,
     mainTabReselectionEvent: Int,
     showUnsavedDayNoteDialog: Boolean,
     onDismissUnsavedDayNoteDialog: () -> Unit,
@@ -140,7 +140,7 @@ fun MainScreen(
                             placeId = placeId
                         ))
                     },
-                    onPermissionBannerConfirm = onPermissionBannerConfirm,
+                    onPermissionActionClick = onPermissionActionClick,
                     debugActions = debugActions,
                     floatingBottomPadding = floatingBottomPadding
                 )

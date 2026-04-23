@@ -171,7 +171,7 @@ fun MainRoute(
             AppSettingsNavigator.openAppSettings(context)
         },
         onTrackingPermissionDialogDismiss = viewModel::dismissTrackingPermissionDialog,
-        onPermissionBannerConfirm = {
+        onPermissionActionClick = {
             when (
                 resolvePermissionActionTarget(
                     permissionState = uiState.permissionState,

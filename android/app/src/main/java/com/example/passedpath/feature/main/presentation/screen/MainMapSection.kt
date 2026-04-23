@@ -50,7 +50,7 @@ internal fun MainMapSection(
     onMoreDeleteRecordClick: () -> Unit = {},
     onMapClick: () -> Unit,
     onPlaceMarkerClick: (Long) -> Unit,
-    onPermissionBannerConfirm: () -> Unit,
+    onPermissionActionClick: () -> Unit,
     debugActions: MainDebugActions,
     floatingBottomPadding: androidx.compose.ui.unit.Dp
 ) {
@@ -125,7 +125,7 @@ internal fun MainMapSection(
             onDateSelected = onDateSelected,
             onBookmarkClick = onBookmarkClick,
             onRouteAction = onRouteAction,
-            onPermissionBannerConfirm = onPermissionBannerConfirm,
+            onPermissionActionClick = onPermissionActionClick,
             debugActions = debugActions,
             floatingBottomPadding = floatingBottomPadding,
             bottomEndControlsBottomPadding = currentLocationBottomPadding,
@@ -270,7 +270,7 @@ private fun CurrentLocationButton(
 
 @Preview(showBackground = true, name = "Permission Overlay")
 @Composable
-private fun PermissionBannerPreview() {
+private fun PermissionOverlayPreview() {
     com.example.passedpath.ui.theme.PassedPathTheme {
         Box(
             modifier = Modifier

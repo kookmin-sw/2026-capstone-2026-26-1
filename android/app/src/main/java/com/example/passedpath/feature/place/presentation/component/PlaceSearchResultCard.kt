@@ -35,7 +35,7 @@ import com.example.passedpath.ui.theme.Green50
 import com.example.passedpath.ui.theme.PassedPathTheme
 
 @Composable
-fun PlaceSearchCard(
+fun PlaceSearchResultCard(
     title: String,
     address: String,
     isSelected: Boolean,
@@ -123,20 +123,20 @@ fun PlaceSearchCard(
 
 @Preview(showBackground = true)
 @Composable
-private fun PlaceSearchCardPreview() {
+private fun PlaceSearchResultCardPreview() {
     PassedPathTheme {
         Column(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            PlaceSearchCard(
+            PlaceSearchResultCard(
                 title = "Kookmin University Main Hall",
                 address = "77 Jeongneung-ro, Seongbuk-gu, Seoul",
                 isSelected = false,
                 category = "University"
             )
 
-            PlaceSearchCard(
+            PlaceSearchResultCard(
                 title = "Kookmin University Business Hall",
                 address = "77 Jeongneung-ro, Seongbuk-gu, Seoul",
                 isSelected = true,

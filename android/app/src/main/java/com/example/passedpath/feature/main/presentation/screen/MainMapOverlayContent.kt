@@ -19,7 +19,7 @@ import com.example.passedpath.feature.route.presentation.screen.RouteTopCenterCo
 import com.example.passedpath.feature.route.presentation.screen.RouteTopEndControls
 import com.example.passedpath.feature.route.presentation.state.RouteUiAction
 import com.example.passedpath.ui.component.floating.FloatingButtonColumn
-import com.example.passedpath.ui.component.banner.PermissionBanner
+import com.example.passedpath.ui.component.banner.ActionBottomBanner
 
 @Composable
 internal fun BoxScope.MainMapOverlayContent(
@@ -27,7 +27,7 @@ internal fun BoxScope.MainMapOverlayContent(
     onDateSelected: (String) -> Unit,
     onBookmarkClick: () -> Unit,
     onRouteAction: (RouteUiAction) -> Unit,
-    onPermissionBannerConfirm: () -> Unit,
+    onPermissionActionClick: () -> Unit,
     debugActions: MainDebugActions,
     floatingBottomPadding: Dp,
     bottomEndControlsBottomPadding: Dp = floatingBottomPadding,
@@ -112,14 +112,14 @@ internal fun BoxScope.MainMapOverlayContent(
     }
 
     permissionOverlayUiModel?.let { overlayUiModel ->
-        PermissionBanner(
+        ActionBottomBanner(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(horizontal = 16.dp)
                 .padding(bottom = floatingBottomPadding),
             message = stringResource(overlayUiModel.messageResId),
             actionText = stringResource(overlayUiModel.actionTextResId),
-            onClickAction = onPermissionBannerConfirm
+            onClickAction = onPermissionActionClick
         )
     }
 }

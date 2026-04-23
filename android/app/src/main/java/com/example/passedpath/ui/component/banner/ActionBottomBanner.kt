@@ -21,7 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun PermissionBanner(
+fun ActionBottomBanner(
     modifier: Modifier = Modifier,
     message: String,
     actionText: String,
@@ -63,9 +63,9 @@ fun PermissionBanner(
     }
 }
 
-@Preview(showBackground = true, name = "Permission Banner")
+@Preview(showBackground = true, name = "Action Bottom Banner")
 @Composable
-private fun PermissionBannerPreview() {
+private fun ActionBottomBannerPreview() {
     com.example.passedpath.ui.theme.PassedPathTheme {
         Box(
             modifier = Modifier
@@ -73,7 +73,7 @@ private fun PermissionBannerPreview() {
                 .background(Color(0xFFF3F4F6))
                 .padding(16.dp)
         ) {
-            PermissionBanner(
+            ActionBottomBanner(
                 message = "위치 권한이 필요합니다",
                 actionText = "설정하기",
                 onClickAction = {}
