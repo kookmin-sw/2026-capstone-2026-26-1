@@ -6,9 +6,12 @@ import backend.capstone.domain.place.dto.PlaceAddRequest;
 import backend.capstone.domain.place.dto.PlaceAddResponse;
 import backend.capstone.domain.place.dto.PlaceItem;
 import backend.capstone.domain.place.dto.PlaceListResponse;
+import backend.capstone.domain.place.dto.PlaceSearchResponse;
+import backend.capstone.domain.place.dto.PlaceSearchResponse.PlaceSearchItem;
 import backend.capstone.domain.place.dto.PlaceUpdateResponse;
 import backend.capstone.domain.place.entity.Place;
 import backend.capstone.domain.place.entity.PlaceSource;
+import backend.capstone.domain.place.service.dto.NaverLocalSearchResponse;
 import java.util.List;
 import lombok.NoArgsConstructor;
 
@@ -98,6 +101,25 @@ public class PlaceMapper {
             .orderIndex(orderIndex)
             .source(PlaceSource.AUTO)
             .build();
+    }
+
+    public static PlaceSearchResponse toPlaceSearchResponse(
+        NaverLocalSearchResponse naverLocalSearchResponse
+    ) {
+        List<PlaceSearchItem> items = naverLocalSearchResponse.items() == null
+            ? List.of()
+            : naverLocalSearchResponse.items().stream()
+                .map(item -> new PlaceSearchItem(
+                    item.title(),
+                    item.category(),
+                    item.address(),
+                    item.roadAddress(),
+                    item.mapx(),
+                    item.mapy()
+                ))
+                .toList();
+
+        return new PlaceSearchResponse(items.size(), items);
     }
 
     public static String firstNonBlank(String... values) {

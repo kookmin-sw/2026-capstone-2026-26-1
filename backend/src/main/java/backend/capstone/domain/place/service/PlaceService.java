@@ -94,14 +94,12 @@ public class PlaceService {
             }
         }
 
-        // step 1. 임시 인덱스로 이동
         for (int i = 0; i < places.size(); i++) {
             places.get(i).changeOrderIndex(-(i + 1));
         }
 
         placeRepository.flush();
 
-        // step 2. 최종 인덱스로 이동
         for (int i = 0; i < reorderedPlaceIds.size(); i++) {
             Place place = placeMap.get(reorderedPlaceIds.get(i));
             place.changeOrderIndex(i + 1);
