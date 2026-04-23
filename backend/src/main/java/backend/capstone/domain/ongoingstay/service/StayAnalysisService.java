@@ -31,7 +31,7 @@ public class StayAnalysisService {
     private final GpsPointService gpsPointService;
     private final DayRouteService dayRouteService;
     private final PlaceService placeService;
-    private final KakaoLocalSearchService kakaoLocalSearchService;
+    private final PlaceSearchByCoordService placeSearchByCoordService;
 
     @Transactional
     public void analyzeStay(Long dayRouteId) {
@@ -92,7 +92,7 @@ public class StayAnalysisService {
         Optional<PlaceSearchResult> searchResult = Optional.empty();
 
         try {
-            searchResult = kakaoLocalSearchService.searchByCoordinate(stayLatitude, stayLongitude);
+            searchResult = placeSearchByCoordService.searchByCoordinate(stayLatitude, stayLongitude);
         } catch (WebClientException e) {
             log.error(
                 "카카오 플레이스 조회에 실패. 알 수 없는 place로 저장. dayRouteId={}, lat={}, lon={}",

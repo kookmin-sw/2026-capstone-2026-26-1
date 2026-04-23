@@ -1,4 +1,4 @@
-package backend.capstone.domain.place.dto;
+package backend.capstone.domain.kakaoplace.dto;
 
 import java.util.List;
 
@@ -10,8 +10,8 @@ public record PlaceSearchResponse(
         String placeName,
         String category,
         String roadAddress,
-        Integer longitude,
-        Integer latitude
+        Double longitude,
+        Double latitude
     ) {
     }
 }

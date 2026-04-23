@@ -5,7 +5,6 @@ import backend.capstone.domain.place.dto.PlaceAddRequest;
 import backend.capstone.domain.place.dto.PlaceAddResponse;
 import backend.capstone.domain.place.dto.PlaceListResponse;
 import backend.capstone.domain.place.dto.PlaceReorderRequest;
-import backend.capstone.domain.place.dto.PlaceSearchResponse;
 import backend.capstone.domain.place.dto.PlaceUpdateRequest;
 import backend.capstone.domain.place.dto.PlaceUpdateResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -16,10 +15,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
 import java.time.LocalDate;
 
 @Tag(name = "방문 장소 API")
@@ -93,16 +88,5 @@ public interface PlaceControllerSpec {
                 )
             )
         ) PlaceReorderRequest request
-    );
-
-    @Operation(
-        summary = "네이버 장소 검색 API",
-        description = """
-            장소명으로 네이버 지역(Local) 검색 API를 호출해 검색어와 관련된 장소 목록을 반환합니다.<br>
-            장소는 0개~5개까지 반환됩니다. (네이버 정책에 따름)
-            """
-    )
-    PlaceSearchResponse searchPlaces(
-        @Parameter(example = "국민대학교") @NotBlank String query
     );
 }

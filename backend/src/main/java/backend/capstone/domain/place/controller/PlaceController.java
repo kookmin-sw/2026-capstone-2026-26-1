@@ -5,15 +5,10 @@ import backend.capstone.domain.place.dto.PlaceAddRequest;
 import backend.capstone.domain.place.dto.PlaceAddResponse;
 import backend.capstone.domain.place.dto.PlaceListResponse;
 import backend.capstone.domain.place.dto.PlaceReorderRequest;
-import backend.capstone.domain.place.dto.PlaceSearchResponse;
 import backend.capstone.domain.place.dto.PlaceUpdateRequest;
 import backend.capstone.domain.place.dto.PlaceUpdateResponse;
 import backend.capstone.domain.place.facade.PlaceFacade;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
 import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -25,7 +20,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -87,13 +81,5 @@ public class PlaceController implements PlaceControllerSpec {
         @Valid @RequestBody PlaceReorderRequest request
     ) {
         placeFacade.reorderPlace(date, principal.userId(), request);
-    }
-
-    @Override
-    @GetMapping("/api/places/search")
-    public PlaceSearchResponse searchPlaces(
-        @RequestParam @NotBlank String query
-    ) {
-        return placeFacade.searchPlaces(query);
     }
 }

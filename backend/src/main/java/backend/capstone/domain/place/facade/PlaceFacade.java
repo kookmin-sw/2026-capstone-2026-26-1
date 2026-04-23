@@ -6,12 +6,10 @@ import backend.capstone.domain.place.dto.PlaceAddRequest;
 import backend.capstone.domain.place.dto.PlaceAddResponse;
 import backend.capstone.domain.place.dto.PlaceListResponse;
 import backend.capstone.domain.place.dto.PlaceReorderRequest;
-import backend.capstone.domain.place.dto.PlaceSearchResponse;
 import backend.capstone.domain.place.dto.PlaceUpdateRequest;
 import backend.capstone.domain.place.dto.PlaceUpdateResponse;
 import backend.capstone.domain.place.entity.Place;
 import backend.capstone.domain.place.mapper.PlaceMapper;
-import backend.capstone.domain.place.service.NaverLocalSearchService;
 import backend.capstone.domain.place.service.PlaceService;
 import java.time.LocalDate;
 import java.util.List;
@@ -25,7 +23,6 @@ public class PlaceFacade {
 
     private final DayRouteService dayRouteService;
     private final PlaceService placeService;
-    private final NaverLocalSearchService naverLocalSearchService;
 
     @Transactional(readOnly = true)
     public PlaceListResponse getPlaces(LocalDate date, Long userId) {
@@ -57,10 +54,5 @@ public class PlaceFacade {
     public void reorderPlace(LocalDate date, Long userId, PlaceReorderRequest request) {
         DayRoute dayRoute = dayRouteService.getDayRouteByDateAndUserId(date, userId);
         placeService.reorderPlace(dayRoute, request);
-    }
-
-    @Transactional(readOnly = true)
-    public PlaceSearchResponse searchPlaces(String query) {
-        return naverLocalSearchService.searchPlaces(query);
     }
 }

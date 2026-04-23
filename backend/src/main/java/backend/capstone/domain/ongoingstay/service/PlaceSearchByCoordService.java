@@ -14,7 +14,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 @Service
 @RequiredArgsConstructor
-public class KakaoLocalSearchService {
+public class PlaceSearchByCoordService {
 
     private static final int DEFAULT_RADIUS_METER = 100;
     private static final int DEFAULT_SIZE = 15;
