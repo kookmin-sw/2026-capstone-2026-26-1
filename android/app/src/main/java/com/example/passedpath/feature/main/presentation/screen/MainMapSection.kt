@@ -2,9 +2,12 @@ package com.example.passedpath.feature.main.presentation.screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -25,6 +28,7 @@ import com.example.passedpath.feature.route.presentation.state.PlaceMarkerUiStat
 import com.example.passedpath.feature.route.presentation.state.RouteUiAction
 import com.example.passedpath.ui.component.floating.FloatingButtonColumn
 import com.example.passedpath.ui.component.floating.FloatingCircleIconButton
+import com.example.passedpath.ui.component.menu.MainMorePopupMenu
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -42,6 +46,8 @@ internal fun MainMapSection(
     onRouteAction: (RouteUiAction) -> Unit,
     onStatsClick: () -> Unit,
     onMoreClick: () -> Unit,
+    onMorePlaceBookmarkClick: () -> Unit = {},
+    onMoreDeleteRecordClick: () -> Unit = {},
     onMapClick: () -> Unit,
     onPlaceMarkerClick: (Long) -> Unit,
     onPermissionBannerConfirm: () -> Unit,
@@ -67,6 +73,7 @@ internal fun MainMapSection(
     val coroutineScope = rememberCoroutineScope()
     var isMapLoaded by remember { mutableStateOf(false) }
     var isDebugPanelExpanded by rememberSaveable { mutableStateOf(true) }
+    var isMoreMenuVisible by rememberSaveable { mutableStateOf(false) }
 
     MainMapCameraEffects(
         isMapLoaded = isMapLoaded,
@@ -84,7 +91,10 @@ internal fun MainMapSection(
             contentPadding = PaddingValues(bottom = mapCameraBottomPadding),
             properties = MapProperties(isMyLocationEnabled = false),
             onMapLoaded = { isMapLoaded = true },
-            onMapClick = { onMapClick() }
+            onMapClick = {
+                isMoreMenuVisible = false
+                onMapClick()
+            }
         ) {
             RouteMapContent(
                 routeModeUiState = uiState.routeModeUiState,
@@ -128,8 +138,20 @@ internal fun MainMapSection(
                 )
             },
             topEndControls = {
-                MoreButton(
-                    onClick = onMoreClick,
+                MainMoreButtonMenu(
+                    isMenuVisible = isMoreMenuVisible,
+                    onMoreClick = {
+                        isMoreMenuVisible = !isMoreMenuVisible
+                        onMoreClick()
+                    },
+                    onPlaceBookmarkClick = {
+                        isMoreMenuVisible = false
+                        onMorePlaceBookmarkClick()
+                    },
+                    onDeleteRecordClick = {
+                        isMoreMenuVisible = false
+                        onMoreDeleteRecordClick()
+                    },
                     modifier = Modifier
                 )
             },
@@ -150,6 +172,34 @@ internal fun MainMapSection(
                 )
             }
         )
+    }
+}
+
+@Composable
+private fun MainMoreButtonMenu(
+    isMenuVisible: Boolean,
+    onMoreClick: () -> Unit,
+    onPlaceBookmarkClick: () -> Unit,
+    onDeleteRecordClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = androidx.compose.ui.Alignment.End
+    ) {
+        MoreButton(
+            onClick = onMoreClick,
+            modifier = Modifier
+        )
+
+        if (isMenuVisible) {
+            Spacer(modifier = Modifier.height(8.dp))
+            MainMorePopupMenu(
+                onPlaceBookmarkClick = onPlaceBookmarkClick,
+                onDeleteRecordClick = onDeleteRecordClick,
+                modifier = Modifier
+            )
+        }
     }
 }
 
