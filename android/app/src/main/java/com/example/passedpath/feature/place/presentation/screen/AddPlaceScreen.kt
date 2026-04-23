@@ -40,9 +40,9 @@ import com.example.passedpath.feature.place.domain.model.PlaceSearchResult
 import com.example.passedpath.feature.place.presentation.state.AddPlaceUiState
 import com.example.passedpath.feature.place.presentation.viewmodel.AddPlaceViewModel
 import com.example.passedpath.feature.place.presentation.viewmodel.AddPlaceViewModelFactory
-import com.example.passedpath.ui.component.BaseButton
-import com.example.passedpath.ui.component.PlaceSearchCard
-import com.example.passedpath.ui.component.PlaceSearchTextField
+import com.example.passedpath.ui.component.button.BaseButton
+import com.example.passedpath.ui.component.input.PlaceSearchTextField
+import com.example.passedpath.ui.component.place.PlaceSearchCard
 import com.example.passedpath.ui.theme.Gray100
 import com.example.passedpath.ui.theme.Gray500
 import com.example.passedpath.ui.theme.Gray900

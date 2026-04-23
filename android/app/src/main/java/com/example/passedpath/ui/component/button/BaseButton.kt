@@ -1,4 +1,4 @@
-package com.example.passedpath.ui.component
+package com.example.passedpath.ui.component.button
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer

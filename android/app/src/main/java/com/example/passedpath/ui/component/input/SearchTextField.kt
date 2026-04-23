@@ -1,4 +1,4 @@
-﻿package com.example.passedpath.ui.component
+package com.example.passedpath.ui.component.input
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.fillMaxWidth

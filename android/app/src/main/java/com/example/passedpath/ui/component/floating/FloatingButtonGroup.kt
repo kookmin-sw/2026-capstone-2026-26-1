@@ -1,4 +1,4 @@
-package com.example.passedpath.ui.component
+package com.example.passedpath.ui.component.floating
 
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.example.passedpath.ui.component.button.BaseCircleButton
 import com.example.passedpath.ui.theme.Gray900
 
 object FloatingButtonDefaults {

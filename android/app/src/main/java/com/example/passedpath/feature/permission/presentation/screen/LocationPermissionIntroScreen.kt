@@ -18,7 +18,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.passedpath.R
 import com.example.passedpath.ui.PermissionSettingDialog
-import com.example.passedpath.ui.component.BaseButton
+import com.example.passedpath.ui.component.button.BaseButton
 import com.example.passedpath.ui.theme.PassedPathTheme
 
 @Composable

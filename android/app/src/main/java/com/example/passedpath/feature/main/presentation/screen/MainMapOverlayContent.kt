@@ -18,7 +18,7 @@ import com.example.passedpath.feature.route.presentation.screen.RouteStatusOverl
 import com.example.passedpath.feature.route.presentation.screen.RouteTopCenterControls
 import com.example.passedpath.feature.route.presentation.screen.RouteTopEndControls
 import com.example.passedpath.feature.route.presentation.state.RouteUiAction
-import com.example.passedpath.ui.component.FloatingButtonColumn
+import com.example.passedpath.ui.component.floating.FloatingButtonColumn
 import com.example.passedpath.ui.component.banner.PermissionBanner
 
 @Composable

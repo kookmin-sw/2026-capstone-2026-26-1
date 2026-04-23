@@ -1,4 +1,4 @@
-package com.example.passedpath.ui.component
+package com.example.passedpath.ui.component.place
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border

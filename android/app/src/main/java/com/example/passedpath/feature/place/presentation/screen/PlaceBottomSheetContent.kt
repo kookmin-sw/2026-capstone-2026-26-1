@@ -48,7 +48,7 @@ import androidx.compose.ui.unit.dp
 import com.example.passedpath.R
 import com.example.passedpath.feature.place.domain.model.VisitedPlace
 import com.example.passedpath.feature.place.presentation.state.PlaceListUiState
-import com.example.passedpath.ui.component.PlaceCard
+import com.example.passedpath.ui.component.place.PlaceCard
 import com.example.passedpath.ui.theme.Gray100
 import com.example.passedpath.ui.theme.Gray400
 import com.example.passedpath.ui.theme.Gray700
