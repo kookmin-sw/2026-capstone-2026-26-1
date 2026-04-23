@@ -1,5 +1,7 @@
 package backend.capstone.domain.place.service;
 
+import backend.capstone.domain.bookmarkplace.entity.BookmarkPlace;
+import backend.capstone.domain.bookmarkplace.service.BookmarkPlaceService;
 import backend.capstone.domain.dayroute.entity.DayRoute;
 import backend.capstone.domain.dayroute.service.DayRouteService;
 import backend.capstone.domain.ongoingstay.entity.OngoingStay;
@@ -14,7 +16,6 @@ import backend.capstone.domain.place.exception.PlaceErrorCode;
 import backend.capstone.domain.place.mapper.PlaceMapper;
 import backend.capstone.domain.place.repository.PlaceRepository;
 import backend.capstone.global.exception.BusinessException;
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +31,7 @@ public class PlaceService {
 
     private final DayRouteService dayRouteService;
     private final PlaceRepository placeRepository;
+    private final BookmarkPlaceService bookmarkPlaceService;
 
     @Transactional
     public PlaceAddResponse addPlace(DayRoute dayRoute, PlaceAddRequest request) {
@@ -123,7 +125,25 @@ public class PlaceService {
                 () -> PlaceMapper.toUnknownAuto(dayRoute, stay.getCenterLatitude(), stay.getCenterLongitude(), newOrder,
                     stay.getStartTime(), stay.getLastTime()));
 
+        applyBookmarkPlaceType(dayRoute, place);
         placeRepository.save(place);
+    }
+
+    private void applyBookmarkPlaceType(DayRoute dayRoute, Place place) {
+        String roadAddress = emptyToNull(place.getRoadAddress());
+        if (roadAddress == null) {
+            return;
+        }
+
+        bookmarkPlaceService.getBookmarkPlaceByUserId(dayRoute.getUser().getId()).stream()
+            .filter(bookmarkPlace -> roadAddress.equals(bookmarkPlace.getRoadAddress()))
+            .findFirst()
+            .map(BookmarkPlace::getType)
+            .ifPresent(place::changeType);
+    }
+
+    private String emptyToNull(String value) {
+        return (value == null || value.isBlank()) ? null : value;
     }
 
     private int getNewOrder(DayRoute dayRoute) {

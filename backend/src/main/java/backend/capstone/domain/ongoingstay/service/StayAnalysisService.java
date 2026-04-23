@@ -75,7 +75,7 @@ public class StayAnalysisService {
                 continue;
             }
 
-            //종료된 stay가 10분이상 체류한 stay인지 판단
+            //종료된 stay가 15분이상 체류한 stay인지 판단
             if (stay.getDurationMinutes() >= STAY_MIN_DURATION_MINUTE) {
                 promoteStayToPlace(dayRoute, stay);
             }

@@ -173,9 +173,8 @@ public class PlaceSearchByCoordService {
         String placeName = emptyToNull(doc.place_name());
         String roadAddress = emptyToNull(doc.road_address_name());
 
-        // 도로명주소가 같거나 장소명이 같으면 북마크 장소와 동일한 장소로 간주
-        if ((placeName != null && placeName.equals(bookmarkPlace.getName()))
-            || (roadAddress != null && roadAddress.equals(bookmarkPlace.getRoadAddress()))) {
+        // 도로명주소가 같으면 북마크 장소와 동일한 장소로 간주
+        if (roadAddress != null && roadAddress.equals(bookmarkPlace.getRoadAddress())) {
             return true;
         }
 
