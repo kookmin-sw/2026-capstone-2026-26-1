@@ -77,29 +77,30 @@ public class StayAnalysisService {
 
             //종료된 stay가 10분이상 체류한 stay인지 판단
             if (stay.getDurationMinutes() >= STAY_MIN_DURATION_MINUTE) {
-                promoteStayToPlace(dayRoute, stay.getCenterLatitude(), stay.getCenterLongitude());
+                promoteStayToPlace(dayRoute, stay);
             }
 
             ongoingStayRepository.delete(stay);
             stay = OngoingStay.start(dayRoute, point);
             ongoingStayRepository.save(stay);
-
         }
+
         dayRoute.completeAnalysis(newPoints.getLast().getRecordedAt());
     }
 
-    public void promoteStayToPlace(DayRoute dayRoute, double stayLatitude, double stayLongitude) {
+    public void promoteStayToPlace(DayRoute dayRoute, OngoingStay stay) {
         Optional<PlaceSearchResult> searchResult = Optional.empty();
 
         try {
-            searchResult = placeSearchByCoordService.searchByCoordinate(stayLatitude, stayLongitude);
+            searchResult = placeSearchByCoordService.searchByCoordinate(stay.getCenterLatitude(),
+                stay.getCenterLongitude());
         } catch (WebClientException e) {
             log.error(
-                "카카오 플레이스 조회에 실패. 알 수 없는 place로 저장. dayRouteId={}, lat={}, lon={}",
-                dayRoute.getId(), stayLatitude, stayLongitude, e);
+                "카카오 장소 조회에 실패했습니다. 이름 없는 장소로 저장합니다. dayRouteId={}, lat={}, lon={}",
+                dayRoute.getId(), stay.getCenterLatitude(), stay.getCenterLongitude(), e);
         }
 
-        placeService.saveAutoPlace(dayRoute, stayLatitude, stayLongitude, searchResult);
+        placeService.saveAutoPlace(dayRoute, stay, searchResult);
     }
 
     private void handleLastTailIfDayEnded(DayRoute dayRoute, OngoingStay stay) {
@@ -115,12 +116,13 @@ public class StayAnalysisService {
 
         if (Duration.between(stay.getStartTime(), dayRouteEndTime).toMinutes()
             >= STAY_MIN_DURATION_MINUTE) {
-            promoteStayToPlace(dayRoute, stay.getCenterLatitude(), stay.getCenterLongitude());
+            stay.updateLastTime(dayRouteEndTime);
+            promoteStayToPlace(dayRoute, stay);
         }
+
         ongoingStayRepository.delete(stay);
     }
 
-    //두 좌표간 거리를 m 단위로 계산하는 함수 (하버사인 공식)
     private double distanceMeter(
         double lat1, double lon1,
         double lat2, double lon2
@@ -140,5 +142,4 @@ public class StayAnalysisService {
 
         return earthRadius * c;
     }
-
 }

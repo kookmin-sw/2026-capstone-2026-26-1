@@ -6,12 +6,11 @@ import backend.capstone.domain.place.dto.PlaceAddRequest;
 import backend.capstone.domain.place.dto.PlaceAddResponse;
 import backend.capstone.domain.place.dto.PlaceItem;
 import backend.capstone.domain.place.dto.PlaceListResponse;
-import backend.capstone.domain.kakaoplace.dto.PlaceSearchResponse;
-import backend.capstone.domain.kakaoplace.dto.PlaceSearchResponse.PlaceSearchItem;
 import backend.capstone.domain.place.dto.PlaceUpdateResponse;
 import backend.capstone.domain.place.entity.Place;
 import backend.capstone.domain.place.entity.PlaceSource;
-import backend.capstone.domain.kakaoplace.service.dto.KakaoLocalSearchResult;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import lombok.NoArgsConstructor;
 
@@ -35,11 +34,13 @@ public class PlaceMapper {
         return PlaceAddResponse.builder()
             .placeId(place.getId())
             .placeName(place.getName())
-            .type(place.getSource())
+            .source(place.getSource())
             .roadAddress(place.getRoadAddress())
             .latitude(place.getLatitude())
             .longitude(place.getLongitude())
             .orderIndex(place.getOrderIndex())
+            .startTime(place.getStartTime())
+            .endTime(place.getEndTime())
             .build();
     }
 
@@ -47,11 +48,13 @@ public class PlaceMapper {
         return PlaceItem.builder()
             .placeId(place.getId())
             .placeName(place.getName())
-            .type(place.getSource())
+            .source(place.getSource())
             .roadAddress(place.getRoadAddress())
             .latitude(place.getLatitude())
             .longitude(place.getLongitude())
             .orderIndex(place.getOrderIndex())
+            .startTime(place.getStartTime())
+            .endTime(place.getEndTime())
             .build();
     }
 
@@ -70,14 +73,21 @@ public class PlaceMapper {
         return PlaceUpdateResponse.builder()
             .roadAddress(place.getRoadAddress())
             .placeName(place.getName())
-            .type(place.getSource())
+            .source(place.getSource())
             .latitude(place.getLatitude())
             .longitude(place.getLongitude())
+            .startTime(place.getStartTime())
+            .endTime(place.getEndTime())
             .build();
     }
 
-    public static Place toEntityByAuto(DayRoute dayRoute, PlaceSearchResult searchResult,
-        int orderIndex) {
+    public static Place toEntityByAuto(
+        DayRoute dayRoute,
+        PlaceSearchResult searchResult,
+        int orderIndex,
+        LocalDateTime startTime,
+        LocalDateTime endTime
+    ) {
         return Place.builder()
             .dayRoute(dayRoute)
             .name(firstNonBlank(searchResult.name(), searchResult.roadAddress(),
@@ -87,11 +97,19 @@ public class PlaceMapper {
             .longitude(searchResult.longitude())
             .orderIndex(orderIndex)
             .source(PlaceSource.AUTO)
+            .startTime(startTime)
+            .endTime(endTime)
             .build();
     }
 
-    public static Place toUnknownAuto(DayRoute dayRoute, double stayLatitude,
-        double stayLongitude, int orderIndex) {
+    public static Place toUnknownAuto(
+        DayRoute dayRoute,
+        double stayLatitude,
+        double stayLongitude,
+        int orderIndex,
+        LocalDateTime startTime,
+        LocalDateTime endTime
+    ) {
         return Place.builder()
             .dayRoute(dayRoute)
             .name("알 수 없음")
@@ -100,6 +118,8 @@ public class PlaceMapper {
             .longitude(stayLongitude)
             .orderIndex(orderIndex)
             .source(PlaceSource.AUTO)
+            .startTime(startTime)
+            .endTime(endTime)
             .build();
     }
 

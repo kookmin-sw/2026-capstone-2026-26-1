@@ -2,6 +2,7 @@ package backend.capstone.domain.place.service;
 
 import backend.capstone.domain.dayroute.entity.DayRoute;
 import backend.capstone.domain.dayroute.service.DayRouteService;
+import backend.capstone.domain.ongoingstay.entity.OngoingStay;
 import backend.capstone.domain.ongoingstay.service.dto.PlaceSearchResult;
 import backend.capstone.domain.place.dto.PlaceAddRequest;
 import backend.capstone.domain.place.dto.PlaceAddResponse;
@@ -13,6 +14,7 @@ import backend.capstone.domain.place.exception.PlaceErrorCode;
 import backend.capstone.domain.place.mapper.PlaceMapper;
 import backend.capstone.domain.place.repository.PlaceRepository;
 import backend.capstone.global.exception.BusinessException;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -107,14 +109,19 @@ public class PlaceService {
     }
 
     @Transactional
-    public void saveAutoPlace(DayRoute dayRoute, double stayLatitude,
-        double stayLongitude, Optional<PlaceSearchResult> searchResult) {
+    public void saveAutoPlace(
+        DayRoute dayRoute,
+        OngoingStay stay,
+        Optional<PlaceSearchResult> searchResult
+    ) {
         int newOrder = getNewOrder(dayRoute);
 
         Place place = searchResult
-            .map(result -> PlaceMapper.toEntityByAuto(dayRoute, result, newOrder))
+            .map(result -> PlaceMapper.toEntityByAuto(dayRoute, result, newOrder,
+                stay.getStartTime(), stay.getLastTime()))
             .orElseGet(
-                () -> PlaceMapper.toUnknownAuto(dayRoute, stayLatitude, stayLongitude, newOrder));
+                () -> PlaceMapper.toUnknownAuto(dayRoute, stay.getCenterLatitude(), stay.getCenterLongitude(), newOrder,
+                    stay.getStartTime(), stay.getLastTime()));
 
         placeRepository.save(place);
     }

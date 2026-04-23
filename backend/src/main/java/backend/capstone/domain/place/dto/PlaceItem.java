@@ -2,6 +2,9 @@ package backend.capstone.domain.place.dto;
 
 import backend.capstone.domain.place.entity.PlaceSource;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import lombok.Builder;
 
 @Builder
@@ -14,7 +17,7 @@ public record PlaceItem(
     String placeName,
 
     @Schema(example = "AUTO", description = "장소 생성 유형")
-    PlaceSource type,
+    PlaceSource source,
 
     @Schema(example = "서울 강남구 테헤란로 123", description = "도로명 주소")
     String roadAddress,
@@ -26,7 +29,12 @@ public record PlaceItem(
     double longitude,
 
     @Schema(example = "1", description = "일정 내 장소 순서")
-    int orderIndex
-) {
+    int orderIndex,
 
+    @Schema(example = "09:30:00", description = "장소 체류 시작 시간")
+    LocalDateTime startTime,
+
+    @Schema(example = "10:15:00", description = "장소 체류 종료 시간")
+    LocalDateTime endTime
+) {
 }
