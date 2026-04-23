@@ -21,7 +21,7 @@ public class PlaceSearchByCoordService {
     private static final int DEFAULT_RADIUS_METER = 100;
     private static final int DEFAULT_SIZE = 15;
     private static final int BOOKMARK_PLACE_WEIGHT = -50;
-    private static final int BOOKMARK_MATCH_RADIUS_METER = 50;
+    private static final int BOOKMARK_MATCH_RADIUS_METER = 30;
 
     /**
      * 1차 탐색 카테고리 앱 취지상 "의미있는 장소"일 가능성이 높은 카테고리
