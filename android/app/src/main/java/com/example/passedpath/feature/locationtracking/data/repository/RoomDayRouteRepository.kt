@@ -59,7 +59,7 @@ class RoomDayRouteRepository(
             val response = dayRouteApi.getDayRoute(dateKey)
             AppDebugLogger.debug(
                 DebugLogTag.ROUTE_LOAD,
-                "remote route dto dateKey=$dateKey responseDate=${response.date} totalDistance=${response.totalDistance} pathPointCount=${response.pathPointCount} encodedLength=${response.encodedPath?.length ?: 0}"
+                "remote route dto dateKey=$dateKey responseDate=${response.date} totalDistance=${response.totalDistance} pathPointCount=${response.pathPointCount} gpsPoints=${response.gpsPoints?.size ?: 0}"
             )
             val routeDetail = response.toDayRouteDetail(requestedDateKey = dateKey)
             AppDebugLogger.debug(

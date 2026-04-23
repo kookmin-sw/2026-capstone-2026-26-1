@@ -17,7 +17,8 @@
   - title and memo come from remote `dayroute/{date}` read data
   - place data for map and sheet comes from `GET /api/day-routes/{date}/places`
 - Past dates:
-  - route path, title, and memo come from remote `dayroute/{date}`
+  - route path, title, memo, and distance come from remote `dayroute/{date}`
+  - route path is read from remote `gpsPoints` latitude/longitude pairs, not from encoded polyline text
   - place data for map and sheet comes from `GET /api/day-routes/{date}/places`
 
 ## Route render policy

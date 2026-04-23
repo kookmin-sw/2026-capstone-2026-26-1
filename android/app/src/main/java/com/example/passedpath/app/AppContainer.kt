@@ -114,6 +114,7 @@ class AppContainer(
             "passed-path.db"
         )
             .addMigrations(PassedPathDatabase.MIGRATION_1_2)
+            .addMigrations(PassedPathDatabase.MIGRATION_2_3)
             .build()
     }
 
