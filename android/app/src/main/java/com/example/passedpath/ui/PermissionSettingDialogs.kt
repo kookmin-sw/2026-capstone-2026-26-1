@@ -28,8 +28,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.passedpath.R
-import com.example.passedpath.ui.component.BaseButton
-import com.example.passedpath.ui.component.BaseButtonVariant
+import com.example.passedpath.ui.component.button.BaseButton
+import com.example.passedpath.ui.component.button.BaseButtonVariant
 import com.example.passedpath.ui.theme.PassedPathTheme
 import com.example.passedpath.ui.theme.Pretendard
 

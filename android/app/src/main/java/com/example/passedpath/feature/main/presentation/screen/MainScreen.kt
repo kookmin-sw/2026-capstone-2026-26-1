@@ -19,16 +19,14 @@ import com.example.passedpath.feature.main.presentation.policy.reduceForBottomSh
 import com.example.passedpath.feature.main.presentation.policy.reduceForDateChange
 import com.example.passedpath.feature.main.presentation.policy.reduceForPlaceMarkerClick
 import com.example.passedpath.feature.main.presentation.policy.reduceForSelectedPlaceHandled
-import com.example.passedpath.feature.main.presentation.policy.reduceForPlaceCreateSheetVisibility
 import com.example.passedpath.feature.main.presentation.policy.reduceForSheetHideRequest
 import com.example.passedpath.feature.main.presentation.policy.reduceForSheetValueChange
 import com.example.passedpath.feature.main.presentation.state.MainUiState
-import com.example.passedpath.feature.place.presentation.screen.PlaceCreateBottomSheet
 import com.example.passedpath.feature.place.presentation.state.PlaceUiState
 import com.example.passedpath.feature.route.presentation.state.MainRouteModeUiState
 import com.example.passedpath.feature.route.presentation.state.RouteUiAction
 import com.example.passedpath.ui.PermissionSettingDialog
-import com.example.passedpath.ui.component.BaseConfirmDialog
+import com.example.passedpath.ui.component.dialog.BaseConfirmDialog
 import com.example.passedpath.ui.component.toast.ToastOverlayHost
 import com.example.passedpath.ui.component.toast.ToastOverlayItem
 
@@ -46,9 +44,10 @@ fun MainScreen(
     onDayNoteMemoChanged: (String) -> Unit,
     onDayNoteSaveClick: () -> Unit,
     onPlaceListRefreshRequested: (String) -> Unit,
+    onNavigateToAddPlace: (String) -> Unit,
     onTrackingPermissionDialogConfirm: () -> Unit,
     onTrackingPermissionDialogDismiss: () -> Unit,
-    onPermissionBannerConfirm: () -> Unit,
+    onPermissionActionClick: () -> Unit,
     mainTabReselectionEvent: Int,
     showUnsavedDayNoteDialog: Boolean,
     onDismissUnsavedDayNoteDialog: () -> Unit,
@@ -67,6 +66,7 @@ fun MainScreen(
         }
     }
     val dayNoteToastMessage = dayNoteUiState.errorMessage ?: dayNoteUiState.successMessage
+    val bookmarkToastMessage = uiState.bookmarkToggleUiState.feedbackMessage
     val shouldShowPastEmptyToast =
         uiState.routeModeUiState is MainRouteModeUiState.Past &&
             uiState.routeModeUiState.isRouteEmpty &&
@@ -78,6 +78,14 @@ fun MainScreen(
                 ToastOverlayItem(
                     message = dayNoteToastMessage,
                     triggerKey = "daynote:${dayNoteUiState.feedbackEventId}:$dayNoteToastMessage"
+                )
+            )
+        }
+        if (bookmarkToastMessage != null) {
+            add(
+                ToastOverlayItem(
+                    message = bookmarkToastMessage,
+                    triggerKey = "bookmark:${uiState.bookmarkToggleUiState.feedbackEventId}:$bookmarkToastMessage"
                 )
             )
         }
@@ -132,7 +140,7 @@ fun MainScreen(
                             placeId = placeId
                         ))
                     },
-                    onPermissionBannerConfirm = onPermissionBannerConfirm,
+                    onPermissionActionClick = onPermissionActionClick,
                     debugActions = debugActions,
                     floatingBottomPadding = floatingBottomPadding
                 )
@@ -161,10 +169,7 @@ fun MainScreen(
                         onPlaceListRefreshRequested(uiState.selectedDateKey)
                     },
                     onAddPlaceClick = {
-                        dispatchInteraction(reduceForPlaceCreateSheetVisibility(
-                            state = localUiState,
-                            isVisible = true
-                        ))
+                        onNavigateToAddPlace(uiState.selectedDateKey)
                     }
                 )
             }
@@ -173,24 +178,6 @@ fun MainScreen(
         ToastOverlayHost(
             toasts = overlayToasts,
             modifier = Modifier.align(Alignment.BottomCenter)
-        )
-    }
-
-    if (localUiState.isPlaceCreateSheetVisible) {
-        PlaceCreateBottomSheet(
-            selectedDateKey = uiState.selectedDateKey,
-            onDismiss = {
-                dispatchInteraction(reduceForPlaceCreateSheetVisibility(
-                    state = localUiState,
-                    isVisible = false
-                ))
-            },
-            onCreated = {
-                dispatchInteraction(reduceForPlaceCreateSheetVisibility(
-                    state = localUiState,
-                    isVisible = false
-                ))
-            }
         )
     }
 

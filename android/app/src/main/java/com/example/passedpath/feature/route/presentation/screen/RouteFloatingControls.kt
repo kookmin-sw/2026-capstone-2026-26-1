@@ -9,7 +9,7 @@ import androidx.compose.ui.unit.dp
 import com.example.passedpath.feature.route.presentation.action.buildRouteActionUiState
 import com.example.passedpath.feature.route.presentation.state.MainRouteModeUiState
 import com.example.passedpath.feature.route.presentation.state.RouteUiAction
-import com.example.passedpath.ui.component.FloatingButtonRow
+import com.example.passedpath.ui.component.floating.FloatingButtonRow
 
 @Composable
 internal fun RouteTopCenterControls(

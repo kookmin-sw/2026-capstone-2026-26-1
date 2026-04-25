@@ -35,6 +35,11 @@ val Gray700 = Color(0xFF374151)
 val Gray800 = Color(0xFF1F2937)
 val Gray900 = Color(0xFF111827)
 
+// else
+val kakaoYello = Color(0xFFFEE500)
+val White = Color(0xFFFFFFFF)
+val Black = Color(0xFF000000)
+
 
 val Primary = Green500
 

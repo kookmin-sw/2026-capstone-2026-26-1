@@ -1,4 +1,4 @@
-package com.example.passedpath.ui.component
+package com.example.passedpath.ui.component.button
 
 enum class BaseButtonVariant {
     PRIMARY,

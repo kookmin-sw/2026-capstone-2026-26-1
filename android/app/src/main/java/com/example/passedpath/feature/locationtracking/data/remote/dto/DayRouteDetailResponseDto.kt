@@ -6,9 +6,15 @@ data class DayRouteDetailResponseDto(
     val title: String?,
     val memo: String?,
     val isBookmarked: Boolean?,
-    val encodedPath: String?,
     val pathPointCount: Int?,
+    val gpsPoints: List<GpsPointItemDto>?,
     val places: List<PlaceItemDto>?
+)
+
+data class GpsPointItemDto(
+    val recordedAt: String?,
+    val latitude: Double?,
+    val longitude: Double?
 )
 
 data class PlaceItemDto(

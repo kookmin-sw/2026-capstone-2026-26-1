@@ -17,18 +17,13 @@
   - title and memo come from remote `dayroute/{date}` read data
   - place data for map and sheet comes from `GET /api/day-routes/{date}/places`
 - Past dates:
-  - route path, title, and memo come from remote `dayroute/{date}`
+  - route path, title, memo, and distance come from remote `dayroute/{date}`
+  - route path is read from remote `gpsPoints` latitude/longitude pairs, not from encoded polyline text
   - place data for map and sheet comes from `GET /api/day-routes/{date}/places`
 
-## Route gap render policy
-- Route rendering keeps the base path color unchanged for both solid and gap segments.
-- The app renders only the connecting line between two adjacent route points as dashed when both conditions are true:
-  - point time gap is at least 10 minutes
-  - straight-line distance between the two points is at least 1km
-- Dashed rendering is evaluated per adjacent point pair, not for the whole route polyline.
-- Current limitation:
-  - today/local route points include timestamps, so the dashed-gap rule can be applied
-  - past-date remote route points currently do not include per-point timestamps in `dayroute/{date}`, so the time-gap rule cannot be evaluated there until the server contract widens
+## Route render policy
+- Route path renders as a solid polyline.
+- Route rendering does not distinguish visual gap types between adjacent points.
 
 ## Place read and synchronization policy
 - Place data for both map markers and the place bottom sheet comes from `GET /api/day-routes/{date}/places`.
@@ -145,7 +140,7 @@
   - moving mode:
     - request interval: `60s`
     - minimum update interval: `30s`
-    - minimum update distance: `20m`
+    - minimum update distance: `35m`
   - idle mode:
     - request interval: `5m`
     - minimum update interval: `2m`
@@ -156,11 +151,11 @@
   - if no point is saved for `5m`, switch to idle mode
   - if a point is saved again while idle, switch back to moving mode
 - Local save policy:
-  - drop locations whose accuracy is worse than `50m`
-  - skip local save when moved distance from the latest saved point is less than `20m`
+  - drop locations whose accuracy is worse than `35m`
+  - skip local save when moved distance from the latest saved point is less than `max(35m, accuracy * 1.5)`
 - Policy split by responsibility:
   - location callback request policy belongs in `feature/locationtracking/domain/policy/LocationRequestPolicy.kt`
-  - moving/idle transition policy belongs in `feature/locationtracking/domain/policy/AdaptiveTrackingModePolicy.kt`
+  - moving/idle transition policy belongs in `feature/locationtracking/domain/policy/LocationRequestPolicy.kt`
   - local save acceptance policy belongs in `feature/locationtracking/domain/policy/LocationPersistencePolicy.kt`
   - upload scheduling policy belongs in `feature/locationtracking/domain/policy/LocationUploadPolicy.kt`
 

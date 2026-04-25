@@ -46,7 +46,11 @@ class TrackingLocationProvider(
     ): LocationTrackingSession {
         val locationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
-                locationResult.lastLocation?.toTrackedLocation()?.let(onLocationUpdated)
+                locationResult.locations
+                    .asSequence()
+                    .map { it.toTrackedLocation() }
+                    .sortedBy(TrackedLocation::recordedAtEpochMillis)
+                    .forEach(onLocationUpdated)
             }
         }
 

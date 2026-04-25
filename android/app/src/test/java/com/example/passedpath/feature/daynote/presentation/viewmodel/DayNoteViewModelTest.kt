@@ -7,6 +7,7 @@ import com.example.passedpath.feature.daynote.domain.repository.DayRouteTitleRep
 import com.example.passedpath.feature.daynote.domain.usecase.PatchDayRouteMemoUseCase
 import com.example.passedpath.feature.daynote.domain.usecase.PatchDayRouteTitleUseCase
 import com.example.passedpath.testutil.MainDispatcherRule
+import com.example.passedpath.ui.state.ApiFailureMessage
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
@@ -188,7 +189,7 @@ class DayNoteViewModelTest {
 
         val state = viewModel.uiState.value
         assertEquals(listOf("title"), callOrder)
-        assertEquals("네트워크 문제로 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.", state.errorMessage)
+        assertEquals(ApiFailureMessage.NETWORK_REQUEST_FAILED, state.errorMessage)
         assertNull(state.successMessage)
         assertTrue(state.isDirty)
         assertEquals(1L, state.feedbackEventId)
@@ -222,7 +223,7 @@ class DayNoteViewModelTest {
         assertEquals("New title", state.title)
         assertEquals("Old memo", state.originalMemo)
         assertEquals("New memo", state.memo)
-        assertEquals("네트워크 문제로 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.", state.errorMessage)
+        assertEquals(ApiFailureMessage.NETWORK_REQUEST_FAILED, state.errorMessage)
         assertNull(state.successMessage)
         assertTrue(state.isDirty)
         assertTrue(patch.shouldUpdateTitle)

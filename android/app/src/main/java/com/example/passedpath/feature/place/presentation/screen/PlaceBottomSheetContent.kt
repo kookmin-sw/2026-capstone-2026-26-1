@@ -2,6 +2,7 @@ package com.example.passedpath.feature.place.presentation.screen
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -20,8 +21,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -33,28 +32,46 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.passedpath.R
+import com.example.passedpath.feature.place.domain.model.BookmarkPlaceType
+import com.example.passedpath.feature.place.domain.model.PlaceSourceType
 import com.example.passedpath.feature.place.domain.model.VisitedPlace
+import com.example.passedpath.feature.place.presentation.component.PlaceCard
 import com.example.passedpath.feature.place.presentation.state.PlaceListUiState
-import com.example.passedpath.ui.component.PlaceCard
+import com.example.passedpath.ui.component.button.BaseButton
+import com.example.passedpath.ui.component.button.BaseButtonVariant
 import com.example.passedpath.ui.theme.Gray100
 import com.example.passedpath.ui.theme.Gray400
+import com.example.passedpath.ui.theme.Gray500
 import com.example.passedpath.ui.theme.Gray700
+import com.example.passedpath.ui.theme.Green100
+import com.example.passedpath.ui.theme.Green300
 import com.example.passedpath.ui.theme.Green50
 import com.example.passedpath.ui.theme.Green500
+import com.example.passedpath.ui.theme.Green600
+import com.example.passedpath.ui.theme.PassedPathTheme
 import kotlinx.coroutines.delay
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @Composable
 fun PlaceBottomSheetContent(
@@ -79,7 +96,6 @@ fun PlaceBottomSheetContent(
             onSelectedPlaceHandled()
             return@LaunchedEffect
         }
-
         listState.animateScrollToItem(placeSectionStartIndex + selectedIndex)
         animatedPlaceId = placeId
         delay(320)
@@ -95,7 +111,7 @@ fun PlaceBottomSheetContent(
                 shape = RectangleShape
             },
         state = listState,
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         if (isBannerVisible) {
             item(key = "banner") {
@@ -104,10 +120,7 @@ fun PlaceBottomSheetContent(
         }
 
         item(key = "summary") {
-            PlaceSummarySection(
-                selectedDateKey = selectedDateKey,
-                placeCount = placeListUiState.placeCount
-            )
+            PlaceSummarySection(placeCount = placeListUiState.placeCount)
         }
 
         if (placeListUiState.isStale && placeListUiState.errorMessage != null) {
@@ -121,19 +134,20 @@ fun PlaceBottomSheetContent(
 
         when {
             placeListUiState.isLoading && !placeListUiState.hasRetainedContent -> {
-                item(key = "loading") { LoadingPlaceSection() }
+                item(key = "loading") { LoadingPlaceNotice() }
             }
+
             placeListUiState.errorMessage != null && !placeListUiState.isStale -> {
                 item(key = "error") {
-                    ErrorPlaceSection(
+                    ErrorPlaceNotice(
                         message = placeListUiState.errorMessage,
                         onRetryClick = onRetryClick
                     )
                 }
             }
-            sortedPlaces.isEmpty() -> {
-                item(key = "empty") { EmptyPlaceSection() }
-            }
+
+            sortedPlaces.isEmpty() -> Unit
+
             else -> {
                 itemsIndexed(
                     items = sortedPlaces,
@@ -160,35 +174,38 @@ fun PlaceBottomSheetContent(
 }
 
 @Composable
-private fun PlaceSummarySection(
-    selectedDateKey: String,
-    placeCount: Int
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+private fun PlaceSummarySection(placeCount: Int) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
         Text(
-            text = stringResource(R.string.place_sheet_selected_date, selectedDateKey),
-            style = MaterialTheme.typography.bodySmall,
-            color = Gray400
-        )
-        Text(
-            text = stringResource(R.string.place_sheet_visit_count, placeCount),
-            style = MaterialTheme.typography.bodyLarge,
-            color = Gray700,
-            fontWeight = FontWeight.SemiBold
+            text = buildAnnotatedString {
+                append(stringResource(R.string.place_sheet_visit_count_prefix))
+                withStyle(SpanStyle(color = Green300)) {
+                    append(stringResource(R.string.place_sheet_visit_count_suffix, placeCount))
+                }
+            },
+            style = MaterialTheme.typography.bodyLarge.copy(
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold
+            ),
+            color = Gray500
         )
     }
 }
 
 @Composable
-private fun LoadingPlaceSection() {
+private fun LoadingPlaceNotice() {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(color = Gray100, shape = RoundedCornerShape(22.dp))
-            .padding(horizontal = 18.dp, vertical = 24.dp)
+            .background(color = Gray100, shape = RoundedCornerShape(16.dp))
+            .padding(horizontal = 16.dp, vertical = 18.dp)
     ) {
         Text(
-            text = "방문 장소를 불러오는 중입니다.",
+            text = stringResource(R.string.place_sheet_loading),
             style = MaterialTheme.typography.bodyMedium,
             color = Gray400
         )
@@ -196,19 +213,19 @@ private fun LoadingPlaceSection() {
 }
 
 @Composable
-private fun ErrorPlaceSection(
+private fun ErrorPlaceNotice(
     message: String,
     onRetryClick: () -> Unit
 ) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(color = Gray100, shape = RoundedCornerShape(22.dp))
-            .padding(horizontal = 18.dp, vertical = 24.dp)
+            .background(color = Gray100, shape = RoundedCornerShape(16.dp))
+            .padding(horizontal = 16.dp, vertical = 18.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(
-                text = "방문 장소를 불러오지 못했습니다.",
+                text = stringResource(R.string.place_sheet_error_title),
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.SemiBold
             )
@@ -232,8 +249,8 @@ private fun StalePlaceSection(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(color = Gray100, shape = RoundedCornerShape(22.dp))
-            .padding(horizontal = 18.dp, vertical = 18.dp)
+            .background(color = Green50, shape = RoundedCornerShape(16.dp))
+            .padding(horizontal = 16.dp, vertical = 14.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
@@ -255,69 +272,36 @@ private fun StalePlaceSection(
 }
 
 @Composable
-private fun EmptyPlaceSection() {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(color = Gray100, shape = RoundedCornerShape(22.dp))
-            .padding(horizontal = 18.dp, vertical = 24.dp)
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(
-                text = stringResource(R.string.place_sheet_empty_title),
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.SemiBold
-            )
-            Text(
-                text = stringResource(R.string.place_sheet_empty_body),
-                style = MaterialTheme.typography.bodyMedium,
-                color = Gray400
-            )
-        }
-    }
-}
-
-@Composable
-private fun PlaceGuideBanner(
-    onClose: () -> Unit
-) {
+private fun PlaceGuideBanner(onClose: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(color = Green50, shape = RoundedCornerShape(18.dp))
-            .padding(start = 16.dp, top = 14.dp, end = 12.dp, bottom = 14.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+            .background(color = Green50, shape = RoundedCornerShape(14.dp))
+            .padding(start = 14.dp, top = 10.dp, end = 12.dp, bottom = 10.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Column(
+        Icon(
+            painter = painterResource(id = R.drawable.ic_information),
+            contentDescription = null,
+            tint = Green500,
+            modifier = Modifier.size(17.dp)
+        )
+        Text(
+            text = stringResource(R.string.place_sheet_banner_title),
             modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(2.dp)
-        ) {
-            Text(
-                text = stringResource(R.string.place_sheet_banner_title),
-                style = MaterialTheme.typography.bodyMedium,
-                color = Green500,
-                fontWeight = FontWeight.SemiBold
-            )
-            Text(
-                text = stringResource(R.string.place_sheet_banner_body),
-                style = MaterialTheme.typography.bodySmall,
-                color = Gray400
-            )
-        }
-        Box(
+            style = MaterialTheme.typography.bodySmall,
+            color = Gray700
+        )
+        Text(
+            text = stringResource(R.string.place_sheet_banner_close),
             modifier = Modifier
-                .size(28.dp)
-                .clickable(onClick = onClose),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Rounded.Close,
-                contentDescription = stringResource(R.string.place_sheet_banner_close),
-                tint = Gray400,
-                modifier = Modifier.size(16.dp)
-            )
-        }
+                .clickable(onClick = onClose)
+                .padding(horizontal = 4.dp, vertical = 2.dp),
+            style = MaterialTheme.typography.bodySmall,
+            color = Green500,
+            fontWeight = FontWeight.SemiBold
+        )
     }
 }
 
@@ -328,9 +312,7 @@ private fun PlaceTimelineItem(
     isFirst: Boolean,
     isLast: Boolean
 ) {
-    val horizontalOffset = remember(place.placeId) {
-        Animatable(0f)
-    }
+    val horizontalOffset = remember(place.placeId) { Animatable(0f) }
 
     LaunchedEffect(shouldAnimate) {
         if (!shouldAnimate) {
@@ -349,7 +331,7 @@ private fun PlaceTimelineItem(
         modifier = Modifier
             .fillMaxWidth()
             .offset(x = horizontalOffset.value.toCardOffset()),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.Top
     ) {
         TimelineDecoration(
@@ -358,29 +340,35 @@ private fun PlaceTimelineItem(
             isLast = isLast
         )
         PlaceCard(
-            title = place.placeName.ifBlank {
+            name = place.placeName.ifBlank {
                 stringResource(R.string.route_place_fallback_title, place.orderIndex)
             },
-            subtitle = place.roadAddress.ifBlank {
+            address = place.roadAddress.ifBlank {
                 stringResource(
                     R.string.place_card_coordinate,
                     place.latitude,
                     place.longitude
                 )
             },
-            tertiaryText = place.roadAddress.takeIf { it.isNotBlank() }?.let {
-                stringResource(
-                    R.string.place_card_coordinate,
-                    place.latitude,
-                    place.longitude
-                )
-            },
-            modifier = Modifier.weight(1f)
+            startTimeText = place.startTime.toPlaceCardTimeText(),
+            endTimeText = place.endTime.toPlaceCardTimeText(),
+            isFavoritePlace = place.bookmarkType != null,
+            modifier = Modifier.weight(1f),
+            isCompact = true
         )
     }
 }
 
 private fun Float.toCardOffset(): Dp = this.dp
+
+private fun String?.toPlaceCardTimeText(): String? {
+    val timestamp = this ?: return null
+    return runCatching {
+        Instant.parse(timestamp)
+            .atZone(ZoneId.systemDefault())
+            .format(PlaceCardTimeFormatter)
+    }.getOrNull()
+}
 
 @Composable
 private fun TimelineDecoration(
@@ -390,18 +378,18 @@ private fun TimelineDecoration(
 ) {
     Box(
         modifier = Modifier
-            .padding(top = 10.dp)
-            .size(width = 26.dp, height = 96.dp),
+            .padding(top = 6.dp)
+            .size(width = 22.dp, height = 78.dp),
         contentAlignment = Alignment.TopCenter
     ) {
         Canvas(modifier = Modifier.matchParentSize()) {
             val centerX = size.width / 2f
-            val pointCenterY = 14.dp.toPx()
-            val pointRadius = 5.dp.toPx()
-            val dashEffect = PathEffect.dashPathEffect(floatArrayOf(5f, 7f), 0f)
-            val dashColor = Green500.copy(alpha = 0.35f)
-            val strokeWidth = 2.dp.toPx()
-            val gap = 7.dp.toPx()
+            val pointCenterY = 11.dp.toPx()
+            val pointRadius = 8.dp.toPx()
+            val dashEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 14f), 0f)
+            val dashColor = Green500.copy(alpha = 0.24f)
+            val strokeWidth = 1.dp.toPx()
+            val gap = 4.dp.toPx()
 
             if (!isFirst) {
                 drawLine(
@@ -424,49 +412,114 @@ private fun TimelineDecoration(
                 )
             }
             drawCircle(
-                color = Green500,
+                color = Green50,
                 radius = pointRadius,
                 center = Offset(centerX, pointCenterY)
             )
         }
-        Text(
-            text = orderIndex.toString(),
-            modifier = Modifier.padding(top = 28.dp),
-            style = MaterialTheme.typography.bodySmall,
-            color = Green500,
-            fontWeight = FontWeight.SemiBold
-        )
-    }
-}
-
-@Composable
-private fun PlaceAddButton(
-    onClick: () -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(color = Green50, shape = RoundedCornerShape(22.dp))
-            .clickable(onClick = onClick)
-            .padding(vertical = 17.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Box(
+            modifier = Modifier.size(22.dp),
+            contentAlignment = Alignment.Center
         ) {
             Text(
-                text = "+",
-                color = Green500,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.SemiBold
-            )
-            Text(
-                text = stringResource(R.string.place_sheet_add),
-                color = Green500,
-                style = MaterialTheme.typography.bodyLarge,
+                text = orderIndex.toString(),
+                style = MaterialTheme.typography.labelSmall,
+                color = Green600,
                 fontWeight = FontWeight.SemiBold
             )
         }
     }
 }
+
+@Composable
+private fun PlaceAddButton(onClick: () -> Unit) {
+    BaseButton(
+        text = "+ ${stringResource(R.string.place_sheet_add)}",
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        variant = BaseButtonVariant.SECONDARY,
+        border = BorderStroke(1.dp, Green100)
+    )
+}
+
+@Preview(showBackground = true, heightDp = 620, name = "Place Sheet Content")
+@Composable
+private fun PlaceBottomSheetContentPreview() {
+    PassedPathTheme {
+        PlaceBottomSheetContent(
+            selectedDateKey = "2026-04-23",
+            placeListUiState = PlaceListUiState(
+                dateKey = "2026-04-23",
+                places = previewVisitedPlaces(),
+                placeCount = previewVisitedPlaces().size,
+                hasLoaded = true
+            ),
+            selectedPlaceId = null,
+            onSelectedPlaceHandled = {},
+            onRetryClick = {},
+            onAddPlaceClick = {},
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 20.dp)
+        )
+    }
+}
+
+@Preview(showBackground = true, heightDp = 620, name = "Place Sheet Empty")
+@Composable
+private fun PlaceBottomSheetContentEmptyPreview() {
+    PassedPathTheme {
+        PlaceBottomSheetContent(
+            selectedDateKey = "2026-04-23",
+            placeListUiState = PlaceListUiState(
+                dateKey = "2026-04-23",
+                hasLoaded = true
+            ),
+            selectedPlaceId = null,
+            onSelectedPlaceHandled = {},
+            onRetryClick = {},
+            onAddPlaceClick = {},
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 20.dp)
+        )
+    }
+}
+
+private fun previewVisitedPlaces(): List<VisitedPlace> {
+    return listOf(
+        VisitedPlace(
+            placeId = 1L,
+            placeName = "Campus Hall",
+            source = PlaceSourceType.MANUAL,
+            roadAddress = "서울 성북구 정릉로 77",
+            latitude = 37.6109,
+            longitude = 126.9970,
+            orderIndex = 1
+        ),
+        VisitedPlace(
+            placeId = 2L,
+            placeName = "Memoir Bakery",
+            source = PlaceSourceType.AUTO,
+            bookmarkType = BookmarkPlaceType.HOME,
+            roadAddress = "서울 종로구 대명길 34 2층",
+            latitude = 37.5839,
+            longitude = 127.0008,
+            orderIndex = 2,
+            startTime = "2026-04-23T09:00:00Z",
+            endTime = "2026-04-23T10:10:00Z"
+        ),
+        VisitedPlace(
+            placeId = 3L,
+            placeName = "Dongdaemun Prime City",
+            source = PlaceSourceType.MANUAL,
+            roadAddress = "서울 동대문구 왕산로 18",
+            latitude = 37.5764,
+            longitude = 127.0253,
+            orderIndex = 3
+        )
+    )
+}
+
+private val PlaceCardTimeFormatter: DateTimeFormatter =
+    DateTimeFormatter.ofPattern("a h:mm", Locale.KOREA)

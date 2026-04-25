@@ -1,6 +1,7 @@
 ﻿package com.example.passedpath.feature.locationtracking.data.remote.mapper
 
 import com.example.passedpath.feature.locationtracking.data.remote.dto.DayRouteDetailResponseDto
+import com.example.passedpath.feature.locationtracking.data.remote.dto.GpsPointItemDto
 import com.example.passedpath.feature.locationtracking.data.remote.dto.PlaceItemDto
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -10,16 +11,31 @@ import org.junit.Test
 class DayRouteRemoteMapperTest {
 
     @Test
-    fun `toDayRouteDetail decodes polyline and normalizes nullable fields`() {
-        // 테스트로 사용할 입력 데이터 변수 생성
+    fun `toDayRouteDetail maps gps points and normalizes nullable fields`() {
         val dto = DayRouteDetailResponseDto(
             date = null,
             totalDistance = null,
             title = null,
             memo = null,
             isBookmarked = null,
-            encodedPath = "_p~iF~ps|U_ulLnnqC_mqNvxq`@",
             pathPointCount = null,
+            gpsPoints = listOf(
+                GpsPointItemDto(
+                    recordedAt = "2026-03-29T10:00:00Z",
+                    latitude = 38.5,
+                    longitude = -120.2
+                ),
+                GpsPointItemDto(
+                    recordedAt = "2026-03-29T10:05:00Z",
+                    latitude = 40.7,
+                    longitude = -120.95
+                ),
+                GpsPointItemDto(
+                    recordedAt = "2026-03-29T10:10:00Z",
+                    latitude = 43.252,
+                    longitude = -126.453
+                )
+            ),
             places = listOf(
                 PlaceItemDto(
                     placeId = 2L,

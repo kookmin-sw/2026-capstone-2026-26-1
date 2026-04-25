@@ -18,8 +18,8 @@ import com.example.passedpath.feature.route.presentation.screen.RouteStatusOverl
 import com.example.passedpath.feature.route.presentation.screen.RouteTopCenterControls
 import com.example.passedpath.feature.route.presentation.screen.RouteTopEndControls
 import com.example.passedpath.feature.route.presentation.state.RouteUiAction
-import com.example.passedpath.ui.component.FloatingButtonColumn
-import com.example.passedpath.ui.component.banner.PermissionBanner
+import com.example.passedpath.ui.component.floating.FloatingButtonColumn
+import com.example.passedpath.ui.component.banner.ActionBottomBanner
 
 @Composable
 internal fun BoxScope.MainMapOverlayContent(
@@ -27,7 +27,7 @@ internal fun BoxScope.MainMapOverlayContent(
     onDateSelected: (String) -> Unit,
     onBookmarkClick: () -> Unit,
     onRouteAction: (RouteUiAction) -> Unit,
-    onPermissionBannerConfirm: () -> Unit,
+    onPermissionActionClick: () -> Unit,
     debugActions: MainDebugActions,
     floatingBottomPadding: Dp,
     bottomEndControlsBottomPadding: Dp = floatingBottomPadding,
@@ -49,6 +49,7 @@ internal fun BoxScope.MainMapOverlayContent(
 
     RouteTopBars(
         route = uiState.selectedRoute,
+        isBookmarkUpdating = uiState.bookmarkToggleUiState.isUpdating(uiState.selectedDateKey),
         onDateSelected = onDateSelected,
         onBookmarkClick = onBookmarkClick,
         modifier = Modifier
@@ -83,7 +84,7 @@ internal fun BoxScope.MainMapOverlayContent(
             .align(Alignment.TopCenter)
             .fillMaxWidth()
             .statusBarsPadding()
-            .padding(top = RouteTopBarsHeight + 120.dp, start = 16.dp, end = 16.dp),
+            .padding(top = RouteTopBarsHeight + 160.dp, start = 16.dp, end = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
@@ -111,14 +112,14 @@ internal fun BoxScope.MainMapOverlayContent(
     }
 
     permissionOverlayUiModel?.let { overlayUiModel ->
-        PermissionBanner(
+        ActionBottomBanner(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(horizontal = 16.dp)
                 .padding(bottom = floatingBottomPadding),
             message = stringResource(overlayUiModel.messageResId),
             actionText = stringResource(overlayUiModel.actionTextResId),
-            onClickAction = onPermissionBannerConfirm
+            onClickAction = onPermissionActionClick
         )
     }
 }

@@ -1,4 +1,4 @@
-package com.example.passedpath.ui.component
+package com.example.passedpath.ui.component.button
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope

@@ -101,7 +101,7 @@ class RouteStateCoordinator(
                 val routeDetail = result.routeDetail
                 AppDebugLogger.debug(
                     DebugLogTag.ROUTE_LOAD,
-                    "remote route success dateKey=$dateKey points=${routeDetail.pathPointCount} decodedPoints=${routeDetail.polylinePoints.size} encodedLength=${routeDetail.encodedPath.length}"
+                    "remote route success dateKey=$dateKey points=${routeDetail.pathPointCount} decodedPoints=${routeDetail.polylinePoints.size}"
                 )
                 RouteLoadState(
                     selectedDateKey = routeDetail.dateKey,

@@ -11,7 +11,7 @@ class LocationRequestPolicyTest {
 
         assertEquals(60_000L, config.updateIntervalMs)
         assertEquals(30_000L, config.minUpdateIntervalMs)
-        assertEquals(30f, config.minUpdateDistanceMeters)
+        assertEquals(35f, config.minUpdateDistanceMeters)
     }
 
     @Test
