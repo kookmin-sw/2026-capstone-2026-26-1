@@ -6,10 +6,18 @@ import com.example.passedpath.feature.place.domain.repository.PlaceSearchReposit
 class SearchPlacesUseCase(
     private val repository: PlaceSearchRepository
 ) {
-    suspend operator fun invoke(query: String): List<PlaceSearchResult> {
+    suspend operator fun invoke(
+        query: String,
+        page: Int = 1,
+        size: Int = 10
+    ): List<PlaceSearchResult> {
         val normalizedQuery = query.trim()
         if (normalizedQuery.isBlank()) return emptyList()
 
-        return repository.search(normalizedQuery)
+        return repository.search(
+            query = normalizedQuery,
+            page = page,
+            size = size
+        )
     }
 }

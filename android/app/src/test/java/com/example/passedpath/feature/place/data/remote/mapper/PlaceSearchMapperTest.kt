@@ -12,11 +12,9 @@ class PlaceSearchMapperTest {
         val response = PlaceSearchResponseDto(
             places = listOf(
                 PlaceSearchItemDto(
-                    id = "naver-1",
-                    name = "Cafe",
+                    placeName = "Cafe",
                     category = "Food",
                     roadAddress = "Road Address",
-                    address = "Jibun Address",
                     latitude = 37.1,
                     longitude = 127.1
                 )
@@ -26,7 +24,7 @@ class PlaceSearchMapperTest {
         val result = response.toPlaceSearchResults()
 
         assertEquals(1, result.size)
-        assertEquals("naver-1", result.first().id)
+        assertEquals(null, result.first().id)
         assertEquals("Cafe", result.first().name)
         assertEquals("Food", result.first().category)
         assertEquals("Road Address", result.first().displayAddress)
@@ -35,25 +33,28 @@ class PlaceSearchMapperTest {
     }
 
     @Test
-    fun `toPlaceSearchResults drops invalid results and falls back to address`() {
+    fun `toPlaceSearchResults drops invalid results when road address is missing`() {
         val response = PlaceSearchResponseDto(
             places = listOf(
                 PlaceSearchItemDto(
-                    id = "valid",
-                    name = "Library",
+                    placeName = "Library",
                     category = null,
-                    roadAddress = "",
-                    address = "Fallback Address",
+                    roadAddress = "Road Address",
                     latitude = 37.2,
                     longitude = 127.2
                 ),
                 PlaceSearchItemDto(
-                    id = "missing-coordinate",
-                    name = "Broken",
+                    placeName = "Broken",
                     category = "Etc",
                     roadAddress = "Road",
-                    address = "Address",
                     latitude = null,
+                    longitude = 127.3
+                ),
+                PlaceSearchItemDto(
+                    placeName = "No Road Address",
+                    category = "Etc",
+                    roadAddress = "",
+                    latitude = 37.3,
                     longitude = 127.3
                 )
             )
@@ -62,8 +63,8 @@ class PlaceSearchMapperTest {
         val result = response.toPlaceSearchResults()
 
         assertEquals(1, result.size)
-        assertEquals("valid", result.first().id)
+        assertEquals(null, result.first().id)
         assertEquals("", result.first().category)
-        assertEquals("Fallback Address", result.first().displayAddress)
+        assertEquals("Road Address", result.first().displayAddress)
     }
 }

@@ -7,6 +7,8 @@ import retrofit2.http.Query
 interface PlaceSearchApi {
     @GET("/api/places/search")
     suspend fun searchPlaces(
-        @Query("query") query: String
+        @Query("query") query: String,
+        @Query("page") page: Int = 1,
+        @Query("size") size: Int = 10
     ): PlaceSearchResponseDto
 }

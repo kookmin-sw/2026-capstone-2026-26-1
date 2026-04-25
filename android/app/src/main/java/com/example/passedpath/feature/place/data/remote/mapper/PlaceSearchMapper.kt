@@ -9,22 +9,21 @@ fun PlaceSearchResponseDto.toPlaceSearchResults(): List<PlaceSearchResult> {
 }
 
 private fun PlaceSearchItemDto.toPlaceSearchResult(): PlaceSearchResult? {
-    val normalizedName = name?.trim().orEmpty()
+    val normalizedName = placeName?.trim().orEmpty()
     val normalizedCategory = category?.trim().orEmpty()
     val normalizedRoadAddress = roadAddress?.trim().orEmpty()
-    val normalizedAddress = address?.trim().orEmpty()
     val normalizedLatitude = latitude ?: return null
     val normalizedLongitude = longitude ?: return null
 
     if (normalizedName.isBlank()) return null
-    if (normalizedRoadAddress.isBlank() && normalizedAddress.isBlank()) return null
+    if (normalizedRoadAddress.isBlank()) return null
 
     return PlaceSearchResult(
-        id = id?.trim()?.takeIf(String::isNotBlank),
+        id = null,
         name = normalizedName,
         category = normalizedCategory,
         roadAddress = normalizedRoadAddress,
-        address = normalizedAddress,
+        address = normalizedRoadAddress,
         latitude = normalizedLatitude,
         longitude = normalizedLongitude
     )

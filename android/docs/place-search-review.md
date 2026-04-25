@@ -17,12 +17,20 @@ Status: Final snapshot for today's place-search work
   - `MainScreen` forwards the event through `onNavigateToAddPlace`.
   - `AppNavHost` navigates to `AddPlaceScreen` with `dateKey`.
 - Android calls only the backend place-search endpoint:
-  - `GET /api/places/search?query={query}`
+  - `GET /api/places/search?query={query}&page={page}&size={size}`
   - Naver Open API credentials stay on the backend.
 - Search data flow is separated by layer:
   - data: `PlaceSearchApi`, DTO, mapper, repository implementation
   - domain: `PlaceSearchResult`, repository contract, `SearchPlacesUseCase`
   - presentation: `AddPlaceUiState`, `AddPlaceViewModel`, `AddPlaceScreen`
+- Current contract alignment:
+  - request uses `query`, `page`, `size`
+  - response metadata includes `page`, `size`, `isEnd`, `pageableCount`
+  - search items use `placeName`, `category`, `roadAddress`, `latitude`, `longitude`
+- Current implementation scope:
+  - the app currently requests only the first page with default size
+  - response metadata is accepted in DTO but not yet surfaced in presentation state
+  - infinite scroll is not implemented yet
 - Place creation after selection is handled by `CreatePlaceFromSearchResultUseCase`.
   - It maps a selected search result to the existing add-place API.
   - `AddPlaceViewModel` owns search, selection, and submit state.
@@ -54,7 +62,8 @@ Status: Final snapshot for today's place-search work
 - Search screen text is still mostly hardcoded.
   - This should move to `strings.xml` before UI polish.
 - Search API contract is assumed from the planned backend response.
-  - The app expects `places[].category`, `name`, `roadAddress`, `address`, `latitude`, and `longitude`.
+  - The app now expects `places[].placeName`, `category`, `roadAddress`, `latitude`, and `longitude`.
+  - Search-result pagination metadata is not yet reflected in UI state.
 - Test coverage is still narrow around failure and debounce behavior.
   - Happy-path search-create is covered.
   - Duplicate-query, create failure, and empty-result UX need additional tests.
@@ -72,7 +81,8 @@ Status: Final snapshot for today's place-search work
 2. Add create failure retry polish.
    - Current behavior leaves the user on `AddPlaceScreen` with error text.
 3. Move hardcoded search strings into `strings.xml`.
-4. Confirm backend search response shape and nullability.
+4. Wire paging request params into API/repository defaults.
+5. Confirm backend search response shape and nullability.
 
 ### Better Structure
 1. Replace event-counter refresh with a typed navigation result.
@@ -86,33 +96,39 @@ Status: Final snapshot for today's place-search work
    - Place list and reorder stay in `PlaceViewModel`.
    - Future delete/update should be driven by selected `placeId`, not raw text input.
 4. Add tests around edge cases.
-   - blank query clears results
-   - same query avoids duplicate requests
-   - new query clears selection
-   - create failure keeps the selected result and shows an error
+  - blank query clears results
+  - same query avoids duplicate requests
+  - new query clears selection
+  - create failure keeps the selected result and shows an error
+5. Add paged search state.
+  - `AddPlaceViewModel` should own `page`, `isEnd`, and append/replace rules.
+  - scroll events should request `page + 1` only when not loading and `isEnd == false`.
 
 ## Remaining Work
 1. Backend contract confirmation
    - Confirm `/api/places/search` response field names and nullability.
    - Confirm whether `category` is always provided.
+   - Confirm whether `roadAddress` is always non-null for every returned item.
 2. UX polish
    - Decide whether blank query shows a blank area or lightweight guidance.
    - Add clearer submission progress and failure retry affordance.
    - Show a success message after returning to `Main`, if desired.
+   - Add paging UX for long result lists.
 3. Drag reorder
    - Remove comma-separated reorder input after drag UI is implemented.
    - Submit ordered `placeIds` once per completed reorder action.
 4. Tests
    - Add duplicate-query and debounce tests.
    - Add create failure and empty-result tests.
+   - Add paging append tests and `isEnd=true` stop tests.
    - Add reorder UI tests after the drag interaction exists.
 
 ## Next Start Point
-1. Confirm the backend contract for `GET /api/places/search`.
-2. Add `AddPlaceViewModel` tests for duplicate query, debounce, create failure, and empty result.
-3. Move hardcoded add-place screen text to `strings.xml`.
-4. Polish create success/failure UX.
-5. Implement drag reorder UI in `PlaceBottomSheetContent`.
+1. Add `AddPlaceUiState` paging fields and append logic.
+2. Implement infinite scroll trigger in `AddPlaceScreen`.
+3. Add `AddPlaceViewModel` tests for duplicate query, debounce, create failure, empty result, and paging stop conditions.
+4. Move hardcoded add-place screen text to `strings.xml`.
+5. Polish create success/failure UX.
 6. Replace the temporary comma-separated reorder input with finalized drag result submission.
 
 ## Likely File Areas

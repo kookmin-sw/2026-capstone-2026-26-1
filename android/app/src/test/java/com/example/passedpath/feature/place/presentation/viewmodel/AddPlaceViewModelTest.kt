@@ -71,7 +71,7 @@ class AddPlaceViewModelTest {
         advanceUntilIdle()
 
         assertFalse(viewModel.uiState.value.isSubmitting)
-        assertEquals(listOf("Cafe"), searchRepository.requestedQueries)
+        assertEquals(listOf("Cafe:1:10"), searchRepository.requestedQueries)
         assertEquals(listOf("2026-04-23"), placeRepository.addRequestDates)
         assertEquals("Cafe", placeRepository.addRequests.single().placeName)
         assertEquals("Road Address", placeRepository.addRequests.single().roadAddress)
@@ -85,8 +85,8 @@ class AddPlaceViewModelTest {
     ) : PlaceSearchRepository {
         val requestedQueries = mutableListOf<String>()
 
-        override suspend fun search(query: String): List<PlaceSearchResult> {
-            requestedQueries += query
+        override suspend fun search(query: String, page: Int, size: Int): List<PlaceSearchResult> {
+            requestedQueries += "$query:$page:$size"
             return results
         }
     }

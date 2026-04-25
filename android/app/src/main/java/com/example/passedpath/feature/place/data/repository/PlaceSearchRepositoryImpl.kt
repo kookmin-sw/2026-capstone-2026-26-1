@@ -8,10 +8,18 @@ import com.example.passedpath.feature.place.domain.repository.PlaceSearchReposit
 class PlaceSearchRepositoryImpl(
     private val api: PlaceSearchApi
 ) : PlaceSearchRepository {
-    override suspend fun search(query: String): List<PlaceSearchResult> {
+    override suspend fun search(
+        query: String,
+        page: Int,
+        size: Int
+    ): List<PlaceSearchResult> {
         val normalizedQuery = query.trim()
         if (normalizedQuery.isBlank()) return emptyList()
 
-        return api.searchPlaces(normalizedQuery).toPlaceSearchResults()
+        return api.searchPlaces(
+            query = normalizedQuery,
+            page = page,
+            size = size
+        ).toPlaceSearchResults()
     }
 }
