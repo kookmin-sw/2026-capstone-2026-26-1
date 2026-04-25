@@ -13,16 +13,6 @@ data class MainCoordinateUiState(
     val recordedAtEpochMillis: Long? = null
 )
 
-data class BookmarkToggleUiState(
-    val updatingDateKey: String? = null,
-    val feedbackMessage: String? = null,
-    val feedbackEventId: Long = 0L
-) {
-    fun isUpdating(dateKey: String): Boolean {
-        return updatingDateKey == dateKey
-    }
-}
-
 sealed interface MainCameraIntent {
     data object CenterCurrentLocation : MainCameraIntent
 
@@ -37,7 +27,6 @@ data class MainUiState(
     val pendingCameraIntent: MainCameraIntent? = null,
     val showTrackingPermissionDialog: Boolean = false,
     val selectedDateKey: String = "",
-    val bookmarkToggleUiState: BookmarkToggleUiState = BookmarkToggleUiState(),
     val fetchedMapPlaces: List<PlaceMarkerUiState>? = null,
     val routeModeUiState: MainRouteModeUiState = MainRouteModeUiState.Today(
         route = SelectedDayRouteUiState(dateKey = "")

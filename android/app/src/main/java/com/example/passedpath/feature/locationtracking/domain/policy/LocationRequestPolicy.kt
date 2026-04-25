@@ -17,7 +17,7 @@ object TrackingModePolicy {
     private val movingConfig = RequestConfig(
         updateIntervalMs = 60_000L,
         minUpdateIntervalMs = 30_000L,
-        minUpdateDistanceMeters = 35f
+        minUpdateDistanceMeters = 30f
     )
     private val idleConfig = RequestConfig(
         updateIntervalMs = 5 * 60_000L,

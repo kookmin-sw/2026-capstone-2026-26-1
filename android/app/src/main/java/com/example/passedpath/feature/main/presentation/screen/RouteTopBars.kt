@@ -55,7 +55,6 @@ private val RouteTopBarsPreviewBackground = Color(0xFFEFF3F8)
 @Composable
 internal fun RouteTopBars(
     route: SelectedDayRouteUiState,
-    isBookmarkUpdating: Boolean,
     onDateSelected: (String) -> Unit,
     onBookmarkClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -72,7 +71,6 @@ internal fun RouteTopBars(
         ) {
             DateNavigationBar(
                 route = route,
-                isBookmarkUpdating = isBookmarkUpdating,
                 onDateSelected = onDateSelected,
                 onBookmarkClick = onBookmarkClick,
                 modifier = Modifier
@@ -93,7 +91,6 @@ internal fun RouteTopBars(
 @Composable
 internal fun DateNavigationBar(
     route: SelectedDayRouteUiState,
-    isBookmarkUpdating: Boolean,
     onDateSelected: (String) -> Unit,
     onBookmarkClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -133,7 +130,6 @@ internal fun DateNavigationBar(
             ) {
                 BookmarkToggleButton(
                     isBookmarked = route.isBookmarked,
-                    isEnabled = !isBookmarkUpdating,
                     onClick = onBookmarkClick
                 )
                 Row(
@@ -193,12 +189,10 @@ private fun NavigationArrowButton(
 @Composable
 private fun BookmarkToggleButton(
     isBookmarked: Boolean,
-    isEnabled: Boolean,
     onClick: () -> Unit
 ) {
     IconButton(
         onClick = onClick,
-        enabled = isEnabled,
         modifier = Modifier.size(40.dp)
     ) {
         Icon(
@@ -306,7 +300,6 @@ private fun RouteTopBarsPreview() {
     PassedPathTheme {
         RouteTopBars(
             route = previewRouteTopBarsState(),
-            isBookmarkUpdating = false,
             onDateSelected = {},
             onBookmarkClick = {},
             modifier = Modifier.background(RouteTopBarsPreviewBackground)

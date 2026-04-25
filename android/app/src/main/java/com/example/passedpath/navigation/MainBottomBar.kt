@@ -59,7 +59,7 @@ private val bottomNavItems = listOf(
     BottomNavItem(
         route = NavRoute.MAIN,
         labelResId = R.string.bottom_nav_main,
-        iconResId = R.drawable.ic_bottom_nav_route
+        iconResId = R.drawable.ic_bottom_conversion_path
     ),
     BottomNavItem(
         route = NavRoute.MYPAGE,

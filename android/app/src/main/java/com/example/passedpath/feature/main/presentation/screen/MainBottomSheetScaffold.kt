@@ -96,14 +96,9 @@ internal fun MainBottomSheetScaffold(
                 .coerceIn(sheetAnchors.expanded, sheetAnchors.hidden)
         }
 
-        val boundedSheetOffset = sheetOffset.coerceIn(sheetAnchors.expanded, sheetAnchors.hidden)
-        val visibleSheetHeightDp = with(density) {
-            (containerHeightPx - boundedSheetOffset)
-                .coerceAtLeast(0f)
-                .toDp()
-        }
+        val visibleSheetHeightDp = with(density) { (containerHeightPx - sheetOffset).toDp() }
         val floatingBottomPadding = visibleSheetHeightDp + BottomSheetFloatingPadding
-        val currentSheetValue = nearestSheetValue(boundedSheetOffset, sheetAnchors)
+        val currentSheetValue = nearestSheetValue(sheetOffset, sheetAnchors)
 
         LaunchedEffect(currentSheetValue) {
             onSheetValueChanged(currentSheetValue)
@@ -113,7 +108,7 @@ internal fun MainBottomSheetScaffold(
             .align(Alignment.TopCenter)
             .fillMaxWidth()
             .height(expandedVisibleHeightDp)
-            .offset { IntOffset(0, boundedSheetOffset.roundToInt()) }
+            .offset { IntOffset(0, sheetOffset.roundToInt()) }
             .draggable(
                 state = draggableState,
                 orientation = Orientation.Vertical,

@@ -5,6 +5,7 @@ import androidx.compose.runtime.saveable.listSaver
 
 internal data class MainScreenLocalUiState(
     val selectedBottomSheetTab: MainBottomSheetTab = MainBottomSheetTab.PLACE,
+    val isPlaceCreateSheetVisible: Boolean = false,
     val bottomSheetValue: MainBottomSheetValue = MainBottomSheetValue.HIDDEN,
     val requestedSheetValue: MainBottomSheetValue? = null,
     val selectedPlaceId: Long? = null
@@ -14,6 +15,7 @@ internal val MainScreenLocalUiStateSaver: Saver<MainScreenLocalUiState, Any> = l
     save = { state ->
         listOf(
             state.selectedBottomSheetTab.name,
+            state.isPlaceCreateSheetVisible,
             state.bottomSheetValue.name,
             state.requestedSheetValue?.name,
             state.selectedPlaceId
@@ -22,9 +24,10 @@ internal val MainScreenLocalUiStateSaver: Saver<MainScreenLocalUiState, Any> = l
     restore = { values ->
         MainScreenLocalUiState(
             selectedBottomSheetTab = MainBottomSheetTab.valueOf(values[0] as String),
-            bottomSheetValue = MainBottomSheetValue.valueOf(values[1] as String),
-            requestedSheetValue = (values[2] as String?)?.let(MainBottomSheetValue::valueOf),
-            selectedPlaceId = values[3] as Long?
+            isPlaceCreateSheetVisible = values[1] as Boolean,
+            bottomSheetValue = MainBottomSheetValue.valueOf(values[2] as String),
+            requestedSheetValue = (values[3] as String?)?.let(MainBottomSheetValue::valueOf),
+            selectedPlaceId = values[4] as Long?
         )
     }
 )

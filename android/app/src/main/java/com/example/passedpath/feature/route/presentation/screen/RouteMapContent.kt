@@ -28,15 +28,17 @@ import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiSt
 import com.example.passedpath.feature.route.presentation.state.MainRouteModeUiState
 import com.example.passedpath.feature.route.presentation.state.PlaceMarkerUiState
 import com.example.passedpath.feature.route.presentation.state.RouteUiAction
-import com.example.passedpath.ui.theme.Green50
-import com.google.android.gms.maps.model.JointType
+import com.google.android.gms.maps.model.Dash
+import com.google.android.gms.maps.model.Gap
 import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.RoundCap
+import com.google.android.gms.maps.model.PatternItem
 import com.google.maps.android.compose.MarkerComposable
 import com.google.maps.android.compose.Polyline
 
-private const val RouteStrokeWidth = 14f
-private const val RouteOutlineWidth = 20f
+private val DashedRoutePattern: List<PatternItem> = listOf(
+    Dash(24f),
+    Gap(18f)
+)
 
 @Composable
 fun RouteMapContent(
@@ -46,24 +48,12 @@ fun RouteMapContent(
     onPlaceMarkerClick: (Long) -> Unit = {}
 ) {
     val selectedRoute = routeModeUiState.route
-    if (selectedRoute.polylinePoints.size >= 2) {
-        val routePoints = selectedRoute.polylinePoints.map(MainCoordinateUiState::toLatLng)
-
+    selectedRoute.routeSegments.forEach { segment ->
         Polyline(
-            points = routePoints,
-            color = Green50,
-            width = RouteOutlineWidth,
-            startCap = RoundCap(),
-            endCap = RoundCap(),
-            jointType = JointType.ROUND
-        )
-        Polyline(
-            points = routePoints,
+            points = listOf(segment.start.toLatLng(), segment.end.toLatLng()),
             color = routeAccentColor,
-            width = RouteStrokeWidth,
-            startCap = RoundCap(),
-            endCap = RoundCap(),
-            jointType = JointType.ROUND
+            width = 14f,
+            pattern = if (segment.isDashed) DashedRoutePattern else null
         )
     }
 

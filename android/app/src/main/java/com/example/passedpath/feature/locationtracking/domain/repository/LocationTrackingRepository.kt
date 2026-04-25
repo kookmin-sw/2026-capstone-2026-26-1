@@ -7,8 +7,7 @@ import kotlinx.coroutines.flow.Flow
 enum class SaveRawLocationResult {
     SAVED,
     DROPPED_ACCURACY,
-    DROPPED_DISTANCE,
-    DROPPED_OUT_OF_ORDER
+    DROPPED_DISTANCE
 }
 
 interface LocationTrackingRepository {

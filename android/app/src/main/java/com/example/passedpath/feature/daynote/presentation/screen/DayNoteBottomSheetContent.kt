@@ -22,7 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.example.passedpath.feature.daynote.presentation.state.DayNoteUiState
-import com.example.passedpath.ui.component.input.BaseInputField
+import com.example.passedpath.ui.component.BaseInputField
 import com.example.passedpath.ui.theme.Gray100
 import com.example.passedpath.ui.theme.Gray400
 import com.example.passedpath.ui.theme.Gray500

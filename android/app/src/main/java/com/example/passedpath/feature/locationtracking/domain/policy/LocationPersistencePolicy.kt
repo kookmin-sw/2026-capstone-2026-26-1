@@ -8,8 +8,8 @@ import kotlin.math.sin
 import kotlin.math.sqrt
 
 object LocationPersistencePolicy {
-    const val MIN_SAVE_DISTANCE_METERS = 35.0
-    const val MAX_ACCEPTABLE_ACCURACY_METERS = 35f
+    const val MIN_SAVE_DISTANCE_METERS = 20.0
+    const val MAX_ACCEPTABLE_ACCURACY_METERS = 50f
     private const val EarthRadiusMeters = 6_371_000.0
 
     fun shouldPersistLocation(
@@ -28,12 +28,7 @@ object LocationPersistencePolicy {
         }
 
         val movedDistanceMeters = distanceBetweenMeters(latestSavedLocation, candidateLocation)
-        return movedDistanceMeters >= requiredSaveDistanceMeters(candidateLocation)
-    }
-
-    fun requiredSaveDistanceMeters(candidateLocation: TrackedLocation): Double {
-        val accuracyBasedDistance = (candidateLocation.accuracyMeters ?: 0f) * 1.5
-        return maxOf(MIN_SAVE_DISTANCE_METERS, accuracyBasedDistance.toDouble())
+        return movedDistanceMeters >= MIN_SAVE_DISTANCE_METERS
     }
 
     private fun distanceBetweenMeters(

@@ -1,4 +1,4 @@
-package com.example.passedpath.ui.component.button
+package com.example.passedpath.ui.component
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues

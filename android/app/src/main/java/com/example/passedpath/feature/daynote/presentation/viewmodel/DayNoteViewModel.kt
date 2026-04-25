@@ -7,7 +7,6 @@ import com.example.passedpath.app.AppContainer
 import com.example.passedpath.feature.daynote.domain.usecase.PatchDayRouteMemoUseCase
 import com.example.passedpath.feature.daynote.domain.usecase.PatchDayRouteTitleUseCase
 import com.example.passedpath.feature.daynote.presentation.state.DayNoteUiState
-import com.example.passedpath.ui.state.ApiFailureMessage
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -150,7 +149,7 @@ class DayNoteViewModel(
                     titleSaved = titleSaved,
                     memoSaved = memoSaved
                 )
-            } catch (throwable: Throwable) {
+            } catch (_: Throwable) {
                 _uiState.update {
                     it.copy(
                         originalTitle = if (titleSaved) savedTitle else it.originalTitle,
@@ -158,7 +157,7 @@ class DayNoteViewModel(
                         title = if (titleSaved) savedTitle else it.title,
                         memo = if (memoSaved) savedMemo else it.memo,
                         isSubmitting = false,
-                        errorMessage = ApiFailureMessage.fromThrowable(throwable),
+                        errorMessage = SAVE_FAILURE_MESSAGE,
                         successMessage = null,
                         feedbackEventId = it.feedbackEventId + 1
                     )
@@ -210,6 +209,8 @@ class DayNoteViewModel(
     companion object {
         const val MAX_TITLE_LENGTH: Int = 60
         const val MAX_MEMO_LENGTH: Int = 1000
+        private const val SAVE_FAILURE_MESSAGE: String =
+            "네트워크 문제로 저장하지 못했습니다. 잠시 후 다시 시도해 주세요."
     }
 }
 

@@ -4,7 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.example.passedpath.feature.route.presentation.action.RouteActionUiState
 import com.example.passedpath.feature.route.presentation.state.RouteUiAction
-import com.example.passedpath.ui.component.floating.FloatingButtonRow
+import com.example.passedpath.ui.component.FloatingButtonRow
 
 @Composable
 internal fun RouteActionRow(

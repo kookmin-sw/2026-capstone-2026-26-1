@@ -72,7 +72,8 @@ fun List<GpsPointEntity>.toDayRouteEntity(
         totalDistanceMeters = trackedPoints.calculateTotalDistanceMeters(),
         pathPointCount = trackedPoints.size,
         lastRecordedAtEpochMillis = lastOrNull()?.recordedAtEpochMillis,
-        lastSyncedAtEpochMillis = previousRoute?.lastSyncedAtEpochMillis
+        lastSyncedAtEpochMillis = previousRoute?.lastSyncedAtEpochMillis,
+        encodedPath = previousRoute?.encodedPath
     )
 }
 
@@ -95,7 +96,8 @@ fun DayRouteEntity?.toUpdatedDayRouteEntity(
         totalDistanceMeters = (this?.totalDistanceMeters ?: 0.0) + distanceDeltaMeters,
         pathPointCount = (this?.pathPointCount ?: 0) + 1,
         lastRecordedAtEpochMillis = newPoint.recordedAtEpochMillis,
-        lastSyncedAtEpochMillis = this?.lastSyncedAtEpochMillis
+        lastSyncedAtEpochMillis = this?.lastSyncedAtEpochMillis,
+        encodedPath = this?.encodedPath
     )
 }
 

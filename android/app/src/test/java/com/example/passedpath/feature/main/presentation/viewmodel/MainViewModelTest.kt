@@ -25,8 +25,6 @@ import com.example.passedpath.feature.route.presentation.coordinator.RouteStateC
 import com.example.passedpath.feature.route.presentation.state.MainRouteModeUiState
 import com.example.passedpath.feature.route.presentation.state.RouteUiAction
 import com.example.passedpath.testutil.MainDispatcherRule
-import com.example.passedpath.ui.state.ApiFailureMessage
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -524,77 +522,6 @@ class MainViewModelTest {
     }
 
     @Test
-    fun `toggleSelectedRouteBookmark failure keeps bookmark state and exposes feedback`() = runTest {
-        val bookmarkRepository = FakeDayRouteBookmarkRepository(
-            throwOnToggle = IllegalStateException("boom")
-        )
-        val repository = FakeDayRouteRepository(
-            resultByDate = mutableMapOf(
-                "2026-03-29" to RemoteDayRouteResult.Success(
-                    routeDetail = DayRouteDetail(
-                        dateKey = "2026-03-29",
-                        totalDistanceKm = 1.2,
-                        isBookmarked = false
-                    )
-                )
-            )
-        )
-        val viewModel = createViewModel(
-            repository = repository,
-            initialDateKey = "2026-03-29",
-            todayDateKey = "2026-03-31",
-            bookmarkRepository = bookmarkRepository
-        )
-        advanceUntilIdle()
-
-        viewModel.toggleSelectedRouteBookmark()
-        advanceUntilIdle()
-
-        val state = viewModel.uiState.value
-        assertFalse(state.selectedRoute.isBookmarked)
-        assertNull(state.bookmarkToggleUiState.updatingDateKey)
-        assertEquals(ApiFailureMessage.NETWORK_REQUEST_FAILED, state.bookmarkToggleUiState.feedbackMessage)
-        assertEquals(1L, state.bookmarkToggleUiState.feedbackEventId)
-    }
-
-    @Test
-    fun `toggleSelectedRouteBookmark ignores duplicate clicks while request is in flight`() = runTest {
-        val toggleGate = CompletableDeferred<Unit>()
-        val bookmarkRepository = FakeDayRouteBookmarkRepository(
-            resultByDate = mutableMapOf("2026-03-29" to true),
-            toggleGate = toggleGate
-        )
-        val repository = FakeDayRouteRepository(
-            resultByDate = mutableMapOf(
-                "2026-03-29" to RemoteDayRouteResult.Success(
-                    routeDetail = DayRouteDetail(
-                        dateKey = "2026-03-29",
-                        totalDistanceKm = 1.2,
-                        isBookmarked = false
-                    )
-                )
-            )
-        )
-        val viewModel = createViewModel(
-            repository = repository,
-            initialDateKey = "2026-03-29",
-            todayDateKey = "2026-03-31",
-            bookmarkRepository = bookmarkRepository
-        )
-        advanceUntilIdle()
-
-        viewModel.toggleSelectedRouteBookmark()
-        viewModel.toggleSelectedRouteBookmark()
-        assertTrue(viewModel.uiState.value.bookmarkToggleUiState.isUpdating("2026-03-29"))
-
-        toggleGate.complete(Unit)
-        advanceUntilIdle()
-
-        assertEquals(listOf("2026-03-29"), bookmarkRepository.toggledDates)
-        assertTrue(viewModel.uiState.value.selectedRoute.isBookmarked)
-    }
-
-    @Test
     fun `switching from past error date to today clears stale error and starts local observation`() = runTest {
         val localFlow = MutableStateFlow<DailyPath?>(
             DailyPath(
@@ -667,7 +594,7 @@ class MainViewModelTest {
                 VisitedPlace(
                     placeId = 4L,
                     placeName = "Fetched B",
-                    source = PlaceSourceType.MANUAL,
+                    type = PlaceSourceType.MANUAL,
                     roadAddress = "Address B",
                     latitude = 37.4,
                     longitude = 127.4,
@@ -676,7 +603,7 @@ class MainViewModelTest {
                 VisitedPlace(
                     placeId = 3L,
                     placeName = "Fetched A",
-                    source = PlaceSourceType.AUTO,
+                    type = PlaceSourceType.AUTO,
                     roadAddress = "Address A",
                     latitude = 37.3,
                     longitude = 127.3,
@@ -737,7 +664,7 @@ class MainViewModelTest {
                 VisitedPlace(
                     placeId = 9L,
                     placeName = "Fetched Place",
-                    source = PlaceSourceType.MANUAL,
+                    type = PlaceSourceType.MANUAL,
                     roadAddress = "Fetched Road",
                     latitude = 37.9,
                     longitude = 127.9,
@@ -847,16 +774,12 @@ class MainViewModelTest {
     }
 
     private class FakeDayRouteBookmarkRepository(
-        private val resultByDate: MutableMap<String, Boolean> = mutableMapOf(),
-        private val throwOnToggle: Throwable? = null,
-        private val toggleGate: CompletableDeferred<Unit>? = null
+        private val resultByDate: MutableMap<String, Boolean> = mutableMapOf()
     ) : DayRouteBookmarkRepository {
         val toggledDates = mutableListOf<String>()
 
         override suspend fun toggleBookmark(dateKey: String): DayRouteBookmark {
-            toggleGate?.await()
             toggledDates += dateKey
-            throwOnToggle?.let { throw it }
             val nextValue = resultByDate[dateKey] ?: true
             resultByDate[dateKey] = nextValue
             return DayRouteBookmark(isBookmarked = nextValue)

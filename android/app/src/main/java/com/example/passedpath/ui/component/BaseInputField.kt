@@ -1,4 +1,4 @@
-package com.example.passedpath.ui.component.input
+package com.example.passedpath.ui.component
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardOptions

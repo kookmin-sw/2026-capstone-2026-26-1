@@ -1,9 +1,9 @@
 package com.example.passedpath.ui.component.menu
 
-import androidx.annotation.DrawableRes
+import androidx.compose.ui.graphics.vector.ImageVector
 
 data class MenuActionItem(
     val text: String,
-    @DrawableRes val iconResId: Int,
+    val icon: ImageVector,
     val onClick: () -> Unit,
 )

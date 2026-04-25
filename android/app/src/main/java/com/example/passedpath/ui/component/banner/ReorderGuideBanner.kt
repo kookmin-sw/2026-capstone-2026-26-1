@@ -1,4 +1,4 @@
-package com.example.passedpath.feature.place.presentation.component
+﻿package com.example.passedpath.ui.component.banner
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -25,7 +25,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.passedpath.R
-import com.example.passedpath.ui.component.banner.BaseBottomBanner
 
 @Composable
 fun ReorderGuideBanner(
@@ -40,7 +39,7 @@ fun ReorderGuideBanner(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
-                painter = painterResource(id = R.drawable.ic_info_circle),
+                painter = painterResource(id = R.drawable.ic_leading),
                 contentDescription = null,
                 tint = Color.Unspecified,
                 modifier = Modifier.size(16.dp)

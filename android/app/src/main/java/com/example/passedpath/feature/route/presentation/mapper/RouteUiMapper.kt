@@ -6,6 +6,7 @@ import com.example.passedpath.feature.locationtracking.domain.model.DayRoutePlac
 import com.example.passedpath.feature.locationtracking.domain.model.RoutePoint
 import com.example.passedpath.feature.locationtracking.domain.model.TrackedLocation
 import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiState
+import com.example.passedpath.feature.route.presentation.policy.shouldRenderGapAsDashed
 import com.example.passedpath.feature.route.presentation.state.MainRouteModeUiState
 import com.example.passedpath.feature.route.presentation.state.PlaceMarkerUiState
 import com.example.passedpath.feature.route.presentation.state.RoutePolylineSegmentUiState
@@ -147,7 +148,8 @@ private fun List<MainCoordinateUiState>.toRoutePolylineSegments(): List<RoutePol
     return zipWithNext { start, end ->
         RoutePolylineSegmentUiState(
             start = start,
-            end = end
+            end = end,
+            isDashed = shouldRenderGapAsDashed(start = start, end = end)
         )
     }
 }

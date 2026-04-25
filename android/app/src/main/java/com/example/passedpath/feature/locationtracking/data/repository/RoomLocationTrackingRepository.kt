@@ -29,18 +29,6 @@ class RoomLocationTrackingRepository(
         val latestSavedPoint = gpsPointDao.getLatestPointByDate(dateKey)?.toTrackedLocation()
 
         if (
-            latestSavedPoint != null &&
-            location.recordedAtEpochMillis <= latestSavedPoint.recordedAtEpochMillis
-        ) {
-            diagnosticsLogger.log(
-                category = TrackingDiagnosticsLogger.CATEGORY_SAVE,
-                message = "drop_out_of_order candidateAt=${location.recordedAtEpochMillis} latestAt=${latestSavedPoint.recordedAtEpochMillis}",
-                dateKey = dateKey
-            )
-            return SaveRawLocationResult.DROPPED_OUT_OF_ORDER
-        }
-
-        if (
             location.accuracyMeters != null &&
             location.accuracyMeters > LocationPersistencePolicy.MAX_ACCEPTABLE_ACCURACY_METERS
         ) {
@@ -54,10 +42,9 @@ class RoomLocationTrackingRepository(
 
         if (!LocationPersistencePolicy.shouldPersistLocation(latestSavedPoint, location)) {
             val movedDistanceMeters = latestSavedPoint?.let { distanceBetweenMeters(it, location) }
-            val requiredDistanceMeters = LocationPersistencePolicy.requiredSaveDistanceMeters(location)
             diagnosticsLogger.log(
                 category = TrackingDiagnosticsLogger.CATEGORY_SAVE,
-                message = "drop_distance moved=$movedDistanceMeters required=$requiredDistanceMeters",
+                message = "drop_distance moved=$movedDistanceMeters min=${LocationPersistencePolicy.MIN_SAVE_DISTANCE_METERS}",
                 dateKey = dateKey
             )
             return SaveRawLocationResult.DROPPED_DISTANCE

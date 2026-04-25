@@ -1,6 +1,5 @@
-package com.example.passedpath.ui.component.button
+package com.example.passedpath.ui.component
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -27,7 +26,6 @@ fun BaseButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     variant: BaseButtonVariant = BaseButtonVariant.PRIMARY,
-    border: BorderStroke? = null,
 ) {
     when (variant) {
         BaseButtonVariant.PRIMARY, BaseButtonVariant.SECONDARY -> {
@@ -49,7 +47,6 @@ fun BaseButton(
                     .fillMaxWidth()
                     .height(56.dp),
                 shape = RoundedCornerShape(20.dp),
-                border = border,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = backgroundColor,
                     contentColor = contentColor,

@@ -20,6 +20,7 @@ data class DayRouteDetail(
     val title: String = "",
     val memo: String = "",
     val isBookmarked: Boolean = false,
+    val encodedPath: String = "",
     val pathPointCount: Int = 0,
     val polylinePoints: List<RoutePoint> = emptyList(),
     val places: List<DayRoutePlace> = emptyList()

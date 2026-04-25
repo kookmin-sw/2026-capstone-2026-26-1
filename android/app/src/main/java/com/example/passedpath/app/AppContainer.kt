@@ -21,10 +21,8 @@ import com.example.passedpath.feature.daynote.domain.repository.DayRouteTitleRep
 import com.example.passedpath.feature.daynote.domain.usecase.PatchDayRouteMemoUseCase
 import com.example.passedpath.feature.daynote.domain.usecase.PatchDayRouteTitleUseCase
 import com.example.passedpath.feature.locationtracking.data.local.PassedPathDatabase
-import com.example.passedpath.feature.locationtracking.data.manager.AndroidNetworkConnectivityObserver
 import com.example.passedpath.feature.locationtracking.data.manager.LocationTrackingServiceStateReader
 import com.example.passedpath.feature.locationtracking.data.manager.LocationTrackingServiceStateWriter
-import com.example.passedpath.feature.locationtracking.data.manager.NetworkConnectivityObserver
 import com.example.passedpath.feature.locationtracking.data.manager.PersistentLocationTrackingServiceStateHolder
 import com.example.passedpath.feature.locationtracking.data.manager.TrackingLocationProvider
 import com.example.passedpath.feature.locationtracking.data.remote.api.DayRouteApi
@@ -50,17 +48,12 @@ import com.example.passedpath.feature.permission.data.manager.AndroidLocationSer
 import com.example.passedpath.feature.permission.data.manager.LocationPermissionStatusReader
 import com.example.passedpath.feature.permission.data.manager.LocationServiceStatusReader
 import com.example.passedpath.feature.place.data.remote.api.PlaceApi
-import com.example.passedpath.feature.place.data.remote.api.PlaceSearchApi
 import com.example.passedpath.feature.place.data.repository.PlaceRepositoryImpl
-import com.example.passedpath.feature.place.data.repository.PlaceSearchRepositoryImpl
 import com.example.passedpath.feature.place.domain.repository.PlaceRepository
-import com.example.passedpath.feature.place.domain.repository.PlaceSearchRepository
 import com.example.passedpath.feature.place.domain.usecase.AddPlaceUseCase
-import com.example.passedpath.feature.place.domain.usecase.CreatePlaceFromSearchResultUseCase
 import com.example.passedpath.feature.place.domain.usecase.DeletePlaceUseCase
 import com.example.passedpath.feature.place.domain.usecase.GetVisitedPlacesUseCase
 import com.example.passedpath.feature.place.domain.usecase.ReorderPlacesUseCase
-import com.example.passedpath.feature.place.domain.usecase.SearchPlacesUseCase
 import com.example.passedpath.feature.place.domain.usecase.UpdateBookmarkPlaceUseCase
 import com.example.passedpath.feature.place.domain.usecase.UpdatePlaceUseCase
 import com.example.passedpath.interceptor.AccessTokenAuthenticator
@@ -91,10 +84,6 @@ class AppContainer(
         TrackingLocationProvider(appContext)
     }
 
-    val networkConnectivityObserver: NetworkConnectivityObserver by lazy {
-        AndroidNetworkConnectivityObserver(appContext)
-    }
-
     private val locationTrackingServiceStateHolder by lazy {
         PersistentLocationTrackingServiceStateHolder(appContext)
     }
@@ -114,7 +103,6 @@ class AppContainer(
             "passed-path.db"
         )
             .addMigrations(PassedPathDatabase.MIGRATION_1_2)
-            .addMigrations(PassedPathDatabase.MIGRATION_2_3)
             .build()
     }
 
@@ -184,10 +172,6 @@ class AppContainer(
 
     private val placeApi by lazy {
         retrofit.create(PlaceApi::class.java)
-    }
-
-    private val placeSearchApi by lazy {
-        retrofit.create(PlaceSearchApi::class.java)
     }
 
     val trackingDebugLogRepository: TrackingDebugLogRepository by lazy {
@@ -272,10 +256,6 @@ class AppContainer(
         PlaceRepositoryImpl(placeApi)
     }
 
-    val placeSearchRepository: PlaceSearchRepository by lazy {
-        PlaceSearchRepositoryImpl(placeSearchApi)
-    }
-
     val uploadGpsPointsBatchUseCase: UploadGpsPointsBatchUseCase by lazy {
         UploadGpsPointsBatchUseCase(
             dayRouteApi = dayRouteApi,
@@ -308,16 +288,8 @@ class AppContainer(
         AddPlaceUseCase(placeRepository = placeRepository)
     }
 
-    val createPlaceFromSearchResultUseCase: CreatePlaceFromSearchResultUseCase by lazy {
-        CreatePlaceFromSearchResultUseCase(addPlaceUseCase = addPlaceUseCase)
-    }
-
     val getVisitedPlacesUseCase: GetVisitedPlacesUseCase by lazy {
         GetVisitedPlacesUseCase(placeRepository = placeRepository)
-    }
-
-    val searchPlacesUseCase: SearchPlacesUseCase by lazy {
-        SearchPlacesUseCase(repository = placeSearchRepository)
     }
 
     val deletePlaceUseCase: DeletePlaceUseCase by lazy {

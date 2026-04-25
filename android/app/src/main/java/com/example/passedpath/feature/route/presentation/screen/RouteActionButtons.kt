@@ -16,7 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.passedpath.R
-import com.example.passedpath.ui.component.button.BasePillButton
+import com.example.passedpath.ui.component.BasePillButton
 import com.example.passedpath.ui.theme.Gray400
 import com.example.passedpath.ui.theme.Gray500
 import com.example.passedpath.ui.theme.Gray700

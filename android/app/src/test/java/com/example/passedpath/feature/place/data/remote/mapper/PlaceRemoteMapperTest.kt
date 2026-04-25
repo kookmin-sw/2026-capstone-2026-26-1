@@ -2,7 +2,6 @@ package com.example.passedpath.feature.place.data.remote.mapper
 
 import com.example.passedpath.feature.place.data.remote.dto.PlaceListItemDto
 import com.example.passedpath.feature.place.data.remote.dto.PlaceListResponseDto
-import com.example.passedpath.feature.place.domain.model.BookmarkPlaceType
 import com.example.passedpath.feature.place.domain.model.PlaceSourceType
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -11,33 +10,27 @@ import org.junit.Test
 class PlaceRemoteMapperTest {
 
     @Test
-    fun `toVisitedPlaceList sorts items by orderIndex and maps source`() {
+    fun `toVisitedPlaceList sorts items by orderIndex and maps type`() {
         val response = PlaceListResponseDto(
             placeCount = 2,
             places = listOf(
                 PlaceListItemDto(
                     placeId = 2L,
                     placeName = "Cafe",
-                    source = "MANUAL",
-                    type = null,
+                    type = "MANUAL",
                     roadAddress = "Seoul Forest 2-gil",
                     latitude = 37.5,
                     longitude = 127.5,
-                    orderIndex = 2,
-                    startTime = null,
-                    endTime = null
+                    orderIndex = 2
                 ),
                 PlaceListItemDto(
                     placeId = 1L,
                     placeName = "Seoul Forest",
-                    source = "AUTO",
-                    type = "HOME",
+                    type = "AUTO",
                     roadAddress = "Ttukseom-ro",
                     latitude = 37.4,
                     longitude = 127.4,
-                    orderIndex = 1,
-                    startTime = "2026-04-23T18:26:07.620Z",
-                    endTime = "2026-04-23T18:26:07.620Z"
+                    orderIndex = 1
                 )
             )
         )
@@ -47,8 +40,7 @@ class PlaceRemoteMapperTest {
         assertEquals(2, result.placeCount)
         assertEquals(2, result.places.size)
         assertEquals(1L, result.places.first().placeId)
-        assertEquals(PlaceSourceType.AUTO, result.places.first().source)
-        assertEquals(BookmarkPlaceType.HOME, result.places.first().bookmarkType)
+        assertEquals(PlaceSourceType.AUTO, result.places.first().type)
         assertEquals(2L, result.places.last().placeId)
     }
 
@@ -60,26 +52,20 @@ class PlaceRemoteMapperTest {
                 PlaceListItemDto(
                     placeId = 1L,
                     placeName = "Valid Place",
-                    source = "AUTO",
-                    type = null,
+                    type = "AUTO",
                     roadAddress = "Road",
                     latitude = 37.4,
                     longitude = 127.4,
-                    orderIndex = 1,
-                    startTime = null,
-                    endTime = null
+                    orderIndex = 1
                 ),
                 PlaceListItemDto(
                     placeId = null,
                     placeName = "Broken Place",
-                    source = "MANUAL",
-                    type = null,
+                    type = "MANUAL",
                     roadAddress = "Road",
                     latitude = 37.5,
                     longitude = 127.5,
-                    orderIndex = 2,
-                    startTime = null,
-                    endTime = null
+                    orderIndex = 2
                 )
             )
         )

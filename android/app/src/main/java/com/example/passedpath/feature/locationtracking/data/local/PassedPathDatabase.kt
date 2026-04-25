@@ -13,7 +13,7 @@ import com.example.passedpath.feature.locationtracking.data.local.entity.Trackin
 
 @Database(
     entities = [GpsPointEntity::class, DayRouteEntity::class, TrackingDebugLogEntity::class],
-    version = 3,
+    version = 2,
     exportSchema = false
 )
 abstract class PassedPathDatabase : RoomDatabase() {
@@ -47,42 +47,6 @@ abstract class PassedPathDatabase : RoomDatabase() {
                     ON tracking_debug_logs(dateKey, recordedAtEpochMillis)
                     """.trimIndent()
                 )
-            }
-        }
-
-        val MIGRATION_2_3: Migration = object : Migration(2, 3) {
-            override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL(
-                    """
-                    CREATE TABLE IF NOT EXISTS day_routes_new (
-                        dateKey TEXT NOT NULL PRIMARY KEY,
-                        totalDistanceMeters REAL NOT NULL,
-                        pathPointCount INTEGER NOT NULL,
-                        lastRecordedAtEpochMillis INTEGER,
-                        lastSyncedAtEpochMillis INTEGER
-                    )
-                    """.trimIndent()
-                )
-                db.execSQL(
-                    """
-                    INSERT INTO day_routes_new (
-                        dateKey,
-                        totalDistanceMeters,
-                        pathPointCount,
-                        lastRecordedAtEpochMillis,
-                        lastSyncedAtEpochMillis
-                    )
-                    SELECT
-                        dateKey,
-                        totalDistanceMeters,
-                        pathPointCount,
-                        lastRecordedAtEpochMillis,
-                        lastSyncedAtEpochMillis
-                    FROM day_routes
-                    """.trimIndent()
-                )
-                db.execSQL("DROP TABLE day_routes")
-                db.execSQL("ALTER TABLE day_routes_new RENAME TO day_routes")
             }
         }
     }

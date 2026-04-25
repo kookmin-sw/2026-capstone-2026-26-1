@@ -8,10 +8,12 @@ import com.example.passedpath.feature.place.domain.model.UpdatedPlace
 import com.example.passedpath.feature.place.domain.model.VisitedPlace
 import com.example.passedpath.feature.place.domain.model.VisitedPlaceList
 import com.example.passedpath.feature.place.domain.repository.PlaceRepository
+import com.example.passedpath.feature.place.domain.usecase.AddPlaceUseCase
+import com.example.passedpath.feature.place.domain.usecase.DeletePlaceUseCase
 import com.example.passedpath.feature.place.domain.usecase.GetVisitedPlacesUseCase
 import com.example.passedpath.feature.place.domain.usecase.ReorderPlacesUseCase
+import com.example.passedpath.feature.place.domain.usecase.UpdatePlaceUseCase
 import com.example.passedpath.testutil.MainDispatcherRule
-import com.example.passedpath.ui.state.ApiFailureMessage
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -35,16 +37,22 @@ class PlaceViewModelTest {
                 "2026-04-03" to VisitedPlaceList(
                     placeCount = 2,
                     places = listOf(
-                        visitedPlace(
+                        VisitedPlace(
                             placeId = 2L,
                             placeName = "Cafe",
-                            source = PlaceSourceType.MANUAL,
+                            type = PlaceSourceType.MANUAL,
+                            roadAddress = "Seoul Forest 2-gil",
+                            latitude = 37.5,
+                            longitude = 127.5,
                             orderIndex = 2
                         ),
-                        visitedPlace(
+                        VisitedPlace(
                             placeId = 1L,
                             placeName = "Seoul Forest",
-                            source = PlaceSourceType.AUTO,
+                            type = PlaceSourceType.AUTO,
+                            roadAddress = "Ttukseom-ro",
+                            latitude = 37.4,
+                            longitude = 127.4,
                             orderIndex = 1
                         )
                     )
@@ -77,8 +85,8 @@ class PlaceViewModelTest {
 
         val state = viewModel.uiState.value
         assertFalse(state.placeList.isLoading)
-        assertEquals(ApiFailureMessage.NETWORK_REQUEST_FAILED, state.placeList.errorMessage)
-        assertEquals(ApiFailureMessage.NETWORK_REQUEST_FAILED, state.errorMessage)
+        assertEquals("boom", state.placeList.errorMessage)
+        assertEquals("boom", state.errorMessage)
     }
 
     @Test
@@ -87,7 +95,17 @@ class PlaceViewModelTest {
             visitedPlaceListByDate = mutableMapOf(
                 "2026-04-03" to VisitedPlaceList(
                     placeCount = 1,
-                    places = listOf(visitedPlace(placeId = 1L, placeName = "Seoul Forest"))
+                    places = listOf(
+                        VisitedPlace(
+                            placeId = 1L,
+                            placeName = "Seoul Forest",
+                            type = PlaceSourceType.AUTO,
+                            roadAddress = "Ttukseom-ro",
+                            latitude = 37.4,
+                            longitude = 127.4,
+                            orderIndex = 1
+                        )
+                    )
                 )
             )
         )
@@ -105,7 +123,7 @@ class PlaceViewModelTest {
         assertEquals(1, state.placeList.placeCount)
         assertEquals("Seoul Forest", state.placeList.places.first().placeName)
         assertTrue(state.placeList.isStale)
-        assertEquals(ApiFailureMessage.NETWORK_REQUEST_FAILED, state.placeList.errorMessage)
+        assertEquals("boom", state.placeList.errorMessage)
     }
 
     @Test
@@ -114,7 +132,17 @@ class PlaceViewModelTest {
             visitedPlaceListByDate = mutableMapOf(
                 "2026-04-03" to VisitedPlaceList(
                     placeCount = 1,
-                    places = listOf(visitedPlace(placeId = 1L, placeName = "Seoul Forest"))
+                    places = listOf(
+                        VisitedPlace(
+                            placeId = 1L,
+                            placeName = "Seoul Forest",
+                            type = PlaceSourceType.AUTO,
+                            roadAddress = "Ttukseom-ro",
+                            latitude = 37.4,
+                            longitude = 127.4,
+                            orderIndex = 1
+                        )
+                    )
                 )
             )
         )
@@ -132,11 +160,22 @@ class PlaceViewModelTest {
         repository.visitedPlaceListByDate["2026-04-03"] = VisitedPlaceList(
             placeCount = 2,
             places = listOf(
-                visitedPlace(placeId = 1L, placeName = "Seoul Forest"),
-                visitedPlace(
+                VisitedPlace(
+                    placeId = 1L,
+                    placeName = "Seoul Forest",
+                    type = PlaceSourceType.AUTO,
+                    roadAddress = "Ttukseom-ro",
+                    latitude = 37.4,
+                    longitude = 127.4,
+                    orderIndex = 1
+                ),
+                VisitedPlace(
                     placeId = 2L,
                     placeName = "Cafe",
-                    source = PlaceSourceType.MANUAL,
+                    type = PlaceSourceType.MANUAL,
+                    roadAddress = "Seoul Forest 2-gil",
+                    latitude = 37.5,
+                    longitude = 127.5,
                     orderIndex = 2
                 )
             )
@@ -162,10 +201,7 @@ class PlaceViewModelTest {
 
         val state = viewModel.uiState.value
         assertFalse(state.placeList.isLoading)
-        assertEquals(
-            "\ub0a0\uc9dc\ub294 yyyy-MM-dd \ud615\uc2dd\uc774\uc5b4\uc57c \ud569\ub2c8\ub2e4.",
-            state.placeList.errorMessage
-        )
+        assertEquals("날짜는 yyyy-MM-dd 형식이어야 합니다.", state.placeList.errorMessage)
         assertTrue(repository.requestedPlaceListDates.isEmpty())
     }
 
@@ -185,6 +221,58 @@ class PlaceViewModelTest {
     }
 
     @Test
+    fun `savePlace create refreshes place list after success`() = runTest {
+        val repository = FakePlaceRepository()
+        val viewModel = createViewModel(repository = repository, initialDateKey = "2026-04-03")
+
+        viewModel.updatePlaceName("Seoul Forest")
+        viewModel.updateRoadAddress("Ttukseom-ro")
+        viewModel.updateLatitude("37.4")
+        viewModel.updateLongitude("127.4")
+
+        viewModel.savePlace()
+        advanceUntilIdle()
+
+        assertEquals(listOf("2026-04-03"), repository.requestedPlaceListDates)
+        assertEquals(1, repository.addRequests.size)
+        assertEquals("장소가 등록되었습니다. placeId=1, 순서 1번", viewModel.uiState.value.successMessage)
+    }
+
+    @Test
+    fun `savePlace update refreshes place list after success`() = runTest {
+        val repository = FakePlaceRepository()
+        val viewModel = createViewModel(repository = repository, initialDateKey = "2026-04-03")
+
+        viewModel.updatePlaceId("7")
+        viewModel.updatePlaceName("Updated Place")
+        viewModel.updateRoadAddress("Updated Address")
+        viewModel.updateLatitude("37.5")
+        viewModel.updateLongitude("127.5")
+
+        viewModel.savePlace()
+        advanceUntilIdle()
+
+        assertEquals(listOf("2026-04-03"), repository.requestedPlaceListDates)
+        assertEquals(listOf(7L), repository.updatedPlaceIds)
+        assertEquals("장소가 수정되었습니다. placeId=7", viewModel.uiState.value.successMessage)
+    }
+
+    @Test
+    fun `deletePlace refreshes place list after success`() = runTest {
+        val repository = FakePlaceRepository()
+        val viewModel = createViewModel(repository = repository, initialDateKey = "2026-04-03")
+
+        viewModel.updatePlaceId("9")
+
+        viewModel.deletePlace()
+        advanceUntilIdle()
+
+        assertEquals(listOf("2026-04-03"), repository.requestedPlaceListDates)
+        assertEquals(listOf(9L), repository.deletedPlaceIds)
+        assertEquals("장소가 삭제되었습니다. placeId=9", viewModel.uiState.value.successMessage)
+    }
+
+    @Test
     fun `reorderPlaces refreshes place list after success`() = runTest {
         val repository = FakePlaceRepository()
         val viewModel = createViewModel(repository = repository, initialDateKey = "2026-04-03")
@@ -197,7 +285,7 @@ class PlaceViewModelTest {
         assertEquals(listOf("2026-04-03"), repository.requestedPlaceListDates)
         assertEquals(listOf(listOf(3L, 1L, 2L)), repository.reorderRequests)
         assertEquals(
-            "\uc7a5\uc18c \uc21c\uc11c\uac00 \ubcc0\uacbd\ub418\uc5c8\uc2b5\ub2c8\ub2e4. ids=3,1,2",
+            "장소 순서가 변경되었습니다. ids=3,1,2",
             viewModel.uiState.value.successMessage
         )
     }
@@ -207,26 +295,12 @@ class PlaceViewModelTest {
         initialDateKey: String
     ): PlaceViewModel {
         return PlaceViewModel(
+            addPlaceUseCase = AddPlaceUseCase(repository),
+            updatePlaceUseCase = UpdatePlaceUseCase(repository),
+            deletePlaceUseCase = DeletePlaceUseCase(repository),
             reorderPlacesUseCase = ReorderPlacesUseCase(repository),
             getVisitedPlacesUseCase = GetVisitedPlacesUseCase(repository),
             initialDateKey = initialDateKey
-        )
-    }
-
-    private fun visitedPlace(
-        placeId: Long,
-        placeName: String,
-        source: PlaceSourceType = PlaceSourceType.AUTO,
-        orderIndex: Int = 1
-    ): VisitedPlace {
-        return VisitedPlace(
-            placeId = placeId,
-            placeName = placeName,
-            source = source,
-            roadAddress = "Ttukseom-ro",
-            latitude = 37.4,
-            longitude = 127.4,
-            orderIndex = orderIndex
         )
     }
 
@@ -235,7 +309,10 @@ class PlaceViewModelTest {
         var throwOnGetPlaces: Throwable? = null
     ) : PlaceRepository {
         val requestedPlaceListDates = mutableListOf<String>()
+        val addRequests = mutableListOf<PlaceRegistration>()
+        val updatedPlaceIds = mutableListOf<Long>()
         val reorderRequests = mutableListOf<List<Long>>()
+        val deletedPlaceIds = mutableListOf<Long>()
 
         override suspend fun getPlaces(dateKey: String): VisitedPlaceList {
             requestedPlaceListDates += dateKey
@@ -247,6 +324,7 @@ class PlaceViewModelTest {
         }
 
         override suspend fun addPlace(dateKey: String, place: PlaceRegistration): RegisteredPlace {
+            addRequests += place
             return RegisteredPlace(
                 placeId = 1L,
                 placeName = place.placeName,
@@ -262,6 +340,7 @@ class PlaceViewModelTest {
             placeId: Long,
             place: PlaceRegistration
         ): UpdatedPlace {
+            updatedPlaceIds += placeId
             return UpdatedPlace(
                 placeName = place.placeName,
                 roadAddress = place.roadAddress,
@@ -281,6 +360,8 @@ class PlaceViewModelTest {
             return bookmarkPlace
         }
 
-        override suspend fun deletePlace(dateKey: String, placeId: Long) = Unit
+        override suspend fun deletePlace(dateKey: String, placeId: Long) {
+            deletedPlaceIds += placeId
+        }
     }
 }
