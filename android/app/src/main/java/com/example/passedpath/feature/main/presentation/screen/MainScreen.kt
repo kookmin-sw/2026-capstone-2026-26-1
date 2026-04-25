@@ -66,6 +66,46 @@ fun MainScreen(
             onPlaceListRefreshRequested(uiState.selectedDateKey)
         }
     }
+    fun handleSheetValueChanged(bottomSheetValue: MainBottomSheetValue) {
+        dispatchInteraction(
+            reduceForSheetValueChange(
+                state = localUiState,
+                bottomSheetValue = bottomSheetValue
+            )
+        )
+    }
+
+    fun handleSheetCommandConsumed(consumedValue: MainBottomSheetValue) {
+        dispatchInteraction(
+            reduceForSheetCommandConsumed(
+                state = localUiState,
+                consumedValue = consumedValue
+            )
+        )
+    }
+
+    fun hideBottomSheet() {
+        dispatchInteraction(reduceForSheetHideRequest(localUiState))
+    }
+
+    fun handlePlaceMarkerClick(placeId: Long) {
+        dispatchInteraction(
+            reduceForPlaceMarkerClick(
+                state = localUiState,
+                placeId = placeId
+            )
+        )
+    }
+
+    fun handleBottomSheetTabSelected(tab: MainBottomSheetTab) {
+        dispatchInteraction(
+            reduceForBottomSheetTabSelection(
+                state = localUiState,
+                selectedTab = tab
+            )
+        )
+    }
+
     val dayNoteToastMessage = dayNoteUiState.errorMessage ?: dayNoteUiState.successMessage
     val bookmarkToastMessage = uiState.bookmarkToggleUiState.feedbackMessage
     val shouldShowPastEmptyToast =
@@ -107,7 +147,7 @@ fun MainScreen(
     LaunchedEffect(mainTabReselectionEvent) {
         if (mainTabReselectionEvent == 0) return@LaunchedEffect
         focusManager.clearFocus(force = true)
-        dispatchInteraction(reduceForSheetHideRequest(localUiState))
+        hideBottomSheet()
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -116,18 +156,8 @@ fun MainScreen(
                 .fillMaxSize()
                 .statusBarsPadding(),
             requestedSheetValue = localUiState.requestedSheetValue,
-            onSheetValueChanged = { bottomSheetValue ->
-                dispatchInteraction(reduceForSheetValueChange(
-                    state = localUiState,
-                    bottomSheetValue = bottomSheetValue
-                ))
-            },
-            onSheetCommandConsumed = { consumedValue ->
-                dispatchInteraction(reduceForSheetCommandConsumed(
-                    state = localUiState,
-                    consumedValue = consumedValue
-                ))
-            },
+            onSheetValueChanged = ::handleSheetValueChanged,
+            onSheetCommandConsumed = ::handleSheetCommandConsumed,
             content = { floatingBottomPadding ->
                 MainMapSection(
                     uiState = uiState,
@@ -139,14 +169,9 @@ fun MainScreen(
                     onMoreClick = {},
                     onMapClick = {
                         focusManager.clearFocus(force = true)
-                        dispatchInteraction(reduceForSheetHideRequest(localUiState))
+                        hideBottomSheet()
                     },
-                    onPlaceMarkerClick = { placeId ->
-                        dispatchInteraction(reduceForPlaceMarkerClick(
-                            state = localUiState,
-                            placeId = placeId
-                        ))
-                    },
+                    onPlaceMarkerClick = ::handlePlaceMarkerClick,
                     onPermissionActionClick = onPermissionActionClick,
                     debugActions = debugActions,
                     floatingBottomPadding = floatingBottomPadding
@@ -166,12 +191,7 @@ fun MainScreen(
                     onDayNoteMemoChanged = onDayNoteMemoChanged,
                     onDayNoteSaveClick = onDayNoteSaveClick,
                     selectedTab = localUiState.selectedBottomSheetTab,
-                    onTabSelected = { tab ->
-                        dispatchInteraction(reduceForBottomSheetTabSelection(
-                            state = localUiState,
-                            selectedTab = tab
-                        ))
-                    },
+                    onTabSelected = ::handleBottomSheetTabSelected,
                     onPlaceRetryClick = {
                         onPlaceListRefreshRequested(uiState.selectedDateKey)
                     },

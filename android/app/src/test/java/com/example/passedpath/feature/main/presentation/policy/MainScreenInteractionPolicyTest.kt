@@ -12,6 +12,34 @@ import org.junit.Test
 class MainScreenInteractionPolicyTest {
 
     @Test
+    fun `tab selection policy opens hidden sheet to middle`() {
+        val decision = resolveBottomSheetTabSelection(
+            currentSheetValue = MainBottomSheetValue.HIDDEN,
+            currentTab = MainBottomSheetTab.PLACE,
+            selectedTab = MainBottomSheetTab.DAYNOTE,
+            selectedPlaceId = 9L
+        )
+
+        assertEquals(MainBottomSheetValue.MIDDLE, decision.requestedSheetValue)
+        assertNull(decision.selectedPlaceId)
+        assertFalse(decision.shouldRefreshPlaces)
+    }
+
+    @Test
+    fun `tab selection policy keeps visible sheet height unchanged`() {
+        val decision = resolveBottomSheetTabSelection(
+            currentSheetValue = MainBottomSheetValue.EXPANDED,
+            currentTab = MainBottomSheetTab.DAYNOTE,
+            selectedTab = MainBottomSheetTab.PLACE,
+            selectedPlaceId = 9L
+        )
+
+        assertNull(decision.requestedSheetValue)
+        assertEquals(9L, decision.selectedPlaceId)
+        assertTrue(decision.shouldRefreshPlaces)
+    }
+
+    @Test
     fun `marker click from non place tab opens place tab and requests refresh`() {
         val initialState = MainScreenLocalUiState(
             selectedBottomSheetTab = MainBottomSheetTab.DAYNOTE
