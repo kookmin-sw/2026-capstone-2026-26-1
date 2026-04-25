@@ -12,15 +12,20 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import kotlin.math.abs
@@ -79,21 +84,85 @@ internal fun MainBottomSheetScaffold(
                 MainBottomSheetValue.MIDDLE -> sheetAnchors.middle
                 MainBottomSheetValue.HIDDEN -> sheetAnchors.hidden
             }
-            animate(
-                initialValue = sheetOffset,
-                targetValue = targetOffset,
-                animationSpec = spring(
-                    dampingRatio = Spring.DampingRatioNoBouncy,
-                    stiffness = Spring.StiffnessMediumLow
-                )
-            ) { value, _ ->
-                sheetOffset = value
-            }
+            animateSheetOffsetTo(
+                currentOffset = sheetOffset,
+                targetOffset = targetOffset,
+                onOffsetChanged = { sheetOffset = it }
+            )
         }
 
         val draggableState = rememberDraggableState { delta ->
             sheetOffset = (sheetOffset + delta)
                 .coerceIn(sheetAnchors.expanded, sheetAnchors.hidden)
+        }
+        val nestedScrollConnection = remember(sheetAnchors, coroutineScope) {
+            object : NestedScrollConnection {
+                override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                    if (source != NestedScrollSource.UserInput) return Offset.Zero
+                    if (available.y >= 0f) return Offset.Zero
+                    val consumedY = consumeSheetDragDelta(
+                        delta = available.y,
+                        currentOffset = sheetOffset,
+                        minOffset = sheetAnchors.expanded,
+                        maxOffset = sheetAnchors.hidden,
+                        onOffsetChanged = { sheetOffset = it }
+                    )
+                    return Offset(x = 0f, y = consumedY)
+                }
+
+                override fun onPostScroll(
+                    consumed: Offset,
+                    available: Offset,
+                    source: NestedScrollSource
+                ): Offset {
+                    if (source != NestedScrollSource.UserInput) return Offset.Zero
+                    if (available.y <= 0f) return Offset.Zero
+                    val consumedY = consumeSheetDragDelta(
+                        delta = available.y,
+                        currentOffset = sheetOffset,
+                        minOffset = sheetAnchors.expanded,
+                        maxOffset = sheetAnchors.hidden,
+                        onOffsetChanged = { sheetOffset = it }
+                    )
+                    return Offset(x = 0f, y = consumedY)
+                }
+
+                override suspend fun onPreFling(available: Velocity): Velocity {
+                    if (available.y >= 0f || sheetOffset <= sheetAnchors.expanded) {
+                        return Velocity.Zero
+                    }
+                    val targetOffset = settleSheetOffset(
+                        currentOffset = sheetOffset,
+                        currentValue = nearestSheetValue(sheetOffset, sheetAnchors),
+                        anchors = sheetAnchors,
+                        velocity = available.y
+                    )
+                    animateSheetOffsetTo(
+                        currentOffset = sheetOffset,
+                        targetOffset = targetOffset,
+                        onOffsetChanged = { sheetOffset = it }
+                    )
+                    return available
+                }
+
+                override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity {
+                    if (available.y <= 0f || sheetOffset >= sheetAnchors.hidden) {
+                        return Velocity.Zero
+                    }
+                    val targetOffset = settleSheetOffset(
+                        currentOffset = sheetOffset,
+                        currentValue = nearestSheetValue(sheetOffset, sheetAnchors),
+                        anchors = sheetAnchors,
+                        velocity = available.y
+                    )
+                    animateSheetOffsetTo(
+                        currentOffset = sheetOffset,
+                        targetOffset = targetOffset,
+                        onOffsetChanged = { sheetOffset = it }
+                    )
+                    return available
+                }
+            }
         }
 
         val boundedSheetOffset = sheetOffset.coerceIn(sheetAnchors.expanded, sheetAnchors.hidden)
@@ -114,6 +183,7 @@ internal fun MainBottomSheetScaffold(
             .fillMaxWidth()
             .height(expandedVisibleHeightDp)
             .offset { IntOffset(0, boundedSheetOffset.roundToInt()) }
+            .nestedScroll(nestedScrollConnection)
             .draggable(
                 state = draggableState,
                 orientation = Orientation.Vertical,
@@ -125,16 +195,11 @@ internal fun MainBottomSheetScaffold(
                             anchors = sheetAnchors,
                             velocity = velocity
                         )
-                        animate(
-                            initialValue = sheetOffset,
-                            targetValue = targetOffset,
-                            animationSpec = spring(
-                                dampingRatio = Spring.DampingRatioNoBouncy,
-                                stiffness = Spring.StiffnessMediumLow
-                            )
-                        ) { value, _ ->
-                            sheetOffset = value
-                        }
+                        animateSheetOffsetTo(
+                            currentOffset = sheetOffset,
+                            targetOffset = targetOffset,
+                            onOffsetChanged = { sheetOffset = it }
+                        )
                     }
                 }
             )
@@ -144,6 +209,38 @@ internal fun MainBottomSheetScaffold(
             sheet(sheetModifier)
         }
     }
+}
+
+private suspend fun animateSheetOffsetTo(
+    currentOffset: Float,
+    targetOffset: Float,
+    onOffsetChanged: (Float) -> Unit
+) {
+    animate(
+        initialValue = currentOffset,
+        targetValue = targetOffset,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioNoBouncy,
+            stiffness = Spring.StiffnessMediumLow
+        )
+    ) { value, _ ->
+        onOffsetChanged(value)
+    }
+}
+
+private fun consumeSheetDragDelta(
+    delta: Float,
+    currentOffset: Float,
+    minOffset: Float,
+    maxOffset: Float,
+    onOffsetChanged: (Float) -> Unit
+): Float {
+    val nextOffset = (currentOffset + delta).coerceIn(minOffset, maxOffset)
+    val consumed = nextOffset - currentOffset
+    if (consumed != 0f) {
+        onOffsetChanged(nextOffset)
+    }
+    return consumed
 }
 
 private fun settleSheetOffset(
