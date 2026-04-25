@@ -63,4 +63,50 @@ class LocationPersistencePolicyTest {
             )
         )
     }
+
+    @Test
+    fun `persists location when moved distance exceeds static minimum`() {
+        val latest = TrackedLocation(
+            latitude = 37.5665,
+            longitude = 126.9780,
+            accuracyMeters = 10f,
+            recordedAtEpochMillis = 1L
+        )
+        val candidate = TrackedLocation(
+            latitude = 37.56682,
+            longitude = 126.9780,
+            accuracyMeters = 10f,
+            recordedAtEpochMillis = 2L
+        )
+
+        assertTrue(
+            LocationPersistencePolicy.shouldPersistLocation(
+                latestSavedLocation = latest,
+                candidateLocation = candidate
+            )
+        )
+    }
+
+    @Test
+    fun `drops location when moved distance is below accuracy based threshold`() {
+        val latest = TrackedLocation(
+            latitude = 37.5665,
+            longitude = 126.9780,
+            accuracyMeters = 10f,
+            recordedAtEpochMillis = 1L
+        )
+        val candidate = TrackedLocation(
+            latitude = 37.5669,
+            longitude = 126.9780,
+            accuracyMeters = 30f,
+            recordedAtEpochMillis = 2L
+        )
+
+        assertFalse(
+            LocationPersistencePolicy.shouldPersistLocation(
+                latestSavedLocation = latest,
+                candidateLocation = candidate
+            )
+        )
+    }
 }

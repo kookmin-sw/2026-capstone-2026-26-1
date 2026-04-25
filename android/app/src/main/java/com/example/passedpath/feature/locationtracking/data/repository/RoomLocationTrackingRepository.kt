@@ -54,9 +54,10 @@ class RoomLocationTrackingRepository(
 
         if (!LocationPersistencePolicy.shouldPersistLocation(latestSavedPoint, location)) {
             val movedDistanceMeters = latestSavedPoint?.let { distanceBetweenMeters(it, location) }
+            val requiredDistanceMeters = LocationPersistencePolicy.requiredSaveDistanceMeters(location)
             diagnosticsLogger.log(
                 category = TrackingDiagnosticsLogger.CATEGORY_SAVE,
-                message = "drop_distance moved=$movedDistanceMeters min=${LocationPersistencePolicy.MIN_SAVE_DISTANCE_METERS}",
+                message = "drop_distance moved=$movedDistanceMeters required=$requiredDistanceMeters",
                 dateKey = dateKey
             )
             return SaveRawLocationResult.DROPPED_DISTANCE

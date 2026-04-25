@@ -140,7 +140,7 @@
   - moving mode:
     - request interval: `60s`
     - minimum update interval: `30s`
-    - minimum update distance: `30m`
+    - minimum update distance: `35m`
   - idle mode:
     - request interval: `5m`
     - minimum update interval: `2m`
@@ -151,8 +151,8 @@
   - if no point is saved for `5m`, switch to idle mode
   - if a point is saved again while idle, switch back to moving mode
 - Local save policy:
-  - drop locations whose accuracy is worse than `50m`
-  - skip local save when moved distance from the latest saved point is less than `20m`
+  - drop locations whose accuracy is worse than `35m`
+  - skip local save when moved distance from the latest saved point is less than `max(35m, accuracy * 1.5)`
 - Policy split by responsibility:
   - location callback request policy belongs in `feature/locationtracking/domain/policy/LocationRequestPolicy.kt`
   - moving/idle transition policy belongs in `feature/locationtracking/domain/policy/LocationRequestPolicy.kt`
