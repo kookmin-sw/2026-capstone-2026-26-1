@@ -43,9 +43,10 @@ class MainScreenInteractionPolicyTest {
     }
 
     @Test
-    fun `place tab reselection keeps place tab open at middle and requests refresh`() {
+    fun `place tab reselection opens hidden sheet to middle and requests refresh`() {
         val initialState = MainScreenLocalUiState(
             selectedBottomSheetTab = MainBottomSheetTab.PLACE,
+            bottomSheetValue = MainBottomSheetValue.HIDDEN,
             requestedSheetValue = MainBottomSheetValue.HIDDEN
         )
 
@@ -60,9 +61,10 @@ class MainScreenInteractionPolicyTest {
     }
 
     @Test
-    fun `daynote tab selection clears selected place without refresh`() {
+    fun `daynote tab selection keeps expanded sheet height and clears selected place`() {
         val initialState = MainScreenLocalUiState(
             selectedBottomSheetTab = MainBottomSheetTab.PLACE,
+            bottomSheetValue = MainBottomSheetValue.EXPANDED,
             selectedPlaceId = 9L
         )
 
@@ -72,9 +74,40 @@ class MainScreenInteractionPolicyTest {
         )
 
         assertEquals(MainBottomSheetTab.DAYNOTE, result.state.selectedBottomSheetTab)
-        assertEquals(MainBottomSheetValue.MIDDLE, result.state.requestedSheetValue)
+        assertNull(result.state.requestedSheetValue)
         assertNull(result.state.selectedPlaceId)
         assertFalse(result.shouldRefreshPlaces)
+    }
+
+    @Test
+    fun `sheet value change keeps requested command until command completion callback`() {
+        val initialState = MainScreenLocalUiState(
+            bottomSheetValue = MainBottomSheetValue.HIDDEN,
+            requestedSheetValue = MainBottomSheetValue.MIDDLE
+        )
+
+        val result = reduceForSheetValueChange(
+            state = initialState,
+            bottomSheetValue = MainBottomSheetValue.MIDDLE
+        )
+
+        assertEquals(MainBottomSheetValue.MIDDLE, result.state.bottomSheetValue)
+        assertEquals(MainBottomSheetValue.MIDDLE, result.state.requestedSheetValue)
+    }
+
+    @Test
+    fun `sheet command consumed clears matching requested value`() {
+        val initialState = MainScreenLocalUiState(
+            bottomSheetValue = MainBottomSheetValue.HIDDEN,
+            requestedSheetValue = MainBottomSheetValue.MIDDLE
+        )
+
+        val result = reduceForSheetCommandConsumed(
+            state = initialState,
+            consumedValue = MainBottomSheetValue.MIDDLE
+        )
+
+        assertNull(result.state.requestedSheetValue)
     }
 
     @Test

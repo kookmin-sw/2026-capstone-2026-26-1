@@ -43,6 +43,7 @@ internal fun MainBottomSheetScaffold(
     modifier: Modifier = Modifier,
     requestedSheetValue: MainBottomSheetValue? = null,
     onSheetValueChanged: (MainBottomSheetValue) -> Unit = {},
+    onSheetCommandConsumed: (MainBottomSheetValue) -> Unit = {},
     content: @Composable (Dp) -> Unit,
     sheet: @Composable (Modifier) -> Unit
 ) {
@@ -89,6 +90,7 @@ internal fun MainBottomSheetScaffold(
                 targetOffset = targetOffset,
                 onOffsetChanged = { sheetOffset = it }
             )
+            onSheetCommandConsumed(targetValue)
         }
 
         val draggableState = rememberDraggableState { delta ->

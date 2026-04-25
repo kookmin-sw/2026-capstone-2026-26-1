@@ -19,6 +19,7 @@ import com.example.passedpath.feature.main.presentation.policy.reduceForBottomSh
 import com.example.passedpath.feature.main.presentation.policy.reduceForDateChange
 import com.example.passedpath.feature.main.presentation.policy.reduceForPlaceMarkerClick
 import com.example.passedpath.feature.main.presentation.policy.reduceForSelectedPlaceHandled
+import com.example.passedpath.feature.main.presentation.policy.reduceForSheetCommandConsumed
 import com.example.passedpath.feature.main.presentation.policy.reduceForSheetHideRequest
 import com.example.passedpath.feature.main.presentation.policy.reduceForSheetValueChange
 import com.example.passedpath.feature.main.presentation.state.MainUiState
@@ -119,6 +120,12 @@ fun MainScreen(
                 dispatchInteraction(reduceForSheetValueChange(
                     state = localUiState,
                     bottomSheetValue = bottomSheetValue
+                ))
+            },
+            onSheetCommandConsumed = { consumedValue ->
+                dispatchInteraction(reduceForSheetCommandConsumed(
+                    state = localUiState,
+                    consumedValue = consumedValue
                 ))
             },
             content = { floatingBottomPadding ->

@@ -64,11 +64,18 @@ internal fun reduceForBottomSheetTabSelection(
     state: MainScreenLocalUiState,
     selectedTab: MainBottomSheetTab
 ): MainScreenInteractionResult {
+    val requestedSheetValue =
+        if (state.bottomSheetValue == MainBottomSheetValue.HIDDEN) {
+            MainBottomSheetValue.MIDDLE
+        } else {
+            null
+        }
+
     return if (selectedTab == MainBottomSheetTab.PLACE) {
         MainScreenInteractionResult(
             state = state.copy(
                 selectedBottomSheetTab = selectedTab,
-                requestedSheetValue = MainBottomSheetValue.MIDDLE
+                requestedSheetValue = requestedSheetValue
             ),
             shouldRefreshPlaces = true
         )
@@ -76,7 +83,7 @@ internal fun reduceForBottomSheetTabSelection(
         MainScreenInteractionResult(
             state = state.copy(
                 selectedBottomSheetTab = selectedTab,
-                requestedSheetValue = MainBottomSheetValue.MIDDLE,
+                requestedSheetValue = requestedSheetValue,
                 selectedPlaceId = null
             )
         )
@@ -88,5 +95,18 @@ internal fun reduceForSelectedPlaceHandled(
 ): MainScreenInteractionResult {
     return MainScreenInteractionResult(
         state = state.copy(selectedPlaceId = null)
+    )
+}
+
+internal fun reduceForSheetCommandConsumed(
+    state: MainScreenLocalUiState,
+    consumedValue: MainBottomSheetValue
+): MainScreenInteractionResult {
+    return MainScreenInteractionResult(
+        state = if (state.requestedSheetValue == consumedValue) {
+            state.copy(requestedSheetValue = null)
+        } else {
+            state
+        }
     )
 }
