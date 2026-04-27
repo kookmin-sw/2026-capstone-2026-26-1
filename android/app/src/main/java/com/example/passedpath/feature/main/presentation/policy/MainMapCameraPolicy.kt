@@ -1,8 +1,8 @@
 ﻿package com.example.passedpath.feature.main.presentation.policy
 
 import com.example.passedpath.feature.main.presentation.state.MainCameraIntent
-import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiState
 import com.example.passedpath.feature.route.presentation.coordinator.RouteLoadState
+import com.example.passedpath.ui.state.CoordinateUiState
 import com.google.android.gms.maps.CameraUpdate
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.LatLng
@@ -13,7 +13,7 @@ private const val RouteBoundsPaddingPx = 180
 internal fun resolveCameraIntentAfterRouteState(
     currentDateKey: String,
     currentRouteHasLocationData: Boolean,
-    currentLocation: MainCoordinateUiState?,
+    currentLocation: CoordinateUiState?,
     routeState: RouteLoadState
 ): MainCameraIntent? {
     if (routeState.routeModeUiState.isRouteLoading) {
@@ -33,7 +33,7 @@ internal fun resolveCameraIntentAfterRouteState(
 
 internal fun shouldRequestCurrentLocationCamera(
     currentRouteHasLocationData: Boolean,
-    previousLocation: MainCoordinateUiState?
+    previousLocation: CoordinateUiState?
 ): Boolean {
     return !currentRouteHasLocationData && previousLocation == null
 }

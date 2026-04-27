@@ -17,13 +17,13 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.passedpath.R
-import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiState
+import com.example.passedpath.ui.state.CoordinateUiState
 import com.google.maps.android.compose.MarkerComposable
 
 private val CurrentLocationGlowBase = Color(0xFF006B5F)
 
 @Composable
-internal fun CurrentLocationMapMarker(currentLocation: MainCoordinateUiState) {
+internal fun CurrentLocationMapMarker(currentLocation: CoordinateUiState) {
     MarkerComposable(
         state = com.google.maps.android.compose.MarkerState(position = currentLocation.toLatLng()),
         title = stringResource(R.string.main_map_marker_title),

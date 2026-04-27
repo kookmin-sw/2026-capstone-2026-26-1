@@ -20,7 +20,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.passedpath.R
-import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiState
 import com.example.passedpath.feature.main.presentation.state.MainUiState
 import com.example.passedpath.feature.permission.presentation.state.LocationPermissionUiState
 import com.example.passedpath.feature.route.presentation.screen.RouteMapContent
@@ -28,6 +27,7 @@ import com.example.passedpath.feature.route.presentation.state.PlaceMarkerUiStat
 import com.example.passedpath.feature.route.presentation.state.RouteUiAction
 import com.example.passedpath.ui.component.floating.FloatingButtonColumn
 import com.example.passedpath.ui.component.floating.FloatingCircleIconButton
+import com.example.passedpath.ui.state.CoordinateUiState
 import com.example.passedpath.feature.main.presentation.component.MainMorePopupMenu
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
@@ -65,7 +65,7 @@ internal fun MainMapSection(
     } else {
         uiState.currentLocation
     }
-    val routePoints = uiState.selectedRoute.polylinePoints.map(MainCoordinateUiState::toLatLng)
+    val routePoints = uiState.selectedRoute.polylinePoints.map(CoordinateUiState::toLatLng)
     val initialCameraTarget =
         routePoints.firstOrNull() ?: currentLocation?.toLatLng() ?: fallbackPosition
     val cameraPositionState = rememberCameraPositionState {
@@ -219,7 +219,7 @@ private fun FloatingMapButtons(
     }
 }
 
-internal fun MainCoordinateUiState.toLatLng(): LatLng = LatLng(latitude, longitude)
+internal fun CoordinateUiState.toLatLng(): LatLng = LatLng(latitude, longitude)
 
 private fun markerCameraTarget(
     markerPlaces: List<PlaceMarkerUiState>,

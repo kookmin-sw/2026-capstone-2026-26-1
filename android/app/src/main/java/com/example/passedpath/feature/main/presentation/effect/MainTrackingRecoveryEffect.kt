@@ -5,7 +5,8 @@ import androidx.compose.runtime.LaunchedEffect
 import com.example.passedpath.debug.AppDebugLogger
 import com.example.passedpath.debug.DebugLogTag
 import com.example.passedpath.feature.locationtracking.data.manager.LocationTrackingServiceStateReader
-import com.example.passedpath.feature.permission.presentation.policy.canRunTracking
+import com.example.passedpath.feature.main.presentation.policy.TrackingRecoveryDecision
+import com.example.passedpath.feature.main.presentation.policy.decideTrackingRecovery
 import com.example.passedpath.feature.permission.presentation.state.LocationPermissionUiState
 
 @Composable
@@ -18,26 +19,34 @@ internal fun MainTrackingRecoveryEffect(
     stopLocationTracking: (Boolean) -> Unit
 ) {
     LaunchedEffect(permissionState, isLocationServiceEnabled, isTrackingActive) {
-        if (canRunTracking(permissionState, isLocationServiceEnabled)) {
-            if (trackingServiceStateReader.isTrackingEnabledByUser() && !isTrackingActive) {
+        val isTrackingEnabledByUser = trackingServiceStateReader.isTrackingEnabledByUser()
+
+        when (
+            decideTrackingRecovery(
+                permissionState = permissionState,
+                isLocationServiceEnabled = isLocationServiceEnabled,
+                isTrackingActive = isTrackingActive,
+                isTrackingEnabledByUser = isTrackingEnabledByUser
+            )
+        ) {
+            TrackingRecoveryDecision.RestartTracking -> {
                 AppDebugLogger.debug(
                     DebugLogTag.TRACKING,
                     "auto-restart tracking because userEnabled=true and service inactive"
                 )
                 startLocationTracking(false)
-            } else if (!trackingServiceStateReader.isTrackingEnabledByUser() && isTrackingActive) {
+            }
+
+            TrackingRecoveryDecision.StopTracking -> {
                 AppDebugLogger.debug(
                     DebugLogTag.TRACKING,
-                    "auto-stop tracking because userEnabled=false and service active"
+                    "stop tracking by recovery decision userEnabled=$isTrackingEnabledByUser " +
+                        "permission=$permissionState gpsEnabled=$isLocationServiceEnabled"
                 )
                 stopLocationTracking(false)
             }
-        } else if (isTrackingActive) {
-            AppDebugLogger.debug(
-                DebugLogTag.TRACKING,
-                "force-stop tracking because tracking cannot run permission=$permissionState gpsEnabled=$isLocationServiceEnabled"
-            )
-            stopLocationTracking(false)
+
+            TrackingRecoveryDecision.NoOp -> Unit
         }
     }
 }

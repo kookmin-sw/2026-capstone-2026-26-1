@@ -5,11 +5,11 @@ import com.example.passedpath.feature.locationtracking.domain.model.DayRouteDeta
 import com.example.passedpath.feature.locationtracking.domain.model.DayRoutePlace
 import com.example.passedpath.feature.locationtracking.domain.model.RoutePoint
 import com.example.passedpath.feature.locationtracking.domain.model.TrackedLocation
-import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiState
 import com.example.passedpath.feature.route.presentation.state.MainRouteModeUiState
 import com.example.passedpath.feature.route.presentation.state.PlaceMarkerUiState
 import com.example.passedpath.feature.route.presentation.state.RoutePolylineSegmentUiState
 import com.example.passedpath.feature.route.presentation.state.SelectedDayRouteUiState
+import com.example.passedpath.ui.state.CoordinateUiState
 
 internal fun createInitialRouteMode(dateKey: String, isToday: Boolean): MainRouteModeUiState {
     val route = SelectedDayRouteUiState(dateKey = dateKey)
@@ -91,7 +91,7 @@ internal fun createPastRouteMode(
 }
 
 internal fun DailyPath.toSelectedDayRouteUiState(): SelectedDayRouteUiState {
-    val polylinePoints = points.map(TrackedLocation::toMainCoordinateUiState)
+    val polylinePoints = points.map(TrackedLocation::toCoordinateUiState)
     return SelectedDayRouteUiState(
         dateKey = dateKey,
         title = "",
@@ -111,7 +111,7 @@ internal fun createTodaySelectedDayRouteUiState(
     remoteRouteDetail: DayRouteDetail?
 ): SelectedDayRouteUiState {
     val remoteRouteUiState = remoteRouteDetail?.toSelectedDayRouteUiState()
-    val polylinePoints = dailyPath?.points?.map(TrackedLocation::toMainCoordinateUiState).orEmpty()
+    val polylinePoints = dailyPath?.points?.map(TrackedLocation::toCoordinateUiState).orEmpty()
 
     return SelectedDayRouteUiState(
         dateKey = dateKey,
@@ -127,7 +127,7 @@ internal fun createTodaySelectedDayRouteUiState(
 }
 
 internal fun DayRouteDetail.toSelectedDayRouteUiState(): SelectedDayRouteUiState {
-    val polylinePoints = polylinePoints.map(RoutePoint::toMainCoordinateUiState)
+    val polylinePoints = polylinePoints.map(RoutePoint::toCoordinateUiState)
     return SelectedDayRouteUiState(
         dateKey = dateKey,
         title = title,
@@ -141,7 +141,42 @@ internal fun DayRouteDetail.toSelectedDayRouteUiState(): SelectedDayRouteUiState
     )
 }
 
-private fun List<MainCoordinateUiState>.toRoutePolylineSegments(): List<RoutePolylineSegmentUiState> {
+internal fun patchRouteNoteSnapshot(
+    routeModeUiState: MainRouteModeUiState,
+    title: String?,
+    memo: String?,
+    shouldUpdateTitle: Boolean,
+    shouldUpdateMemo: Boolean
+): MainRouteModeUiState {
+    if (!shouldUpdateTitle && !shouldUpdateMemo) return routeModeUiState
+
+    return routeModeUiState.updateRouteSnapshot { route ->
+        route.copy(
+            title = if (shouldUpdateTitle) title.orEmpty() else route.title,
+            memo = if (shouldUpdateMemo) memo.orEmpty() else route.memo
+        )
+    }
+}
+
+internal fun patchRouteBookmarkSnapshot(
+    routeModeUiState: MainRouteModeUiState,
+    isBookmarked: Boolean
+): MainRouteModeUiState {
+    return routeModeUiState.updateRouteSnapshot { route ->
+        route.copy(isBookmarked = isBookmarked)
+    }
+}
+
+private fun MainRouteModeUiState.updateRouteSnapshot(
+    transform: (SelectedDayRouteUiState) -> SelectedDayRouteUiState
+): MainRouteModeUiState {
+    return when (this) {
+        is MainRouteModeUiState.Today -> copy(route = transform(route))
+        is MainRouteModeUiState.Past -> copy(route = transform(route))
+    }
+}
+
+private fun List<CoordinateUiState>.toRoutePolylineSegments(): List<RoutePolylineSegmentUiState> {
     if (size < 2) return emptyList()
 
     return zipWithNext { start, end ->
@@ -152,16 +187,16 @@ private fun List<MainCoordinateUiState>.toRoutePolylineSegments(): List<RoutePol
     }
 }
 
-private fun TrackedLocation.toMainCoordinateUiState(): MainCoordinateUiState {
-    return MainCoordinateUiState(
+private fun TrackedLocation.toCoordinateUiState(): CoordinateUiState {
+    return CoordinateUiState(
         latitude = latitude,
         longitude = longitude,
         recordedAtEpochMillis = recordedAtEpochMillis
     )
 }
 
-private fun RoutePoint.toMainCoordinateUiState(): MainCoordinateUiState {
-    return MainCoordinateUiState(
+private fun RoutePoint.toCoordinateUiState(): CoordinateUiState {
+    return CoordinateUiState(
         latitude = latitude,
         longitude = longitude
     )

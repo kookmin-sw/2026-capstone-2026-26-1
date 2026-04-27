@@ -13,14 +13,13 @@ import com.example.passedpath.feature.daynote.presentation.viewmodel.DayNoteView
 import com.example.passedpath.feature.daynote.presentation.viewmodel.DayNoteViewModelFactory
 import com.example.passedpath.feature.main.presentation.coordinator.DateSelectionDecision
 import com.example.passedpath.feature.main.presentation.coordinator.DateSelectionGuardCoordinator
+import com.example.passedpath.feature.main.presentation.mapper.resolveMainMarkerPlaces
 import com.example.passedpath.feature.main.presentation.viewmodel.MainViewModel
 import com.example.passedpath.feature.main.presentation.viewmodel.MainViewModelFactory
-import com.example.passedpath.feature.place.domain.model.VisitedPlace
 import com.example.passedpath.feature.place.presentation.viewmodel.PlaceViewModel
 import com.example.passedpath.feature.place.presentation.viewmodel.PlaceViewModelFactory
 import com.example.passedpath.feature.permission.presentation.policy.PermissionActionTarget
 import com.example.passedpath.feature.permission.presentation.policy.resolvePermissionActionTarget
-import com.example.passedpath.feature.route.presentation.state.PlaceMarkerUiState
 import com.example.passedpath.util.AppSettingsNavigator
 
 @Composable
@@ -49,7 +48,10 @@ fun MainRoute(
         )
     )
     val placeUiState by placeViewModel.uiState.collectAsStateWithLifecycle()
-    val markerPlaces = placeUiState.placeList.places.toPlaceMarkerUiStates()
+    val markerPlaces = resolveMainMarkerPlaces(
+        placeListUiState = placeUiState.placeList,
+        route = uiState.selectedRoute
+    )
     val dateSelectionGuardCoordinator = remember { DateSelectionGuardCoordinator() }
     val dateSelectionGuardState by dateSelectionGuardCoordinator.state.collectAsStateWithLifecycle()
 
@@ -179,18 +181,4 @@ fun MainRoute(
             }
         )
     )
-}
-
-private fun List<VisitedPlace>.toPlaceMarkerUiStates(): List<PlaceMarkerUiState> {
-    return sortedBy(VisitedPlace::orderIndex)
-        .map { place ->
-            PlaceMarkerUiState(
-                placeId = place.placeId,
-                placeName = place.placeName,
-                roadAddress = place.roadAddress,
-                latitude = place.latitude,
-                longitude = place.longitude,
-                orderIndex = place.orderIndex
-            )
-        }
 }

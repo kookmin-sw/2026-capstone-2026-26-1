@@ -14,8 +14,8 @@ import com.example.passedpath.feature.locationtracking.domain.repository.RemoteD
 import com.example.passedpath.feature.locationtracking.domain.repository.TrackingDebugLogRepository
 import com.example.passedpath.feature.locationtracking.domain.usecase.ObserveRecentTrackingEventsUseCase
 import com.example.passedpath.feature.main.presentation.state.MainCameraIntent
-import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiState
 import com.example.passedpath.feature.permission.presentation.mapper.createPermissionOverlayUiModel
+import com.example.passedpath.feature.permission.presentation.policy.LocationAccessStateResolver
 import com.example.passedpath.feature.permission.presentation.state.LocationPermissionUiState
 import com.example.passedpath.feature.permission.data.manager.LocationPermissionStatusReader
 import com.example.passedpath.feature.permission.data.manager.LocationServiceStatusReader
@@ -24,6 +24,7 @@ import com.example.passedpath.feature.route.presentation.state.MainRouteModeUiSt
 import com.example.passedpath.feature.route.presentation.state.RouteUiAction
 import com.example.passedpath.testutil.MainDispatcherRule
 import com.example.passedpath.ui.state.ApiFailureMessage
+import com.example.passedpath.ui.state.CoordinateUiState
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -178,7 +179,7 @@ class MainViewModelTest {
         advanceUntilIdle()
 
         viewModel.updateCurrentLocation(
-            MainCoordinateUiState(latitude = 37.1, longitude = 127.1)
+            CoordinateUiState(latitude = 37.1, longitude = 127.1)
         )
 
         assertEquals(
@@ -201,7 +202,7 @@ class MainViewModelTest {
         advanceUntilIdle()
 
         viewModel.updateCurrentLocation(
-            MainCoordinateUiState(latitude = 37.1, longitude = 127.1)
+            CoordinateUiState(latitude = 37.1, longitude = 127.1)
         )
         viewModel.consumeCameraIntent()
 
@@ -643,8 +644,10 @@ class MainViewModelTest {
         bookmarkRepository: DayRouteBookmarkRepository = FakeDayRouteBookmarkRepository()
     ): MainViewModel {
         return MainViewModel(
-            locationPermissionStatusReader = permissionReader,
-            locationServiceStatusReader = locationServiceReader,
+            locationAccessStateResolver = LocationAccessStateResolver(
+                locationPermissionStatusReader = permissionReader,
+                locationServiceStatusReader = locationServiceReader
+            ),
             initialDateKeyProvider = { initialDateKey },
             routeStateCoordinator = RouteStateCoordinator(
                 dayRouteRepository = repository,

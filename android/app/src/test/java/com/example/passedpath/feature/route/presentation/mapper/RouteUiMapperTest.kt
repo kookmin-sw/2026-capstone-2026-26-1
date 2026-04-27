@@ -6,8 +6,10 @@ import com.example.passedpath.feature.locationtracking.domain.model.DayRoutePlac
 import com.example.passedpath.feature.locationtracking.domain.model.RoutePoint
 import com.example.passedpath.feature.locationtracking.domain.model.TrackedLocation
 import com.example.passedpath.feature.route.presentation.state.MainRouteModeUiState
+import com.example.passedpath.feature.route.presentation.state.SelectedDayRouteUiState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -145,5 +147,152 @@ class RouteUiMapperTest {
         assertEquals(1L, uiState.polylinePoints.first().recordedAtEpochMillis)
         assertEquals(2.45, uiState.totalDistanceKm, 0.0)
         assertEquals(1, uiState.markerPlaces.size)
+    }
+
+    @Test
+    fun `patchRouteNoteSnapshot updates only title when title is saved`() {
+        val state = MainRouteModeUiState.Today(
+            route = route(title = "Old title", memo = "Old memo")
+        )
+
+        val result = patchRouteNoteSnapshot(
+            routeModeUiState = state,
+            title = "New title",
+            memo = "New memo",
+            shouldUpdateTitle = true,
+            shouldUpdateMemo = false
+        )
+
+        assertEquals("New title", result.route.title)
+        assertEquals("Old memo", result.route.memo)
+    }
+
+    @Test
+    fun `patchRouteNoteSnapshot updates only memo when memo is saved`() {
+        val state = MainRouteModeUiState.Today(
+            route = route(title = "Old title", memo = "Old memo")
+        )
+
+        val result = patchRouteNoteSnapshot(
+            routeModeUiState = state,
+            title = "New title",
+            memo = "New memo",
+            shouldUpdateTitle = false,
+            shouldUpdateMemo = true
+        )
+
+        assertEquals("Old title", result.route.title)
+        assertEquals("New memo", result.route.memo)
+    }
+
+    @Test
+    fun `patchRouteNoteSnapshot updates title and memo when both are saved`() {
+        val state = MainRouteModeUiState.Today(
+            route = route(title = "Old title", memo = "Old memo")
+        )
+
+        val result = patchRouteNoteSnapshot(
+            routeModeUiState = state,
+            title = "New title",
+            memo = "New memo",
+            shouldUpdateTitle = true,
+            shouldUpdateMemo = true
+        )
+
+        assertEquals("New title", result.route.title)
+        assertEquals("New memo", result.route.memo)
+    }
+
+    @Test
+    fun `patchRouteNoteSnapshot returns original state when nothing is saved`() {
+        val state = MainRouteModeUiState.Today(
+            route = route(title = "Old title", memo = "Old memo")
+        )
+
+        val result = patchRouteNoteSnapshot(
+            routeModeUiState = state,
+            title = "New title",
+            memo = "New memo",
+            shouldUpdateTitle = false,
+            shouldUpdateMemo = false
+        )
+
+        assertSame(state, result)
+    }
+
+    @Test
+    fun `patchRouteNoteSnapshot updates past route mode`() {
+        val state = MainRouteModeUiState.Past(
+            route = route(title = "Old title", memo = "Old memo")
+        )
+
+        val result = patchRouteNoteSnapshot(
+            routeModeUiState = state,
+            title = "New title",
+            memo = "New memo",
+            shouldUpdateTitle = true,
+            shouldUpdateMemo = true
+        )
+
+        assertTrue(result is MainRouteModeUiState.Past)
+        assertEquals("New title", result.route.title)
+        assertEquals("New memo", result.route.memo)
+    }
+
+    @Test
+    fun `patchRouteBookmarkSnapshot updates today bookmark state`() {
+        val state = MainRouteModeUiState.Today(
+            route = route(
+                title = "Title",
+                memo = "Memo",
+                isBookmarked = false
+            )
+        )
+
+        val result = patchRouteBookmarkSnapshot(
+            routeModeUiState = state,
+            isBookmarked = true
+        )
+
+        assertTrue(result is MainRouteModeUiState.Today)
+        assertTrue(result.route.isBookmarked)
+        assertEquals("Title", result.route.title)
+        assertEquals("Memo", result.route.memo)
+        assertEquals("2026-04-01", result.route.dateKey)
+    }
+
+    @Test
+    fun `patchRouteBookmarkSnapshot updates past bookmark state`() {
+        val state = MainRouteModeUiState.Past(
+            route = route(
+                title = "Title",
+                memo = "Memo",
+                isBookmarked = true
+            )
+        )
+
+        val result = patchRouteBookmarkSnapshot(
+            routeModeUiState = state,
+            isBookmarked = false
+        )
+
+        assertTrue(result is MainRouteModeUiState.Past)
+        assertFalse(result.route.isBookmarked)
+        assertEquals("Title", result.route.title)
+        assertEquals("Memo", result.route.memo)
+        assertEquals("2026-04-01", result.route.dateKey)
+    }
+
+    private fun route(
+        title: String,
+        memo: String,
+        isBookmarked: Boolean = false
+    ): SelectedDayRouteUiState {
+        return SelectedDayRouteUiState(
+            dateKey = "2026-04-01",
+            title = title,
+            memo = memo,
+            isBookmarked = isBookmarked
+        )
     }
 }

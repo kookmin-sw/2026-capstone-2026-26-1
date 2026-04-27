@@ -18,20 +18,19 @@ import com.example.passedpath.feature.main.presentation.policy.resolveCameraInte
 import com.example.passedpath.feature.main.presentation.policy.resolveMainRouteActionRequest
 import com.example.passedpath.feature.main.presentation.policy.shouldRequestCurrentLocationCamera
 import com.example.passedpath.feature.main.presentation.state.MainCameraIntent
-import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiState
 import com.example.passedpath.feature.main.presentation.state.MainUiState
 import com.example.passedpath.feature.main.presentation.state.BookmarkToggleUiState
 import com.example.passedpath.feature.main.presentation.state.withDebugState
-import com.example.passedpath.feature.permission.data.manager.LocationPermissionStatusReader
-import com.example.passedpath.feature.permission.data.manager.LocationServiceStatusReader
-import com.example.passedpath.feature.permission.presentation.policy.resolveLocationPermissionUiState
+import com.example.passedpath.feature.permission.presentation.policy.LocationAccessStateResolver
 import com.example.passedpath.feature.permission.presentation.state.LocationPermissionUiState
+import com.example.passedpath.feature.route.presentation.mapper.patchRouteBookmarkSnapshot
+import com.example.passedpath.feature.route.presentation.mapper.patchRouteNoteSnapshot
 import com.example.passedpath.feature.route.presentation.coordinator.RouteLoadState
 import com.example.passedpath.feature.route.presentation.coordinator.RouteStateCoordinator
 import com.example.passedpath.feature.route.presentation.state.MainRouteModeUiState
 import com.example.passedpath.feature.route.presentation.state.RouteUiAction
-import com.example.passedpath.feature.route.presentation.state.SelectedDayRouteUiState
 import com.example.passedpath.ui.state.ApiFailureMessage
+import com.example.passedpath.ui.state.CoordinateUiState
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -45,8 +44,7 @@ import java.util.Date
 import java.util.Locale
 
 class MainViewModel(
-    private val locationPermissionStatusReader: LocationPermissionStatusReader,
-    private val locationServiceStatusReader: LocationServiceStatusReader,
+    private val locationAccessStateResolver: LocationAccessStateResolver,
     initialDateKeyProvider: () -> String = ::todayDateKey,
     private val routeStateCoordinator: RouteStateCoordinator,
     private val toggleDayRouteBookmarkUseCase: ToggleDayRouteBookmarkUseCase,
@@ -61,7 +59,7 @@ class MainViewModel(
 
     private val _uiState = MutableStateFlow(
         MainUiState(
-            isLocationServiceEnabled = locationServiceStatusReader.isLocationServiceEnabled(),
+            isLocationServiceEnabled = locationAccessStateResolver.isLocationServiceEnabled(),
             isTrackingActive = trackingServiceStateReader.isTracking.value,
             selectedDateKey = initialDateKey,
             routeModeUiState = routeStateCoordinator
@@ -87,10 +85,7 @@ class MainViewModel(
     }
 
     fun refreshPermissionState() {
-        val permissionState = resolveLocationPermissionUiState(
-            isBackgroundAlwaysGranted = locationPermissionStatusReader.isBackgroundAlwaysGranted(),
-            isForegroundGranted = locationPermissionStatusReader.isForegroundGranted()
-        )
+        val permissionState = locationAccessStateResolver.resolvePermissionState()
         AppDebugLogger.debug(
             DebugLogTag.PERMISSION,
             "refreshPermissionState result=$permissionState"
@@ -111,7 +106,7 @@ class MainViewModel(
     }
 
     fun refreshLocationServiceState() {
-        val isEnabled = locationServiceStatusReader.isLocationServiceEnabled()
+        val isEnabled = locationAccessStateResolver.isLocationServiceEnabled()
         AppDebugLogger.debug(
             DebugLogTag.PERMISSION,
             "refreshLocationServiceState enabled=$isEnabled"
@@ -123,7 +118,7 @@ class MainViewModel(
         }
     }
 
-    fun updateCurrentLocation(location: MainCoordinateUiState) {
+    fun updateCurrentLocation(location: CoordinateUiState) {
         _uiState.update { currentState ->
             currentState.copy(
                 currentLocation = location,
@@ -172,12 +167,13 @@ class MainViewModel(
                 currentState
             } else {
                 currentState.copy(
-                    routeModeUiState = currentState.routeModeUiState.updateRouteSnapshot { route ->
-                        route.copy(
-                            title = if (shouldUpdateTitle) title.orEmpty() else route.title,
-                            memo = if (shouldUpdateMemo) memo.orEmpty() else route.memo
-                        )
-                    }
+                    routeModeUiState = patchRouteNoteSnapshot(
+                        routeModeUiState = currentState.routeModeUiState,
+                        title = title,
+                        memo = memo,
+                        shouldUpdateTitle = shouldUpdateTitle,
+                        shouldUpdateMemo = shouldUpdateMemo
+                    )
                 )
             }
         }
@@ -219,9 +215,10 @@ class MainViewModel(
                         currentState.copy(
                             bookmarkToggleUiState = currentState.bookmarkToggleUiState
                                 .clearUpdatingDate(selectedDateKey),
-                            routeModeUiState = currentState.routeModeUiState.updateRouteSnapshot { route ->
-                                route.copy(isBookmarked = bookmark.isBookmarked)
-                            }
+                            routeModeUiState = patchRouteBookmarkSnapshot(
+                                routeModeUiState = currentState.routeModeUiState,
+                                isBookmarked = bookmark.isBookmarked
+                            )
                         )
                     }
                 }
@@ -394,15 +391,6 @@ private fun MainRouteModeUiState.withTrackingState(isTracking: Boolean): MainRou
     }
 }
 
-private fun MainRouteModeUiState.updateRouteSnapshot(
-    transform: (SelectedDayRouteUiState) -> SelectedDayRouteUiState
-): MainRouteModeUiState {
-    return when (this) {
-        is MainRouteModeUiState.Today -> copy(route = transform(route))
-        is MainRouteModeUiState.Past -> copy(route = transform(route))
-    }
-}
-
 private fun todayDateKey(): String {
     return SimpleDateFormat("yyyy-MM-dd", Locale.KOREA).format(Date())
 }
@@ -414,8 +402,10 @@ class MainViewModelFactory(
         if (modelClass.isAssignableFrom(MainViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
             return MainViewModel(
-                locationPermissionStatusReader = appContainer.locationPermissionStatusReader,
-                locationServiceStatusReader = appContainer.locationServiceStatusReader,
+                locationAccessStateResolver = LocationAccessStateResolver(
+                    locationPermissionStatusReader = appContainer.locationPermissionStatusReader,
+                    locationServiceStatusReader = appContainer.locationServiceStatusReader
+                ),
                 routeStateCoordinator = RouteStateCoordinator(
                     dayRouteRepository = appContainer.dayRouteRepository,
                     todayDateKeyProvider = ::todayDateKey
