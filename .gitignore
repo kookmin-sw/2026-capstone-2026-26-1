@@ -19,6 +19,10 @@ Thumbs.db
 *~
 *.swp
 
+# Local Codex working rules
+AGENTS.md
+agents.md
+
 # =========================
 # Android module (root-level safety)
 # =========================
