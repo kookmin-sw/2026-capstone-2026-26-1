@@ -1,4 +1,4 @@
-package backend.capstone.global.config;
+package backend.capstone.domain.kakaoplace.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
