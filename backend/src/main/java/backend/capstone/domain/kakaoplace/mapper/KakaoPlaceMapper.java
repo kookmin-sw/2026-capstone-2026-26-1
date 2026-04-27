@@ -24,7 +24,7 @@ public class KakaoPlaceMapper {
                 ))
                 .toList();
 
-        return new PlaceSearchResponse(page, result.meta().is_end(), result.meta()
+        return new PlaceSearchResponse(page, items.size(), result.meta().is_end(), result.meta()
             .pageable_count(), items);
     }
 

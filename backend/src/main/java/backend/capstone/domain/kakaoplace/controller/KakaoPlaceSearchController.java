@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @Validated
 @Tag(name = "카카오 장소 검색 API")
-public class KakaoPlaceController {
+public class KakaoPlaceSearchController {
 
     private final KakaoSearchByKeywordService kakaoSearchByKeywordService;
 
@@ -28,6 +28,7 @@ public class KakaoPlaceController {
             <br>
             - `page`는 현재 요청한 페이지 번호입니다.<br>
             - `places`는 실제 이번 응답에서 내려온 장소 목록입니다.<br>
+            - `size`는 이번 응답에서 내려온 장소 수입니다. (끝 페이지가 아닌 이상 10개임)<br>
             - `isEnd=true`이면 검색 결과를 모두 응답받았기에 다음 페이지를 요청하지 않아도 됩니다.<br>
             - `pageableCount`는 카카오 API 기준으로 조회 가능한 전체 결과 수입니다.<br>
             <br>
