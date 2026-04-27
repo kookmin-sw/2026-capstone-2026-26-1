@@ -12,6 +12,7 @@ import backend.capstone.domain.bookmarkplace.repository.BookmarkPlaceRepository;
 import backend.capstone.domain.user.entity.User;
 import backend.capstone.domain.user.service.UserService;
 import backend.capstone.global.exception.BusinessException;
+import jakarta.transaction.TransactionScoped;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -65,5 +66,10 @@ public class BookmarkPlaceService {
             userId);
 
         return BookmarkPlaceMapper.toListResponse(bookmarkPlaces);
+    }
+
+    @Transactional(readOnly = true)
+    public List<BookmarkPlace> getBookmarkPlaceByUserId(Long userId) {
+        return bookmarkPlaceRepository.findByUserIdOrderByIdAsc(userId);
     }
 }

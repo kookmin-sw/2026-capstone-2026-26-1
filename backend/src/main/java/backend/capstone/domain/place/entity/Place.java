@@ -1,5 +1,6 @@
 package backend.capstone.domain.place.entity;
 
+import backend.capstone.domain.bookmarkplace.entity.BookmarkPlaceType;
 import backend.capstone.domain.dayroute.entity.DayRoute;
 import backend.capstone.global.entity.BaseTimeEntity;
 import jakarta.persistence.Column;
@@ -14,6 +15,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import java.time.LocalDateTime;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -52,9 +54,16 @@ public class Place extends BaseTimeEntity {
     @Enumerated(EnumType.STRING)
     private PlaceSource source;
 
+    private LocalDateTime startTime;
+
+    private LocalDateTime endTime;
+
+    @Enumerated(EnumType.STRING)
+    private BookmarkPlaceType type;
+
     @Builder
     Place(DayRoute dayRoute, String roadAddress, String name, double latitude, double longitude,
-        int orderIndex, PlaceSource source) {
+        int orderIndex, PlaceSource source, LocalDateTime startTime, LocalDateTime endTime) {
         this.dayRoute = dayRoute;
         this.roadAddress = roadAddress;
         this.name = name;
@@ -62,6 +71,8 @@ public class Place extends BaseTimeEntity {
         this.longitude = longitude;
         this.orderIndex = orderIndex;
         this.source = source;
+        this.startTime = startTime;
+        this.endTime = endTime;
     }
 
     public void update(String roadAddress, String name, double latitude, double longitude) {
@@ -73,5 +84,9 @@ public class Place extends BaseTimeEntity {
 
     public void changeOrderIndex(int orderIndex) {
         this.orderIndex = orderIndex;
+    }
+
+    public void changeType(BookmarkPlaceType type) {
+        this.type = type;
     }
 }

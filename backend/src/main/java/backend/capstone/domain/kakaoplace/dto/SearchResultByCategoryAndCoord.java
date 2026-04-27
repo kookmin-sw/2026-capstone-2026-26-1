@@ -1,9 +1,9 @@
-package backend.capstone.domain.ongoingstay.service.dto;
+package backend.capstone.domain.kakaoplace.dto;
 
 import lombok.Builder;
 
 @Builder
-public record PlaceSearchResult(
+public record SearchResultByCategoryAndCoord(
     String name,
     String roadAddress,
     String jibunAddress,

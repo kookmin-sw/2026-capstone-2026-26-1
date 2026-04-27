@@ -1,8 +1,8 @@
-package backend.capstone.domain.ongoingstay.service.dto;
+package backend.capstone.domain.kakaoplace.service.dto;
 
 import java.util.List;
 
-public record KakaoCategorySearchResponse(
+public record KakaoSearchByKeywordResult(
     Meta meta,
     List<Document> documents
 ) {
@@ -12,23 +12,18 @@ public record KakaoCategorySearchResponse(
         int pageable_count,
         boolean is_end
     ) {
-
     }
 
     public record Document(
         String id,
         String place_name,
         String category_name,
-        String category_group_code,
-        String category_group_name,
-        String phone,
         String address_name,
         String road_address_name,
-        String x,
-        String y,
+        String phone,
         String place_url,
-        String distance
+        String x,
+        String y
     ) {
-
     }
 }

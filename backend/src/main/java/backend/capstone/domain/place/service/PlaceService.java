@@ -1,8 +1,11 @@
 package backend.capstone.domain.place.service;
 
+import backend.capstone.domain.bookmarkplace.entity.BookmarkPlace;
+import backend.capstone.domain.bookmarkplace.service.BookmarkPlaceService;
 import backend.capstone.domain.dayroute.entity.DayRoute;
 import backend.capstone.domain.dayroute.service.DayRouteService;
-import backend.capstone.domain.ongoingstay.service.dto.PlaceSearchResult;
+import backend.capstone.domain.ongoingstay.entity.OngoingStay;
+import backend.capstone.domain.kakaoplace.dto.SearchResultByCategoryAndCoord;
 import backend.capstone.domain.place.dto.PlaceAddRequest;
 import backend.capstone.domain.place.dto.PlaceAddResponse;
 import backend.capstone.domain.place.dto.PlaceReorderRequest;
@@ -28,14 +31,18 @@ public class PlaceService {
 
     private final DayRouteService dayRouteService;
     private final PlaceRepository placeRepository;
+    private final BookmarkPlaceService bookmarkPlaceService;
 
     @Transactional
     public PlaceAddResponse addPlace(DayRoute dayRoute, PlaceAddRequest request) {
         int newOrder = getNewOrder(dayRoute);
 
-        Place savedPlace = placeRepository.save(
-            PlaceMapper.toEntityByManual(dayRoute, request, newOrder));
+        Place place = PlaceMapper.toEntityByManual(dayRoute, request, newOrder);
+        applyBookmarkPlaceType(dayRoute, place);
+
+        Place savedPlace = placeRepository.save(place);
         dayRouteService.refreshHasManualData(dayRoute);
+
         return PlaceMapper.toPlaceAddResponse(savedPlace);
     }
 
@@ -52,6 +59,7 @@ public class PlaceService {
 
         place.update(request.roadAddress(), request.placeName(), request.latitude(),
             request.longitude());
+        applyBookmarkPlaceType(dayRoute, place);
 
         return PlaceMapper.toPlaceUpdateResponse(place);
     }
@@ -94,14 +102,12 @@ public class PlaceService {
             }
         }
 
-        // step 1. 임시 인덱스로 이동
         for (int i = 0; i < places.size(); i++) {
             places.get(i).changeOrderIndex(-(i + 1));
         }
 
         placeRepository.flush();
 
-        // step 2. 최종 인덱스로 이동
         for (int i = 0; i < reorderedPlaceIds.size(); i++) {
             Place place = placeMap.get(reorderedPlaceIds.get(i));
             place.changeOrderIndex(i + 1);
@@ -109,16 +115,38 @@ public class PlaceService {
     }
 
     @Transactional
-    public void saveAutoPlace(DayRoute dayRoute, double stayLatitude,
-        double stayLongitude, Optional<PlaceSearchResult> searchResult) {
+    public void saveAutoPlace(
+        DayRoute dayRoute,
+        OngoingStay stay,
+        Optional<SearchResultByCategoryAndCoord> searchResult
+    ) {
         int newOrder = getNewOrder(dayRoute);
 
         Place place = searchResult
-            .map(result -> PlaceMapper.toEntityByAuto(dayRoute, result, newOrder))
+            .map(result -> PlaceMapper.toEntityByAuto(dayRoute, result, newOrder,
+                stay.getStartTime(), stay.getLastTime()))
             .orElseGet(
-                () -> PlaceMapper.toUnknownAuto(dayRoute, stayLatitude, stayLongitude, newOrder));
+                () -> PlaceMapper.toUnknownAuto(dayRoute, stay.getCenterLatitude(), stay.getCenterLongitude(), newOrder,
+                    stay.getStartTime(), stay.getLastTime()));
 
+        applyBookmarkPlaceType(dayRoute, place);
         placeRepository.save(place);
+    }
+
+    private void applyBookmarkPlaceType(DayRoute dayRoute, Place place) {
+        String roadAddress = emptyToNull(place.getRoadAddress());
+        place.changeType(
+            roadAddress == null ? null
+                : bookmarkPlaceService.getBookmarkPlaceByUserId(dayRoute.getUser().getId()).stream()
+                    .filter(bookmarkPlace -> roadAddress.equals(bookmarkPlace.getRoadAddress()))
+                    .findFirst()
+                    .map(BookmarkPlace::getType)
+                    .orElse(null)
+        );
+    }
+
+    private String emptyToNull(String value) {
+        return (value == null || value.isBlank()) ? null : value;
     }
 
     private int getNewOrder(DayRoute dayRoute) {

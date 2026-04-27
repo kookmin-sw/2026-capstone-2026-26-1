@@ -78,5 +78,8 @@ public class OngoingStay extends BaseTimeEntity {
     public long getDurationMinutes() {
         return Duration.between(startTime, lastTime).toMinutes();
     }
-}
 
+    public void updateLastTime(LocalDateTime lastTime) {
+        this.lastTime = lastTime;
+    }
+}

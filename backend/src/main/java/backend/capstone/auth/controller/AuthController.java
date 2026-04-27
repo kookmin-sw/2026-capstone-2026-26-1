@@ -40,9 +40,15 @@ public class AuthController implements AuthControllerSpec {
     }
 
     @Override
-    @GetMapping("/test-issue")
+    @GetMapping("/test-token/issue")
     public TokenPair issueTestJwt() {
-        return authService.testIssue();
+        return authService.testIssue(1L);
+    }
+
+    @Override
+    @GetMapping("/hyewon-token/issue")
+    public TokenPair issueHyewonJwt() {
+        return authService.testIssue(2L);
     }
 
     private String resolveBearerToken(HttpServletRequest request) {

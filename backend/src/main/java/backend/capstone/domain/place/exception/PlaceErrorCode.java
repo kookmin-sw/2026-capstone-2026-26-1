@@ -10,7 +10,7 @@ import org.springframework.http.HttpStatus;
 public enum PlaceErrorCode implements ErrorCode {
 
     PLACE_NOT_FOUND("장소를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
-    INVALID_PLACE_REORDER("잘못된 Place Reorder 요청입니다.", HttpStatus.BAD_REQUEST);
+    INVALID_PLACE_REORDER("잘못된 장소 순서 변경 요청입니다.", HttpStatus.BAD_REQUEST);
 
     private final String message;
     private final HttpStatus status;

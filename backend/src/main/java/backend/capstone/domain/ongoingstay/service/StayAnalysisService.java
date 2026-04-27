@@ -5,9 +5,10 @@ import backend.capstone.domain.dayroute.entity.DayRoute;
 import backend.capstone.domain.dayroute.service.DayRouteService;
 import backend.capstone.domain.gpspoint.entity.GpsPoint;
 import backend.capstone.domain.gpspoint.service.GpsPointService;
+import backend.capstone.domain.kakaoplace.service.KakaoSearchByCategoryService;
 import backend.capstone.domain.ongoingstay.entity.OngoingStay;
 import backend.capstone.domain.ongoingstay.repository.OngoingStayRepository;
-import backend.capstone.domain.ongoingstay.service.dto.PlaceSearchResult;
+import backend.capstone.domain.kakaoplace.dto.SearchResultByCategoryAndCoord;
 import backend.capstone.domain.place.service.PlaceService;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -31,7 +32,7 @@ public class StayAnalysisService {
     private final GpsPointService gpsPointService;
     private final DayRouteService dayRouteService;
     private final PlaceService placeService;
-    private final PlaceSearchService placeSearchService;
+    private final KakaoSearchByCategoryService kakaoSearchByCategoryService;
 
     @Transactional
     public void analyzeStay(Long dayRouteId) {
@@ -75,31 +76,32 @@ public class StayAnalysisService {
                 continue;
             }
 
-            //종료된 stay가 10분이상 체류한 stay인지 판단
+            //종료된 stay가 15분이상 체류한 stay인지 판단
             if (stay.getDurationMinutes() >= STAY_MIN_DURATION_MINUTE) {
-                promoteStayToPlace(dayRoute, stay.getCenterLatitude(), stay.getCenterLongitude());
+                promoteStayToPlace(dayRoute, stay);
             }
 
             ongoingStayRepository.delete(stay);
             stay = OngoingStay.start(dayRoute, point);
             ongoingStayRepository.save(stay);
-
         }
+
         dayRoute.completeAnalysis(newPoints.getLast().getRecordedAt());
     }
 
-    public void promoteStayToPlace(DayRoute dayRoute, double stayLatitude, double stayLongitude) {
-        Optional<PlaceSearchResult> searchResult = Optional.empty();
+    public void promoteStayToPlace(DayRoute dayRoute, OngoingStay stay) {
+        Optional<SearchResultByCategoryAndCoord> searchResult = Optional.empty();
 
         try {
-            searchResult = placeSearchService.searchByCoordinate(stayLatitude, stayLongitude);
+            searchResult = kakaoSearchByCategoryService.searchByCategory(stay.getCenterLatitude(),
+                stay.getCenterLongitude(), dayRoute.getUser().getId());
         } catch (WebClientException e) {
             log.error(
-                "카카오 플레이스 조회에 실패. 알 수 없는 place로 저장. dayRouteId={}, lat={}, lon={}",
-                dayRoute.getId(), stayLatitude, stayLongitude, e);
+                "카카오 장소 조회에 실패했습니다. 이름 없는 장소로 저장합니다. dayRouteId={}, lat={}, lon={}",
+                dayRoute.getId(), stay.getCenterLatitude(), stay.getCenterLongitude(), e);
         }
 
-        placeService.saveAutoPlace(dayRoute, stayLatitude, stayLongitude, searchResult);
+        placeService.saveAutoPlace(dayRoute, stay, searchResult);
     }
 
     private void handleLastTailIfDayEnded(DayRoute dayRoute, OngoingStay stay) {
@@ -115,12 +117,13 @@ public class StayAnalysisService {
 
         if (Duration.between(stay.getStartTime(), dayRouteEndTime).toMinutes()
             >= STAY_MIN_DURATION_MINUTE) {
-            promoteStayToPlace(dayRoute, stay.getCenterLatitude(), stay.getCenterLongitude());
+            stay.updateLastTime(dayRouteEndTime);
+            promoteStayToPlace(dayRoute, stay);
         }
+
         ongoingStayRepository.delete(stay);
     }
 
-    //두 좌표간 거리를 m 단위로 계산하는 함수 (하버사인 공식)
     private double distanceMeter(
         double lat1, double lon1,
         double lat2, double lon2
@@ -140,5 +143,4 @@ public class StayAnalysisService {
 
         return earthRadius * c;
     }
-
 }

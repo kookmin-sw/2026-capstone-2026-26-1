@@ -14,7 +14,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class BookmarkPlaceMapper {
 
-    public static BookmarkPlace toEntity(User user, BookmarkPlaceCreateRequest request) {
+    public static BookmarkPlace toEntity(
+        User user,
+        BookmarkPlaceCreateRequest request
+    ) {
         return BookmarkPlace.builder()
             .user(user)
             .type(request.type())

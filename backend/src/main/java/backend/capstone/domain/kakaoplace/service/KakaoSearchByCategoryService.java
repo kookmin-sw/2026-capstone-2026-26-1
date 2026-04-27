@@ -1,8 +1,10 @@
-package backend.capstone.domain.ongoingstay.service;
+package backend.capstone.domain.kakaoplace.service;
 
-import backend.capstone.domain.ongoingstay.service.dto.KakaoCategorySearchResponse;
-import backend.capstone.domain.ongoingstay.service.dto.KakaoCategorySearchResponse.Document;
-import backend.capstone.domain.ongoingstay.service.dto.PlaceSearchResult;
+import backend.capstone.domain.bookmarkplace.entity.BookmarkPlace;
+import backend.capstone.domain.bookmarkplace.service.BookmarkPlaceService;
+import backend.capstone.domain.kakaoplace.service.dto.KakaoSearchByCategoryResult;
+import backend.capstone.domain.kakaoplace.service.dto.KakaoSearchByCategoryResult.Document;
+import backend.capstone.domain.kakaoplace.dto.SearchResultByCategoryAndCoord;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -14,10 +16,12 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 @Service
 @RequiredArgsConstructor
-public class PlaceSearchService {
+public class KakaoSearchByCategoryService {
 
     private static final int DEFAULT_RADIUS_METER = 100;
     private static final int DEFAULT_SIZE = 15;
+    private static final int BOOKMARK_PLACE_WEIGHT = -50;
+    private static final int BOOKMARK_MATCH_RADIUS_METER = 30;
 
     /**
      * 1차 탐색 카테고리 앱 취지상 "의미있는 장소"일 가능성이 높은 카테고리
@@ -47,14 +51,18 @@ public class PlaceSearchService {
     );
 
     private final WebClient kakaoLocalWebClient;
-    private final PlaceSearchFallbackService placeSearchFallbackService;
+    private final KakaoSearchByCoordService kakaoSearchByCoordService;
+    private final BookmarkPlaceService bookmarkPlaceService;
 
-    public Optional<PlaceSearchResult> searchByCoordinate(double latitude, double longitude) {
-        Optional<Document> bestPoi = findBestPoi(latitude, longitude);
+    public Optional<SearchResultByCategoryAndCoord> searchByCategory(double latitude, double longitude,
+        Long userId) {
+        List<BookmarkPlace> bookmarkPlaces = bookmarkPlaceService.getBookmarkPlaceByUserId(userId);
+        Optional<Document> bestPoi = findBestPoi(latitude, longitude, bookmarkPlaces);
+
         if (bestPoi.isPresent()) {
             Document doc = bestPoi.get();
             return Optional.of(
-                PlaceSearchResult.builder()
+                SearchResultByCategoryAndCoord.builder()
                     .name(emptyToNull(doc.place_name()))
                     .roadAddress(emptyToNull(doc.road_address_name()))
                     .jibunAddress(emptyToNull(doc.address_name()))
@@ -64,35 +72,39 @@ public class PlaceSearchService {
             );
         }
 
-        return placeSearchFallbackService.searchAddressFallback(latitude, longitude);
+        return kakaoSearchByCoordService.searchByCoord(latitude, longitude);
     }
 
-    private Optional<KakaoCategorySearchResponse.Document> findBestPoi(
+    private Optional<KakaoSearchByCategoryResult.Document> findBestPoi(
         double latitude,
-        double longitude
+        double longitude,
+        List<BookmarkPlace> bookmarkPlaces
     ) {
         // 1차 카테고리부터 우선 탐색
-        Optional<KakaoCategorySearchResponse.Document> primaryBestPoi =
-            findBestPoiByCategories(latitude, longitude, PRIMARY_CATEGORY_GROUP_CODES);
+        Optional<KakaoSearchByCategoryResult.Document> primaryBestPoi =
+            findBestPlaceByCategory(latitude, longitude, PRIMARY_CATEGORY_GROUP_CODES,
+                bookmarkPlaces);
 
         if (primaryBestPoi.isPresent()) {
             return primaryBestPoi;
         }
 
         // 1차에서 후보가 없을 때만 2차 카테고리 탐색
-        return findBestPoiByCategories(latitude, longitude, SECONDARY_CATEGORY_GROUP_CODES);
+        return findBestPlaceByCategory(latitude, longitude, SECONDARY_CATEGORY_GROUP_CODES,
+            bookmarkPlaces);
     }
 
     //거리+카테고리 기반으로 최적의 poi를 반환하는 함수
-    private Optional<KakaoCategorySearchResponse.Document> findBestPoiByCategories(
+    private Optional<KakaoSearchByCategoryResult.Document> findBestPlaceByCategory(
         double latitude,
         double longitude,
-        List<String> categoryGroupCodes
+        List<String> categoryGroupCodes,
+        List<BookmarkPlace> bookmarkPlaces
     ) {
         Map<String, Document> uniqueCandidates = new LinkedHashMap<>();
 
         for (String categoryGroupCode : categoryGroupCodes) {
-            KakaoCategorySearchResponse response = kakaoLocalWebClient.get()
+            KakaoSearchByCategoryResult response = kakaoLocalWebClient.get()
                 .uri(uriBuilder -> uriBuilder
                     .path("/v2/local/search/category.json")
                     .queryParam("category_group_code", categoryGroupCode)
@@ -103,7 +115,7 @@ public class PlaceSearchService {
                     .queryParam("size", DEFAULT_SIZE)
                     .build())
                 .retrieve()
-                .bodyToMono(KakaoCategorySearchResponse.class)
+                .bodyToMono(KakaoSearchByCategoryResult.class)
                 .block();
 
             if (response == null || response.documents() == null || response.documents()
@@ -125,13 +137,14 @@ public class PlaceSearchService {
         }
 
         return uniqueCandidates.values().stream()
-            .min(Comparator.comparingInt(this::score));
+            .min(Comparator.comparingInt(doc -> score(doc, bookmarkPlaces)));
     }
 
     /**
      * 최적 후보 선정 기준: 거리+카테고리별 가중치
      */
-    private int score(KakaoCategorySearchResponse.Document doc) {
+    private int score(KakaoSearchByCategoryResult.Document doc,
+        List<BookmarkPlace> bookmarkPlaces) {
         Integer distance = parseInteger(doc.distance()); //distance는 좌표와 장소 간의 직선거리(m)
         if (distance == null) {
             return Integer.MAX_VALUE;
@@ -140,8 +153,39 @@ public class PlaceSearchService {
         int score = distance;
         String categoryGroupCode = emptyToNull(doc.category_group_code());
         score += categoryWeight(categoryGroupCode);
+        score += bookmarkPlaceWeight(doc, bookmarkPlaces);
 
         return score;
+    }
+
+    private int bookmarkPlaceWeight(Document doc, List<BookmarkPlace> bookmarkPlaces) {
+        if (bookmarkPlaces.isEmpty()) {
+            return 0;
+        }
+
+        return bookmarkPlaces.stream()
+            .anyMatch(bookmarkPlace -> isSamePlace(doc, bookmarkPlace))
+            ? BOOKMARK_PLACE_WEIGHT
+            : 0;
+    }
+
+    private boolean isSamePlace(Document doc, BookmarkPlace bookmarkPlace) {
+        String placeName = emptyToNull(doc.place_name());
+        String roadAddress = emptyToNull(doc.road_address_name());
+
+        // 도로명주소가 같으면 북마크 장소와 동일한 장소로 간주
+        if (roadAddress != null && roadAddress.equals(bookmarkPlace.getRoadAddress())) {
+            return true;
+        }
+
+        Double latitude = parseDouble(doc.y());
+        Double longitude = parseDouble(doc.x());
+        if (latitude == null || longitude == null) {
+            return false;
+        }
+
+        return distanceMeter(latitude, longitude, bookmarkPlace.getLatitude(),
+            bookmarkPlace.getLongitude()) <= BOOKMARK_MATCH_RADIUS_METER;
     }
 
     private int categoryWeight(String categoryGroupCode) {
@@ -182,5 +226,24 @@ public class PlaceSearchService {
         return (value == null || value.isBlank()) ? null : value;
     }
 
+    private double distanceMeter(
+        double lat1, double lon1,
+        double lat2, double lon2
+    ) {
+        double earthRadius = 6371000;
+
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLon = Math.toRadians(lon2 - lon1);
+
+        double a =
+            Math.sin(dLat / 2) * Math.sin(dLat / 2)
+                + Math.cos(Math.toRadians(lat1))
+                * Math.cos(Math.toRadians(lat2))
+                * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+        return earthRadius * c;
+    }
 
 }
