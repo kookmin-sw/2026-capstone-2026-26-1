@@ -5,7 +5,7 @@ import backend.capstone.domain.bookmarkplace.service.BookmarkPlaceService;
 import backend.capstone.domain.dayroute.entity.DayRoute;
 import backend.capstone.domain.dayroute.service.DayRouteService;
 import backend.capstone.domain.ongoingstay.entity.OngoingStay;
-import backend.capstone.domain.ongoingstay.service.dto.PlaceSearchResult;
+import backend.capstone.domain.kakaoplace.dto.SearchResultByCategoryAndCoord;
 import backend.capstone.domain.place.dto.PlaceAddRequest;
 import backend.capstone.domain.place.dto.PlaceAddResponse;
 import backend.capstone.domain.place.dto.PlaceReorderRequest;
@@ -118,7 +118,7 @@ public class PlaceService {
     public void saveAutoPlace(
         DayRoute dayRoute,
         OngoingStay stay,
-        Optional<PlaceSearchResult> searchResult
+        Optional<SearchResultByCategoryAndCoord> searchResult
     ) {
         int newOrder = getNewOrder(dayRoute);
 

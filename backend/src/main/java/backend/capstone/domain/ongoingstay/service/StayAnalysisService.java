@@ -5,9 +5,10 @@ import backend.capstone.domain.dayroute.entity.DayRoute;
 import backend.capstone.domain.dayroute.service.DayRouteService;
 import backend.capstone.domain.gpspoint.entity.GpsPoint;
 import backend.capstone.domain.gpspoint.service.GpsPointService;
+import backend.capstone.domain.kakaoplace.service.KakaoSearchByCategoryService;
 import backend.capstone.domain.ongoingstay.entity.OngoingStay;
 import backend.capstone.domain.ongoingstay.repository.OngoingStayRepository;
-import backend.capstone.domain.ongoingstay.service.dto.PlaceSearchResult;
+import backend.capstone.domain.kakaoplace.dto.SearchResultByCategoryAndCoord;
 import backend.capstone.domain.place.service.PlaceService;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -31,7 +32,7 @@ public class StayAnalysisService {
     private final GpsPointService gpsPointService;
     private final DayRouteService dayRouteService;
     private final PlaceService placeService;
-    private final PlaceSearchByCoordService placeSearchByCoordService;
+    private final KakaoSearchByCategoryService kakaoSearchByCategoryService;
 
     @Transactional
     public void analyzeStay(Long dayRouteId) {
@@ -89,10 +90,10 @@ public class StayAnalysisService {
     }
 
     public void promoteStayToPlace(DayRoute dayRoute, OngoingStay stay) {
-        Optional<PlaceSearchResult> searchResult = Optional.empty();
+        Optional<SearchResultByCategoryAndCoord> searchResult = Optional.empty();
 
         try {
-            searchResult = placeSearchByCoordService.searchByCoordinate(stay.getCenterLatitude(),
+            searchResult = kakaoSearchByCategoryService.searchByCategory(stay.getCenterLatitude(),
                 stay.getCenterLongitude(), dayRoute.getUser().getId());
         } catch (WebClientException e) {
             log.error(

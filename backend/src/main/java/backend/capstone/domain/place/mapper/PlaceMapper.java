@@ -1,7 +1,7 @@
 package backend.capstone.domain.place.mapper;
 
 import backend.capstone.domain.dayroute.entity.DayRoute;
-import backend.capstone.domain.ongoingstay.service.dto.PlaceSearchResult;
+import backend.capstone.domain.kakaoplace.dto.SearchResultByCategoryAndCoord;
 import backend.capstone.domain.place.dto.PlaceAddRequest;
 import backend.capstone.domain.place.dto.PlaceAddResponse;
 import backend.capstone.domain.place.dto.PlaceItem;
@@ -85,7 +85,7 @@ public class PlaceMapper {
 
     public static Place toEntityByAuto(
         DayRoute dayRoute,
-        PlaceSearchResult searchResult,
+        SearchResultByCategoryAndCoord searchResult,
         int orderIndex,
         LocalDateTime startTime,
         LocalDateTime endTime

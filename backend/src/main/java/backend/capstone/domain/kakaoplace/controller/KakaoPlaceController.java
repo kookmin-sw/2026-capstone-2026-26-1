@@ -1,7 +1,7 @@
 package backend.capstone.domain.kakaoplace.controller;
 
 import backend.capstone.domain.kakaoplace.dto.PlaceSearchResponse;
-import backend.capstone.domain.kakaoplace.service.KakaoLocalSearchService;
+import backend.capstone.domain.kakaoplace.service.KakaoSearchByKeywordService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "카카오 장소 검색 API")
 public class KakaoPlaceController {
 
-    private final KakaoLocalSearchService kakaoLocalSearchService;
+    private final KakaoSearchByKeywordService kakaoSearchByKeywordService;
 
     @Operation(
         summary = "카카오 장소 검색 API",
@@ -41,6 +41,6 @@ public class KakaoPlaceController {
     public PlaceSearchResponse searchPlaces(
         @Parameter(example = "국민대학교") @RequestParam @NotBlank String query,
         @RequestParam(defaultValue = "1") int page) {
-        return kakaoLocalSearchService.searchPlaces(query, page);
+        return kakaoSearchByKeywordService.searchByKeyword(query, page);
     }
 }

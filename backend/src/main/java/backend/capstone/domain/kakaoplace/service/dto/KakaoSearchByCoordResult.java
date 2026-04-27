@@ -1,8 +1,8 @@
-package backend.capstone.domain.ongoingstay.service.dto;
+package backend.capstone.domain.kakaoplace.service.dto;
 
 import java.util.List;
 
-public record KakaoCoord2AddressResponse(
+public record KakaoSearchByCoordResult(
     Meta meta,
     List<Document> documents
 ) {

@@ -2,7 +2,7 @@ package backend.capstone.domain.kakaoplace.mapper;
 
 import backend.capstone.domain.kakaoplace.dto.PlaceSearchResponse;
 import backend.capstone.domain.kakaoplace.dto.PlaceSearchResponse.PlaceSearchItem;
-import backend.capstone.domain.kakaoplace.service.dto.KakaoLocalSearchResult;
+import backend.capstone.domain.kakaoplace.service.dto.KakaoSearchByKeywordResult;
 import java.util.List;
 import lombok.NoArgsConstructor;
 
@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 public class KakaoPlaceMapper {
 
     public static PlaceSearchResponse toPlaceSearchResponse(
-        int page, KakaoLocalSearchResult result
+        int page, KakaoSearchByKeywordResult result
     ) {
         List<PlaceSearchItem> items = result.documents() == null
             ? List.of()

@@ -1,7 +1,7 @@
-package backend.capstone.domain.ongoingstay.service;
+package backend.capstone.domain.kakaoplace.service;
 
-import backend.capstone.domain.ongoingstay.service.dto.KakaoCoord2AddressResponse;
-import backend.capstone.domain.ongoingstay.service.dto.PlaceSearchResult;
+import backend.capstone.domain.kakaoplace.service.dto.KakaoSearchByCoordResult;
+import backend.capstone.domain.kakaoplace.dto.SearchResultByCategoryAndCoord;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -9,15 +9,15 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 @Service
 @RequiredArgsConstructor
-public class PlaceSearchFallbackService {
+public class KakaoSearchByCoordService {
 
     private final WebClient kakaoLocalWebClient;
 
     /**
      * 적절한 POI가 없을 때 중심좌표 기반 주소 fallback
      */
-    public Optional<PlaceSearchResult> searchAddressFallback(double latitude, double longitude) {
-        KakaoCoord2AddressResponse response = kakaoLocalWebClient.get()
+    public Optional<SearchResultByCategoryAndCoord> searchByCoord(double latitude, double longitude) {
+        KakaoSearchByCoordResult response = kakaoLocalWebClient.get()
             .uri(uriBuilder -> uriBuilder
                 .path("/v2/local/geo/coord2address.json")
                 .queryParam("x", longitude)
@@ -25,14 +25,14 @@ public class PlaceSearchFallbackService {
                 .queryParam("input_coord", "WGS84")
                 .build())
             .retrieve()
-            .bodyToMono(KakaoCoord2AddressResponse.class)
+            .bodyToMono(KakaoSearchByCoordResult.class)
             .block();
 
         if (response == null || response.documents() == null || response.documents().isEmpty()) {
             return Optional.empty();
         }
 
-        KakaoCoord2AddressResponse.Document doc = response.documents().getFirst();
+        KakaoSearchByCoordResult.Document doc = response.documents().getFirst();
 
         String placeName = extractPlaceName(doc);
         String roadAddress = extractRoadAddress(doc);
@@ -42,7 +42,7 @@ public class PlaceSearchFallbackService {
         Double resolvedLongitude = extractAddressLongitude(doc);
 
         return Optional.of(
-            PlaceSearchResult.builder()
+            SearchResultByCategoryAndCoord.builder()
                 .name(placeName)
                 .roadAddress(roadAddress)
                 .jibunAddress(jibunAddress)
@@ -52,7 +52,7 @@ public class PlaceSearchFallbackService {
         );
     }
 
-    private String extractPlaceName(KakaoCoord2AddressResponse.Document document) {
+    private String extractPlaceName(KakaoSearchByCoordResult.Document document) {
         if (document.road_address() != null) {
             String buildingName = document.road_address().building_name();
             if (buildingName != null && !buildingName.isBlank()) {
@@ -75,7 +75,7 @@ public class PlaceSearchFallbackService {
         return null;
     }
 
-    private String extractRoadAddress(KakaoCoord2AddressResponse.Document document) {
+    private String extractRoadAddress(KakaoSearchByCoordResult.Document document) {
         if (document.road_address() != null) {
             String roadAddressName = document.road_address().address_name();
             if (roadAddressName != null && !roadAddressName.isBlank()) {
@@ -90,7 +90,7 @@ public class PlaceSearchFallbackService {
         return null;
     }
 
-    private String extractJibunAddress(KakaoCoord2AddressResponse.Document document) {
+    private String extractJibunAddress(KakaoSearchByCoordResult.Document document) {
         if (document != null && document.address() != null) {
             String addressName = document.address().address_name();
             if (addressName != null && !addressName.isBlank()) {
@@ -100,7 +100,7 @@ public class PlaceSearchFallbackService {
         return null;
     }
 
-    private Double extractAddressLatitude(KakaoCoord2AddressResponse.Document document) {
+    private Double extractAddressLatitude(KakaoSearchByCoordResult.Document document) {
         if (document == null) {
             return null;
         }
@@ -119,7 +119,7 @@ public class PlaceSearchFallbackService {
         return null;
     }
 
-    private Double extractAddressLongitude(KakaoCoord2AddressResponse.Document document) {
+    private Double extractAddressLongitude(KakaoSearchByCoordResult.Document document) {
         if (document == null) {
             return null;
         }
