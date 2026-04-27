@@ -68,6 +68,7 @@ internal fun MainBottomSheet(
     onTabSelected: (MainBottomSheetTab) -> Unit,
     onPlaceRetryClick: () -> Unit,
     onAddPlaceClick: () -> Unit,
+    onReorderPlaces: (List<Long>) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val focusManager = LocalFocusManager.current
@@ -112,6 +113,8 @@ internal fun MainBottomSheet(
                         onSelectedPlaceHandled = onSelectedPlaceHandled,
                         onRetryClick = onPlaceRetryClick,
                         onAddPlaceClick = onAddPlaceClick,
+                        onReorderPlaces = onReorderPlaces,
+                        isReorderSubmitting = placeUiState.isSubmitting,
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(horizontal = 20.dp)
@@ -259,6 +262,7 @@ private fun MainBottomSheetPreview() {
                 onTabSelected = {},
                 onPlaceRetryClick = {},
                 onAddPlaceClick = {},
+                onReorderPlaces = {},
                 modifier = Modifier.fillMaxSize()
             )
         }

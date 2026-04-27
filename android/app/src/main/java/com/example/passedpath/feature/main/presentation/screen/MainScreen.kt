@@ -48,6 +48,7 @@ fun MainScreen(
     onDayNoteSaveClick: () -> Unit,
     onPlaceListRefreshRequested: (String) -> Unit,
     onNavigateToAddPlace: (String) -> Unit,
+    onReorderPlaces: (List<Long>) -> Unit,
     onTrackingPermissionDialogConfirm: () -> Unit,
     onTrackingPermissionDialogDismiss: () -> Unit,
     onPermissionActionClick: () -> Unit,
@@ -200,7 +201,8 @@ fun MainScreen(
                     },
                     onAddPlaceClick = {
                         onNavigateToAddPlace(uiState.selectedDateKey)
-                    }
+                    },
+                    onReorderPlaces = onReorderPlaces
                 )
             }
         )

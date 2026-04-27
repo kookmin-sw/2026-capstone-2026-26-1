@@ -6,6 +6,8 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,6 +20,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -30,6 +33,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -39,6 +43,7 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
@@ -67,7 +72,9 @@ import com.example.passedpath.ui.theme.Green50
 import com.example.passedpath.ui.theme.Green500
 import com.example.passedpath.ui.theme.Green600
 import com.example.passedpath.ui.theme.PassedPathTheme
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -81,17 +88,41 @@ fun PlaceBottomSheetContent(
     onSelectedPlaceHandled: () -> Unit,
     onRetryClick: () -> Unit,
     onAddPlaceClick: () -> Unit,
+    onReorderPlaces: (List<Long>) -> Unit,
     modifier: Modifier = Modifier,
+    isReorderSubmitting: Boolean = false
 ) {
     var isBannerVisible by rememberSaveable { mutableStateOf(true) }
     var animatedPlaceId by remember { mutableStateOf<Long?>(null) }
     val sortedPlaces = placeListUiState.places.sortedBy(VisitedPlace::orderIndex)
+    var reorderedPlaces by remember { mutableStateOf(sortedPlaces) }
+    val currentReorderedPlaces by rememberUpdatedState(reorderedPlaces)
+    var draggedPlaceId by remember { mutableStateOf<Long?>(null) }
+    var wasReorderSubmitting by remember { mutableStateOf(false) }
+    val canReorder = sortedPlaces.size > 1 &&
+        !isReorderSubmitting &&
+        !placeListUiState.isLoading &&
+        !(placeListUiState.errorMessage != null && !placeListUiState.isStale)
     val listState = rememberLazyListState()
     val placeSectionStartIndex = (if (isBannerVisible) 1 else 0) + 1
 
-    LaunchedEffect(selectedPlaceId, sortedPlaces) {
+    LaunchedEffect(sortedPlaces) {
+        if (draggedPlaceId == null) {
+            reorderedPlaces = sortedPlaces
+        }
+    }
+
+    LaunchedEffect(isReorderSubmitting, placeListUiState.errorMessage, sortedPlaces) {
+        if (wasReorderSubmitting && !isReorderSubmitting && placeListUiState.errorMessage != null) {
+            reorderedPlaces = sortedPlaces
+            draggedPlaceId = null
+        }
+        wasReorderSubmitting = isReorderSubmitting
+    }
+
+    LaunchedEffect(selectedPlaceId, reorderedPlaces) {
         val placeId = selectedPlaceId ?: return@LaunchedEffect
-        val selectedIndex = sortedPlaces.indexOfFirst { it.placeId == placeId }
+        val selectedIndex = reorderedPlaces.indexOfFirst { it.placeId == placeId }
         if (selectedIndex < 0) {
             onSelectedPlaceHandled()
             return@LaunchedEffect
@@ -106,6 +137,28 @@ fun PlaceBottomSheetContent(
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
+            .placeReorderGesture(
+                enabled = canReorder,
+                placesProvider = { currentReorderedPlaces },
+                listState = listState,
+                onDragStartPlace = { placeId ->
+                    draggedPlaceId = placeId
+                },
+                onMovePlace = { fromIndex, toIndex ->
+                    reorderedPlaces = reorderedPlaces.moved(fromIndex, toIndex)
+                },
+                onDragFinished = {
+                    val nextPlaceIds = reorderedPlaces.map(VisitedPlace::placeId)
+                    if (nextPlaceIds != sortedPlaces.map(VisitedPlace::placeId)) {
+                        onReorderPlaces(nextPlaceIds)
+                    }
+                    draggedPlaceId = null
+                },
+                onDragCancelled = {
+                    reorderedPlaces = sortedPlaces
+                    draggedPlaceId = null
+                }
+            )
             .graphicsLayer {
                 clip = true
                 shape = RectangleShape
@@ -146,18 +199,19 @@ fun PlaceBottomSheetContent(
                 }
             }
 
-            sortedPlaces.isEmpty() -> Unit
+            reorderedPlaces.isEmpty() -> Unit
 
             else -> {
                 itemsIndexed(
-                    items = sortedPlaces,
+                    items = reorderedPlaces,
                     key = { _, place -> place.placeId }
                 ) { index, place ->
                     PlaceTimelineItem(
                         place = place,
                         shouldAnimate = place.placeId == animatedPlaceId,
                         isFirst = index == 0,
-                        isLast = index == sortedPlaces.lastIndex
+                        isLast = index == reorderedPlaces.lastIndex,
+                        displayOrderIndex = index + 1
                     )
                 }
             }
@@ -310,7 +364,8 @@ private fun PlaceTimelineItem(
     place: VisitedPlace,
     shouldAnimate: Boolean,
     isFirst: Boolean,
-    isLast: Boolean
+    isLast: Boolean,
+    displayOrderIndex: Int
 ) {
     val horizontalOffset = remember(place.placeId) { Animatable(0f) }
 
@@ -335,13 +390,13 @@ private fun PlaceTimelineItem(
         verticalAlignment = Alignment.Top
     ) {
         TimelineDecoration(
-            orderIndex = place.orderIndex,
+            orderIndex = displayOrderIndex,
             isFirst = isFirst,
             isLast = isLast
         )
         PlaceCard(
             name = place.placeName.ifBlank {
-                stringResource(R.string.route_place_fallback_title, place.orderIndex)
+                stringResource(R.string.route_place_fallback_title, displayOrderIndex)
             },
             address = place.roadAddress.ifBlank {
                 stringResource(
@@ -359,7 +414,101 @@ private fun PlaceTimelineItem(
     }
 }
 
+private fun Modifier.placeReorderGesture(
+    enabled: Boolean,
+    placesProvider: () -> List<VisitedPlace>,
+    listState: LazyListState,
+    onDragStartPlace: (Long) -> Unit,
+    onMovePlace: (fromIndex: Int, toIndex: Int) -> Unit,
+    onDragFinished: () -> Unit,
+    onDragCancelled: () -> Unit
+): Modifier {
+    if (!enabled) return this
+
+    return pointerInput(enabled, listState) {
+        var draggedPlaceId: Long? = null
+
+        coroutineScope {
+            detectDragGesturesAfterLongPress(
+                onDragStart = { offset ->
+                    val places = placesProvider()
+                    val placeId = listState.placeIdAtOffset(offset.y, places)
+                    draggedPlaceId = placeId
+                    placeId?.let(onDragStartPlace)
+                },
+                onDrag = { change, _ ->
+                    val placeId = draggedPlaceId ?: return@detectDragGesturesAfterLongPress
+                    change.consume()
+                    val places = placesProvider()
+                    val fromIndex = places.indexOfFirst { it.placeId == placeId }
+                    val toIndex = listState.placeIndexAtOffset(change.position.y, places)
+                    if (fromIndex >= 0 && toIndex != null && fromIndex != toIndex) {
+                        onMovePlace(fromIndex, toIndex)
+                    }
+                    val scrollDelta = listState.edgeScrollDelta(change.position.y)
+                    if (scrollDelta != 0f) {
+                        launch {
+                            listState.scrollBy(scrollDelta)
+                        }
+                    }
+                },
+                onDragEnd = {
+                    if (draggedPlaceId != null) {
+                        onDragFinished()
+                    }
+                    draggedPlaceId = null
+                },
+                onDragCancel = {
+                    if (draggedPlaceId != null) {
+                        onDragCancelled()
+                    }
+                    draggedPlaceId = null
+                }
+            )
+        }
+    }
+}
+
+private fun LazyListState.placeIdAtOffset(offsetY: Float, places: List<VisitedPlace>): Long? {
+    val itemKey = layoutInfo.visibleItemsInfo
+        .firstOrNull { item ->
+            item.key is Long &&
+                offsetY.toInt() in item.offset..(item.offset + item.size)
+        }
+        ?.key as? Long
+
+    return itemKey?.takeIf { key -> places.any { it.placeId == key } }
+}
+
+private fun LazyListState.placeIndexAtOffset(offsetY: Float, places: List<VisitedPlace>): Int? {
+    val placeId = placeIdAtOffset(offsetY, places) ?: return null
+    return places.indexOfFirst { it.placeId == placeId }.takeIf { it >= 0 }
+}
+
+private fun LazyListState.edgeScrollDelta(offsetY: Float): Float {
+    val viewportStart = layoutInfo.viewportStartOffset.toFloat()
+    val viewportEnd = layoutInfo.viewportEndOffset.toFloat()
+    val edgeSize = ReorderAutoScrollEdgeSizePx
+
+    return when {
+        offsetY < viewportStart + edgeSize -> -ReorderAutoScrollStepPx
+        offsetY > viewportEnd - edgeSize -> ReorderAutoScrollStepPx
+        else -> 0f
+    }
+}
+
+private fun List<VisitedPlace>.moved(fromIndex: Int, toIndex: Int): List<VisitedPlace> {
+    if (fromIndex !in indices || toIndex !in indices || fromIndex == toIndex) return this
+
+    return toMutableList().apply {
+        add(toIndex, removeAt(fromIndex))
+    }
+}
+
 private fun Float.toCardOffset(): Dp = this.dp
+
+private const val ReorderAutoScrollEdgeSizePx = 96f
+private const val ReorderAutoScrollStepPx = 28f
 
 private fun String?.toPlaceCardTimeText(): String? {
     val timestamp = this ?: return null
@@ -458,6 +607,7 @@ private fun PlaceBottomSheetContentPreview() {
             onSelectedPlaceHandled = {},
             onRetryClick = {},
             onAddPlaceClick = {},
+            onReorderPlaces = {},
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 20.dp)
@@ -479,6 +629,7 @@ private fun PlaceBottomSheetContentEmptyPreview() {
             onSelectedPlaceHandled = {},
             onRetryClick = {},
             onAddPlaceClick = {},
+            onReorderPlaces = {},
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 20.dp)

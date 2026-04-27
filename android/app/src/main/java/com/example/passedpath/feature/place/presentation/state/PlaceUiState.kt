@@ -4,24 +4,13 @@ import com.example.passedpath.feature.place.domain.model.VisitedPlace
 
 data class PlaceUiState(
     val dateKey: String = "",
-    val reorderPlaceIdsInput: String = "",
     val isSubmitting: Boolean = false,
     val placeList: PlaceListUiState = PlaceListUiState(),
     val errorMessage: String? = null,
     val successMessage: String? = null
 ) {
-    val parsedReorderPlaceIds: List<Long>
-        get() = reorderPlaceIdsInput
-            .split(',')
-            .map(String::trim)
-            .filter(String::isNotBlank)
-            .mapNotNull(String::toLongOrNull)
-
     val isDateValid: Boolean
         get() = dateKey.isNotBlank()
-
-    val isReorderEnabled: Boolean
-        get() = !isSubmitting && isDateValid && parsedReorderPlaceIds.isNotEmpty()
 }
 
 data class PlaceListUiState(

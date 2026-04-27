@@ -147,6 +147,7 @@ fun MainRoute(
         onDayNoteSaveClick = dayNoteViewModel::submitDayNote,
         onPlaceListRefreshRequested = placeViewModel::fetchVisitedPlaces,
         onNavigateToAddPlace = onNavigateToAddPlace,
+        onReorderPlaces = placeViewModel::reorderPlaces,
         onTrackingPermissionDialogConfirm = {
             viewModel.dismissTrackingPermissionDialog()
             AppSettingsNavigator.openAppSettings(context)

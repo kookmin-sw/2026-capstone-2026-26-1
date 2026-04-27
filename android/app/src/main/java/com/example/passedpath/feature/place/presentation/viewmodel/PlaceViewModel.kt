@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.passedpath.app.AppContainer
+import com.example.passedpath.feature.place.domain.model.VisitedPlace
 import com.example.passedpath.feature.place.domain.usecase.GetVisitedPlacesUseCase
 import com.example.passedpath.feature.place.domain.usecase.ReorderPlacesUseCase
 import com.example.passedpath.feature.place.presentation.state.PlaceListUiState
@@ -50,16 +51,6 @@ class PlaceViewModel(
         }
     }
 
-    fun updateReorderPlaceIdsInput(value: String) {
-        updateField {
-            copy(
-                reorderPlaceIdsInput = value,
-                errorMessage = null,
-                successMessage = null
-            )
-        }
-    }
-
     // 현재 날짜의 장소 목록을 다시 불러온다.
     fun fetchVisitedPlaces(dateKey: String = _uiState.value.dateKey) {
         if (!isValidDateKey(dateKey)) {
@@ -83,10 +74,10 @@ class PlaceViewModel(
         }
     }
 
-    // 장소 순서를 저장하고 목록을 다시 불러온다.
-    fun reorderPlaces() {
+    fun reorderPlaces(placeIds: List<Long>) {
         val currentState = _uiState.value
-        val placeIds = currentState.parsedReorderPlaceIds
+        if (currentState.isSubmitting) return
+
         if (!isValidDateKey(currentState.dateKey)) {
             _uiState.update {
                 it.copy(
@@ -96,33 +87,32 @@ class PlaceViewModel(
             }
             return
         }
-        if (placeIds.isEmpty()) {
+
+        val currentPlaceIds = currentState.placeList.places
+            .sortedBy(VisitedPlace::orderIndex)
+            .map(VisitedPlace::placeId)
+
+        if (placeIds == currentPlaceIds) return
+
+        if (!hasSamePlaceIds(currentPlaceIds, placeIds)) {
             _uiState.update {
                 it.copy(
-                    errorMessage = "순서 변경용 placeId 배열을 입력해 주세요.",
-                    successMessage = null
-                )
-            }
-            return
-        }
-        if (!isValidReorderInput(currentState.reorderPlaceIdsInput, placeIds)) {
-            _uiState.update {
-                it.copy(
-                    errorMessage = "순서 변경 입력은 쉼표로 구분된 숫자 목록이어야 합니다. 예: 2,1",
+                    errorMessage = "현재 장소 목록과 순서 변경 요청이 일치하지 않습니다.",
                     successMessage = null
                 )
             }
             return
         }
 
+        _uiState.update {
+            it.copy(
+                isSubmitting = true,
+                errorMessage = null,
+                successMessage = null
+            )
+        }
+
         viewModelScope.launch {
-            _uiState.update {
-                it.copy(
-                    isSubmitting = true,
-                    errorMessage = null,
-                    successMessage = null
-                )
-            }
             try {
                 reorderPlacesUseCase(
                     dateKey = currentState.dateKey,
@@ -132,7 +122,10 @@ class PlaceViewModel(
                     it.copy(
                         isSubmitting = false,
                         errorMessage = null,
-                        successMessage = "장소 순서가 변경되었습니다. ids=${placeIds.joinToString(",")}"
+                        successMessage = "장소 순서가 변경되었습니다.",
+                        placeList = it.placeList.copy(
+                            places = it.placeList.places.reorderedBy(placeIds)
+                        )
                     )
                 }
                 refreshVisitedPlaces(dateKey = currentState.dateKey)
@@ -146,23 +139,6 @@ class PlaceViewModel(
                 }
             }
         }
-    }
-
-    // 임시 순서 입력 상태만 초기화한다.
-    fun resetForm() {
-        _uiState.update {
-            it.copy(
-                reorderPlaceIdsInput = "",
-                errorMessage = null,
-                successMessage = null
-            )
-        }
-    }
-
-    // 순서 입력값 형태를 검사한다.
-    private fun isValidReorderInput(rawInput: String, parsedIds: List<Long>): Boolean {
-        val normalized = rawInput.split(',').map(String::trim).filter(String::isNotBlank)
-        return normalized.isNotEmpty() && normalized.size == parsedIds.size
     }
 
     // 목록 재조회 로직을 한 곳에서 처리한다.
@@ -226,6 +202,18 @@ class PlaceViewModel(
     // 입력 필드 상태를 공통 방식으로 바꾼다.
     private inline fun updateField(transform: PlaceUiState.() -> PlaceUiState) {
         _uiState.update { currentState -> currentState.transform() }
+    }
+
+    private fun hasSamePlaceIds(currentPlaceIds: List<Long>, requestedPlaceIds: List<Long>): Boolean {
+        return currentPlaceIds.size == requestedPlaceIds.size &&
+            currentPlaceIds.toSet() == requestedPlaceIds.toSet()
+    }
+
+    private fun List<VisitedPlace>.reorderedBy(placeIds: List<Long>): List<VisitedPlace> {
+        val placeById = associateBy(VisitedPlace::placeId)
+        return placeIds.mapIndexedNotNull { index, placeId ->
+            placeById[placeId]?.copy(orderIndex = index + 1)
+        }
     }
 
     // 날짜 형식이 맞는지 확인한다.
