@@ -29,7 +29,7 @@ public interface AuthControllerSpec {
               "message": "만료된 액세스 토큰입니다."
             }
             ```
-            X-Refresh-Token 헤더에 리프레시 토큰을 넣어주세요. 엑세스토큰은 넣지 않아도 됩니다.
+            X-Refresh-Token 헤더에 리프레시 토큰을 넣고 Authorization 헤더에 만료된 엑세스 토큰을 넣어주세요.
             이 API의 응답으로 받은 엑세스 토큰과 리프레시 토큰을 사용해주세요. (그전에 저장한 엑세스 토큰과 리프레시 토큰은 폐지)
             """
     )
