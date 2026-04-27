@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 public class KakaoPlaceMapper {
 
     public static PlaceSearchResponse toPlaceSearchResponse(
-        int page, int size,KakaoLocalSearchResult result
+        int page, KakaoLocalSearchResult result
     ) {
         List<PlaceSearchItem> items = result.documents() == null
             ? List.of()
@@ -24,7 +24,7 @@ public class KakaoPlaceMapper {
                 ))
                 .toList();
 
-        return new PlaceSearchResponse(page, size, result.meta().is_end(), result.meta()
+        return new PlaceSearchResponse(page, result.meta().is_end(), result.meta()
             .pageable_count(), items);
     }
 

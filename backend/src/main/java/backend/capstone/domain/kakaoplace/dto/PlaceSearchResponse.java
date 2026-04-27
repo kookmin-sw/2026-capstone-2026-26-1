@@ -6,7 +6,6 @@ import lombok.Builder;
 @Builder
 public record PlaceSearchResponse(
     int page,
-    int size,
     boolean isEnd,
     int pageableCount,
     List<PlaceSearchItem> places
