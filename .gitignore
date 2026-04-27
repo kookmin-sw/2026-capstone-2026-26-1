@@ -22,6 +22,7 @@ Thumbs.db
 # Local Codex working rules
 AGENTS.md
 agents.md
+.codex/
 
 # =========================
 # Android module (root-level safety)
