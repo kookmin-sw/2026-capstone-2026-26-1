@@ -21,9 +21,7 @@ import com.example.passedpath.feature.main.presentation.state.MainCameraIntent
 import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiState
 import com.example.passedpath.feature.main.presentation.state.MainUiState
 import com.example.passedpath.feature.main.presentation.state.BookmarkToggleUiState
-import com.example.passedpath.feature.main.presentation.state.toPlaceMarkerUiState
 import com.example.passedpath.feature.main.presentation.state.withDebugState
-import com.example.passedpath.feature.place.domain.model.VisitedPlace
 import com.example.passedpath.feature.permission.data.manager.LocationPermissionStatusReader
 import com.example.passedpath.feature.permission.data.manager.LocationServiceStatusReader
 import com.example.passedpath.feature.permission.presentation.policy.resolveLocationPermissionUiState
@@ -158,30 +156,6 @@ class MainViewModel(
                 trigger = RouteReloadTrigger.DateSelection
             )
         )
-    }
-
-    fun updateFetchedMapPlaces(dateKey: String, places: List<VisitedPlace>) {
-        _uiState.update { currentState ->
-            if (currentState.selectedDateKey != dateKey) {
-                currentState
-            } else {
-                currentState.copy(
-                    fetchedMapPlaces = places
-                        .sortedBy(VisitedPlace::orderIndex)
-                        .map(VisitedPlace::toPlaceMarkerUiState)
-                )
-            }
-        }
-    }
-
-    fun clearFetchedMapPlaces(dateKey: String) {
-        _uiState.update { currentState ->
-            if (currentState.selectedDateKey != dateKey) {
-                currentState
-            } else {
-                currentState.copy(fetchedMapPlaces = null)
-            }
-        }
     }
 
     fun applyDayNoteSnapshotPatch(
@@ -342,11 +316,6 @@ class MainViewModel(
             )
             currentState.copy(
                 selectedDateKey = routeState.selectedDateKey,
-                fetchedMapPlaces = if (currentState.selectedDateKey == routeState.selectedDateKey) {
-                    currentState.fetchedMapPlaces
-                } else {
-                    null
-                },
                 routeModeUiState = routeState.routeModeUiState
                     .withTrackingState(trackingServiceStateReader.isTracking.value),
                 pendingCameraIntent = nextCameraIntent ?: currentState.pendingCameraIntent

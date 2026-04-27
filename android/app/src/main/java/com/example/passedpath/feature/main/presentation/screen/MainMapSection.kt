@@ -40,6 +40,7 @@ import kotlinx.coroutines.launch
 @Composable
 internal fun MainMapSection(
     uiState: MainUiState,
+    markerPlaces: List<PlaceMarkerUiState>,
     onCameraIntentConsumed: () -> Unit,
     onDateSelected: (String) -> Unit,
     onBookmarkClick: () -> Unit,
@@ -98,11 +99,11 @@ internal fun MainMapSection(
         ) {
             RouteMapContent(
                 routeModeUiState = uiState.routeModeUiState,
-                markerPlaces = uiState.mapPlaces,
+                markerPlaces = markerPlaces,
                 routeAccentColor = routeAccentColor,
                 onPlaceMarkerClick = { placeId ->
                     markerCameraTarget(
-                        markerPlaces = uiState.mapPlaces,
+                        markerPlaces = markerPlaces,
                         placeId = placeId
                     )?.let { target ->
                         coroutineScope.launch {

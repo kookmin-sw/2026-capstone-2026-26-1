@@ -25,6 +25,7 @@ import com.example.passedpath.feature.main.presentation.policy.reduceForSheetVal
 import com.example.passedpath.feature.main.presentation.state.MainUiState
 import com.example.passedpath.feature.place.presentation.state.PlaceUiState
 import com.example.passedpath.feature.route.presentation.state.MainRouteModeUiState
+import com.example.passedpath.feature.route.presentation.state.PlaceMarkerUiState
 import com.example.passedpath.feature.route.presentation.state.RouteUiAction
 import com.example.passedpath.ui.PermissionSettingDialog
 import com.example.passedpath.ui.component.dialog.BaseConfirmDialog
@@ -36,6 +37,7 @@ fun MainScreen(
     uiState: MainUiState,
     dayNoteUiState: DayNoteUiState,
     placeUiState: PlaceUiState,
+    markerPlaces: List<PlaceMarkerUiState>,
     onCameraIntentConsumed: () -> Unit,
     onDateSelected: (String) -> Unit,
     onDateSelectionRequested: (String) -> Unit,
@@ -161,6 +163,7 @@ fun MainScreen(
             content = { floatingBottomPadding ->
                 MainMapSection(
                     uiState = uiState,
+                    markerPlaces = markerPlaces,
                     onCameraIntentConsumed = onCameraIntentConsumed,
                     onDateSelected = onDateSelectionRequested,
                     onBookmarkClick = onBookmarkClick,
