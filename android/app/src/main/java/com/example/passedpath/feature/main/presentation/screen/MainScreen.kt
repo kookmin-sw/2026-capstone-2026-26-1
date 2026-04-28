@@ -22,6 +22,7 @@ import com.example.passedpath.feature.main.presentation.policy.reduceForSelected
 import com.example.passedpath.feature.main.presentation.policy.reduceForSheetCommandConsumed
 import com.example.passedpath.feature.main.presentation.policy.reduceForSheetHideRequest
 import com.example.passedpath.feature.main.presentation.policy.reduceForSheetValueChange
+import com.example.passedpath.feature.main.presentation.policy.shouldShowCurrentLocationButton
 import com.example.passedpath.feature.main.presentation.state.MainUiState
 import com.example.passedpath.feature.place.presentation.state.PlaceUiState
 import com.example.passedpath.feature.route.presentation.state.MainRouteModeUiState
@@ -178,7 +179,10 @@ fun MainScreen(
                     onPlaceMarkerClick = ::handlePlaceMarkerClick,
                     onPermissionActionClick = onPermissionActionClick,
                     debugActions = debugActions,
-                    floatingBottomPadding = floatingBottomPadding
+                    floatingBottomPadding = floatingBottomPadding,
+                    showCurrentLocationButton = shouldShowCurrentLocationButton(
+                        bottomSheetValue = localUiState.bottomSheetValue
+                    )
                 )
             },
             sheet = { sheetModifier ->

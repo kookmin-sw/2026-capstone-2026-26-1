@@ -35,6 +35,12 @@ internal fun reduceForSheetValueChange(
     )
 }
 
+internal fun shouldShowCurrentLocationButton(
+    bottomSheetValue: MainBottomSheetValue
+): Boolean {
+    return bottomSheetValue == MainBottomSheetValue.HIDDEN
+}
+
 internal fun reduceForPlaceMarkerClick(
     state: MainScreenLocalUiState,
     placeId: Long

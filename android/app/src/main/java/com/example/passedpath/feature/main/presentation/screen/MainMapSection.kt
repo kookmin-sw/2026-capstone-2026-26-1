@@ -53,7 +53,8 @@ internal fun MainMapSection(
     onPlaceMarkerClick: (Long) -> Unit,
     onPermissionActionClick: () -> Unit,
     debugActions: MainDebugActions,
-    floatingBottomPadding: androidx.compose.ui.unit.Dp
+    floatingBottomPadding: androidx.compose.ui.unit.Dp,
+    showCurrentLocationButton: Boolean
 ) {
     val routeAccentColor = androidx.compose.material3.MaterialTheme.colorScheme.primary
     val fallbackPosition = LatLng(37.5662952, 126.9779451)
@@ -158,7 +159,9 @@ internal fun MainMapSection(
             },
             floatingControls = {
                 FloatingMapButtons(
-                    onCurrentLocationClick = currentLocation?.let {
+                    onCurrentLocationClick = currentLocation?.takeIf {
+                        showCurrentLocationButton
+                    }?.let {
                         {
                             coroutineScope.launch {
                                 cameraPositionState.animate(

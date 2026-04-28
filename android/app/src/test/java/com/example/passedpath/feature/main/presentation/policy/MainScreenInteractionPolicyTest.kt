@@ -184,4 +184,11 @@ class MainScreenInteractionPolicyTest {
         assertNull(result.state.requestedSheetValue)
         assertNull(result.state.selectedPlaceId)
     }
+
+    @Test
+    fun `current location button shows only when sheet is hidden`() {
+        assertTrue(shouldShowCurrentLocationButton(MainBottomSheetValue.HIDDEN))
+        assertFalse(shouldShowCurrentLocationButton(MainBottomSheetValue.MIDDLE))
+        assertFalse(shouldShowCurrentLocationButton(MainBottomSheetValue.EXPANDED))
+    }
 }
