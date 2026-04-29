@@ -9,6 +9,7 @@ import backend.capstone.domain.place.dto.PlaceListResponse;
 import backend.capstone.domain.place.dto.PlaceUpdateResponse;
 import backend.capstone.domain.place.entity.Place;
 import backend.capstone.domain.place.entity.PlaceSource;
+import backend.capstone.global.util.KstDateTimeUtils;
 import java.time.Instant;
 import java.util.List;
 import lombok.NoArgsConstructor;
@@ -39,8 +40,8 @@ public class PlaceMapper {
             .latitude(place.getLatitude())
             .longitude(place.getLongitude())
             .orderIndex(place.getOrderIndex())
-            .startTime(place.getStartTime())
-            .endTime(place.getEndTime())
+            .startTime(KstDateTimeUtils.toKstOffsetDateTime(place.getStartTime()))
+            .endTime(KstDateTimeUtils.toKstOffsetDateTime(place.getEndTime()))
             .build();
     }
 
@@ -54,8 +55,8 @@ public class PlaceMapper {
             .latitude(place.getLatitude())
             .longitude(place.getLongitude())
             .orderIndex(place.getOrderIndex())
-            .startTime(place.getStartTime())
-            .endTime(place.getEndTime())
+            .startTime(KstDateTimeUtils.toKstOffsetDateTime(place.getStartTime()))
+            .endTime(KstDateTimeUtils.toKstOffsetDateTime(place.getEndTime()))
             .build();
     }
 
@@ -78,8 +79,8 @@ public class PlaceMapper {
             .type(place.getType())
             .latitude(place.getLatitude())
             .longitude(place.getLongitude())
-            .startTime(place.getStartTime())
-            .endTime(place.getEndTime())
+            .startTime(KstDateTimeUtils.toKstOffsetDateTime(place.getStartTime()))
+            .endTime(KstDateTimeUtils.toKstOffsetDateTime(place.getEndTime()))
             .build();
     }
 
