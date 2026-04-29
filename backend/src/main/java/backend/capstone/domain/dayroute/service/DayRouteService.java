@@ -8,6 +8,7 @@ import backend.capstone.domain.dayroute.repository.DayRouteRepository;
 import backend.capstone.domain.place.repository.PlaceRepository;
 import backend.capstone.domain.user.service.UserService;
 import backend.capstone.global.exception.BusinessException;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -93,7 +94,7 @@ public class DayRouteService {
     }
 
     @Transactional
-    public void updateTime(DayRoute dayRoute, LocalDateTime startTime, LocalDateTime endTime) {
+    public void updateTime(DayRoute dayRoute, Instant startTime, Instant endTime) {
         dayRoute.updateTime(startTime, endTime);
     }
 

@@ -12,7 +12,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import java.time.Duration;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -38,9 +38,9 @@ public class OngoingStay extends BaseTimeEntity {
     @JoinColumn(name = "end_point_id")
     private GpsPoint lastPoint;
 
-    private LocalDateTime startTime;
+    private Instant startTime;
 
-    private LocalDateTime lastTime;
+    private Instant lastTime;
 
     private double centerLatitude;
 
@@ -79,7 +79,7 @@ public class OngoingStay extends BaseTimeEntity {
         return Duration.between(startTime, lastTime).toMinutes();
     }
 
-    public void updateLastTime(LocalDateTime lastTime) {
+    public void updateLastTime(Instant lastTime) {
         this.lastTime = lastTime;
     }
 }

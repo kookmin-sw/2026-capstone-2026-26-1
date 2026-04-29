@@ -1,7 +1,7 @@
 package backend.capstone.domain.dayroute.dto;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import lombok.Builder;
 
@@ -18,7 +18,7 @@ public record DayRouteDetailResponse(
 ) {
 
     public record GpsPointItem(
-        LocalDateTime recordedAt,
+        Instant recordedAt,
         double latitude,
         double longitude
     ) {

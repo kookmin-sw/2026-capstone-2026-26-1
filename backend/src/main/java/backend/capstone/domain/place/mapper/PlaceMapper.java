@@ -9,7 +9,7 @@ import backend.capstone.domain.place.dto.PlaceListResponse;
 import backend.capstone.domain.place.dto.PlaceUpdateResponse;
 import backend.capstone.domain.place.entity.Place;
 import backend.capstone.domain.place.entity.PlaceSource;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import lombok.NoArgsConstructor;
 
@@ -87,8 +87,8 @@ public class PlaceMapper {
         DayRoute dayRoute,
         SearchResultByCategoryAndCoord searchResult,
         int orderIndex,
-        LocalDateTime startTime,
-        LocalDateTime endTime
+        Instant startTime,
+        Instant endTime
     ) {
         return Place.builder()
             .dayRoute(dayRoute)
@@ -109,8 +109,8 @@ public class PlaceMapper {
         double stayLatitude,
         double stayLongitude,
         int orderIndex,
-        LocalDateTime startTime,
-        LocalDateTime endTime
+        Instant startTime,
+        Instant endTime
     ) {
         return Place.builder()
             .dayRoute(dayRoute)

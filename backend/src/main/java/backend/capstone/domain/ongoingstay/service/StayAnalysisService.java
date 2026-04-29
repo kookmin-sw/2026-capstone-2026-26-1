@@ -5,13 +5,14 @@ import backend.capstone.domain.dayroute.entity.DayRoute;
 import backend.capstone.domain.dayroute.service.DayRouteService;
 import backend.capstone.domain.gpspoint.entity.GpsPoint;
 import backend.capstone.domain.gpspoint.service.GpsPointService;
+import backend.capstone.domain.kakaoplace.dto.SearchResultByCategoryAndCoord;
 import backend.capstone.domain.kakaoplace.service.KakaoSearchByCategoryService;
 import backend.capstone.domain.ongoingstay.entity.OngoingStay;
 import backend.capstone.domain.ongoingstay.repository.OngoingStayRepository;
-import backend.capstone.domain.kakaoplace.dto.SearchResultByCategoryAndCoord;
 import backend.capstone.domain.place.service.PlaceService;
 import java.time.Duration;
-import java.time.LocalDateTime;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,7 @@ public class StayAnalysisService {
 
     private static final int STAY_RADIUS_METER = 50;
     private static final int STAY_MIN_DURATION_MINUTE = 15;
+    private static final ZoneId KST_ZONE_ID = ZoneId.of("Asia/Seoul");
 
     private final OngoingStayRepository ongoingStayRepository;
     private final GpsPointService gpsPointService;
@@ -109,9 +111,12 @@ public class StayAnalysisService {
             return;
         }
 
-        LocalDateTime dayRouteEndTime = dayRouteService.getDayRouteEndTime(dayRoute);
+        Instant dayRouteEndTime = dayRouteService.getDayRouteEndTime(dayRoute)
+            .atZone(KST_ZONE_ID)
+            .toInstant();
+
         // 아직 이 dayRoute의 종료 기준 시각이 지나지 않았으면 아무것도 하지 않음
-        if (LocalDateTime.now().isBefore(dayRouteEndTime)) {
+        if (Instant.now().isBefore(dayRouteEndTime)) {
             return;
         }
 

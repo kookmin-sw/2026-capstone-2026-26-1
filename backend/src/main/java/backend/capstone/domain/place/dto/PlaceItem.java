@@ -3,7 +3,7 @@ package backend.capstone.domain.place.dto;
 import backend.capstone.domain.bookmarkplace.entity.BookmarkPlaceType;
 import backend.capstone.domain.place.entity.PlaceSource;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import lombok.Builder;
 
 @Builder
@@ -33,9 +33,9 @@ public record PlaceItem(
     int orderIndex,
 
     @Schema(example = "09:30:00", description = "장소 체류 시작 시간")
-    LocalDateTime startTime,
+    Instant startTime,
 
     @Schema(example = "10:15:00", description = "장소 체류 종료 시간")
-    LocalDateTime endTime
+    Instant endTime
 ) {
 }

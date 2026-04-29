@@ -2,7 +2,7 @@ package backend.capstone.domain.place.dto;
 
 import backend.capstone.domain.bookmarkplace.entity.BookmarkPlaceType;
 import backend.capstone.domain.place.entity.PlaceSource;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import lombok.Builder;
 
 @Builder
@@ -15,7 +15,7 @@ public record PlaceAddResponse(
     double latitude,
     double longitude,
     int orderIndex,
-    LocalDateTime startTime,
-    LocalDateTime endTime
+    Instant startTime,
+    Instant endTime
 ) {
 }
