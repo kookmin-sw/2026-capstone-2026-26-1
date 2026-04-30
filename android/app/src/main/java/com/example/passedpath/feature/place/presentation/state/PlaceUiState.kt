@@ -7,7 +7,8 @@ data class PlaceUiState(
     val isSubmitting: Boolean = false,
     val placeList: PlaceListUiState = PlaceListUiState(),
     val errorMessage: String? = null,
-    val successMessage: String? = null
+    val successMessage: String? = null,
+    val feedbackEventId: Long = 0L
 ) {
     val isDateValid: Boolean
         get() = dateKey.isNotBlank()

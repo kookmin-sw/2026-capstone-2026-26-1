@@ -80,7 +80,7 @@
     <string name="route_empty_past_message">선택한 날짜에는 지도에 표시할 경로 데이터가 없습니다.</string>
     <string name="route_empty_past_toast">이 날의 경로 기록이 존재하지 않아요</string>
     <string name="route_place_fallback_title">장소 %1$d</string>
-    <string name="record_sheet_tab_place">방문한 장소</string>
+    <string name="record_sheet_tab_place">방문 장소</string>
     <string name="record_sheet_tab_daynote">메모</string>
     <string name="place_sheet_title">방문한 장소</string>
     <string name="place_sheet_placeholder_body">이 날짜에 저장한 장소 목록이 이곳에 표시됩니다. 다음 단계에서 장소 추가와 편집을 연결합니다.</string>
@@ -100,6 +100,8 @@
     <string name="place_sheet_banner_title">장소를 길게 눌러 순서를 자유롭게 변경할 수 있어요</string>
     <string name="place_sheet_banner_body">장소 카드는 방문 순서에 맞춰 보여주고, 필요한 기능은 다음 단계에서 연결합니다.</string>
     <string name="place_sheet_banner_close">닫기</string>
+    <string name="place_menu_edit">수정하기</string>
+    <string name="place_menu_delete">삭제하기</string>
     <string name="daynote_sheet_title">지나온 길 메모</string>
     <string name="daynote_sheet_placeholder_body">이 날짜에 남긴 메모와 요약이 이곳에 표시됩니다. 다음 단계에서 입력과 저장 정책을 붙입니다.</string>
     <string name="permission_banner_denied_title">위치 권한이 없어 현재 위치와 기록을 사용할 수 없어요</string>
@@ -126,8 +128,8 @@
     <string name="place_action_delete">장소 삭제</string>
     <string name="place_action_reset">입력 초기화</string>
     <string name="debug_panel_title">디버그 상태</string>
-    <string name="debug_panel_expand">펼치기</string>
-    <string name="debug_panel_collapse">접기</string>
+    <string name="debug_panel_open">디버그 패널 열기</string>
+    <string name="debug_panel_close">닫기</string>
     <string name="debug_panel_date">선택 날짜: %1$s</string>
     <string name="debug_panel_route">경로 모드: %1$s / 소스: %2$s / 상태: %3$s</string>
     <string name="debug_panel_permission">권한: %1$s / GPS: %2$s</string>

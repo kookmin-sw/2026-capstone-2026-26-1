@@ -1,11 +1,13 @@
 package com.example.passedpath.feature.main.presentation.screen
 
+import android.util.Log
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -24,6 +26,8 @@ import com.example.passedpath.feature.main.presentation.policy.reduceForSheetHid
 import com.example.passedpath.feature.main.presentation.policy.reduceForSheetValueChange
 import com.example.passedpath.feature.main.presentation.policy.shouldShowCurrentLocationButton
 import com.example.passedpath.feature.main.presentation.state.MainUiState
+import com.example.passedpath.feature.place.domain.model.VisitedPlace
+import com.example.passedpath.feature.place.presentation.component.PlaceDeleteConfirmDialog
 import com.example.passedpath.feature.place.presentation.state.PlaceUiState
 import com.example.passedpath.feature.route.presentation.state.MainRouteModeUiState
 import com.example.passedpath.feature.route.presentation.state.PlaceMarkerUiState
@@ -56,6 +60,8 @@ fun MainScreen(
     onNavigateToAddPlace: (String) -> Unit,
     onReorderPlaces: (List<Long>) -> Unit,
     onCloseReorderGuideBanner: () -> Unit,
+    onEditPlaceClick: (Long) -> Unit,
+    onConfirmDeletePlace: (Long) -> Unit,
     onTrackingPermissionDialogConfirm: () -> Unit,
     onTrackingPermissionDialogDismiss: () -> Unit,
     onPermissionActionClick: () -> Unit,
@@ -69,6 +75,9 @@ fun MainScreen(
 ) {
     var localUiState by rememberSaveable(stateSaver = MainScreenLocalUiStateSaver) {
         mutableStateOf(MainScreenLocalUiState())
+    }
+    var pendingDeletePlace by remember {
+        mutableStateOf<VisitedPlace?>(null)
     }
     val focusManager = LocalFocusManager.current
 
@@ -119,6 +128,7 @@ fun MainScreen(
     }
 
     val dayNoteToastMessage = dayNoteUiState.errorMessage ?: dayNoteUiState.successMessage
+    val placeToastMessage = placeUiState.errorMessage ?: placeUiState.successMessage
     val bookmarkToastMessage = uiState.bookmarkToggleUiState.feedbackMessage
     val shouldShowPastEmptyToast =
         uiState.routeModeUiState is MainRouteModeUiState.Past &&
@@ -131,6 +141,14 @@ fun MainScreen(
                 ToastOverlayItem(
                     message = dayNoteToastMessage,
                     triggerKey = "daynote:${dayNoteUiState.feedbackEventId}:$dayNoteToastMessage"
+                )
+            )
+        }
+        if (placeToastMessage != null) {
+            add(
+                ToastOverlayItem(
+                    message = placeToastMessage,
+                    triggerKey = "place:${placeUiState.feedbackEventId}:$placeToastMessage"
                 )
             )
         }
@@ -152,7 +170,16 @@ fun MainScreen(
         }
     }
 
+    LaunchedEffect(placeUiState.feedbackEventId, placeToastMessage) {
+        if (placeToastMessage == null) return@LaunchedEffect
+        Log.d(
+            "PlaceFlow",
+            "place toast eventId=${placeUiState.feedbackEventId} isError=${placeUiState.errorMessage != null} message=$placeToastMessage"
+        )
+    }
+
     LaunchedEffect(uiState.selectedDateKey) {
+        pendingDeletePlace = null
         dispatchInteraction(reduceForDateChange(localUiState))
     }
 
@@ -224,7 +251,13 @@ fun MainScreen(
                         onNavigateToAddPlace(uiState.selectedDateKey)
                     },
                     onReorderPlaces = onReorderPlaces,
-                    onCloseReorderGuideBanner = onCloseReorderGuideBanner
+                    onCloseReorderGuideBanner = onCloseReorderGuideBanner,
+                    onEditPlaceClick = onEditPlaceClick,
+                    onDeletePlaceRequested = { placeId ->
+                        pendingDeletePlace = placeUiState.placeList.places.firstOrNull { place ->
+                            place.placeId == placeId
+                        }
+                    }
                 )
             }
         )
@@ -245,11 +278,24 @@ fun MainScreen(
     if (showUnsavedDayNoteDialog) {
         BaseConfirmDialog(
             title = "변경 사항을 저장할까요?",
-            message = "저장하지 않으면 작성 중인 내용이 사라집니다.",
+            message = "변경사항을 저장하지 않으면 사라집니다",
             dismissText = "취소",
             confirmText = "저장",
             onDismiss = onDismissUnsavedDayNoteDialog,
             onConfirm = onConfirmUnsavedDayNoteDialog
+        )
+    }
+
+    pendingDeletePlace?.let { place ->
+        PlaceDeleteConfirmDialog(
+            placeName = place.placeName.ifBlank { "이 장소" },
+            onDismiss = {
+                pendingDeletePlace = null
+            },
+            onConfirm = {
+                pendingDeletePlace = null
+                onConfirmDeletePlace(place.placeId)
+            }
         )
     }
 }

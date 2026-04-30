@@ -28,11 +28,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
 import com.example.passedpath.R
 import com.example.passedpath.ui.component.menu.ActionPopupMenu
 import com.example.passedpath.ui.component.menu.MenuActionItem
@@ -58,6 +62,7 @@ fun PlaceCard(
     isSelected: Boolean = false,
     showMoreButton: Boolean = true,
     onMoreClick: (() -> Unit)? = null,
+    onDismissMenu: (() -> Unit)? = null,
     isMenuVisible: Boolean = false,
     menuItems: List<MenuActionItem> = emptyList(),
     isCompact: Boolean = false,
@@ -71,6 +76,13 @@ fun PlaceCard(
         else -> Color.Transparent
     }
     val backgroundColor = lerp(Gray50, Green50, coercedHighlightProgress)
+    val density = LocalDensity.current
+    val menuOffset = with(density) {
+        IntOffset(
+            x = -8.dp.roundToPx(),
+            y = (if (isCompact) 58.dp else 60.dp).roundToPx()
+        )
+    }
 
     Box(modifier = modifier.fillMaxWidth()) {
         Surface(
@@ -99,12 +111,14 @@ fun PlaceCard(
         }
 
         if (isMenuVisible && menuItems.isNotEmpty()) {
-            ActionPopupMenu(
-                items = menuItems,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(top = if (isCompact) 46.dp else 48.dp, end = 10.dp)
-            )
+            Popup(
+                alignment = Alignment.TopEnd,
+                offset = menuOffset,
+                onDismissRequest = { onDismissMenu?.invoke() },
+                properties = PopupProperties(focusable = true)
+            ) {
+                ActionPopupMenu(items = menuItems)
+            }
         }
     }
 }

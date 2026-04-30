@@ -28,6 +28,8 @@ fun BaseButton(
     enabled: Boolean = true,
     variant: BaseButtonVariant = BaseButtonVariant.PRIMARY,
     border: BorderStroke? = null,
+    containerColor: Color? = null,
+    contentColor: Color? = null,
 ) {
     when (variant) {
         BaseButtonVariant.PRIMARY, BaseButtonVariant.SECONDARY -> {
@@ -35,12 +37,12 @@ fun BaseButton(
                 BaseButtonVariant.PRIMARY -> MaterialTheme.colorScheme.primary
                 BaseButtonVariant.SECONDARY -> MaterialTheme.colorScheme.secondary
                 BaseButtonVariant.TEXT_ONLY -> Color.Transparent
-            }
+            }.let { containerColor ?: it }
             val contentColor = when (variant) {
                 BaseButtonVariant.PRIMARY -> MaterialTheme.colorScheme.onPrimary
                 BaseButtonVariant.SECONDARY -> MaterialTheme.colorScheme.onSecondary
                 BaseButtonVariant.TEXT_ONLY -> Color.Unspecified
-            }
+            }.let { contentColor ?: it }
 
             Button(
                 onClick = onClick,
@@ -71,7 +73,7 @@ fun BaseButton(
                 modifier = modifier,
                 colors = ButtonDefaults.textButtonColors(
                     containerColor = Color.Transparent,
-                    contentColor = Gray400,
+                    contentColor = contentColor ?: Gray400,
                     disabledContentColor = Gray200
                 )
             ) {

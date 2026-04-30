@@ -42,8 +42,20 @@ class PlaceRepositoryImplTest {
         assertTrue(result.places.isEmpty())
     }
 
+    @Test
+    fun `deletePlace accepts successful no content response`() = runTest {
+        val repository = PlaceRepositoryImpl(
+            placeApi = FakePlaceApi(
+                deleteResponse = Response.success(204, null as Unit?)
+            )
+        )
+
+        repository.deletePlace(dateKey = "2026-04-30", placeId = 33L)
+    }
+
     private class FakePlaceApi(
-        private val throwable: Throwable? = null
+        private val throwable: Throwable? = null,
+        private val deleteResponse: Response<Unit> = Response.success(Unit)
     ) : PlaceApi {
         override suspend fun getPlaces(date: String): PlaceListResponseDto {
             throwable?.let { throw it }
@@ -73,8 +85,8 @@ class PlaceRepositoryImplTest {
             error("Not needed in test")
         }
 
-        override suspend fun deletePlace(date: String, placeId: Long) {
-            error("Not needed in test")
+        override suspend fun deletePlace(date: String, placeId: Long): Response<Unit> {
+            return deleteResponse
         }
     }
 }

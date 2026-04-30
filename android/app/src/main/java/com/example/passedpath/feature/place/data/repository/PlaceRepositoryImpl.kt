@@ -67,10 +67,13 @@ class PlaceRepositoryImpl(
     }
 
     override suspend fun deletePlace(dateKey: String, placeId: Long) {
-        placeApi.deletePlace(
+        val response = placeApi.deletePlace(
             date = dateKey,
             placeId = placeId
         )
+        if (!response.isSuccessful) {
+            throw HttpException(response)
+        }
     }
 }
 

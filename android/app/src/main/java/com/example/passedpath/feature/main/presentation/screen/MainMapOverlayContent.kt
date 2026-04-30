@@ -31,8 +31,8 @@ internal fun BoxScope.MainMapOverlayContent(
     debugActions: MainDebugActions,
     floatingBottomPadding: Dp,
     bottomEndControlsBottomPadding: Dp = floatingBottomPadding,
-    isDebugPanelExpanded: Boolean,
-    onToggleDebugPanelExpanded: () -> Unit,
+    isDebugPanelVisible: Boolean,
+    onCloseDebugPanel: () -> Unit,
     topStartControls: @Composable (() -> Unit)? = null,
     topEndControls: @Composable (() -> Unit)? = null,
     floatingControls: @Composable (() -> Unit)? = null
@@ -92,13 +92,12 @@ internal fun BoxScope.MainMapOverlayContent(
             routeMode = uiState.routeModeUiState,
             onRouteAction = onRouteAction
         )
-        if (BuildConfig.DEBUG) {
+        if (BuildConfig.DEBUG && isDebugPanelVisible) {
             MainDebugPanel(
                 debugUiState = uiState.debugUiState,
                 onRefreshSystemState = debugActions.refreshSystemState,
                 onReloadRoute = debugActions.reloadRoute,
-                isExpanded = isDebugPanelExpanded,
-                onToggleExpanded = onToggleDebugPanelExpanded
+                onClose = onCloseDebugPanel
             )
         }
     }

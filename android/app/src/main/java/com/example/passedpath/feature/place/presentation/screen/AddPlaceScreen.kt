@@ -193,7 +193,7 @@ private fun AddPlaceScreenContent(
 
             if (shouldShowConfirmButton) {
                 BaseButton(
-                    text = if (uiState.isSubmitting) "추가 중..." else "이 장소 추가하기",
+                    text = "이 장소 추가하기",
                     onClick = {
                         clearFocus()
                         onAddPlaceClick()

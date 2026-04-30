@@ -1,6 +1,11 @@
 package com.example.passedpath.feature.place.presentation.screen
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
@@ -18,6 +23,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -38,6 +44,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.StrokeCap
@@ -50,6 +58,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.passedpath.R
@@ -60,6 +69,7 @@ import com.example.passedpath.feature.place.presentation.component.PlaceCard
 import com.example.passedpath.feature.place.presentation.state.PlaceListUiState
 import com.example.passedpath.ui.component.button.BaseButton
 import com.example.passedpath.ui.component.button.BaseButtonVariant
+import com.example.passedpath.ui.component.menu.MenuActionItem
 import com.example.passedpath.ui.theme.Gray100
 import com.example.passedpath.ui.theme.Gray400
 import com.example.passedpath.ui.theme.Gray500
@@ -89,6 +99,8 @@ fun PlaceBottomSheetContent(
     onCloseReorderGuideBanner: () -> Unit,
     modifier: Modifier = Modifier,
     isReorderSubmitting: Boolean = false,
+    onEditPlaceClick: (Long) -> Unit = {},
+    onDeletePlaceRequested: (Long) -> Unit = {},
     onScrollStateChanged: (Boolean) -> Unit = {}
 ) {
     val isBannerVisible = placeListUiState.isReorderGuideBannerVisible
@@ -97,6 +109,7 @@ fun PlaceBottomSheetContent(
     var reorderedPlaces by remember { mutableStateOf(sortedPlaces) }
     val currentReorderedPlaces by rememberUpdatedState(reorderedPlaces)
     var draggedPlaceId by remember { mutableStateOf<Long?>(null) }
+    var openedMenuPlaceId by remember { mutableStateOf<Long?>(null) }
     var wasReorderSubmitting by remember { mutableStateOf(false) }
     val canReorder = sortedPlaces.size > 1 &&
         !isReorderSubmitting &&
@@ -109,16 +122,34 @@ fun PlaceBottomSheetContent(
                 listState.firstVisibleItemScrollOffset > 0
         }
     }
+    val footerTopSpacing = if (reorderedPlaces.isEmpty()) 0.dp else PlaceTimelineItemSpacing
     val placeSectionStartIndex = (if (isBannerVisible) 1 else 0) + 1
+
+    fun closeOpenedMenu() {
+        openedMenuPlaceId = null
+    }
 
     LaunchedEffect(isContentScrolled) {
         onScrollStateChanged(isContentScrolled)
+    }
+
+    LaunchedEffect(listState.isScrollInProgress) {
+        if (listState.isScrollInProgress) {
+            closeOpenedMenu()
+        }
     }
 
     LaunchedEffect(sortedPlaces) {
         if (draggedPlaceId == null) {
             reorderedPlaces = sortedPlaces
         }
+        if (openedMenuPlaceId != null && sortedPlaces.none { it.placeId == openedMenuPlaceId }) {
+            closeOpenedMenu()
+        }
+    }
+
+    LaunchedEffect(selectedDateKey) {
+        closeOpenedMenu()
     }
 
     LaunchedEffect(isReorderSubmitting, placeListUiState.errorMessage, sortedPlaces) {
@@ -135,6 +166,7 @@ fun PlaceBottomSheetContent(
         if (selectedIndex < 0) {
             return@LaunchedEffect
         }
+        closeOpenedMenu()
         listState.animateScrollToItem(placeSectionStartIndex + selectedIndex)
         animatedPlaceId = placeId
         delay(1_700)
@@ -151,6 +183,7 @@ fun PlaceBottomSheetContent(
                 listState = listState,
                 onDragStartPlace = { placeId ->
                     draggedPlaceId = placeId
+                    closeOpenedMenu()
                 },
                 onMovePlace = { fromIndex, toIndex ->
                     reorderedPlaces = reorderedPlaces.moved(fromIndex, toIndex)
@@ -172,38 +205,50 @@ fun PlaceBottomSheetContent(
                 shape = RectangleShape
             },
         state = listState,
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+        verticalArrangement = Arrangement.spacedBy(0.dp)
     ) {
         if (isBannerVisible) {
             item(key = "banner") {
-                PlaceGuideBanner(onClose = onCloseReorderGuideBanner)
+                Box(modifier = Modifier.padding(bottom = PlaceTimelineItemSpacing)) {
+                    PlaceGuideBanner(onClose = onCloseReorderGuideBanner)
+                }
             }
         }
 
         item(key = "summary") {
-            PlaceSummarySection(placeCount = placeListUiState.placeCount)
+            Box(modifier = Modifier.padding(bottom = PlaceTimelineItemSpacing)) {
+                PlaceSummarySection(placeCount = placeListUiState.placeCount)
+            }
         }
 
         if (placeListUiState.isStale && placeListUiState.errorMessage != null) {
             item(key = "stale_notice") {
-                StalePlaceSection(
-                    message = placeListUiState.errorMessage,
-                    onRetryClick = onRetryClick
-                )
+                Box(modifier = Modifier.padding(bottom = PlaceTimelineItemSpacing)) {
+                    StalePlaceSection(
+                        message = placeListUiState.errorMessage,
+                        onRetryClick = onRetryClick
+                    )
+                }
             }
         }
 
         when {
             placeListUiState.isLoading && !placeListUiState.hasRetainedContent -> {
-                item(key = "loading") { LoadingPlaceNotice() }
+                item(key = "loading") {
+                    Box(modifier = Modifier.padding(bottom = PlaceTimelineItemSpacing)) {
+                        PlaceLoadingSkeletonList()
+                    }
+                }
             }
 
             placeListUiState.errorMessage != null && !placeListUiState.isStale -> {
                 item(key = "error") {
-                    ErrorPlaceNotice(
-                        message = placeListUiState.errorMessage,
-                        onRetryClick = onRetryClick
-                    )
+                    Box(modifier = Modifier.padding(bottom = PlaceTimelineItemSpacing)) {
+                        ErrorPlaceNotice(
+                            message = placeListUiState.errorMessage,
+                            onRetryClick = onRetryClick
+                        )
+                    }
                 }
             }
 
@@ -219,18 +264,37 @@ fun PlaceBottomSheetContent(
                         shouldAnimate = place.placeId == animatedPlaceId,
                         isFirst = index == 0,
                         isLast = index == reorderedPlaces.lastIndex,
-                        displayOrderIndex = index + 1
+                        displayOrderIndex = index + 1,
+                        isMenuVisible = openedMenuPlaceId == place.placeId,
+                        onMoreClick = {
+                            openedMenuPlaceId = if (openedMenuPlaceId == place.placeId) {
+                                null
+                            } else {
+                                place.placeId
+                            }
+                        },
+                        onDismissMenu = ::closeOpenedMenu,
+                        onEditPlaceClick = {
+                            closeOpenedMenu()
+                            onEditPlaceClick(place.placeId)
+                        },
+                        onDeletePlaceClick = {
+                            closeOpenedMenu()
+                            onDeletePlaceRequested(place.placeId)
+                        }
                     )
                 }
             }
         }
 
         item(key = "footer") {
-            PlaceAddButton(onClick = onAddPlaceClick)
+            Box(modifier = Modifier.padding(top = footerTopSpacing)) {
+                PlaceAddButton(onClick = onAddPlaceClick)
+            }
         }
 
         item(key = "bottom_spacer") {
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
@@ -254,22 +318,6 @@ private fun PlaceSummarySection(placeCount: Int) {
                 fontWeight = FontWeight.SemiBold
             ),
             color = Gray500
-        )
-    }
-}
-
-@Composable
-private fun LoadingPlaceNotice() {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(color = Gray100, shape = RoundedCornerShape(16.dp))
-            .padding(horizontal = 16.dp, vertical = 18.dp)
-    ) {
-        Text(
-            text = stringResource(R.string.place_sheet_loading),
-            style = MaterialTheme.typography.bodyMedium,
-            color = Gray400
         )
     }
 }
@@ -334,6 +382,168 @@ private fun StalePlaceSection(
 }
 
 @Composable
+private fun PlaceLoadingSkeletonList() {
+    val shimmerBrush = rememberPlaceSkeletonBrush()
+
+    Column(verticalArrangement = Arrangement.spacedBy(PlaceTimelineItemSpacing)) {
+        repeat(2) { index ->
+            PlaceTimelineSkeletonItem(
+                shimmerBrush = shimmerBrush,
+                isFirst = index == 0,
+                isLast = index == 1
+            )
+        }
+    }
+}
+
+@Composable
+private fun PlaceTimelineSkeletonItem(
+    shimmerBrush: Brush,
+    isFirst: Boolean,
+    isLast: Boolean
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.Top
+    ) {
+        SkeletonTimelineDecoration(
+            shimmerBrush = shimmerBrush,
+            isFirst = isFirst,
+            isLast = isLast
+        )
+        SkeletonPlaceCard(
+            shimmerBrush = shimmerBrush,
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+@Composable
+private fun SkeletonPlaceCard(
+    shimmerBrush: Brush,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .height(PlaceTimelineCardHeight)
+            .background(
+                brush = shimmerBrush,
+                shape = RoundedCornerShape(18.dp)
+            )
+            .padding(start = 16.dp, top = 15.dp, end = 16.dp, bottom = 15.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        SkeletonBlock(
+            shimmerBrush = shimmerBrush,
+            modifier = Modifier
+                .fillMaxWidth(0.46f)
+                .height(14.dp)
+        )
+        SkeletonBlock(
+            shimmerBrush = shimmerBrush,
+            modifier = Modifier
+                .fillMaxWidth(0.78f)
+                .height(12.dp)
+        )
+        SkeletonBlock(
+            shimmerBrush = shimmerBrush,
+            modifier = Modifier
+                .width(96.dp)
+                .height(10.dp)
+        )
+    }
+}
+
+@Composable
+private fun SkeletonTimelineDecoration(
+    shimmerBrush: Brush,
+    isFirst: Boolean,
+    isLast: Boolean
+) {
+    val decorationHeight = PlaceTimelineCardHeight + if (isLast) 0.dp else PlaceTimelineItemSpacing
+
+    Box(
+        modifier = Modifier
+            .size(width = 22.dp, height = decorationHeight),
+        contentAlignment = Alignment.TopCenter
+    ) {
+        Canvas(modifier = Modifier.matchParentSize()) {
+            val centerX = size.width / 2f
+            val pointCenterY = PlaceTimelinePointCenterY.toPx()
+            val pointRadius = 8.dp.toPx()
+            val dashEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 14f), 0f)
+            val strokeWidth = 1.dp.toPx()
+            val gap = 4.dp.toPx()
+
+            if (!isFirst) {
+                drawLine(
+                    color = Gray100,
+                    start = Offset(centerX, 0f),
+                    end = Offset(centerX, pointCenterY - pointRadius - gap),
+                    strokeWidth = strokeWidth,
+                    cap = StrokeCap.Round,
+                    pathEffect = dashEffect
+                )
+            }
+            if (!isLast) {
+                drawLine(
+                    color = Gray100,
+                    start = Offset(centerX, pointCenterY + pointRadius + gap),
+                    end = Offset(centerX, size.height),
+                    strokeWidth = strokeWidth,
+                    cap = StrokeCap.Round,
+                    pathEffect = dashEffect
+                )
+            }
+        }
+        Box(
+            modifier = Modifier
+                .padding(top = PlaceTimelinePointCenterY - 8.dp)
+                .size(16.dp)
+                .background(brush = shimmerBrush, shape = RoundedCornerShape(8.dp))
+        )
+    }
+}
+
+@Composable
+private fun SkeletonBlock(
+    shimmerBrush: Brush,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier.background(
+            brush = shimmerBrush,
+            shape = RoundedCornerShape(8.dp)
+        )
+    )
+}
+
+@Composable
+private fun rememberPlaceSkeletonBrush(): Brush {
+    val transition = rememberInfiniteTransition(label = "place_skeleton")
+    val shimmerOffset by transition.animateFloat(
+        initialValue = -320f,
+        targetValue = 720f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1_250, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "place_skeleton_offset"
+    )
+
+    return Brush.linearGradient(
+        colors = listOf(
+            Gray100,
+            Color.White.copy(alpha = 0.88f),
+            Gray100
+        ),
+        start = Offset(shimmerOffset, shimmerOffset),
+        end = Offset(shimmerOffset + 220f, shimmerOffset + 220f)
+    )
+}
+
+@Composable
 private fun PlaceGuideBanner(onClose: () -> Unit) {
     Row(
         modifier = Modifier
@@ -373,9 +583,17 @@ private fun PlaceTimelineItem(
     shouldAnimate: Boolean,
     isFirst: Boolean,
     isLast: Boolean,
-    displayOrderIndex: Int
+    displayOrderIndex: Int,
+    isMenuVisible: Boolean,
+    onMoreClick: () -> Unit,
+    onDismissMenu: () -> Unit,
+    onEditPlaceClick: () -> Unit,
+    onDeletePlaceClick: () -> Unit
 ) {
     val highlightProgress = remember(place.placeId) { Animatable(0f) }
+    val bottomSpacing = if (isLast) 0.dp else PlaceTimelineItemSpacing
+    val editMenuText = stringResource(R.string.place_menu_edit)
+    val deleteMenuText = stringResource(R.string.place_menu_delete)
 
     LaunchedEffect(shouldAnimate) {
         if (!shouldAnimate) {
@@ -390,14 +608,16 @@ private fun PlaceTimelineItem(
     }
 
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.Top
     ) {
         TimelineDecoration(
             orderIndex = displayOrderIndex,
             isFirst = isFirst,
-            isLast = isLast
+            isLast = isLast,
+            bottomSpacing = bottomSpacing
         )
         PlaceCard(
             name = place.placeName.ifBlank {
@@ -413,6 +633,21 @@ private fun PlaceTimelineItem(
             startTimeText = place.startTime.toPlaceCardTimeText(),
             endTimeText = place.endTime.toPlaceCardTimeText(),
             isFavoritePlace = place.bookmarkType != null,
+            onMoreClick = onMoreClick,
+            onDismissMenu = onDismissMenu,
+            isMenuVisible = isMenuVisible,
+            menuItems = listOf(
+                MenuActionItem(
+                    text = editMenuText,
+                    iconResId = R.drawable.ic_check,
+                    onClick = onEditPlaceClick
+                ),
+                MenuActionItem(
+                    text = deleteMenuText,
+                    iconResId = R.drawable.ic_trash,
+                    onClick = onDeletePlaceClick
+                )
+            ),
             highlightProgress = highlightProgress.value,
             modifier = Modifier.weight(1f),
             isCompact = true
@@ -513,6 +748,9 @@ private fun List<VisitedPlace>.moved(fromIndex: Int, toIndex: Int): List<Visited
 
 private const val ReorderAutoScrollEdgeSizePx = 96f
 private const val ReorderAutoScrollStepPx = 28f
+private val PlaceTimelineCardHeight = 78.dp
+private val PlaceTimelineItemSpacing = 16.dp
+private val PlaceTimelinePointCenterY = 34.dp
 
 private fun String?.toPlaceCardTimeText(): String? {
     val timestamp = this ?: return null
@@ -526,17 +764,18 @@ private fun String?.toPlaceCardTimeText(): String? {
 private fun TimelineDecoration(
     orderIndex: Int,
     isFirst: Boolean,
-    isLast: Boolean
+    isLast: Boolean,
+    bottomSpacing: Dp
 ) {
+    val decorationHeight = PlaceTimelineCardHeight + bottomSpacing
     Box(
         modifier = Modifier
-            .padding(top = 6.dp)
-            .size(width = 22.dp, height = 78.dp),
+            .size(width = 22.dp, height = decorationHeight),
         contentAlignment = Alignment.TopCenter
     ) {
         Canvas(modifier = Modifier.matchParentSize()) {
             val centerX = size.width / 2f
-            val pointCenterY = 11.dp.toPx()
+            val pointCenterY = PlaceTimelinePointCenterY.toPx()
             val pointRadius = 8.dp.toPx()
             val dashEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 14f), 0f)
             val dashColor = Green500.copy(alpha = 0.24f)
@@ -570,7 +809,9 @@ private fun TimelineDecoration(
             )
         }
         Box(
-            modifier = Modifier.size(22.dp),
+            modifier = Modifier
+                .padding(top = PlaceTimelinePointCenterY - 11.dp)
+                .size(22.dp),
             contentAlignment = Alignment.Center
         ) {
             Text(

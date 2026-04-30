@@ -19,7 +19,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.passedpath.BuildConfig
 import com.example.passedpath.R
+import com.example.passedpath.feature.main.presentation.component.MainMorePopupMenu
 import com.example.passedpath.feature.main.presentation.state.MainUiState
 import com.example.passedpath.feature.permission.presentation.state.LocationPermissionUiState
 import com.example.passedpath.feature.route.presentation.screen.RouteMapContent
@@ -28,7 +30,6 @@ import com.example.passedpath.feature.route.presentation.state.RouteUiAction
 import com.example.passedpath.ui.component.floating.FloatingButtonColumn
 import com.example.passedpath.ui.component.floating.FloatingCircleIconButton
 import com.example.passedpath.ui.state.CoordinateUiState
-import com.example.passedpath.feature.main.presentation.component.MainMorePopupMenu
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -74,7 +75,7 @@ internal fun MainMapSection(
     }
     val coroutineScope = rememberCoroutineScope()
     var isMapLoaded by remember { mutableStateOf(false) }
-    var isDebugPanelExpanded by rememberSaveable { mutableStateOf(true) }
+    var isDebugPanelVisible by rememberSaveable { mutableStateOf(false) }
     var isMoreMenuVisible by rememberSaveable { mutableStateOf(false) }
 
     MainMapCameraEffects(
@@ -131,13 +132,19 @@ internal fun MainMapSection(
             debugActions = debugActions,
             floatingBottomPadding = floatingBottomPadding,
             bottomEndControlsBottomPadding = currentLocationBottomPadding,
-            isDebugPanelExpanded = isDebugPanelExpanded,
-            onToggleDebugPanelExpanded = { isDebugPanelExpanded = !isDebugPanelExpanded },
+            isDebugPanelVisible = isDebugPanelVisible,
+            onCloseDebugPanel = { isDebugPanelVisible = false },
             topStartControls = {
                 StatsButton(
                     onClick = onStatsClick,
                     modifier = Modifier
                 )
+                if (BuildConfig.DEBUG) {
+                    DebugPanelButton(
+                        onClick = { isDebugPanelVisible = !isDebugPanelVisible },
+                        modifier = Modifier
+                    )
+                }
             },
             topEndControls = {
                 MainMoreButtonMenu(
@@ -242,6 +249,19 @@ private fun StatsButton(
         onClick = onClick,
         iconResId = R.drawable.ic_stats,
         contentDescriptionResId = R.string.main_stats,
+        modifier = modifier
+    )
+}
+
+@Composable
+private fun DebugPanelButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    FloatingCircleIconButton(
+        onClick = onClick,
+        iconResId = R.drawable.ic_info_circle,
+        contentDescriptionResId = R.string.debug_panel_open,
         modifier = modifier
     )
 }

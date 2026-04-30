@@ -4,8 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.passedpath.app.AppContainer
+import com.example.passedpath.debug.AppDebugLogger
 import com.example.passedpath.feature.place.domain.model.VisitedPlace
 import com.example.passedpath.feature.place.domain.repository.PlaceGuideRepository
+import com.example.passedpath.feature.place.domain.usecase.DeletePlaceUseCase
 import com.example.passedpath.feature.place.domain.usecase.GetVisitedPlacesUseCase
 import com.example.passedpath.feature.place.domain.usecase.ReorderPlacesUseCase
 import com.example.passedpath.feature.place.presentation.state.PlaceListUiState
@@ -26,9 +28,11 @@ import java.util.Locale
 class PlaceViewModel(
     private val reorderPlacesUseCase: ReorderPlacesUseCase,
     private val getVisitedPlacesUseCase: GetVisitedPlacesUseCase,
+    private val deletePlaceUseCase: DeletePlaceUseCase,
     private val placeGuideRepository: PlaceGuideRepository = InMemoryPlaceGuideRepository(),
     initialDateKey: String = todayDateKey()
 ) : ViewModel() {
+    private val logTag = "PlaceFlow"
     private var isReorderGuideBannerDismissed = false
     private var hasRequestedReorderGuideBannerDismissal = false
 
@@ -81,7 +85,8 @@ class PlaceViewModel(
                         errorMessage = "날짜는 yyyy-MM-dd 형식이어야 합니다."
                     ),
                     errorMessage = "날짜는 yyyy-MM-dd 형식이어야 합니다.",
-                    successMessage = null
+                    successMessage = null,
+                    feedbackEventId = it.feedbackEventId + 1
                 )
             }
             return
@@ -100,7 +105,8 @@ class PlaceViewModel(
             _uiState.update {
                 it.copy(
                     errorMessage = "날짜는 yyyy-MM-dd 형식이어야 합니다.",
-                    successMessage = null
+                    successMessage = null,
+                    feedbackEventId = it.feedbackEventId + 1
                 )
             }
             return
@@ -116,7 +122,8 @@ class PlaceViewModel(
             _uiState.update {
                 it.copy(
                     errorMessage = "현재 장소 목록과 순서 변경 요청이 일치하지 않습니다.",
-                    successMessage = null
+                    successMessage = null,
+                    feedbackEventId = it.feedbackEventId + 1
                 )
             }
             return
@@ -141,6 +148,7 @@ class PlaceViewModel(
                         isSubmitting = false,
                         errorMessage = null,
                         successMessage = "장소 순서가 변경되었습니다.",
+                        feedbackEventId = it.feedbackEventId + 1,
                         placeList = it.placeList.copy(
                             places = it.placeList.places.reorderedBy(placeIds)
                         )
@@ -148,11 +156,87 @@ class PlaceViewModel(
                 }
                 refreshVisitedPlaces(dateKey = currentState.dateKey)
             } catch (throwable: Throwable) {
+                AppDebugLogger.debug(
+                    tag = logTag,
+                    message = "reorderPlaces failed dateKey=${currentState.dateKey} placeIds=$placeIds error=${throwable.toLogSummary()}"
+                )
                 _uiState.update {
                     it.copy(
                         isSubmitting = false,
                         errorMessage = ApiFailureMessage.fromThrowable(throwable),
-                        successMessage = null
+                        successMessage = null,
+                        feedbackEventId = it.feedbackEventId + 1
+                    )
+                }
+            }
+        }
+    }
+
+    fun deletePlace(placeId: Long) {
+        val currentState = _uiState.value
+        if (currentState.isSubmitting) return
+
+        if (!isValidDateKey(currentState.dateKey)) {
+            _uiState.update {
+                it.copy(
+                    errorMessage = "날짜는 yyyy-MM-dd 형식이어야 합니다.",
+                    successMessage = null,
+                    feedbackEventId = it.feedbackEventId + 1
+                )
+            }
+            return
+        }
+
+        if (currentState.placeList.places.none { it.placeId == placeId }) {
+            _uiState.update {
+                it.copy(
+                    errorMessage = "삭제할 장소를 찾을 수 없습니다.",
+                    successMessage = null,
+                    feedbackEventId = it.feedbackEventId + 1
+                )
+            }
+            return
+        }
+
+        _uiState.update {
+            it.copy(
+                isSubmitting = true,
+                errorMessage = null,
+                successMessage = null
+            )
+        }
+
+        viewModelScope.launch {
+            try {
+                deletePlaceUseCase(
+                    dateKey = currentState.dateKey,
+                    placeId = placeId
+                )
+                _uiState.update {
+                    it.copy(
+                        isSubmitting = false,
+                        errorMessage = null,
+                        successMessage = "장소를 삭제했습니다.",
+                        feedbackEventId = it.feedbackEventId + 1,
+                        placeList = it.placeList.removedPlace(placeId)
+                    )
+                }
+                refreshVisitedPlaces(
+                    dateKey = currentState.dateKey,
+                    showLoading = false,
+                    surfaceError = false
+                )
+            } catch (throwable: Throwable) {
+                AppDebugLogger.debug(
+                    tag = logTag,
+                    message = "deletePlace failed dateKey=${currentState.dateKey} placeId=$placeId error=${throwable.toLogSummary()}"
+                )
+                _uiState.update {
+                    it.copy(
+                        isSubmitting = false,
+                        errorMessage = ApiFailureMessage.fromThrowable(throwable),
+                        successMessage = null,
+                        feedbackEventId = it.feedbackEventId + 1
                     )
                 }
             }
@@ -178,7 +262,9 @@ class PlaceViewModel(
     // 목록 재조회 로직을 한 곳에서 처리한다.
     private suspend fun refreshVisitedPlaces(
         dateKey: String,
-        clearFeedbackMessage: Boolean = false
+        clearFeedbackMessage: Boolean = false,
+        showLoading: Boolean = true,
+        surfaceError: Boolean = true
     ) {
         _uiState.update {
             val currentPlaceList = it.placeList
@@ -186,7 +272,7 @@ class PlaceViewModel(
                 dateKey = dateKey,
                 placeList = currentPlaceList.copy(
                     dateKey = dateKey,
-                    isLoading = true,
+                    isLoading = showLoading,
                     errorMessage = null,
                     isStale = false
                 ),
@@ -218,6 +304,21 @@ class PlaceViewModel(
             _uiState.update {
                 val currentPlaceList = it.placeList
                 val hasRetainedContent = currentPlaceList.hasRetainedContent
+                AppDebugLogger.debug(
+                    tag = logTag,
+                    message = "refreshVisitedPlaces failed dateKey=$dateKey clearFeedbackMessage=$clearFeedbackMessage showLoading=$showLoading surfaceError=$surfaceError retainedContent=$hasRetainedContent currentCount=${currentPlaceList.places.size} error=${throwable.toLogSummary()}"
+                )
+                if (!surfaceError) {
+                    return@update it.copy(
+                        dateKey = dateKey,
+                        placeList = currentPlaceList.copy(
+                            dateKey = dateKey,
+                            isLoading = false,
+                            errorMessage = null,
+                            isStale = false
+                        )
+                    )
+                }
                 it.copy(
                     dateKey = dateKey,
                     placeList = currentPlaceList.copy(
@@ -227,7 +328,8 @@ class PlaceViewModel(
                         isStale = hasRetainedContent
                     ),
                     errorMessage = errorMessage,
-                    successMessage = if (clearFeedbackMessage) null else it.successMessage
+                    successMessage = if (clearFeedbackMessage) null else it.successMessage,
+                    feedbackEventId = it.feedbackEventId + 1
                 )
             }
         }
@@ -258,6 +360,18 @@ class PlaceViewModel(
         )
     }
 
+    private fun PlaceListUiState.removedPlace(placeId: Long): PlaceListUiState {
+        val nextPlaces = places.filterNot { it.placeId == placeId }
+        return copy(
+            places = nextPlaces,
+            placeCount = nextPlaces.size,
+            hasLoaded = true,
+            isLoading = false,
+            errorMessage = null,
+            isStale = false
+        ).withReorderGuideBannerVisibility(isReorderGuideBannerDismissed)
+    }
+
     // 날짜 형식이 맞는지 확인한다.
     private fun isValidDateKey(value: String): Boolean {
         return try {
@@ -270,6 +384,10 @@ class PlaceViewModel(
 }
 
 private const val ReorderGuideMinimumPlaceCount = 2
+
+private fun Throwable.toLogSummary(): String {
+    return "${this::class.java.simpleName}:${message.orEmpty()}"
+}
 
 private class InMemoryPlaceGuideRepository : PlaceGuideRepository {
     private val dismissed = MutableStateFlow(false)
@@ -297,6 +415,7 @@ class PlaceViewModelFactory(
             return PlaceViewModel(
                 reorderPlacesUseCase = appContainer.reorderPlacesUseCase,
                 getVisitedPlacesUseCase = appContainer.getVisitedPlacesUseCase,
+                deletePlaceUseCase = appContainer.deletePlaceUseCase,
                 placeGuideRepository = appContainer.placeGuideRepository,
                 initialDateKey = initialDateKey
             ) as T

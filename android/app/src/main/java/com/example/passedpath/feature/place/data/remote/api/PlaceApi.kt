@@ -14,6 +14,7 @@ import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Path
+import retrofit2.Response
 
 interface PlaceApi {
     @GET("/api/day-routes/{date}/places")
@@ -50,5 +51,5 @@ interface PlaceApi {
     suspend fun deletePlace(
         @Path("date") date: String,
         @Path("placeId") placeId: Long
-    )
+    ): Response<Unit>
 }
