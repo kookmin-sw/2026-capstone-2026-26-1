@@ -27,7 +27,7 @@ import org.springframework.web.reactive.function.client.WebClientException;
 public class StayAnalysisService {
 
     private static final int STAY_RADIUS_METER = 50;
-    private static final int STAY_MIN_DURATION_MINUTE = 15;
+    private static final int STAY_MIN_DURATION_MINUTE = 10;
     private static final ZoneId KST_ZONE_ID = ZoneId.of("Asia/Seoul");
 
     private final OngoingStayRepository ongoingStayRepository;

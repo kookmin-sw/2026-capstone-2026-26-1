@@ -81,12 +81,24 @@ public class DayRoute {
     @Enumerated(EnumType.STRING)
     private AnalysisStatus analysisStatus;
 
+    @Enumerated(EnumType.STRING)
+    private HomeRouteStatus homeRouteStatus;
+
+    //외출시간
+    private Instant outingTime;
+
+    //귀가시간
+    private Instant homeComingTime;
+
+    private Instant homeAnalysisLastPointAt;
+
     @Builder
     public DayRoute(User user, LocalDate date) {
         this.user = user;
         this.date = date;
         gpsPoints = new ArrayList<>();
         analysisStatus = AnalysisStatus.IDLE;
+        homeRouteStatus = HomeRouteStatus.UNKNOWN;
     }
 
     public void updateTime(Instant startTime, Instant endTime) {
