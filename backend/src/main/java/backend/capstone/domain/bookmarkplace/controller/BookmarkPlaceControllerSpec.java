@@ -27,7 +27,7 @@ public interface BookmarkPlaceControllerSpec {
         description = """
             type 필드의 값은 HOME/COMPANY/SCHOOL/ETC 중 하나를 선택해 주세요.<br>
             카카오 장소 검색 api에서 받은 longitude와 latitude 값을 요청값에 넣어주세요.<br>
-            이미 type이 HOME인 즐겨찾기 장소가 존재하고, 요청 type도 HOME인 경우 예외가 발생합니다. (집주소 중복 등록 방지)
+            이미 type이 HOME인 즐찾 장소가 존재하는데, HOME type 즐찾 장소를 등록하려는 경우 예외가 발생합니다. (집주소 중복 등록 방지)
             """
     )
     BookmarkPlaceCreateResponse createBookmarkPlace(
