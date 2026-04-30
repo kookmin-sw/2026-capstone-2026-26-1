@@ -81,7 +81,7 @@
     <string name="route_empty_past_toast">이 날의 경로 기록이 존재하지 않아요</string>
     <string name="route_place_fallback_title">장소 %1$d</string>
     <string name="record_sheet_tab_place">방문한 장소</string>
-    <string name="record_sheet_tab_daynote">지나온 길 메모</string>
+    <string name="record_sheet_tab_daynote">메모</string>
     <string name="place_sheet_title">방문한 장소</string>
     <string name="place_sheet_placeholder_body">이 날짜에 저장한 장소 목록이 이곳에 표시됩니다. 다음 단계에서 장소 추가와 편집을 연결합니다.</string>
     <string name="place_sheet_selected_date">선택한 날짜 %1$s</string>
