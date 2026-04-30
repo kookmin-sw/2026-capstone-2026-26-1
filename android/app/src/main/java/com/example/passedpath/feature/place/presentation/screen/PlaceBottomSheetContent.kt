@@ -34,7 +34,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -88,10 +87,11 @@ fun PlaceBottomSheetContent(
     onRetryClick: () -> Unit,
     onAddPlaceClick: () -> Unit,
     onReorderPlaces: (List<Long>) -> Unit,
+    onCloseReorderGuideBanner: () -> Unit,
     modifier: Modifier = Modifier,
     isReorderSubmitting: Boolean = false
 ) {
-    var isBannerVisible by rememberSaveable { mutableStateOf(true) }
+    val isBannerVisible = placeListUiState.isReorderGuideBannerVisible
     var animatedPlaceId by remember { mutableStateOf<Long?>(null) }
     val sortedPlaces = placeListUiState.places.sortedBy(VisitedPlace::orderIndex)
     var reorderedPlaces by remember { mutableStateOf(sortedPlaces) }
@@ -167,7 +167,7 @@ fun PlaceBottomSheetContent(
     ) {
         if (isBannerVisible) {
             item(key = "banner") {
-                PlaceGuideBanner(onClose = { isBannerVisible = false })
+                PlaceGuideBanner(onClose = onCloseReorderGuideBanner)
             }
         }
 
@@ -606,6 +606,7 @@ private fun PlaceBottomSheetContentPreview() {
             onRetryClick = {},
             onAddPlaceClick = {},
             onReorderPlaces = {},
+            onCloseReorderGuideBanner = {},
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 20.dp)
@@ -628,6 +629,7 @@ private fun PlaceBottomSheetContentEmptyPreview() {
             onRetryClick = {},
             onAddPlaceClick = {},
             onReorderPlaces = {},
+            onCloseReorderGuideBanner = {},
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 20.dp)

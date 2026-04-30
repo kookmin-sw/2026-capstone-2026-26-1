@@ -51,8 +51,10 @@ import com.example.passedpath.feature.permission.data.manager.LocationPermission
 import com.example.passedpath.feature.permission.data.manager.LocationServiceStatusReader
 import com.example.passedpath.feature.place.data.remote.api.PlaceApi
 import com.example.passedpath.feature.place.data.remote.api.PlaceSearchApi
+import com.example.passedpath.feature.place.data.repository.PlaceGuideRepositoryImpl
 import com.example.passedpath.feature.place.data.repository.PlaceRepositoryImpl
 import com.example.passedpath.feature.place.data.repository.PlaceSearchRepositoryImpl
+import com.example.passedpath.feature.place.domain.repository.PlaceGuideRepository
 import com.example.passedpath.feature.place.domain.repository.PlaceRepository
 import com.example.passedpath.feature.place.domain.repository.PlaceSearchRepository
 import com.example.passedpath.feature.place.domain.usecase.AddPlaceUseCase
@@ -274,6 +276,10 @@ class AppContainer(
 
     val placeSearchRepository: PlaceSearchRepository by lazy {
         PlaceSearchRepositoryImpl(placeSearchApi)
+    }
+
+    val placeGuideRepository: PlaceGuideRepository by lazy {
+        PlaceGuideRepositoryImpl(appContext)
     }
 
     val uploadGpsPointsBatchUseCase: UploadGpsPointsBatchUseCase by lazy {

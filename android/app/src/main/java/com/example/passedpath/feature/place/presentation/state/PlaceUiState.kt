@@ -20,7 +20,8 @@ data class PlaceListUiState(
     val hasLoaded: Boolean = false,
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
-    val isStale: Boolean = false
+    val isStale: Boolean = false,
+    val isReorderGuideBannerVisible: Boolean = false
 ) {
     val hasRetainedContent: Boolean
         get() = hasLoaded && places.isNotEmpty()

@@ -5,11 +5,13 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.passedpath.app.AppContainer
 import com.example.passedpath.feature.place.domain.model.VisitedPlace
+import com.example.passedpath.feature.place.domain.repository.PlaceGuideRepository
 import com.example.passedpath.feature.place.domain.usecase.GetVisitedPlacesUseCase
 import com.example.passedpath.feature.place.domain.usecase.ReorderPlacesUseCase
 import com.example.passedpath.feature.place.presentation.state.PlaceListUiState
 import com.example.passedpath.feature.place.presentation.state.PlaceUiState
 import com.example.passedpath.ui.state.ApiFailureMessage
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -24,8 +26,11 @@ import java.util.Locale
 class PlaceViewModel(
     private val reorderPlacesUseCase: ReorderPlacesUseCase,
     private val getVisitedPlacesUseCase: GetVisitedPlacesUseCase,
+    private val placeGuideRepository: PlaceGuideRepository = InMemoryPlaceGuideRepository(),
     initialDateKey: String = todayDateKey()
 ) : ViewModel() {
+    private var isReorderGuideBannerDismissed = false
+    private var hasRequestedReorderGuideBannerDismissal = false
 
     private val _uiState = MutableStateFlow(
         PlaceUiState(
@@ -34,6 +39,19 @@ class PlaceViewModel(
         )
     )
     val uiState: StateFlow<PlaceUiState> = _uiState.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            placeGuideRepository.isReorderGuideBannerDismissed.collect { dismissed ->
+                isReorderGuideBannerDismissed = dismissed || hasRequestedReorderGuideBannerDismissal
+                _uiState.update { state ->
+                    state.copy(
+                        placeList = state.placeList.withReorderGuideBannerVisibility(isReorderGuideBannerDismissed)
+                    )
+                }
+            }
+        }
+    }
 
     // 날짜를 바꾸고, 이전 날짜의 목록 상태는 지운다.
     fun updateDateKey(value: String) {
@@ -141,6 +159,22 @@ class PlaceViewModel(
         }
     }
 
+    fun dismissReorderGuideBanner() {
+        if (isReorderGuideBannerDismissed) return
+
+        hasRequestedReorderGuideBannerDismissal = true
+        isReorderGuideBannerDismissed = true
+        _uiState.update { state ->
+            state.copy(
+                placeList = state.placeList.copy(isReorderGuideBannerVisible = false)
+            )
+        }
+
+        viewModelScope.launch {
+            placeGuideRepository.dismissReorderGuideBanner()
+        }
+    }
+
     // 목록 재조회 로직을 한 곳에서 처리한다.
     private suspend fun refreshVisitedPlaces(
         dateKey: String,
@@ -174,7 +208,7 @@ class PlaceViewModel(
                         isLoading = false,
                         errorMessage = null,
                         isStale = false
-                    ),
+                    ).withReorderGuideBannerVisibility(isReorderGuideBannerDismissed),
                     errorMessage = null,
                     successMessage = if (clearFeedbackMessage) null else it.successMessage
                 )
@@ -216,6 +250,14 @@ class PlaceViewModel(
         }
     }
 
+    private fun PlaceListUiState.withReorderGuideBannerVisibility(
+        isDismissed: Boolean
+    ): PlaceListUiState {
+        return copy(
+            isReorderGuideBannerVisible = places.size >= ReorderGuideMinimumPlaceCount && !isDismissed
+        )
+    }
+
     // 날짜 형식이 맞는지 확인한다.
     private fun isValidDateKey(value: String): Boolean {
         return try {
@@ -224,6 +266,18 @@ class PlaceViewModel(
         } catch (_: DateTimeParseException) {
             false
         }
+    }
+}
+
+private const val ReorderGuideMinimumPlaceCount = 2
+
+private class InMemoryPlaceGuideRepository : PlaceGuideRepository {
+    private val dismissed = MutableStateFlow(false)
+
+    override val isReorderGuideBannerDismissed: Flow<Boolean> = dismissed
+
+    override suspend fun dismissReorderGuideBanner() {
+        dismissed.value = true
     }
 }
 
@@ -243,6 +297,7 @@ class PlaceViewModelFactory(
             return PlaceViewModel(
                 reorderPlacesUseCase = appContainer.reorderPlacesUseCase,
                 getVisitedPlacesUseCase = appContainer.getVisitedPlacesUseCase,
+                placeGuideRepository = appContainer.placeGuideRepository,
                 initialDateKey = initialDateKey
             ) as T
         }

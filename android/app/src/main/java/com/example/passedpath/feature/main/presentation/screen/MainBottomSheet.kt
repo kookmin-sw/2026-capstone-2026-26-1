@@ -69,6 +69,7 @@ internal fun MainBottomSheet(
     onPlaceRetryClick: () -> Unit,
     onAddPlaceClick: () -> Unit,
     onReorderPlaces: (List<Long>) -> Unit,
+    onCloseReorderGuideBanner: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val focusManager = LocalFocusManager.current
@@ -114,6 +115,7 @@ internal fun MainBottomSheet(
                         onRetryClick = onPlaceRetryClick,
                         onAddPlaceClick = onAddPlaceClick,
                         onReorderPlaces = onReorderPlaces,
+                        onCloseReorderGuideBanner = onCloseReorderGuideBanner,
                         isReorderSubmitting = placeUiState.isSubmitting,
                         modifier = Modifier
                             .fillMaxSize()
@@ -263,6 +265,7 @@ private fun MainBottomSheetPreview() {
                 onPlaceRetryClick = {},
                 onAddPlaceClick = {},
                 onReorderPlaces = {},
+                onCloseReorderGuideBanner = {},
                 modifier = Modifier.fillMaxSize()
             )
         }

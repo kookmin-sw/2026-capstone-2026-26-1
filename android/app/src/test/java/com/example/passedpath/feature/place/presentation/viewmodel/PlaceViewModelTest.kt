@@ -7,6 +7,7 @@ import com.example.passedpath.feature.place.domain.model.RegisteredPlace
 import com.example.passedpath.feature.place.domain.model.UpdatedPlace
 import com.example.passedpath.feature.place.domain.model.VisitedPlace
 import com.example.passedpath.feature.place.domain.model.VisitedPlaceList
+import com.example.passedpath.feature.place.domain.repository.PlaceGuideRepository
 import com.example.passedpath.feature.place.domain.repository.PlaceRepository
 import com.example.passedpath.feature.place.domain.usecase.GetVisitedPlacesUseCase
 import com.example.passedpath.feature.place.domain.usecase.ReorderPlacesUseCase
@@ -14,6 +15,8 @@ import com.example.passedpath.testutil.MainDispatcherRule
 import com.example.passedpath.ui.state.ApiFailureMessage
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -65,6 +68,73 @@ class PlaceViewModelTest {
         assertEquals(2, state.placeList.placeCount)
         assertEquals(2, state.placeList.places.size)
         assertEquals(listOf("2026-04-03"), repository.requestedPlaceListDates)
+    }
+
+    @Test
+    fun `reorder guide banner shows only when two or more places are loaded and not dismissed`() = runTest {
+        val repository = FakePlaceRepository(
+            visitedPlaceListByDate = mutableMapOf(
+                "2026-04-03" to VisitedPlaceList(
+                    placeCount = 2,
+                    places = listOf(
+                        visitedPlace(placeId = 1L, placeName = "Seoul Forest", orderIndex = 1),
+                        visitedPlace(placeId = 2L, placeName = "Cafe", orderIndex = 2)
+                    )
+                ),
+                "2026-04-04" to VisitedPlaceList(
+                    placeCount = 1,
+                    places = listOf(visitedPlace(placeId = 3L, placeName = "Library", orderIndex = 1))
+                )
+            )
+        )
+        val viewModel = createViewModel(repository = repository, initialDateKey = "2026-04-03")
+
+        viewModel.fetchVisitedPlaces()
+        advanceUntilIdle()
+
+        assertTrue(viewModel.uiState.value.placeList.isReorderGuideBannerVisible)
+
+        viewModel.updateDateKey("2026-04-04")
+        viewModel.fetchVisitedPlaces()
+        advanceUntilIdle()
+
+        assertFalse(viewModel.uiState.value.placeList.isReorderGuideBannerVisible)
+    }
+
+    @Test
+    fun `dismissReorderGuideBanner hides banner and keeps it hidden after reloads`() = runTest {
+        val repository = FakePlaceRepository(
+            visitedPlaceListByDate = mutableMapOf(
+                "2026-04-03" to VisitedPlaceList(
+                    placeCount = 2,
+                    places = listOf(
+                        visitedPlace(placeId = 1L, placeName = "Seoul Forest", orderIndex = 1),
+                        visitedPlace(placeId = 2L, placeName = "Cafe", orderIndex = 2)
+                    )
+                )
+            )
+        )
+        val guideRepository = FakePlaceGuideRepository()
+        val viewModel = createViewModel(
+            repository = repository,
+            guideRepository = guideRepository,
+            initialDateKey = "2026-04-03"
+        )
+
+        viewModel.fetchVisitedPlaces()
+        advanceUntilIdle()
+        assertTrue(viewModel.uiState.value.placeList.isReorderGuideBannerVisible)
+
+        viewModel.dismissReorderGuideBanner()
+        advanceUntilIdle()
+
+        assertTrue(guideRepository.dismissRequested)
+        assertFalse(viewModel.uiState.value.placeList.isReorderGuideBannerVisible)
+
+        viewModel.fetchVisitedPlaces()
+        advanceUntilIdle()
+
+        assertFalse(viewModel.uiState.value.placeList.isReorderGuideBannerVisible)
     }
 
     @Test
@@ -366,11 +436,13 @@ class PlaceViewModelTest {
 
     private fun createViewModel(
         repository: FakePlaceRepository,
-        initialDateKey: String
+        initialDateKey: String,
+        guideRepository: FakePlaceGuideRepository = FakePlaceGuideRepository()
     ): PlaceViewModel {
         return PlaceViewModel(
             reorderPlacesUseCase = ReorderPlacesUseCase(repository),
             getVisitedPlacesUseCase = GetVisitedPlacesUseCase(repository),
+            placeGuideRepository = guideRepository,
             initialDateKey = initialDateKey
         )
     }
@@ -450,5 +522,17 @@ class PlaceViewModelTest {
         }
 
         override suspend fun deletePlace(dateKey: String, placeId: Long) = Unit
+    }
+
+    private class FakePlaceGuideRepository : PlaceGuideRepository {
+        private val dismissed = MutableStateFlow(false)
+        var dismissRequested = false
+
+        override val isReorderGuideBannerDismissed: Flow<Boolean> = dismissed
+
+        override suspend fun dismissReorderGuideBanner() {
+            dismissRequested = true
+            dismissed.value = true
+        }
     }
 }

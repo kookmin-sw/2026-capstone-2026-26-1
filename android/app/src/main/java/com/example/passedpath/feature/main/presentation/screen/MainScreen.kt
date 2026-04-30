@@ -49,6 +49,7 @@ fun MainScreen(
     onPlaceListRefreshRequested: (String) -> Unit,
     onNavigateToAddPlace: (String) -> Unit,
     onReorderPlaces: (List<Long>) -> Unit,
+    onCloseReorderGuideBanner: () -> Unit,
     onTrackingPermissionDialogConfirm: () -> Unit,
     onTrackingPermissionDialogDismiss: () -> Unit,
     onPermissionActionClick: () -> Unit,
@@ -203,7 +204,8 @@ fun MainScreen(
                     onAddPlaceClick = {
                         onNavigateToAddPlace(uiState.selectedDateKey)
                     },
-                    onReorderPlaces = onReorderPlaces
+                    onReorderPlaces = onReorderPlaces,
+                    onCloseReorderGuideBanner = onCloseReorderGuideBanner
                 )
             }
         )

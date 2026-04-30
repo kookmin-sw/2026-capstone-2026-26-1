@@ -150,6 +150,7 @@ fun MainRoute(
         onPlaceListRefreshRequested = placeViewModel::fetchVisitedPlaces,
         onNavigateToAddPlace = onNavigateToAddPlace,
         onReorderPlaces = placeViewModel::reorderPlaces,
+        onCloseReorderGuideBanner = placeViewModel::dismissReorderGuideBanner,
         onTrackingPermissionDialogConfirm = {
             viewModel.dismissTrackingPermissionDialog()
             AppSettingsNavigator.openAppSettings(context)
