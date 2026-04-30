@@ -55,7 +55,7 @@ class AddPlaceViewModelTest {
                 addPlaceUseCase = AddPlaceUseCase(placeRepository)
             )
         )
-        val creationEvents = mutableListOf<Unit>()
+        val creationEvents = mutableListOf<Long>()
         val eventJob = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
             viewModel.placeCreated.toList(creationEvents)
         }
@@ -75,7 +75,7 @@ class AddPlaceViewModelTest {
         assertEquals(listOf("2026-04-23"), placeRepository.addRequestDates)
         assertEquals("Cafe", placeRepository.addRequests.single().placeName)
         assertEquals("Road Address", placeRepository.addRequests.single().roadAddress)
-        assertEquals(1, creationEvents.size)
+        assertEquals(listOf(1L), creationEvents)
 
         eventJob.cancel()
     }

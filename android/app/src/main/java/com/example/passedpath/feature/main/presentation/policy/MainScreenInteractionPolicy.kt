@@ -22,6 +22,12 @@ internal fun reduceForSheetValueChange(
     state: MainScreenLocalUiState,
     bottomSheetValue: MainBottomSheetValue
 ): MainScreenInteractionResult {
+    if (state.requestedSheetValue != null && state.requestedSheetValue != bottomSheetValue) {
+        return MainScreenInteractionResult(
+            state = state.copy(bottomSheetValue = bottomSheetValue)
+        )
+    }
+
     return MainScreenInteractionResult(
         state = if (bottomSheetValue == MainBottomSheetValue.HIDDEN) {
             state.copy(
@@ -62,6 +68,19 @@ internal fun reduceForSheetHideRequest(
         state = state.copy(
             requestedSheetValue = MainBottomSheetValue.HIDDEN,
             selectedPlaceId = null
+        )
+    )
+}
+
+internal fun reduceForPlaceCreated(
+    state: MainScreenLocalUiState,
+    placeId: Long
+): MainScreenInteractionResult {
+    return MainScreenInteractionResult(
+        state = state.copy(
+            selectedBottomSheetTab = MainBottomSheetTab.PLACE,
+            requestedSheetValue = MainBottomSheetValue.EXPANDED,
+            selectedPlaceId = placeId
         )
     )
 }

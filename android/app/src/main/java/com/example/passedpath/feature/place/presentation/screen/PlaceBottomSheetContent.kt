@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -30,6 +29,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -50,7 +50,6 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.passedpath.R
@@ -89,7 +88,8 @@ fun PlaceBottomSheetContent(
     onReorderPlaces: (List<Long>) -> Unit,
     onCloseReorderGuideBanner: () -> Unit,
     modifier: Modifier = Modifier,
-    isReorderSubmitting: Boolean = false
+    isReorderSubmitting: Boolean = false,
+    onScrollStateChanged: (Boolean) -> Unit = {}
 ) {
     val isBannerVisible = placeListUiState.isReorderGuideBannerVisible
     var animatedPlaceId by remember { mutableStateOf<Long?>(null) }
@@ -103,7 +103,17 @@ fun PlaceBottomSheetContent(
         !placeListUiState.isLoading &&
         !(placeListUiState.errorMessage != null && !placeListUiState.isStale)
     val listState = rememberLazyListState()
+    val isContentScrolled by remember {
+        derivedStateOf {
+            listState.firstVisibleItemIndex > 0 ||
+                listState.firstVisibleItemScrollOffset > 0
+        }
+    }
     val placeSectionStartIndex = (if (isBannerVisible) 1 else 0) + 1
+
+    LaunchedEffect(isContentScrolled) {
+        onScrollStateChanged(isContentScrolled)
+    }
 
     LaunchedEffect(sortedPlaces) {
         if (draggedPlaceId == null) {
@@ -123,12 +133,11 @@ fun PlaceBottomSheetContent(
         val placeId = selectedPlaceId ?: return@LaunchedEffect
         val selectedIndex = reorderedPlaces.indexOfFirst { it.placeId == placeId }
         if (selectedIndex < 0) {
-            onSelectedPlaceHandled()
             return@LaunchedEffect
         }
         listState.animateScrollToItem(placeSectionStartIndex + selectedIndex)
         animatedPlaceId = placeId
-        delay(320)
+        delay(1_700)
         animatedPlaceId = null
         onSelectedPlaceHandled()
     }
@@ -221,7 +230,7 @@ fun PlaceBottomSheetContent(
         }
 
         item(key = "bottom_spacer") {
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(8.dp))
         }
     }
 }
@@ -366,25 +375,22 @@ private fun PlaceTimelineItem(
     isLast: Boolean,
     displayOrderIndex: Int
 ) {
-    val horizontalOffset = remember(place.placeId) { Animatable(0f) }
+    val highlightProgress = remember(place.placeId) { Animatable(0f) }
 
     LaunchedEffect(shouldAnimate) {
         if (!shouldAnimate) {
-            horizontalOffset.snapTo(0f)
+            highlightProgress.snapTo(0f)
             return@LaunchedEffect
         }
 
-        horizontalOffset.snapTo(0f)
-        horizontalOffset.animateTo(10f, animationSpec = tween(durationMillis = 70))
-        horizontalOffset.animateTo(-8f, animationSpec = tween(durationMillis = 90))
-        horizontalOffset.animateTo(6f, animationSpec = tween(durationMillis = 80))
-        horizontalOffset.animateTo(0f, animationSpec = tween(durationMillis = 70))
+        highlightProgress.snapTo(0f)
+        highlightProgress.animateTo(1f, animationSpec = tween(durationMillis = 350))
+        delay(500)
+        highlightProgress.animateTo(0f, animationSpec = tween(durationMillis = 850))
     }
 
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .offset(x = horizontalOffset.value.toCardOffset()),
+        modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.Top
     ) {
@@ -407,6 +413,7 @@ private fun PlaceTimelineItem(
             startTimeText = place.startTime.toPlaceCardTimeText(),
             endTimeText = place.endTime.toPlaceCardTimeText(),
             isFavoritePlace = place.bookmarkType != null,
+            highlightProgress = highlightProgress.value,
             modifier = Modifier.weight(1f),
             isCompact = true
         )
@@ -503,8 +510,6 @@ private fun List<VisitedPlace>.moved(fromIndex: Int, toIndex: Int): List<Visited
         add(toIndex, removeAt(fromIndex))
     }
 }
-
-private fun Float.toCardOffset(): Dp = this.dp
 
 private const val ReorderAutoScrollEdgeSizePx = 96f
 private const val ReorderAutoScrollStepPx = 28f

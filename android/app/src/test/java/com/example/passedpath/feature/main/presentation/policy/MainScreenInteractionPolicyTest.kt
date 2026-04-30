@@ -124,6 +124,24 @@ class MainScreenInteractionPolicyTest {
     }
 
     @Test
+    fun `stale hidden sheet value does not cancel pending expanded command`() {
+        val initialState = MainScreenLocalUiState(
+            bottomSheetValue = MainBottomSheetValue.HIDDEN,
+            requestedSheetValue = MainBottomSheetValue.EXPANDED,
+            selectedPlaceId = 12L
+        )
+
+        val result = reduceForSheetValueChange(
+            state = initialState,
+            bottomSheetValue = MainBottomSheetValue.HIDDEN
+        )
+
+        assertEquals(MainBottomSheetValue.HIDDEN, result.state.bottomSheetValue)
+        assertEquals(MainBottomSheetValue.EXPANDED, result.state.requestedSheetValue)
+        assertEquals(12L, result.state.selectedPlaceId)
+    }
+
+    @Test
     fun `sheet command consumed clears matching requested value`() {
         val initialState = MainScreenLocalUiState(
             bottomSheetValue = MainBottomSheetValue.HIDDEN,
@@ -168,10 +186,29 @@ class MainScreenInteractionPolicyTest {
     }
 
     @Test
+    fun `place created opens place tab to expanded and selects created place`() {
+        val initialState = MainScreenLocalUiState(
+            selectedBottomSheetTab = MainBottomSheetTab.DAYNOTE,
+            bottomSheetValue = MainBottomSheetValue.HIDDEN,
+            requestedSheetValue = MainBottomSheetValue.HIDDEN,
+            selectedPlaceId = 4L
+        )
+
+        val result = reduceForPlaceCreated(
+            state = initialState,
+            placeId = 12L
+        )
+
+        assertEquals(MainBottomSheetTab.PLACE, result.state.selectedBottomSheetTab)
+        assertEquals(MainBottomSheetValue.EXPANDED, result.state.requestedSheetValue)
+        assertEquals(12L, result.state.selectedPlaceId)
+        assertFalse(result.shouldRefreshPlaces)
+    }
+
+    @Test
     fun `hidden sheet clears selected place and requested value`() {
         val initialState = MainScreenLocalUiState(
             bottomSheetValue = MainBottomSheetValue.MIDDLE,
-            requestedSheetValue = MainBottomSheetValue.MIDDLE,
             selectedPlaceId = 5L
         )
 

@@ -20,6 +20,7 @@ import com.example.passedpath.feature.auth.presentation.screen.LoginRoute
 import com.example.passedpath.feature.auth.presentation.state.AuthEvent
 import com.example.passedpath.feature.friends.presentation.screen.FriendsRoute
 import com.example.passedpath.feature.main.presentation.screen.MainRoute
+import com.example.passedpath.feature.main.presentation.screen.PlaceCreatedEvent
 import com.example.passedpath.feature.mypage.presentation.screen.MyPageRoute
 import com.example.passedpath.feature.permission.presentation.screen.LocationPermissionIntroRoute
 import com.example.passedpath.feature.place.presentation.screen.AddPlaceScreen
@@ -36,7 +37,8 @@ fun AppNavHost(
     var loginToastMessage by remember { mutableStateOf<String?>(null) }
     var loginToastTrigger by remember { mutableStateOf(0) }
     var mainTabReselectionEvent by remember { mutableStateOf(0) }
-    var placeCreatedEvent by remember { mutableStateOf(0) }
+    var placeCreatedEvent by remember { mutableStateOf<PlaceCreatedEvent?>(null) }
+    var placeCreatedEventId by remember { mutableStateOf(0) }
     val navBackStackEntry = navController.currentBackStackEntryAsState().value
     val currentRoute = navBackStackEntry?.destination?.route
 
@@ -59,12 +61,21 @@ fun AppNavHost(
                 appEntryViewModel = appEntryViewModel,
                 mainTabReselectionEvent = mainTabReselectionEvent,
                 placeCreatedEvent = placeCreatedEvent,
+                onPlaceCreatedEventConsumed = { eventId ->
+                    if (placeCreatedEvent?.id == eventId) {
+                        placeCreatedEvent = null
+                    }
+                },
                 onLoginToastMessage = { message ->
                     loginToastMessage = message
                     loginToastTrigger++
                 },
-                onPlaceCreated = {
-                    placeCreatedEvent++
+                onPlaceCreated = { placeId ->
+                    placeCreatedEventId++
+                    placeCreatedEvent = PlaceCreatedEvent(
+                        id = placeCreatedEventId,
+                        placeId = placeId
+                    )
                 },
                 modifier = Modifier.fillMaxSize()
             )
@@ -82,12 +93,21 @@ fun AppNavHost(
                     appEntryViewModel = appEntryViewModel,
                     mainTabReselectionEvent = mainTabReselectionEvent,
                     placeCreatedEvent = placeCreatedEvent,
+                    onPlaceCreatedEventConsumed = { eventId ->
+                        if (placeCreatedEvent?.id == eventId) {
+                            placeCreatedEvent = null
+                        }
+                    },
                     onLoginToastMessage = { message ->
                         loginToastMessage = message
                         loginToastTrigger++
                     },
-                    onPlaceCreated = {
-                        placeCreatedEvent++
+                    onPlaceCreated = { placeId ->
+                        placeCreatedEventId++
+                        placeCreatedEvent = PlaceCreatedEvent(
+                            id = placeCreatedEventId,
+                            placeId = placeId
+                        )
                     },
                     modifier = modifier
                 )
@@ -129,9 +149,10 @@ private fun AppNavigationGraph(
     navController: NavHostController,
     appEntryViewModel: AppEntryViewModel,
     mainTabReselectionEvent: Int,
-    placeCreatedEvent: Int,
+    placeCreatedEvent: PlaceCreatedEvent?,
+    onPlaceCreatedEventConsumed: (Int) -> Unit,
     onLoginToastMessage: (String) -> Unit,
-    onPlaceCreated: () -> Unit,
+    onPlaceCreated: (Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
     NavHost(
@@ -179,6 +200,7 @@ private fun AppNavigationGraph(
             MainRoute(
                 mainTabReselectionEvent = mainTabReselectionEvent,
                 placeCreatedEvent = placeCreatedEvent,
+                onPlaceCreatedEventConsumed = onPlaceCreatedEventConsumed,
                 onNavigateToAddPlace = { dateKey ->
                     navController.navigate(NavRoute.addPlace(dateKey))
                 }
@@ -202,8 +224,8 @@ private fun AppNavigationGraph(
                 onBackClick = {
                     navController.popBackStack()
                 },
-                onPlaceCreated = {
-                    onPlaceCreated()
+                onPlaceCreated = { placeId ->
+                    onPlaceCreated(placeId)
                     navController.popBackStack()
                 }
             )

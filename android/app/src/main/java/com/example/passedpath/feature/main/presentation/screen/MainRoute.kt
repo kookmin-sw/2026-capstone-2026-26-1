@@ -25,7 +25,8 @@ import com.example.passedpath.util.AppSettingsNavigator
 @Composable
 fun MainRoute(
     mainTabReselectionEvent: Int = 0,
-    placeCreatedEvent: Int = 0,
+    placeCreatedEvent: PlaceCreatedEvent? = null,
+    onPlaceCreatedEventConsumed: (Int) -> Unit = {},
     onNavigateToAddPlace: (String) -> Unit = {},
     viewModel: MainViewModel = viewModel(
         factory = MainViewModelFactory(LocalContext.current.appContainer)
@@ -80,8 +81,8 @@ fun MainRoute(
         placeViewModel.fetchVisitedPlaces(uiState.selectedDateKey)
     }
 
-    LaunchedEffect(placeCreatedEvent) {
-        if (placeCreatedEvent == 0) return@LaunchedEffect
+    LaunchedEffect(placeCreatedEvent?.id) {
+        if (placeCreatedEvent == null) return@LaunchedEffect
         placeViewModel.fetchVisitedPlaces(uiState.selectedDateKey)
     }
 
@@ -169,6 +170,8 @@ fun MainRoute(
             }
         },
         mainTabReselectionEvent = mainTabReselectionEvent,
+        placeCreatedEvent = placeCreatedEvent,
+        onPlaceCreatedEventHandled = onPlaceCreatedEventConsumed,
         showUnsavedDayNoteDialog = dateSelectionGuardState.pendingDateSelection != null,
         onDismissUnsavedDayNoteDialog = dateSelectionGuardCoordinator::dismissPendingDateSelection,
         onConfirmUnsavedDayNoteDialog = dayNoteViewModel::submitDayNote,

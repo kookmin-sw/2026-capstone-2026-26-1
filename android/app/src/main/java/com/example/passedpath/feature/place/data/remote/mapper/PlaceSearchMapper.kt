@@ -10,7 +10,7 @@ fun PlaceSearchResponseDto.toPlaceSearchResults(): List<PlaceSearchResult> {
 
 private fun PlaceSearchItemDto.toPlaceSearchResult(): PlaceSearchResult? {
     val normalizedName = placeName?.trim().orEmpty()
-    val normalizedCategory = category?.trim().orEmpty()
+    val normalizedCategory = category.toLeafCategory()
     val normalizedRoadAddress = roadAddress?.trim().orEmpty()
     val normalizedLatitude = latitude ?: return null
     val normalizedLongitude = longitude ?: return null
@@ -27,4 +27,12 @@ private fun PlaceSearchItemDto.toPlaceSearchResult(): PlaceSearchResult? {
         latitude = normalizedLatitude,
         longitude = normalizedLongitude
     )
+}
+
+private fun String?.toLeafCategory(): String {
+    return this
+        ?.split(">")
+        ?.map(String::trim)
+        ?.lastOrNull(String::isNotBlank)
+        .orEmpty()
 }

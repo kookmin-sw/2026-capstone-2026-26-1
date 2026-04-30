@@ -1,29 +1,39 @@
 package com.example.passedpath.feature.place.presentation.component
 
 import androidx.compose.foundation.border
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Search
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Icon
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.passedpath.R
 import com.example.passedpath.ui.theme.Gray100
 import com.example.passedpath.ui.theme.Gray300
 import com.example.passedpath.ui.theme.Gray400
@@ -46,14 +56,20 @@ fun PlaceSearchTextField(
     val iconTint = if (isFocused || value.isNotBlank()) Green500 else Gray300
     val textColor = Gray900
     val placeholderColor = Gray400
+    val searchTextStyle = TextStyle(
+        fontSize = 14.sp,
+        fontWeight = FontWeight.Medium,
+        color = textColor
+    )
 
-    OutlinedTextField(
+    BasicTextField(
         value = value,
         onValueChange = onValueChange,
         modifier = modifier
             .fillMaxWidth()
-            .height(52.dp)
+            .height(46.dp)
             .clip(shape)
+            .background(backgroundColor)
             .border(
                 width = 1.5.dp,
                 color = borderColor,
@@ -63,41 +79,36 @@ fun PlaceSearchTextField(
                 isFocused = focusState.isFocused
             },
         singleLine = true,
-        shape = shape,
-        textStyle = TextStyle(
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Medium,
-            color = textColor
-        ),
-        leadingIcon = {
-            Icon(
-                imageVector = Icons.Outlined.Search,
-                contentDescription = "\uAC80\uC0C9 \uC544\uC774\uCF58",
-                tint = iconTint
-            )
-        },
-        placeholder = {
-            Text(
-                text = placeholder,
-                fontSize = 14.sp,
-                color = placeholderColor
-            )
-        },
-        colors = TextFieldDefaults.colors(
-            focusedContainerColor = backgroundColor,
-            unfocusedContainerColor = backgroundColor,
-            disabledContainerColor = backgroundColor,
-            focusedIndicatorColor = Color.Transparent,
-            unfocusedIndicatorColor = Color.Transparent,
-            disabledIndicatorColor = Color.Transparent,
-            focusedTextColor = textColor,
-            unfocusedTextColor = textColor,
-            focusedLeadingIconColor = iconTint,
-            unfocusedLeadingIconColor = iconTint,
-            focusedPlaceholderColor = placeholderColor,
-            unfocusedPlaceholderColor = placeholderColor,
-            cursorColor = Green500
-        )
+        textStyle = searchTextStyle,
+        cursorBrush = SolidColor(Green500),
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+        decorationBox = { innerTextField ->
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_search),
+                    contentDescription = "\uAC80\uC0C9 \uC544\uC774\uCF58",
+                    tint = iconTint
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+                Box(
+                    modifier = Modifier.weight(1f),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    if (value.isBlank()) {
+                        Text(
+                            text = placeholder,
+                            style = searchTextStyle.copy(color = placeholderColor)
+                        )
+                    }
+                    innerTextField()
+                }
+            }
+        }
     )
 }
 

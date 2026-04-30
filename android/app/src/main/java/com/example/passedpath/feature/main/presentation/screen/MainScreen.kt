@@ -16,6 +16,7 @@ import com.example.passedpath.R
 import com.example.passedpath.feature.daynote.presentation.state.DayNoteUiState
 import com.example.passedpath.feature.main.presentation.policy.reduceForBottomSheetTabSelection
 import com.example.passedpath.feature.main.presentation.policy.reduceForDateChange
+import com.example.passedpath.feature.main.presentation.policy.reduceForPlaceCreated
 import com.example.passedpath.feature.main.presentation.policy.reduceForPlaceMarkerClick
 import com.example.passedpath.feature.main.presentation.policy.reduceForSelectedPlaceHandled
 import com.example.passedpath.feature.main.presentation.policy.reduceForSheetCommandConsumed
@@ -31,6 +32,11 @@ import com.example.passedpath.ui.PermissionSettingDialog
 import com.example.passedpath.ui.component.dialog.BaseConfirmDialog
 import com.example.passedpath.ui.component.toast.ToastOverlayHost
 import com.example.passedpath.ui.component.toast.ToastOverlayItem
+
+data class PlaceCreatedEvent(
+    val id: Int,
+    val placeId: Long
+)
 
 @Composable
 fun MainScreen(
@@ -54,6 +60,8 @@ fun MainScreen(
     onTrackingPermissionDialogDismiss: () -> Unit,
     onPermissionActionClick: () -> Unit,
     mainTabReselectionEvent: Int,
+    placeCreatedEvent: PlaceCreatedEvent?,
+    onPlaceCreatedEventHandled: (Int) -> Unit,
     showUnsavedDayNoteDialog: Boolean,
     onDismissUnsavedDayNoteDialog: () -> Unit,
     onConfirmUnsavedDayNoteDialog: () -> Unit,
@@ -152,6 +160,17 @@ fun MainScreen(
         if (mainTabReselectionEvent == 0) return@LaunchedEffect
         focusManager.clearFocus(force = true)
         hideBottomSheet()
+    }
+
+    LaunchedEffect(placeCreatedEvent?.id) {
+        val event = placeCreatedEvent ?: return@LaunchedEffect
+        dispatchInteraction(
+            reduceForPlaceCreated(
+                state = localUiState,
+                placeId = event.placeId
+            )
+        )
+        onPlaceCreatedEventHandled(event.id)
     }
 
     Box(modifier = Modifier.fillMaxSize()) {

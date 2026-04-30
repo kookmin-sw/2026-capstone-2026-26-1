@@ -27,8 +27,8 @@ class AddPlaceViewModel(
     private val _uiState = MutableStateFlow(AddPlaceUiState())
     val uiState: StateFlow<AddPlaceUiState> = _uiState.asStateFlow()
 
-    private val _placeCreated = MutableSharedFlow<Unit>()
-    val placeCreated: SharedFlow<Unit> = _placeCreated.asSharedFlow()
+    private val _placeCreated = MutableSharedFlow<Long>()
+    val placeCreated: SharedFlow<Long> = _placeCreated.asSharedFlow()
 
     private var searchJob: Job? = null
     private var lastRequestedQuery: String? = null
@@ -81,12 +81,12 @@ class AddPlaceViewModel(
             }
 
             try {
-                createPlaceFromSearchResultUseCase(
+                val registeredPlace = createPlaceFromSearchResultUseCase(
                     dateKey = dateKey,
                     place = selectedPlace
                 )
                 _uiState.update { it.copy(isSubmitting = false) }
-                _placeCreated.emit(Unit)
+                _placeCreated.emit(registeredPlace.placeId)
             } catch (throwable: Throwable) {
                 _uiState.update {
                     it.copy(

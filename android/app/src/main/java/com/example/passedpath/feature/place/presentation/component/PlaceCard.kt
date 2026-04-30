@@ -27,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -40,6 +41,7 @@ import com.example.passedpath.ui.theme.Gray400
 import com.example.passedpath.ui.theme.Gray50
 import com.example.passedpath.ui.theme.Gray500
 import com.example.passedpath.ui.theme.Gray900
+import com.example.passedpath.ui.theme.Green300
 import com.example.passedpath.ui.theme.Green50
 import com.example.passedpath.ui.theme.Green500
 import com.example.passedpath.ui.theme.PassedPathTheme
@@ -58,21 +60,29 @@ fun PlaceCard(
     onMoreClick: (() -> Unit)? = null,
     isMenuVisible: Boolean = false,
     menuItems: List<MenuActionItem> = emptyList(),
-    isCompact: Boolean = false
+    isCompact: Boolean = false,
+    highlightProgress: Float = 0f
 ) {
     val cardShape = RoundedCornerShape(if (isCompact) 18.dp else 24.dp)
+    val coercedHighlightProgress = highlightProgress.coerceIn(0f, 1f)
+    val borderColor = when {
+        coercedHighlightProgress > 0f -> Green300.copy(alpha = 0.45f * coercedHighlightProgress)
+        isSelected -> Green500.copy(alpha = 0.28f)
+        else -> Color.Transparent
+    }
+    val backgroundColor = lerp(Gray50, Green50, coercedHighlightProgress)
 
     Box(modifier = modifier.fillMaxWidth()) {
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
                 .border(
-                    width = if (isSelected) 1.dp else 0.dp,
-                    color = if (isSelected) Green500.copy(alpha = 0.28f) else Color.Transparent,
+                    width = if (isSelected || coercedHighlightProgress > 0f) 1.dp else 0.dp,
+                    color = borderColor,
                     shape = cardShape
                 ),
             shape = cardShape,
-            color = Gray50,
+            color = backgroundColor,
             tonalElevation = 0.dp
         ) {
             PlaceCardContent(

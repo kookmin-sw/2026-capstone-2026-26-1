@@ -15,6 +15,10 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -34,12 +38,22 @@ fun DayNoteBottomSheetContent(
     onTitleChanged: (String) -> Unit,
     onMemoChanged: (String) -> Unit,
     onSaveClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onScrollStateChanged: (Boolean) -> Unit = {}
 ) {
+    val scrollState = rememberScrollState()
+    val isContentScrolled by remember {
+        derivedStateOf { scrollState.value > 0 }
+    }
+
+    LaunchedEffect(isContentScrolled) {
+        onScrollStateChanged(isContentScrolled)
+    }
+
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .verticalScroll(rememberScrollState()),
+            .verticalScroll(scrollState),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         DayNoteFieldSection(
