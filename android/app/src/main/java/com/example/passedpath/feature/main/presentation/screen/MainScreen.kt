@@ -2,7 +2,6 @@ package com.example.passedpath.feature.main.presentation.screen
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -156,9 +155,7 @@ fun MainScreen(
 
     Box(modifier = Modifier.fillMaxSize()) {
         MainBottomSheetScaffold(
-            modifier = Modifier
-                .fillMaxSize()
-                .statusBarsPadding(),
+            modifier = Modifier.fillMaxSize(),
             requestedSheetValue = localUiState.requestedSheetValue,
             onSheetValueChanged = ::handleSheetValueChanged,
             onSheetCommandConsumed = ::handleSheetCommandConsumed,

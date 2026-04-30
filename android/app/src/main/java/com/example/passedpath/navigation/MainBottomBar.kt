@@ -213,6 +213,11 @@ fun AppScaffold(
             }
         }
     ) { innerPadding ->
-        content(Modifier.padding(innerPadding))
+        val contentModifier = if (currentDestination?.route == NavRoute.MAIN) {
+            Modifier.padding(bottom = BottomBarTokens.containerHeight)
+        } else {
+            Modifier.padding(innerPadding)
+        }
+        content(contentModifier)
     }
 }
