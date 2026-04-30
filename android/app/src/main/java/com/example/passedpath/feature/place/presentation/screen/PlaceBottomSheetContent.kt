@@ -75,8 +75,7 @@ import com.example.passedpath.ui.theme.PassedPathTheme
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.time.Instant
-import java.time.ZoneId
+import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -513,8 +512,7 @@ private const val ReorderAutoScrollStepPx = 28f
 private fun String?.toPlaceCardTimeText(): String? {
     val timestamp = this ?: return null
     return runCatching {
-        Instant.parse(timestamp)
-            .atZone(ZoneId.systemDefault())
+        OffsetDateTime.parse(timestamp)
             .format(PlaceCardTimeFormatter)
     }.getOrNull()
 }
@@ -657,8 +655,8 @@ private fun previewVisitedPlaces(): List<VisitedPlace> {
             latitude = 37.5839,
             longitude = 127.0008,
             orderIndex = 2,
-            startTime = "2026-04-23T09:00:00Z",
-            endTime = "2026-04-23T10:10:00Z"
+            startTime = "2026-04-23T09:00:00+09:00",
+            endTime = "2026-04-23T10:10:00+09:00"
         ),
         VisitedPlace(
             placeId = 3L,

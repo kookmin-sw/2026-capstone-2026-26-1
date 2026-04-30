@@ -36,8 +36,8 @@ class PlaceRemoteMapperTest {
                     latitude = 37.4,
                     longitude = 127.4,
                     orderIndex = 1,
-                    startTime = "2026-04-23T18:26:07.620Z",
-                    endTime = "2026-04-23T18:26:07.620Z"
+                    startTime = "2026-04-23T18:26:07.620+09:00",
+                    endTime = "2026-04-23T19:10:07.620+09:00"
                 )
             )
         )
@@ -49,6 +49,8 @@ class PlaceRemoteMapperTest {
         assertEquals(1L, result.places.first().placeId)
         assertEquals(PlaceSourceType.AUTO, result.places.first().source)
         assertEquals(BookmarkPlaceType.HOME, result.places.first().bookmarkType)
+        assertEquals("2026-04-23T18:26:07.620+09:00", result.places.first().startTime)
+        assertEquals("2026-04-23T19:10:07.620+09:00", result.places.first().endTime)
         assertEquals(2L, result.places.last().placeId)
     }
 
