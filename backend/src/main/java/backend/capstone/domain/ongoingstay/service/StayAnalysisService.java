@@ -10,6 +10,7 @@ import backend.capstone.domain.kakaoplace.service.KakaoSearchByCategoryService;
 import backend.capstone.domain.ongoingstay.entity.OngoingStay;
 import backend.capstone.domain.ongoingstay.repository.OngoingStayRepository;
 import backend.capstone.domain.place.service.PlaceService;
+import backend.capstone.global.util.GeoUtils;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -68,9 +69,9 @@ public class StayAnalysisService {
             }
 
             //현재 point가 ongoing stay 중심점에서 몇 m 떨어져 있는지 계산
-            double distance = distanceMeter(stay.getCenterLatitude(), stay.getCenterLongitude(),
-                point.getLatitude(),
-                point.getLongitude());
+            double distance = GeoUtils.distanceMeter(
+                stay.getCenterLatitude(), stay.getCenterLongitude(),
+                point.getLatitude(), point.getLongitude());
 
             //현재 point가 기존 stay 중심에서 50m 이내면 같은 체류장소로 판단
             if (distance <= STAY_RADIUS_METER) {
@@ -127,25 +128,5 @@ public class StayAnalysisService {
         }
 
         ongoingStayRepository.delete(stay);
-    }
-
-    private double distanceMeter(
-        double lat1, double lon1,
-        double lat2, double lon2
-    ) {
-        double earthRadius = 6371000;
-
-        double dLat = Math.toRadians(lat2 - lat1);
-        double dLon = Math.toRadians(lon2 - lon1);
-
-        double a =
-            Math.sin(dLat / 2) * Math.sin(dLat / 2)
-                + Math.cos(Math.toRadians(lat1))
-                * Math.cos(Math.toRadians(lat2))
-                * Math.sin(dLon / 2) * Math.sin(dLon / 2);
-
-        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-        return earthRadius * c;
     }
 }
