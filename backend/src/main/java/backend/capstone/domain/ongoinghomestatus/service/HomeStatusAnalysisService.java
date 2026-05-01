@@ -44,8 +44,10 @@ public class HomeStatusAnalysisService {
         }
         BookmarkPlace homeBookmark = optionalHome.get();
 
-        List<GpsPoint> newPoints = gpsPointService.getNewPoints(dayRoute,
-            dayRoute.getHomeAnalysisLastPointAt());
+        List<GpsPoint> newPoints = gpsPointService.getNewPoints(
+            dayRoute,
+            dayRoute.getHomeAnalysisLastPointAt()
+        );
         if (newPoints.isEmpty()) {
             return;
         }
@@ -60,11 +62,15 @@ public class HomeStatusAnalysisService {
         updateHomeAnalysisCursor(dayRoute, newPoints.getLast());
     }
 
-    private OngoingHomeStatus initializeHomeStatus(DayRoute dayRoute, GpsPoint firstPoint,
+    private OngoingHomeStatus initializeHomeStatus(
+        DayRoute dayRoute,
+        GpsPoint firstPoint,
         BookmarkPlace homeBookmark
     ) {
         HomeZoneStatus initialZoneStatus = determineObservedZone(firstPoint, homeBookmark);
-        OngoingHomeStatus ongoingHomeStatus = OngoingHomeStatus.initialize(dayRoute, firstPoint,
+        OngoingHomeStatus ongoingHomeStatus = OngoingHomeStatus.initialize(
+            dayRoute,
+            firstPoint,
             initialZoneStatus
         );
 
@@ -73,50 +79,48 @@ public class HomeStatusAnalysisService {
         return ongoingHomeStatusRepository.save(ongoingHomeStatus);
     }
 
-    private void processPoint(DayRoute dayRoute, OngoingHomeStatus ongoingHomeStatus,
-        BookmarkPlace homeBookmark, GpsPoint point
+    private void processPoint(
+        DayRoute dayRoute,
+        OngoingHomeStatus ongoingHomeStatus,
+        BookmarkPlace homeBookmark,
+        GpsPoint point
     ) {
         HomeZoneStatus observedZoneStatus = determineObservedZone(point, homeBookmark);
 
-        //관측 상태가 현재 확정 상태와 같으면 candidate 버림
         if (observedZoneStatus == ongoingHomeStatus.getCurrentZoneStatus()) {
             ongoingHomeStatus.clearCandidate();
-            ongoingHomeStatus.updateLastProcessedPointAt(point.getRecordedAt());
             return;
         }
 
-        //관측 상태가 현재 상태와 다르고, candidate가 없거나 candidate와 관측 상태가 다르면
-        //새 candidate를 시작하거나 교체
-        if ((ongoingHomeStatus.getCandidateZoneStatus() == null) || (
-            ongoingHomeStatus.getCandidateZoneStatus() != observedZoneStatus)) {
+        if ((ongoingHomeStatus.getCandidateZoneStatus() == null)
+            || (ongoingHomeStatus.getCandidateZoneStatus() != observedZoneStatus)) {
             ongoingHomeStatus.startCandidate(observedZoneStatus, point.getRecordedAt());
-            ongoingHomeStatus.updateLastProcessedPointAt(point.getRecordedAt());
             return;
         }
 
-        //candidate가 같은 방향으로 유지됨 -> 지속 시간 검사
-        long candidateDurationMinutes = Duration.between(ongoingHomeStatus.getCandidateStartedAt(),
+        long candidateDurationMinutes = Duration.between(
+            ongoingHomeStatus.getCandidateStartedAt(),
             point.getRecordedAt()
         ).toMinutes();
 
-        if (candidateDurationMinutes >= TRANSITION_MINUTES) { //5분 이상이면 전이 확정
+        if (candidateDurationMinutes >= TRANSITION_MINUTES) {
             Instant transitionTime = ongoingHomeStatus.getCandidateStartedAt();
 
             ongoingHomeStatus.changeCurrentZoneStatus(observedZoneStatus, transitionTime);
             applyTransitionedDayRouteStatus(dayRoute, observedZoneStatus, transitionTime);
         }
-
-        ongoingHomeStatus.updateLastProcessedPointAt(point.getRecordedAt());
     }
 
     private void updateHomeAnalysisCursor(DayRoute dayRoute, GpsPoint lastPoint) {
         dayRoute.updateHomeAnalysisLastPointAt(lastPoint.getRecordedAt());
     }
 
-    //집 안인지 밖인지 판별
     private HomeZoneStatus determineObservedZone(GpsPoint point, BookmarkPlace homeBookmark) {
-        double distance = GeoUtils.distanceMeter(point.getLatitude(), point.getLongitude(),
-            homeBookmark.getLatitude(), homeBookmark.getLongitude()
+        double distance = GeoUtils.distanceMeter(
+            point.getLatitude(),
+            point.getLongitude(),
+            homeBookmark.getLatitude(),
+            homeBookmark.getLongitude()
         );
 
         if (distance <= HOME_RADIUS_METER) {
@@ -126,8 +130,7 @@ public class HomeStatusAnalysisService {
         return HomeZoneStatus.OUT_HOME;
     }
 
-    private void applyInitialDayRouteStatus(DayRoute dayRoute, HomeZoneStatus zoneStatus
-    ) {
+    private void applyInitialDayRouteStatus(DayRoute dayRoute, HomeZoneStatus zoneStatus) {
         if (zoneStatus == HomeZoneStatus.IN_HOME) {
             dayRoute.markAtHome();
             return;
@@ -136,7 +139,9 @@ public class HomeStatusAnalysisService {
         dayRoute.markOutingWithoutTime();
     }
 
-    private void applyTransitionedDayRouteStatus(DayRoute dayRoute, HomeZoneStatus zoneStatus,
+    private void applyTransitionedDayRouteStatus(
+        DayRoute dayRoute,
+        HomeZoneStatus zoneStatus,
         Instant transitionTime
     ) {
         if (zoneStatus == HomeZoneStatus.IN_HOME) {
