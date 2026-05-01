@@ -49,6 +49,9 @@ public class OngoingHomeStatus extends BaseTimeEntity {
     @Enumerated(EnumType.STRING)
     private HomeZoneStatus candidateZoneStatus;
 
+    //임시 상태가 처음 관측된 시각
+    private Instant candidateStartedAt;
+
     //마지막으로 처리한 gps point 시간
     private Instant lastProcessedPointAt;
 
@@ -65,12 +68,14 @@ public class OngoingHomeStatus extends BaseTimeEntity {
         return status;
     }
 
-    public void startCandidate(HomeZoneStatus candidateZoneStatus) {
+    public void startCandidate(HomeZoneStatus candidateZoneStatus, Instant candidateStartedAt) {
         this.candidateZoneStatus = candidateZoneStatus;
+        this.candidateStartedAt = candidateStartedAt;
     }
 
     public void clearCandidate() {
         this.candidateZoneStatus = null;
+        this.candidateStartedAt = null;
     }
 
     public void changeCurrentZoneStatus(HomeZoneStatus currentZoneStatus, Instant transitionedAt) {

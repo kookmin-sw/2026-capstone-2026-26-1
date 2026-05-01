@@ -154,4 +154,12 @@ public class DayRoute {
         lastAnalyzedAt = recordedAt;
         markIdleAnalysis();
     }
+
+    public void markNoHomeBookmark() {
+        this.homeRouteStatus = HomeRouteStatus.NO_HOME_BOOKMARK;
+    }
+
+    public void updateHomeAnalysisLastPointAt(Instant homeAnalysisLastPointAt) {
+        this.homeAnalysisLastPointAt = homeAnalysisLastPointAt;
+    }
 }
