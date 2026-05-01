@@ -13,17 +13,17 @@ import reactor.core.publisher.Mono;
 
 @Component
 @RequiredArgsConstructor
-public class KakaoAuthClient {
+public class KakaoAuthApiClient {
 
     private static final String USER_INFO_URI = "/v2/user/me";
-    private final @Qualifier("kakaoAuthWebClient") WebClient webClient;
+
+    private final @Qualifier("kakaoAuthWebClient") WebClient kakaoAuthWebClient;
 
     public KakaoUserInfoResponse getUserInfo(String kakaoAccessToken) {
-        return webClient.get()
+        return kakaoAuthWebClient.get()
             .uri(USER_INFO_URI)
             .header(HttpHeaders.AUTHORIZATION, "Bearer " + kakaoAccessToken)
             .retrieve()
-            // 카카오 토큰이 만료/위조면 여기서 401/403 등이 떨어짐
             .onStatus(
                 HttpStatusCode::is4xxClientError,
                 resp -> resp.bodyToMono(String.class)
@@ -37,8 +37,6 @@ public class KakaoAuthClient {
                         body -> Mono.error(new BusinessException(AuthErrorCode.KAKAO_SERVER_ERROR)))
             )
             .bodyToMono(KakaoUserInfoResponse.class)
-            .block(); //TODO: block이랑 reactive랑 뭔차이임
+            .block();
     }
-
-
 }

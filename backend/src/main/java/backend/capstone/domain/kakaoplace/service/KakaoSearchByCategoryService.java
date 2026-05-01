@@ -5,6 +5,7 @@ import backend.capstone.domain.bookmarkplace.service.BookmarkPlaceService;
 import backend.capstone.domain.kakaoplace.service.dto.KakaoSearchByCategoryResult;
 import backend.capstone.domain.kakaoplace.service.dto.KakaoSearchByCategoryResult.Document;
 import backend.capstone.domain.kakaoplace.dto.SearchResultByCategoryAndCoord;
+import backend.capstone.domain.kakaoplace.service.client.KakaoLocalApiClient;
 import backend.capstone.global.util.GeoUtils;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -12,9 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
 
 @Service
 @RequiredArgsConstructor
@@ -52,7 +51,7 @@ public class KakaoSearchByCategoryService {
         "SW8" //지하철역
     );
 
-    private final @Qualifier("kakaoLocalWebClient") WebClient kakaoLocalWebClient;
+    private final KakaoLocalApiClient kakaoLocalApiClient;
     private final KakaoSearchByCoordService kakaoSearchByCoordService;
     private final BookmarkPlaceService bookmarkPlaceService;
 
@@ -106,19 +105,13 @@ public class KakaoSearchByCategoryService {
         Map<String, Document> uniqueCandidates = new LinkedHashMap<>();
 
         for (String categoryGroupCode : categoryGroupCodes) {
-            KakaoSearchByCategoryResult response = kakaoLocalWebClient.get()
-                .uri(uriBuilder -> uriBuilder
-                    .path("/v2/local/search/category.json")
-                    .queryParam("category_group_code", categoryGroupCode)
-                    .queryParam("x", longitude)
-                    .queryParam("y", latitude)
-                    .queryParam("radius", DEFAULT_RADIUS_METER)
-                    .queryParam("sort", "distance")
-                    .queryParam("size", DEFAULT_SIZE)
-                    .build())
-                .retrieve()
-                .bodyToMono(KakaoSearchByCategoryResult.class)
-                .block();
+            KakaoSearchByCategoryResult response = kakaoLocalApiClient.searchByCategory(
+                categoryGroupCode,
+                latitude,
+                longitude,
+                DEFAULT_RADIUS_METER,
+                DEFAULT_SIZE
+            );
 
             if (response == null || response.documents() == null || response.documents()
                 .isEmpty()) {
