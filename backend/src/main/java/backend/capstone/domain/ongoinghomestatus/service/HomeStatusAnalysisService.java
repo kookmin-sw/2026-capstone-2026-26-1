@@ -23,8 +23,10 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class HomeStatusAnalysisService {
 
-    private static final int HOME_RADIUS_METER = 100;
-    private static final int TRANSITION_MINUTES = 5;
+    private static final int INITIAL_HOME_RADIUS_METER = 100;
+    private static final int ENTER_HOME_RADIUS_METER = 80;
+    private static final int EXIT_HOME_RADIUS_METER = 120;
+    private static final int TRANSITION_MINUTES = 3;
 
     private final DayRouteService dayRouteService;
     private final GpsPointService gpsPointService;
@@ -62,15 +64,11 @@ public class HomeStatusAnalysisService {
         updateHomeAnalysisCursor(dayRoute, newPoints.getLast());
     }
 
-    private OngoingHomeStatus initializeHomeStatus(
-        DayRoute dayRoute,
-        GpsPoint firstPoint,
+    private OngoingHomeStatus initializeHomeStatus(DayRoute dayRoute, GpsPoint firstPoint,
         BookmarkPlace homeBookmark
     ) {
-        HomeZoneStatus initialZoneStatus = determineObservedZone(firstPoint, homeBookmark);
-        OngoingHomeStatus ongoingHomeStatus = OngoingHomeStatus.initialize(
-            dayRoute,
-            firstPoint,
+        HomeZoneStatus initialZoneStatus = determineInitialZone(firstPoint, homeBookmark);
+        OngoingHomeStatus ongoingHomeStatus = OngoingHomeStatus.initialize(dayRoute, firstPoint,
             initialZoneStatus
         );
 
@@ -79,13 +77,12 @@ public class HomeStatusAnalysisService {
         return ongoingHomeStatusRepository.save(ongoingHomeStatus);
     }
 
-    private void processPoint(
-        DayRoute dayRoute,
-        OngoingHomeStatus ongoingHomeStatus,
-        BookmarkPlace homeBookmark,
-        GpsPoint point
+    private void processPoint(DayRoute dayRoute, OngoingHomeStatus ongoingHomeStatus,
+        BookmarkPlace homeBookmark, GpsPoint point
     ) {
-        HomeZoneStatus observedZoneStatus = determineObservedZone(point, homeBookmark);
+        HomeZoneStatus observedZoneStatus = determineObservedZone(point, homeBookmark,
+            ongoingHomeStatus.getCurrentZoneStatus()
+        );
 
         if (observedZoneStatus == ongoingHomeStatus.getCurrentZoneStatus()) {
             ongoingHomeStatus.clearCandidate();
@@ -115,15 +112,34 @@ public class HomeStatusAnalysisService {
         dayRoute.updateHomeAnalysisLastPointAt(lastPoint.getRecordedAt());
     }
 
-    private HomeZoneStatus determineObservedZone(GpsPoint point, BookmarkPlace homeBookmark) {
-        double distance = GeoUtils.distanceMeter(
-            point.getLatitude(),
-            point.getLongitude(),
-            homeBookmark.getLatitude(),
-            homeBookmark.getLongitude()
+    private HomeZoneStatus determineInitialZone(GpsPoint point, BookmarkPlace homeBookmark) {
+        double distance = GeoUtils.distanceMeter(point.getLatitude(), point.getLongitude(),
+            homeBookmark.getLatitude(), homeBookmark.getLongitude()
         );
 
-        if (distance <= HOME_RADIUS_METER) {
+        if (distance <= INITIAL_HOME_RADIUS_METER) {
+            return HomeZoneStatus.IN_HOME;
+        }
+
+        return HomeZoneStatus.OUT_HOME;
+    }
+
+    private HomeZoneStatus determineObservedZone(GpsPoint point, BookmarkPlace homeBookmark,
+        HomeZoneStatus currentZoneStatus
+    ) {
+        double distance = GeoUtils.distanceMeter(point.getLatitude(), point.getLongitude(),
+            homeBookmark.getLatitude(), homeBookmark.getLongitude()
+        );
+
+        if (currentZoneStatus == HomeZoneStatus.IN_HOME) {
+            if (distance < EXIT_HOME_RADIUS_METER) {
+                return HomeZoneStatus.IN_HOME;
+            }
+
+            return HomeZoneStatus.OUT_HOME;
+        }
+
+        if (distance <= ENTER_HOME_RADIUS_METER) {
             return HomeZoneStatus.IN_HOME;
         }
 
@@ -139,9 +155,7 @@ public class HomeStatusAnalysisService {
         dayRoute.markOutingWithoutTime();
     }
 
-    private void applyTransitionedDayRouteStatus(
-        DayRoute dayRoute,
-        HomeZoneStatus zoneStatus,
+    private void applyTransitionedDayRouteStatus(DayRoute dayRoute, HomeZoneStatus zoneStatus,
         Instant transitionTime
     ) {
         if (zoneStatus == HomeZoneStatus.IN_HOME) {
