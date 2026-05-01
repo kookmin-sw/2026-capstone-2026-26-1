@@ -82,7 +82,7 @@ public class DayRoute {
     private AnalysisStatus analysisStatus;
 
     @Enumerated(EnumType.STRING)
-    private HomeRouteStatus homeRouteStatus;
+    private DayRouteHomeStatus dayRouteHomeStatus;
 
     //외출시간
     private Instant outingTime;
@@ -98,7 +98,7 @@ public class DayRoute {
         this.date = date;
         gpsPoints = new ArrayList<>();
         analysisStatus = AnalysisStatus.IDLE;
-        homeRouteStatus = HomeRouteStatus.UNKNOWN;
+        dayRouteHomeStatus = DayRouteHomeStatus.UNKNOWN;
     }
 
     public void updateTime(Instant startTime, Instant endTime) {
@@ -106,10 +106,10 @@ public class DayRoute {
         this.endTime = endTime;
     }
 
-    public void updateEncodedPath(String encodedPath, int pathPointCount) {
-        this.encodedPath = encodedPath;
-        this.pathPointCount = pathPointCount;
-    }
+//    public void updateEncodedPath(String encodedPath, int pathPointCount) {
+//        this.encodedPath = encodedPath;
+//        this.pathPointCount = pathPointCount;
+//    }
 
     public void updateTitle(String title) {
         this.title = title;
@@ -155,8 +155,28 @@ public class DayRoute {
         markIdleAnalysis();
     }
 
+    public void markAtHome() {
+        this.dayRouteHomeStatus = DayRouteHomeStatus.AT_HOME;
+    }
+
+    public void markOuting(Instant outingTime) {
+        this.dayRouteHomeStatus = DayRouteHomeStatus.OUTING;
+        if (this.outingTime == null) {
+            this.outingTime = outingTime;
+        }
+    }
+
+    public void markOutingWithoutTime() {
+        this.dayRouteHomeStatus = DayRouteHomeStatus.OUTING;
+    }
+
+    public void markReturnedHome(Instant homeComingTime) {
+        this.dayRouteHomeStatus = DayRouteHomeStatus.RETURNED_HOME;
+        this.homeComingTime = homeComingTime;
+    }
+
     public void markNoHomeBookmark() {
-        this.homeRouteStatus = HomeRouteStatus.NO_HOME_BOOKMARK;
+        this.dayRouteHomeStatus = DayRouteHomeStatus.NO_HOME_BOOKMARK;
     }
 
     public void updateHomeAnalysisLastPointAt(Instant homeAnalysisLastPointAt) {

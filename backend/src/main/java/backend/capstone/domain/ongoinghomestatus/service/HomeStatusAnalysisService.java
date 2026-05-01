@@ -7,8 +7,12 @@ import backend.capstone.domain.dayroute.entity.DayRoute;
 import backend.capstone.domain.dayroute.service.DayRouteService;
 import backend.capstone.domain.gpspoint.entity.GpsPoint;
 import backend.capstone.domain.gpspoint.service.GpsPointService;
+import backend.capstone.domain.ongoinghomestatus.entity.HomeZoneStatus;
 import backend.capstone.domain.ongoinghomestatus.entity.OngoingHomeStatus;
 import backend.capstone.domain.ongoinghomestatus.repository.OngoingHomeStatusRepository;
+import backend.capstone.global.util.GeoUtils;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -31,19 +35,17 @@ public class HomeStatusAnalysisService {
     public void analyzeHomeStatus(Long dayRouteId) {
         DayRoute dayRoute = dayRouteService.getDayRouteById(dayRouteId);
 
-        Optional<BookmarkPlace> optionalHome =
-            bookmarkPlaceRepository.findByUserIdAndType(
-                dayRoute.getUser().getId(), BookmarkPlaceType.HOME);
+        Optional<BookmarkPlace> optionalHome = bookmarkPlaceRepository.findByUserIdAndType(
+            dayRoute.getUser().getId(), BookmarkPlaceType.HOME);
 
-        //집 주소 등록이 안된 경우
         if (optionalHome.isEmpty()) {
-            handleNoHomeBookmark(dayRoute); //TODO: 집 주소 등록이 안된 경우는 현재 메서드가 아예 실행안되도록 바꿔볼까
+            dayRoute.markNoHomeBookmark();
             return;
         }
         BookmarkPlace homeBookmark = optionalHome.get();
 
-        //새롭게 들어온 gps point들을 가져옴
-        List<GpsPoint> newPoints = getNewHomeAnalysisPoints(dayRoute);
+        List<GpsPoint> newPoints = gpsPointService.getNewPoints(dayRoute,
+            dayRoute.getHomeAnalysisLastPointAt());
         if (newPoints.isEmpty()) {
             return;
         }
@@ -55,36 +57,93 @@ public class HomeStatusAnalysisService {
             processPoint(dayRoute, ongoingHomeStatus, homeBookmark, point);
         }
 
-        //커서 업데이트
         updateHomeAnalysisCursor(dayRoute, newPoints.getLast());
     }
 
-    private void handleNoHomeBookmark(DayRoute dayRoute) {
-        dayRoute.markNoHomeBookmark();
-    }
-
-    private List<GpsPoint> getNewHomeAnalysisPoints(DayRoute dayRoute) {
-        return gpsPointService.getNewPoints(dayRoute, dayRoute.getHomeAnalysisLastPointAt());
-    }
-
-    private OngoingHomeStatus initializeHomeStatus(
-        DayRoute dayRoute,
-        GpsPoint firstPoint,
+    private OngoingHomeStatus initializeHomeStatus(DayRoute dayRoute, GpsPoint firstPoint,
         BookmarkPlace homeBookmark
     ) {
-        throw new UnsupportedOperationException("initializeHomeStatus will be implemented next");
+        HomeZoneStatus initialZoneStatus = determineObservedZone(firstPoint, homeBookmark);
+        OngoingHomeStatus ongoingHomeStatus = OngoingHomeStatus.initialize(dayRoute, firstPoint,
+            initialZoneStatus
+        );
+
+        applyInitialDayRouteStatus(dayRoute, initialZoneStatus);
+
+        return ongoingHomeStatusRepository.save(ongoingHomeStatus);
     }
 
-    private void processPoint(
-        DayRoute dayRoute,
-        OngoingHomeStatus ongoingHomeStatus,
-        BookmarkPlace homeBookmark,
-        GpsPoint point
+    private void processPoint(DayRoute dayRoute, OngoingHomeStatus ongoingHomeStatus,
+        BookmarkPlace homeBookmark, GpsPoint point
     ) {
-        throw new UnsupportedOperationException("processPoint will be implemented next");
+        HomeZoneStatus observedZoneStatus = determineObservedZone(point, homeBookmark);
+
+        //관측 상태가 현재 확정 상태와 같으면 candidate 버림
+        if (observedZoneStatus == ongoingHomeStatus.getCurrentZoneStatus()) {
+            ongoingHomeStatus.clearCandidate();
+            ongoingHomeStatus.updateLastProcessedPointAt(point.getRecordedAt());
+            return;
+        }
+
+        //관측 상태가 현재 상태와 다르고, candidate가 없거나 candidate와 관측 상태가 다르면
+        //새 candidate를 시작하거나 교체
+        if ((ongoingHomeStatus.getCandidateZoneStatus() == null) || (
+            ongoingHomeStatus.getCandidateZoneStatus() != observedZoneStatus)) {
+            ongoingHomeStatus.startCandidate(observedZoneStatus, point.getRecordedAt());
+            ongoingHomeStatus.updateLastProcessedPointAt(point.getRecordedAt());
+            return;
+        }
+
+        //candidate가 같은 방향으로 유지됨 -> 지속 시간 검사
+        long candidateDurationMinutes = Duration.between(ongoingHomeStatus.getCandidateStartedAt(),
+            point.getRecordedAt()
+        ).toMinutes();
+
+        if (candidateDurationMinutes >= TRANSITION_MINUTES) { //5분 이상이면 전이 확정
+            Instant transitionTime = ongoingHomeStatus.getCandidateStartedAt();
+
+            ongoingHomeStatus.changeCurrentZoneStatus(observedZoneStatus, transitionTime);
+            applyTransitionedDayRouteStatus(dayRoute, observedZoneStatus, transitionTime);
+        }
+
+        ongoingHomeStatus.updateLastProcessedPointAt(point.getRecordedAt());
     }
 
     private void updateHomeAnalysisCursor(DayRoute dayRoute, GpsPoint lastPoint) {
         dayRoute.updateHomeAnalysisLastPointAt(lastPoint.getRecordedAt());
+    }
+
+    //집 안인지 밖인지 판별
+    private HomeZoneStatus determineObservedZone(GpsPoint point, BookmarkPlace homeBookmark) {
+        double distance = GeoUtils.distanceMeter(point.getLatitude(), point.getLongitude(),
+            homeBookmark.getLatitude(), homeBookmark.getLongitude()
+        );
+
+        if (distance <= HOME_RADIUS_METER) {
+            return HomeZoneStatus.IN_HOME;
+        }
+
+        return HomeZoneStatus.OUT_HOME;
+    }
+
+    private void applyInitialDayRouteStatus(DayRoute dayRoute, HomeZoneStatus zoneStatus
+    ) {
+        if (zoneStatus == HomeZoneStatus.IN_HOME) {
+            dayRoute.markAtHome();
+            return;
+        }
+
+        dayRoute.markOutingWithoutTime();
+    }
+
+    private void applyTransitionedDayRouteStatus(DayRoute dayRoute, HomeZoneStatus zoneStatus,
+        Instant transitionTime
+    ) {
+        if (zoneStatus == HomeZoneStatus.IN_HOME) {
+            dayRoute.markReturnedHome(transitionTime);
+            return;
+        }
+
+        dayRoute.markOuting(transitionTime);
     }
 }
