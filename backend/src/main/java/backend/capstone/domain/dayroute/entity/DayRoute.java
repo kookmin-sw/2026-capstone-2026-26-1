@@ -85,10 +85,10 @@ public class DayRoute {
     private DayRouteHomeStatus dayRouteHomeStatus;
 
     //외출시간
-    private Instant outingTime;
+    private Instant exitHomeTime;
 
     //귀가시간
-    private Instant homeComingTime;
+    private Instant enterHomeTime;
 
     private Instant homeAnalysisLastPointAt;
 
@@ -161,8 +161,8 @@ public class DayRoute {
 
     public void markOuting(Instant outingTime) {
         this.dayRouteHomeStatus = DayRouteHomeStatus.OUTING;
-        if (this.outingTime == null) {
-            this.outingTime = outingTime;
+        if (this.exitHomeTime == null) {
+            this.exitHomeTime = outingTime;
         }
     }
 
@@ -172,7 +172,7 @@ public class DayRoute {
 
     public void markReturnedHome(Instant homeComingTime) {
         this.dayRouteHomeStatus = DayRouteHomeStatus.RETURNED_HOME;
-        this.homeComingTime = homeComingTime;
+        this.enterHomeTime = homeComingTime;
     }
 
     public void markNoHomeBookmark() {
