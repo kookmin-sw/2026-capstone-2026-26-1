@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -51,7 +52,7 @@ public class KakaoSearchByCategoryService {
         "SW8" //지하철역
     );
 
-    private final WebClient kakaoLocalWebClient;
+    private final @Qualifier("kakaoLocalWebClient") WebClient kakaoLocalWebClient;
     private final KakaoSearchByCoordService kakaoSearchByCoordService;
     private final BookmarkPlaceService bookmarkPlaceService;
 

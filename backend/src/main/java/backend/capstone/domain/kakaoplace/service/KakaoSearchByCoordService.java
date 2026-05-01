@@ -4,6 +4,7 @@ import backend.capstone.domain.kakaoplace.service.dto.KakaoSearchByCoordResult;
 import backend.capstone.domain.kakaoplace.dto.SearchResultByCategoryAndCoord;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -11,7 +12,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 @RequiredArgsConstructor
 public class KakaoSearchByCoordService {
 
-    private final WebClient kakaoLocalWebClient;
+    private final @Qualifier("kakaoLocalWebClient") WebClient kakaoLocalWebClient;
 
     /**
      * 적절한 POI가 없을 때 중심좌표 기반 주소 fallback
