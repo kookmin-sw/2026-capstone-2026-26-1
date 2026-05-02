@@ -86,7 +86,7 @@ class HomeStatusAnalysisServiceTest {
             .orElseThrow();
 
         assertThat(savedDayRoute.getDayRouteHomeStatus()).isEqualTo(DayRouteHomeStatus.AT_HOME);
-        assertThat(savedDayRoute.getExitHomeTime()).isNull();
+        assertThat(savedDayRoute.getOutingTime()).isNull();
         assertThat(savedDayRoute.getEnterHomeTime()).isNull();
         assertThat(savedDayRoute.getHomeAnalysisLastPointAt()).isEqualTo(firstPointAt);
         assertThat(ongoingHomeStatus.getCurrentZoneStatus()).isEqualTo(HomeZoneStatus.IN_HOME);
@@ -109,7 +109,7 @@ class HomeStatusAnalysisServiceTest {
             .orElseThrow();
 
         assertThat(savedDayRoute.getDayRouteHomeStatus()).isEqualTo(DayRouteHomeStatus.OUTING);
-        assertThat(savedDayRoute.getExitHomeTime()).isNull();
+        assertThat(savedDayRoute.getOutingTime()).isNull();
         assertThat(savedDayRoute.getEnterHomeTime()).isNull();
         assertThat(ongoingHomeStatus.getCurrentZoneStatus()).isEqualTo(HomeZoneStatus.OUT_HOME);
     }
@@ -137,7 +137,7 @@ class HomeStatusAnalysisServiceTest {
             .orElseThrow();
 
         assertThat(savedDayRoute.getDayRouteHomeStatus()).isEqualTo(DayRouteHomeStatus.OUTING);
-        assertThat(savedDayRoute.getExitHomeTime()).isEqualTo(candidateStartAt);
+        assertThat(savedDayRoute.getOutingTime()).isEqualTo(candidateStartAt);
         assertThat(savedDayRoute.getHomeAnalysisLastPointAt()).isEqualTo(transitionObservedAt);
         assertThat(ongoingHomeStatus.getCurrentZoneStatus()).isEqualTo(HomeZoneStatus.OUT_HOME);
         assertThat(ongoingHomeStatus.getCandidateZoneStatus()).isNull();
@@ -164,7 +164,7 @@ class HomeStatusAnalysisServiceTest {
             .orElseThrow();
 
         assertThat(savedDayRoute.getDayRouteHomeStatus()).isEqualTo(DayRouteHomeStatus.AT_HOME);
-        assertThat(savedDayRoute.getExitHomeTime()).isNull();
+        assertThat(savedDayRoute.getOutingTime()).isNull();
         assertThat(ongoingHomeStatus.getCurrentZoneStatus()).isEqualTo(HomeZoneStatus.IN_HOME);
         assertThat(ongoingHomeStatus.getCandidateZoneStatus()).isNull();
         assertThat(ongoingHomeStatus.getCandidateStartedAt()).isNull();

@@ -84,7 +84,7 @@ public class DayRoute {
     private DayRouteHomeStatus dayRouteHomeStatus;
 
     //첫 외출 시간
-    private Instant exitHomeTime;
+    private Instant outingTime;
 
     //마지막 귀가 시간
     private Instant enterHomeTime;
@@ -165,8 +165,8 @@ public class DayRoute {
 
     public void markOuting(Instant outingTime) {
         this.dayRouteHomeStatus = DayRouteHomeStatus.OUTING;
-        if (this.exitHomeTime == null) {
-            this.exitHomeTime = outingTime;
+        if (this.outingTime == null) {
+            this.outingTime = outingTime;
         }
         this.totalOutingCount++;
     }
