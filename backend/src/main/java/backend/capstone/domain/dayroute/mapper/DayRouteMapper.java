@@ -2,6 +2,7 @@ package backend.capstone.domain.dayroute.mapper;
 
 import backend.capstone.domain.dayroute.dto.DayRouteDetailResponse;
 import backend.capstone.domain.dayroute.dto.DayRouteMonthlyResponse;
+import backend.capstone.domain.dayroute.dto.DayRouteSummaryResponse;
 import backend.capstone.domain.dayroute.entity.DayRoute;
 import backend.capstone.domain.gpspoint.entity.GpsPoint;
 import backend.capstone.domain.user.entity.User;
@@ -43,6 +44,15 @@ public class DayRouteMapper {
                 ))
                 .toList())
             .build();
+    }
+
+    public static DayRouteSummaryResponse toDayRouteSummaryResponse(DayRoute dayRoute) {
+        return new DayRouteSummaryResponse(
+            KstDateTimeUtils.toKstOffsetDateTime(dayRoute.getOutingTime()),
+            KstDateTimeUtils.toKstOffsetDateTime(dayRoute.getEnterHomeTime()),
+            dayRoute.getTotalOutingCount(),
+            dayRoute.getTotalOutingSeconds()
+        );
     }
 
     public static DayRouteMonthlyResponse toDayRouteMonthlyResponse(int year, int month,

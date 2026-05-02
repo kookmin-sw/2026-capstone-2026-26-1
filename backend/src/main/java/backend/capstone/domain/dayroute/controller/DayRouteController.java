@@ -5,6 +5,7 @@ import backend.capstone.domain.dayroute.dto.DayRouteDetailResponse;
 import backend.capstone.domain.dayroute.dto.DayRouteMemoRequest;
 import backend.capstone.domain.dayroute.dto.DayRouteMemoResponse;
 import backend.capstone.domain.dayroute.dto.DayRouteMonthlyResponse;
+import backend.capstone.domain.dayroute.dto.DayRouteSummaryResponse;
 import backend.capstone.domain.dayroute.dto.DayRouteTitleRequest;
 import backend.capstone.domain.dayroute.dto.DayRouteTitleResponse;
 import backend.capstone.domain.dayroute.dto.GpsPointBatchUploadRequest;
@@ -61,6 +62,15 @@ public class DayRouteController implements DayRouteControllerSpec {
         @AuthenticationPrincipal UserPrincipal principal
     ) {
         return dayRouteFacade.getDayRouteDetail(date, principal.userId());
+    }
+
+    @Override
+    @GetMapping("/{date}/summary")
+    public DayRouteSummaryResponse getDayRouteSummary(
+        @PathVariable LocalDate date,
+        @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        return dayRouteFacade.getDayRouteSummary(date, principal.userId());
     }
 
     @Override

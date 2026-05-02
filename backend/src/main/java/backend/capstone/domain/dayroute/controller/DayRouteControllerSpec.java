@@ -5,6 +5,7 @@ import backend.capstone.domain.dayroute.dto.DayRouteDetailResponse;
 import backend.capstone.domain.dayroute.dto.DayRouteMemoRequest;
 import backend.capstone.domain.dayroute.dto.DayRouteMemoResponse;
 import backend.capstone.domain.dayroute.dto.DayRouteMonthlyResponse;
+import backend.capstone.domain.dayroute.dto.DayRouteSummaryResponse;
 import backend.capstone.domain.dayroute.dto.DayRouteTitleRequest;
 import backend.capstone.domain.dayroute.dto.DayRouteTitleResponse;
 import backend.capstone.domain.dayroute.dto.GpsPointBatchUploadRequest;
@@ -46,6 +47,20 @@ public interface DayRouteControllerSpec {
             """
     )
     DayRouteDetailResponse getDayRouteDetail(
+        @Parameter(example = "2026-01-01") LocalDate date,
+        UserPrincipal principal
+    );
+
+    @Operation(
+        summary = "하루 요약 조회 API",
+        description = """
+            해당 날짜의 첫 외출 시간, 마지막 귀가 시간, 총 외출 횟수, 총 외출 시간을 반환합니다.<br>
+            외출 또는 귀가 기록이 아직 없거나 집 주소가 등록되지 않으면 outingTime 또는 enterHomeTime은 null로 반환됩니다.<br>
+            외출 시간과 귀가 시간은 kst 시간으로 변환되어 반환됩니다.<br>
+            totalOutingSeconds는 초 단위입니다.
+            """
+    )
+    DayRouteSummaryResponse getDayRouteSummary(
         @Parameter(example = "2026-01-01") LocalDate date,
         UserPrincipal principal
     );

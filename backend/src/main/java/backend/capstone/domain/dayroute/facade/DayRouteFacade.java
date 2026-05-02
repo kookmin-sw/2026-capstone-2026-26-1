@@ -5,6 +5,7 @@ import backend.capstone.domain.dayroute.dto.DayRouteDetailResponse;
 import backend.capstone.domain.dayroute.dto.DayRouteMemoRequest;
 import backend.capstone.domain.dayroute.dto.DayRouteMemoResponse;
 import backend.capstone.domain.dayroute.dto.DayRouteMonthlyResponse;
+import backend.capstone.domain.dayroute.dto.DayRouteSummaryResponse;
 import backend.capstone.domain.dayroute.dto.DayRouteTitleRequest;
 import backend.capstone.domain.dayroute.dto.DayRouteTitleResponse;
 import backend.capstone.domain.dayroute.dto.GpsPointBatchUploadRequest;
@@ -82,6 +83,12 @@ public class DayRouteFacade {
 
         List<GpsPoint> gpsPoints = gpsPointService.getGpsPointsByDayRouteId(dayRoute);
         return DayRouteMapper.toDayRouteDetailResponse(dayRoute, gpsPoints);
+    }
+
+    @Transactional(readOnly = true)
+    public DayRouteSummaryResponse getDayRouteSummary(LocalDate date, Long userId) {
+        DayRoute dayRoute = dayRouteService.getDayRouteByDateAndUserId(date, userId);
+        return DayRouteMapper.toDayRouteSummaryResponse(dayRoute);
     }
 
     @Transactional(readOnly = true)
