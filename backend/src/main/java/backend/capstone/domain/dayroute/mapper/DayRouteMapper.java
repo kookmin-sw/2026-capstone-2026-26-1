@@ -6,6 +6,7 @@ import backend.capstone.domain.dayroute.dto.DayRouteSummaryResponse;
 import backend.capstone.domain.dayroute.entity.DayRoute;
 import backend.capstone.domain.gpspoint.entity.GpsPoint;
 import backend.capstone.domain.user.entity.User;
+import backend.capstone.global.util.DurationFormatUtils;
 import backend.capstone.global.util.KstDateTimeUtils;
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -51,7 +52,8 @@ public class DayRouteMapper {
             KstDateTimeUtils.toKstOffsetDateTime(dayRoute.getOutingTime()),
             KstDateTimeUtils.toKstOffsetDateTime(dayRoute.getEnterHomeTime()),
             dayRoute.getTotalOutingCount(),
-            dayRoute.getTotalOutingSeconds()
+            dayRoute.getTotalOutingSeconds(),
+            DurationFormatUtils.formatOutingDurationText(dayRoute.getTotalOutingSeconds())
         );
     }
 

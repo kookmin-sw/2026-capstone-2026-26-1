@@ -13,8 +13,11 @@ public record DayRouteSummaryResponse(
     @Schema(example = "2", description = "해당 날짜의 총 외출 횟수")
     int totalOutingCount,
 
-    @Schema(example = "36120", description = "해당 날짜의 총 외출 시간")
-    long totalOutingSeconds
+    @Schema(example = "36120", description = "해당 날짜의 총 외출 시간(초)")
+    long totalOutingSeconds,
+
+    @Schema(example = "10시간 2분", description = "해당 날짜의 총 외출 시간 표시 문자열")
+    String totalOutingDurationText
 ) {
 
 }

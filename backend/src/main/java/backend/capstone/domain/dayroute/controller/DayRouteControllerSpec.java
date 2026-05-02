@@ -57,7 +57,8 @@ public interface DayRouteControllerSpec {
             해당 날짜의 첫 외출 시간, 마지막 귀가 시간, 총 외출 횟수, 총 외출 시간을 반환합니다.<br>
             외출 또는 귀가 기록이 아직 없거나 집 주소가 등록되지 않으면 outingTime 또는 enterHomeTime은 null로 반환됩니다.<br>
             외출 시간과 귀가 시간은 kst 시간으로 변환되어 반환됩니다.<br>
-            totalOutingSeconds는 초 단위입니다.
+            totalOutingSeconds는 총 외출 시간을 초 단위로 계산한 값이고<br>
+            totalOutingDurationText는 "5시간 30분" (시간이 한자리수일 때 앞에 0 안붙음)과 같이 총 외출 시간을 문자열로 변환하여 반환합니다.
             """
     )
     DayRouteSummaryResponse getDayRouteSummary(
