@@ -10,6 +10,7 @@ import backend.capstone.domain.dayroute.dto.DayRouteTitleResponse;
 import backend.capstone.domain.dayroute.dto.GpsPointBatchUploadRequest;
 import backend.capstone.domain.dayroute.dto.GpsPointBatchUploadResponse;
 import backend.capstone.domain.dayroute.entity.DayRoute;
+import backend.capstone.domain.dayroute.event.GpsPointsUploadedEvent;
 import backend.capstone.domain.dayroute.exception.DayRouteErrorCode;
 import backend.capstone.domain.dayroute.mapper.DayRouteMapper;
 import backend.capstone.domain.dayroute.service.DayRouteService;
@@ -20,6 +21,7 @@ import backend.capstone.global.exception.BusinessException;
 import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.CannotAcquireLockException;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Recover;
@@ -33,6 +35,7 @@ public class DayRouteFacade {
 
     private final DayRouteService dayRouteService;
     private final GpsPointService gpsPointService;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Retryable(
         retryFor = {
@@ -56,9 +59,13 @@ public class DayRouteFacade {
                 gpsPointRange.endTime());
         }
 
-        // 이동거리 업데이트
         dayRouteService.updateDistance(dayRoute, request.distance());
         dayRoute.markAnalysisNeeded();
+
+        //분석 이벤트 발행
+        if (!request.gpsPoints().isEmpty()) {
+            applicationEventPublisher.publishEvent(new GpsPointsUploadedEvent(dayRoute.getId()));
+        }
 
         return new GpsPointBatchUploadResponse("좌표 업로드에 성공했습니다.");
     }
