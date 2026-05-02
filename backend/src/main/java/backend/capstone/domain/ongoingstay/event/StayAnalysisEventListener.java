@@ -1,6 +1,7 @@
-package backend.capstone.domain.dayroute.event;
+package backend.capstone.domain.ongoingstay.event;
 
-import backend.capstone.domain.ongoinghomestatus.service.HomeStatusAnalysisService;
+import backend.capstone.domain.dayroute.event.GpsPointsUploadedEvent;
+import backend.capstone.domain.ongoingstay.service.StayAnalysisService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -11,17 +12,17 @@ import org.springframework.transaction.event.TransactionalEventListener;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class HomeStatusAnalysisEventListener {
+public class StayAnalysisEventListener {
 
-    private final HomeStatusAnalysisService homeStatusAnalysisService;
+    private final StayAnalysisService stayAnalysisService;
 
-    @Async("homeStatusAnalysisExecutor")
+    @Async("stayAnalysisExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handle(GpsPointsUploadedEvent event) {
         try {
-            homeStatusAnalysisService.analyzeHomeStatus(event.dayRouteId());
+            stayAnalysisService.analyzeStay(event.dayRouteId());
         } catch (Exception e) {
-            log.error("Home status analysis failed. dayRouteId={}", event.dayRouteId(), e);
+            log.error("Stay analysis failed. dayRouteId={}", event.dayRouteId(), e);
         }
     }
 }
