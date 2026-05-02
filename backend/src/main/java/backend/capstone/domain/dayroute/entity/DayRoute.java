@@ -84,11 +84,14 @@ public class DayRoute {
     @Enumerated(EnumType.STRING)
     private DayRouteHomeStatus dayRouteHomeStatus;
 
-    //외출시간
+    //첫 외출 시간
     private Instant exitHomeTime;
 
-    //귀가시간
+    //마지막 귀가 시간
     private Instant enterHomeTime;
+
+    //총 외출 횟수
+    private int totalOutingCount;
 
     private Instant homeAnalysisLastPointAt;
 
@@ -164,6 +167,7 @@ public class DayRoute {
         if (this.exitHomeTime == null) {
             this.exitHomeTime = outingTime;
         }
+        this.totalOutingCount++;
     }
 
     public void markOutingWithoutTime() {
