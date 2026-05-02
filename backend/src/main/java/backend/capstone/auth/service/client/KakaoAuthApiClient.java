@@ -3,7 +3,6 @@ package backend.capstone.auth.service.client;
 import backend.capstone.auth.exception.AuthErrorCode;
 import backend.capstone.auth.service.dto.KakaoUserInfoResponse;
 import backend.capstone.global.exception.BusinessException;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
@@ -12,12 +11,15 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 @Component
-@RequiredArgsConstructor
 public class KakaoAuthApiClient {
 
     private static final String USER_INFO_URI = "/v2/user/me";
 
-    private final @Qualifier("kakaoAuthWebClient") WebClient kakaoAuthWebClient;
+    private final WebClient kakaoAuthWebClient;
+
+    public KakaoAuthApiClient(@Qualifier("kakaoAuthWebClient") WebClient kakaoAuthWebClient) {
+        this.kakaoAuthWebClient = kakaoAuthWebClient;
+    }
 
     public KakaoUserInfoResponse getUserInfo(String kakaoAccessToken) {
         return kakaoAuthWebClient.get()

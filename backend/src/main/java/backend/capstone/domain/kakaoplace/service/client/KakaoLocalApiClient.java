@@ -3,18 +3,20 @@ package backend.capstone.domain.kakaoplace.service.client;
 import backend.capstone.domain.kakaoplace.service.dto.KakaoSearchByCategoryResult;
 import backend.capstone.domain.kakaoplace.service.dto.KakaoSearchByCoordResult;
 import backend.capstone.domain.kakaoplace.service.dto.KakaoSearchByKeywordResult;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
 @Component
-@RequiredArgsConstructor
 public class KakaoLocalApiClient {
 
     private static final int DEFAULT_KEYWORD_PAGE_SIZE = 10;
 
-    private final @Qualifier("kakaoLocalWebClient") WebClient kakaoLocalWebClient;
+    private final WebClient kakaoLocalWebClient;
+
+    public KakaoLocalApiClient(@Qualifier("kakaoLocalWebClient") WebClient kakaoLocalWebClient) {
+        this.kakaoLocalWebClient = kakaoLocalWebClient;
+    }
 
     public KakaoSearchByKeywordResult searchByKeyword(String query, int page) {
         return kakaoLocalWebClient.get()
