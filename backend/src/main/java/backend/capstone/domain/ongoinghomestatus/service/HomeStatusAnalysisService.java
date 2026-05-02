@@ -46,19 +46,34 @@ public class HomeStatusAnalysisService {
         }
         BookmarkPlace homeBookmark = optionalHome.get();
 
+        //증분 분석
         List<GpsPoint> newPoints = gpsPointService.getNewPoints(
-            dayRoute,
-            dayRoute.getHomeAnalysisLastPointAt()
-        );
+            dayRoute, dayRoute.getHomeAnalysisLastPointAt());
+
         if (newPoints.isEmpty()) {
             return;
         }
 
         OngoingHomeStatus ongoingHomeStatus = ongoingHomeStatusRepository.findByDayRoute(dayRoute)
-            .orElseGet(() -> initializeHomeStatus(dayRoute, newPoints.getFirst(), homeBookmark));
+            .orElse(null);
 
-        for (GpsPoint point : newPoints) {
-            processPoint(dayRoute, ongoingHomeStatus, homeBookmark, point);
+        int startIndex = 0;
+        Instant previousPointAt = dayRoute.getHomeAnalysisLastPointAt();
+
+        //초기화에 사용한 첫 point를 기준점으로 삼고,
+        //루프에서는 그 다음 point부터 처리
+        if (ongoingHomeStatus == null) {
+            GpsPoint firstPoint = newPoints.getFirst();
+            ongoingHomeStatus = initializeHomeStatus(dayRoute, firstPoint, homeBookmark);
+            previousPointAt = firstPoint.getRecordedAt();
+            startIndex = 1;
+        }
+
+        //새 point들을 순서대로 처리
+        for (int i = startIndex; i < newPoints.size(); i++) {
+            GpsPoint point = newPoints.get(i);
+            processPoint(dayRoute, ongoingHomeStatus, homeBookmark, point, previousPointAt);
+            previousPointAt = point.getRecordedAt();
         }
 
         updateHomeAnalysisCursor(dayRoute, newPoints.getLast());
@@ -78,11 +93,15 @@ public class HomeStatusAnalysisService {
     }
 
     private void processPoint(DayRoute dayRoute, OngoingHomeStatus ongoingHomeStatus,
-        BookmarkPlace homeBookmark, GpsPoint point
-    ) {
+        BookmarkPlace homeBookmark, GpsPoint point, Instant previousPointAt) {
+        //이번 point가 집 안인지 밖인지 판단
         HomeZoneStatus observedZoneStatus = determineObservedZone(point, homeBookmark,
             ongoingHomeStatus.getCurrentZoneStatus()
         );
+
+        //이번 point까지의 시간 구간을 외출 시간에 반영
+        accumulateOutingDuration(dayRoute, ongoingHomeStatus, observedZoneStatus,
+            previousPointAt, point.getRecordedAt());
 
         if (observedZoneStatus == ongoingHomeStatus.getCurrentZoneStatus()) {
             ongoingHomeStatus.clearCandidate();
@@ -105,6 +124,45 @@ public class HomeStatusAnalysisService {
 
             ongoingHomeStatus.changeCurrentZoneStatus(observedZoneStatus, transitionTime);
             applyTransitionedDayRouteStatus(dayRoute, observedZoneStatus, transitionTime);
+
+            //외출 확정됐을 때 외출 candidate 시간 누적
+            if (observedZoneStatus == HomeZoneStatus.OUT_HOME) {
+                dayRoute.addOutingDurationSeconds(
+                    Duration.between(transitionTime, point.getRecordedAt()).getSeconds()
+                );
+            }
+        }
+    }
+
+    //직전 point부터 이번 point까지의 시간 구간을 외출시간에 더할지 말지를 결정
+    private void accumulateOutingDuration(DayRoute dayRoute, OngoingHomeStatus ongoingHomeStatus,
+        HomeZoneStatus observedZoneStatus, Instant previousPointAt, Instant currentPointAt
+    ) {
+        //비교할 이전 시간이 없거나
+        //현재 외출 상태가 아니라면 누적 안함
+        if (previousPointAt == null
+            || ongoingHomeStatus.getCurrentZoneStatus() != HomeZoneStatus.OUT_HOME) {
+            return;
+        }
+
+        //현재 확정 상태는 집 밖인데 귀가 candidate가 생긴 상태라면
+        //아직 귀가 확정 전이므로 일단 보수적으로 처리
+        if (ongoingHomeStatus.getCandidateZoneStatus() == HomeZoneStatus.IN_HOME) {
+            //candidate 시작 시점부터 지금까지를 한 번에 외출시간으로 복구 -> 외출 시간에 누적
+            if (observedZoneStatus == HomeZoneStatus.OUT_HOME) {
+                dayRoute.addOutingDurationSeconds(
+                    Duration.between(ongoingHomeStatus.getCandidateStartedAt(), currentPointAt
+                    ).getSeconds()
+                );
+            }
+            return;
+        }
+
+        //현재 확정 상태는 집 밖, 귀가 candidate도 없음 -> 외출 시간에 누적
+        if (observedZoneStatus == HomeZoneStatus.OUT_HOME
+            || observedZoneStatus == HomeZoneStatus.IN_HOME) {
+            dayRoute.addOutingDurationSeconds(
+                Duration.between(previousPointAt, currentPointAt).getSeconds());
         }
     }
 

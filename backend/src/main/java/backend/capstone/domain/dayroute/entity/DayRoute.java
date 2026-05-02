@@ -73,7 +73,6 @@ public class DayRoute {
 
     private boolean hasDetails;
 
-    // stay 분석 flag
     private boolean analysisNeeded;
 
     private Instant lastAnalyzedAt;
@@ -92,6 +91,9 @@ public class DayRoute {
 
     //총 외출 횟수
     private int totalOutingCount;
+
+    //외출 시간
+    private long totalOutingSeconds;
 
     private Instant homeAnalysisLastPointAt;
 
@@ -139,7 +141,6 @@ public class DayRoute {
         this.totalDistance = distance;
     }
 
-    // 분석용 업데이트
     public void markAnalysisNeeded() {
         this.analysisNeeded = true;
     }
@@ -154,7 +155,7 @@ public class DayRoute {
     }
 
     public void completeAnalysis(Instant recordedAt) {
-        lastAnalyzedAt = recordedAt;
+        this.lastAnalyzedAt = recordedAt;
         markIdleAnalysis();
     }
 
@@ -181,6 +182,14 @@ public class DayRoute {
 
     public void markNoHomeBookmark() {
         this.dayRouteHomeStatus = DayRouteHomeStatus.NO_HOME_BOOKMARK;
+    }
+
+    public void addOutingDurationSeconds(long outingSeconds) {
+        if (outingSeconds <= 0) {
+            return;
+        }
+
+        this.totalOutingSeconds += outingSeconds;
     }
 
     public void updateHomeAnalysisLastPointAt(Instant homeAnalysisLastPointAt) {
