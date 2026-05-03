@@ -16,9 +16,11 @@ import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -58,7 +60,6 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.passedpath.R
@@ -613,52 +614,58 @@ private fun PlaceTimelineItem(
         highlightProgress.animateTo(0f, animationSpec = tween(durationMillis = 850))
     }
 
-    Row(
-        modifier = Modifier
-            .fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.Top
-    ) {
-        TimelineDecoration(
-            orderIndex = displayOrderIndex,
-            isFirst = isFirst,
-            isLast = isLast,
-            bottomSpacing = bottomSpacing
-        )
-        PlaceCard(
-            name = place.placeName.ifBlank {
-                stringResource(R.string.route_place_fallback_title, displayOrderIndex)
-            },
-            address = place.roadAddress.ifBlank {
-                stringResource(
-                    R.string.place_card_coordinate,
-                    place.latitude,
-                    place.longitude
-                )
-            },
-            startTimeText = place.startTime.toPlaceCardTimeText(),
-            endTimeText = place.endTime.toPlaceCardTimeText(),
-            isFavoritePlace = place.bookmarkType != null,
-            onClick = onPlaceClick,
-            onMoreClick = onMoreClick,
-            onDismissMenu = onDismissMenu,
-            isMenuVisible = isMenuVisible,
-            menuItems = listOf(
-                MenuActionItem(
-                    text = editMenuText,
-                    iconResId = R.drawable.ic_check,
-                    onClick = onEditPlaceClick
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(IntrinsicSize.Min),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.Top
+        ) {
+            TimelineDecoration(
+                orderIndex = displayOrderIndex,
+                isFirst = isFirst,
+                isLast = isLast
+            )
+            PlaceCard(
+                name = place.placeName.ifBlank {
+                    stringResource(R.string.route_place_fallback_title, displayOrderIndex)
+                },
+                address = place.roadAddress.ifBlank {
+                    stringResource(
+                        R.string.place_card_coordinate,
+                        place.latitude,
+                        place.longitude
+                    )
+                },
+                startTimeText = place.startTime.toPlaceCardTimeText(),
+                endTimeText = place.endTime.toPlaceCardTimeText(),
+                isFavoritePlace = place.bookmarkType != null,
+                onClick = onPlaceClick,
+                onMoreClick = onMoreClick,
+                onDismissMenu = onDismissMenu,
+                isMenuVisible = isMenuVisible,
+                menuItems = listOf(
+                    MenuActionItem(
+                        text = editMenuText,
+                        iconResId = R.drawable.ic_check,
+                        onClick = onEditPlaceClick
+                    ),
+                    MenuActionItem(
+                        text = deleteMenuText,
+                        iconResId = R.drawable.ic_trash,
+                        onClick = onDeletePlaceClick
+                    )
                 ),
-                MenuActionItem(
-                    text = deleteMenuText,
-                    iconResId = R.drawable.ic_trash,
-                    onClick = onDeletePlaceClick
-                )
-            ),
-            highlightProgress = highlightProgress.value,
-            modifier = Modifier.weight(1f),
-            isCompact = true
-        )
+                highlightProgress = highlightProgress.value,
+                modifier = Modifier.weight(1f),
+                isCompact = true
+            )
+        }
+
+        if (bottomSpacing > 0.dp) {
+            Spacer(modifier = Modifier.height(bottomSpacing))
+        }
     }
 }
 
@@ -771,13 +778,12 @@ private fun String?.toPlaceCardTimeText(): String? {
 private fun TimelineDecoration(
     orderIndex: Int,
     isFirst: Boolean,
-    isLast: Boolean,
-    bottomSpacing: Dp
+    isLast: Boolean
 ) {
-    val decorationHeight = PlaceTimelineCardHeight + bottomSpacing
     Box(
         modifier = Modifier
-            .size(width = 22.dp, height = decorationHeight),
+            .width(22.dp)
+            .fillMaxHeight(),
         contentAlignment = Alignment.TopCenter
     ) {
         Canvas(modifier = Modifier.matchParentSize()) {
