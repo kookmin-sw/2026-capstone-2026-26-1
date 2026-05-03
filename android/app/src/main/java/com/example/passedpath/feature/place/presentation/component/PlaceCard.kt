@@ -61,6 +61,7 @@ fun PlaceCard(
     isFavoritePlace: Boolean = false,
     isSelected: Boolean = false,
     showMoreButton: Boolean = true,
+    onClick: (() -> Unit)? = null,
     onMoreClick: (() -> Unit)? = null,
     onDismissMenu: (() -> Unit)? = null,
     isMenuVisible: Boolean = false,
@@ -88,6 +89,9 @@ fun PlaceCard(
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
+                .clickable(enabled = onClick != null) {
+                    onClick?.invoke()
+                }
                 .border(
                     width = if (isSelected || coercedHighlightProgress > 0f) 1.dp else 0.dp,
                     color = borderColor,

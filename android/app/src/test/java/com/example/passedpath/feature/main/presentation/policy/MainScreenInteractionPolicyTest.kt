@@ -142,6 +142,31 @@ class MainScreenInteractionPolicyTest {
     }
 
     @Test
+    fun `hidden value during pending hidden command does not clear command early`() {
+        val initialState = MainScreenLocalUiState(
+            bottomSheetValue = MainBottomSheetValue.MIDDLE,
+            requestedSheetValue = MainBottomSheetValue.HIDDEN,
+            focusedPlaceId = 12L
+        )
+
+        val valueChangeResult = reduceForSheetValueChange(
+            state = initialState,
+            bottomSheetValue = MainBottomSheetValue.HIDDEN
+        )
+
+        assertEquals(MainBottomSheetValue.HIDDEN, valueChangeResult.state.bottomSheetValue)
+        assertEquals(MainBottomSheetValue.HIDDEN, valueChangeResult.state.requestedSheetValue)
+        assertEquals(12L, valueChangeResult.state.focusedPlaceId)
+
+        val consumedResult = reduceForSheetCommandConsumed(
+            state = valueChangeResult.state,
+            consumedValue = MainBottomSheetValue.HIDDEN
+        )
+
+        assertNull(consumedResult.state.requestedSheetValue)
+    }
+
+    @Test
     fun `sheet command consumed clears matching requested value`() {
         val initialState = MainScreenLocalUiState(
             bottomSheetValue = MainBottomSheetValue.HIDDEN,
@@ -176,13 +201,51 @@ class MainScreenInteractionPolicyTest {
         val initialState = MainScreenLocalUiState(
             bottomSheetValue = MainBottomSheetValue.EXPANDED,
             requestedSheetValue = MainBottomSheetValue.EXPANDED,
-            selectedPlaceId = 4L
+            selectedPlaceId = 4L,
+            focusedPlaceId = 8L
         )
 
         val result = reduceForSheetHideRequest(initialState)
 
         assertEquals(MainBottomSheetValue.HIDDEN, result.state.requestedSheetValue)
         assertNull(result.state.selectedPlaceId)
+        assertNull(result.state.focusedPlaceId)
+    }
+
+    @Test
+    fun `place card click hides sheet clears selected place and requests map focus`() {
+        val initialState = MainScreenLocalUiState(
+            bottomSheetValue = MainBottomSheetValue.EXPANDED,
+            requestedSheetValue = MainBottomSheetValue.EXPANDED,
+            selectedPlaceId = 4L
+        )
+
+        val result = reduceForPlaceCardClick(
+            state = initialState,
+            placeId = 12L
+        )
+
+        assertEquals(MainBottomSheetValue.HIDDEN, result.state.requestedSheetValue)
+        assertNull(result.state.selectedPlaceId)
+        assertEquals(12L, result.state.focusedPlaceId)
+        assertFalse(result.shouldRefreshPlaces)
+    }
+
+    @Test
+    fun `map focus handled clears one time focus request only`() {
+        val initialState = MainScreenLocalUiState(
+            selectedBottomSheetTab = MainBottomSheetTab.PLACE,
+            bottomSheetValue = MainBottomSheetValue.HIDDEN,
+            requestedSheetValue = MainBottomSheetValue.HIDDEN,
+            focusedPlaceId = 12L
+        )
+
+        val result = reduceForMapFocusHandled(initialState)
+
+        assertEquals(MainBottomSheetTab.PLACE, result.state.selectedBottomSheetTab)
+        assertEquals(MainBottomSheetValue.HIDDEN, result.state.bottomSheetValue)
+        assertEquals(MainBottomSheetValue.HIDDEN, result.state.requestedSheetValue)
+        assertNull(result.state.focusedPlaceId)
     }
 
     @Test

@@ -100,6 +100,7 @@ fun PlaceBottomSheetContent(
     modifier: Modifier = Modifier,
     isReorderSubmitting: Boolean = false,
     onEditPlaceClick: (Long) -> Unit = {},
+    onPlaceClick: (Long) -> Unit = {},
     onDeletePlaceRequested: (Long) -> Unit = {},
     onScrollStateChanged: (Boolean) -> Unit = {}
 ) {
@@ -277,6 +278,10 @@ fun PlaceBottomSheetContent(
                         onEditPlaceClick = {
                             closeOpenedMenu()
                             onEditPlaceClick(place.placeId)
+                        },
+                        onPlaceClick = {
+                            closeOpenedMenu()
+                            onPlaceClick(place.placeId)
                         },
                         onDeletePlaceClick = {
                             closeOpenedMenu()
@@ -588,6 +593,7 @@ private fun PlaceTimelineItem(
     onMoreClick: () -> Unit,
     onDismissMenu: () -> Unit,
     onEditPlaceClick: () -> Unit,
+    onPlaceClick: () -> Unit,
     onDeletePlaceClick: () -> Unit
 ) {
     val highlightProgress = remember(place.placeId) { Animatable(0f) }
@@ -633,6 +639,7 @@ private fun PlaceTimelineItem(
             startTimeText = place.startTime.toPlaceCardTimeText(),
             endTimeText = place.endTime.toPlaceCardTimeText(),
             isFavoritePlace = place.bookmarkType != null,
+            onClick = onPlaceClick,
             onMoreClick = onMoreClick,
             onDismissMenu = onDismissMenu,
             isMenuVisible = isMenuVisible,

@@ -76,6 +76,7 @@ internal fun MainBottomSheet(
     onReorderPlaces: (List<Long>) -> Unit,
     onCloseReorderGuideBanner: () -> Unit,
     onEditPlaceClick: (Long) -> Unit,
+    onPlaceClick: (Long) -> Unit,
     onDeletePlaceRequested: (Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -130,6 +131,7 @@ internal fun MainBottomSheet(
                         onReorderPlaces = onReorderPlaces,
                         onCloseReorderGuideBanner = onCloseReorderGuideBanner,
                         onEditPlaceClick = onEditPlaceClick,
+                        onPlaceClick = onPlaceClick,
                         onDeletePlaceRequested = onDeletePlaceRequested,
                         onScrollStateChanged = { isContentScrolled = it },
                         isReorderSubmitting = placeUiState.isSubmitting,
@@ -294,6 +296,7 @@ private fun MainBottomSheetPreview() {
                 onReorderPlaces = {},
                 onCloseReorderGuideBanner = {},
                 onEditPlaceClick = {},
+                onPlaceClick = {},
                 onDeletePlaceRequested = {},
                 modifier = Modifier.fillMaxSize()
             )

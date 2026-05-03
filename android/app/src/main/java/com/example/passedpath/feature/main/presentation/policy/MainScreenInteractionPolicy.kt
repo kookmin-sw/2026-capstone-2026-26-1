@@ -13,7 +13,8 @@ internal fun reduceForDateChange(state: MainScreenLocalUiState): MainScreenInter
     return MainScreenInteractionResult(
         state = state.copy(
             selectedPlaceId = null,
-            requestedSheetValue = null
+            requestedSheetValue = null,
+            focusedPlaceId = null
         )
     )
 }
@@ -22,7 +23,7 @@ internal fun reduceForSheetValueChange(
     state: MainScreenLocalUiState,
     bottomSheetValue: MainBottomSheetValue
 ): MainScreenInteractionResult {
-    if (state.requestedSheetValue != null && state.requestedSheetValue != bottomSheetValue) {
+    if (state.requestedSheetValue != null) {
         return MainScreenInteractionResult(
             state = state.copy(bottomSheetValue = bottomSheetValue)
         )
@@ -67,7 +68,21 @@ internal fun reduceForSheetHideRequest(
     return MainScreenInteractionResult(
         state = state.copy(
             requestedSheetValue = MainBottomSheetValue.HIDDEN,
-            selectedPlaceId = null
+            selectedPlaceId = null,
+            focusedPlaceId = null
+        )
+    )
+}
+
+internal fun reduceForPlaceCardClick(
+    state: MainScreenLocalUiState,
+    placeId: Long
+): MainScreenInteractionResult {
+    return MainScreenInteractionResult(
+        state = state.copy(
+            requestedSheetValue = MainBottomSheetValue.HIDDEN,
+            selectedPlaceId = null,
+            focusedPlaceId = placeId
         )
     )
 }
@@ -80,7 +95,8 @@ internal fun reduceForPlaceCreated(
         state = state.copy(
             selectedBottomSheetTab = MainBottomSheetTab.PLACE,
             requestedSheetValue = MainBottomSheetValue.EXPANDED,
-            selectedPlaceId = placeId
+            selectedPlaceId = placeId,
+            focusedPlaceId = null
         )
     )
 }
@@ -111,6 +127,14 @@ internal fun reduceForSelectedPlaceHandled(
 ): MainScreenInteractionResult {
     return MainScreenInteractionResult(
         state = state.copy(selectedPlaceId = null)
+    )
+}
+
+internal fun reduceForMapFocusHandled(
+    state: MainScreenLocalUiState
+): MainScreenInteractionResult {
+    return MainScreenInteractionResult(
+        state = state.copy(focusedPlaceId = null)
     )
 }
 

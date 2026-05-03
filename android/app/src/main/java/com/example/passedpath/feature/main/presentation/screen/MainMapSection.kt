@@ -9,10 +9,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -42,6 +44,8 @@ import kotlinx.coroutines.launch
 internal fun MainMapSection(
     uiState: MainUiState,
     markerPlaces: List<PlaceMarkerUiState>,
+    focusedPlaceId: Long?,
+    onFocusedPlaceHandled: () -> Unit,
     onCameraIntentConsumed: () -> Unit,
     onDateSelected: (String) -> Unit,
     onBookmarkClick: () -> Unit,
@@ -77,6 +81,7 @@ internal fun MainMapSection(
     var isMapLoaded by remember { mutableStateOf(false) }
     var isDebugPanelVisible by rememberSaveable { mutableStateOf(false) }
     var isMoreMenuVisible by rememberSaveable { mutableStateOf(false) }
+    val currentOnFocusedPlaceHandled by rememberUpdatedState(onFocusedPlaceHandled)
 
     MainMapCameraEffects(
         isMapLoaded = isMapLoaded,
@@ -86,6 +91,22 @@ internal fun MainMapSection(
         cameraPositionState = cameraPositionState,
         onCameraIntentConsumed = onCameraIntentConsumed
     )
+
+    LaunchedEffect(isMapLoaded, focusedPlaceId, markerPlaces) {
+        val placeId = focusedPlaceId ?: return@LaunchedEffect
+        if (!isMapLoaded) return@LaunchedEffect
+
+        val target = markerCameraTarget(
+            markerPlaces = markerPlaces,
+            placeId = placeId
+        )
+        if (target != null) {
+            cameraPositionState.animate(
+                CameraUpdateFactory.newLatLngZoom(target, 17f)
+            )
+        }
+        currentOnFocusedPlaceHandled()
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         GoogleMap(

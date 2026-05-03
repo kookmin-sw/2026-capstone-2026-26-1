@@ -18,7 +18,9 @@ import com.example.passedpath.R
 import com.example.passedpath.feature.daynote.presentation.state.DayNoteUiState
 import com.example.passedpath.feature.main.presentation.policy.reduceForBottomSheetTabSelection
 import com.example.passedpath.feature.main.presentation.policy.reduceForDateChange
+import com.example.passedpath.feature.main.presentation.policy.reduceForMapFocusHandled
 import com.example.passedpath.feature.main.presentation.policy.reduceForPlaceCreated
+import com.example.passedpath.feature.main.presentation.policy.reduceForPlaceCardClick
 import com.example.passedpath.feature.main.presentation.policy.reduceForPlaceMarkerClick
 import com.example.passedpath.feature.main.presentation.policy.reduceForSelectedPlaceHandled
 import com.example.passedpath.feature.main.presentation.policy.reduceForSheetCommandConsumed
@@ -118,6 +120,15 @@ fun MainScreen(
         )
     }
 
+    fun handlePlaceCardClick(placeId: Long) {
+        dispatchInteraction(
+            reduceForPlaceCardClick(
+                state = localUiState,
+                placeId = placeId
+            )
+        )
+    }
+
     fun handleBottomSheetTabSelected(tab: MainBottomSheetTab) {
         dispatchInteraction(
             reduceForBottomSheetTabSelection(
@@ -210,6 +221,10 @@ fun MainScreen(
                 MainMapSection(
                     uiState = uiState,
                     markerPlaces = markerPlaces,
+                    focusedPlaceId = localUiState.focusedPlaceId,
+                    onFocusedPlaceHandled = {
+                        dispatchInteraction(reduceForMapFocusHandled(localUiState))
+                    },
                     onCameraIntentConsumed = onCameraIntentConsumed,
                     onDateSelected = onDateSelectionRequested,
                     onBookmarkClick = onBookmarkClick,
@@ -253,6 +268,7 @@ fun MainScreen(
                     onReorderPlaces = onReorderPlaces,
                     onCloseReorderGuideBanner = onCloseReorderGuideBanner,
                     onEditPlaceClick = onEditPlaceClick,
+                    onPlaceClick = ::handlePlaceCardClick,
                     onDeletePlaceRequested = { placeId ->
                         pendingDeletePlace = placeUiState.placeList.places.firstOrNull { place ->
                             place.placeId == placeId
