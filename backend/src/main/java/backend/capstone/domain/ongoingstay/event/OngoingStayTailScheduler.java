@@ -3,6 +3,7 @@ package backend.capstone.domain.ongoingstay.event;
 import backend.capstone.domain.dayroute.service.DayRouteAnalysisLockService;
 import backend.capstone.domain.ongoingstay.repository.OngoingStayRepository;
 import backend.capstone.domain.ongoingstay.service.StayAnalysisService;
+import java.time.Instant;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,7 +24,8 @@ public class OngoingStayTailScheduler {
         initialDelayString = "60000" //1분, 서버 시작 후 첫 실행
     )
     public void reconcileTails() {
-        List<Long> dayRouteIds = ongoingStayRepository.findDayRouteIdsWithOngoingStay();
+        List<Long> dayRouteIds =
+            ongoingStayRepository.findDayRouteIdsWithEndedOngoingStay(Instant.now());
 
         for (Long dayRouteId : dayRouteIds) {
             dayRouteAnalysisLockService.withLock(dayRouteId, () -> analyzeStayTail(dayRouteId));
