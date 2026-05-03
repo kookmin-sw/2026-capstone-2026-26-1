@@ -1,6 +1,7 @@
 package com.example.passedpath.feature.main.presentation.screen
 
 import android.util.Log
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -250,6 +251,14 @@ fun MainScreen(
         onPlaceCreatedEventHandled(event.id)
     }
 
+    BackHandler(enabled = pendingEditPlace != null) {
+        if (isPlaceNameFocused) {
+            hideEditKeyboard()
+        } else {
+            dismissPlaceEdit()
+        }
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         MainBottomSheetScaffold(
             modifier = Modifier.fillMaxSize(),
@@ -400,7 +409,7 @@ private fun PlaceEditNameOverlay(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color.Black.copy(alpha = 0.34f))
-                .clickable(onClick = onDismiss)
+                .clickable(onClick = onClearInputFocus)
         )
         PlaceEditNameBottomSheet(
             placeName = placeName,
