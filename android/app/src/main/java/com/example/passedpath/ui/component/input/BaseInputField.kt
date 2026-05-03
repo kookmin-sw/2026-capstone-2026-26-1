@@ -1,28 +1,42 @@
 package com.example.passedpath.ui.component.input
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.passedpath.ui.theme.Gray100
-import com.example.passedpath.ui.theme.Gray300
 import com.example.passedpath.ui.theme.Gray400
-import com.example.passedpath.ui.theme.Gray700
+import com.example.passedpath.ui.theme.Gray50
+import com.example.passedpath.ui.theme.Gray900
 import com.example.passedpath.ui.theme.Green500
 import com.example.passedpath.ui.theme.PassedPathTheme
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.shape.RoundedCornerShape
-import com.example.passedpath.ui.theme.Gray50
-import com.example.passedpath.ui.theme.Gray500
 
 @Composable
 fun BaseInputField(
@@ -32,32 +46,90 @@ fun BaseInputField(
     modifier: Modifier = Modifier,
     singleLine: Boolean = false,
     minLines: Int = 1,
-    imeAction: ImeAction = ImeAction.Default
+    imeAction: ImeAction = ImeAction.Default,
+    onFocusChanged: (Boolean) -> Unit = {},
+    onImeAction: () -> Unit = {},
+    leadingContent: (@Composable () -> Unit)? = null
 ) {
-    OutlinedTextField(
+    var isFocused by remember { mutableStateOf(false) }
+
+    val shape = RoundedCornerShape(10.dp)
+    val textStyle = TextStyle(
+        fontSize = 14.sp,
+        fontWeight = FontWeight.Medium,
+        color = Gray900
+    )
+
+    BasicTextField(
         value = value,
         onValueChange = onValueChange,
-        modifier = modifier.fillMaxWidth(),
-        textStyle = MaterialTheme.typography.bodyMedium.copy(color = Gray700),
-        placeholder = {
-            Text(
-                text = placeholder,
-                style = MaterialTheme.typography.bodyMedium,
-                color = Gray400
+        modifier = modifier
+            .fillMaxWidth()
+            .baseInputFieldSize(singleLine = singleLine)
+            .clip(shape)
+            .background(if (isFocused) Gray50 else Gray100)
+            .border(
+                width = 1.5.dp,
+                color = if (isFocused) Green500 else Color.Transparent,
+                shape = shape
             )
-        },
-        singleLine = singleLine,
-        minLines = minLines,
+            .onFocusChanged { focusState ->
+                isFocused = focusState.isFocused
+                onFocusChanged(focusState.isFocused)
+            },
+        textStyle = textStyle,
+        cursorBrush = SolidColor(Green500),
         keyboardOptions = KeyboardOptions(imeAction = imeAction),
-        shape = RoundedCornerShape(20.dp),
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = Green500,
-            unfocusedBorderColor = Gray100,
-            focusedContainerColor = Gray50,
-            unfocusedContainerColor = Gray50,
-            cursorColor = Green500
-        )
+        keyboardActions = KeyboardActions(
+            onDone = { onImeAction() },
+            onSearch = { onImeAction() }
+        ),
+        singleLine = singleLine,
+        minLines = if (singleLine) 1 else minLines,
+        decorationBox = { innerTextField ->
+            androidx.compose.foundation.layout.Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .baseInputFieldDecorationSize(singleLine = singleLine)
+                    .padding(
+                        horizontal = 16.dp,
+                        vertical = if (singleLine) 0.dp else 13.dp
+                    ),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = if (singleLine) Alignment.CenterVertically else Alignment.Top
+            ) {
+                leadingContent?.invoke()
+                Box(
+                    modifier = Modifier.weight(1f),
+                    contentAlignment = if (singleLine) Alignment.CenterStart else Alignment.TopStart
+                ) {
+                    if (value.isBlank()) {
+                        Text(
+                            text = placeholder,
+                            style = textStyle.copy(color = Gray400)
+                        )
+                    }
+                    innerTextField()
+                }
+            }
+        }
     )
+}
+
+private fun Modifier.baseInputFieldSize(singleLine: Boolean): Modifier {
+    return if (singleLine) {
+        height(46.dp)
+    } else {
+        defaultMinSize(minHeight = 46.dp)
+    }
+}
+
+private fun Modifier.baseInputFieldDecorationSize(singleLine: Boolean): Modifier {
+    return if (singleLine) {
+        height(46.dp)
+    } else {
+        this
+    }
 }
 
 @Preview(showBackground = true, backgroundColor = 0xFFF8FAFC)
@@ -69,16 +141,23 @@ private fun BaseInputFieldPreview() {
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             BaseInputField(
-                value = "한강 저녁 산책",
+                value = "",
                 onValueChange = {},
-                placeholder = "오늘의 지나온 길을 짧게 남겨 보세요",
+                placeholder = "장소 이름 또는 주소를 검색해 보세요",
+                singleLine = true,
+                imeAction = ImeAction.Search
+            )
+            BaseInputField(
+                value = "국민대학교 복지관",
+                onValueChange = {},
+                placeholder = "장소 이름 또는 주소를 검색해 보세요",
                 singleLine = true,
                 imeAction = ImeAction.Next
             )
             BaseInputField(
-                value = "바람이 많이 불었고, 강가에 앉아 있다가 집으로 돌아왔다.",
+                value = "오늘은 정릉천을 지나 학교 앞 카페에 들렀다.",
                 onValueChange = {},
-                placeholder = "기억하고 싶은 장면, 감정, 장소를 적어 보세요",
+                placeholder = "기억하고 싶은 장소, 감정, 순간을 적어 보세요",
                 minLines = 4
             )
         }

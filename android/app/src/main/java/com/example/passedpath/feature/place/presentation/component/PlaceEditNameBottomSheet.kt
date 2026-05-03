@@ -15,9 +15,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Search
@@ -29,7 +26,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -39,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.passedpath.R
 import com.example.passedpath.ui.component.button.BaseButton
+import com.example.passedpath.ui.component.input.BaseInputField
 import com.example.passedpath.ui.theme.Gray100
 import com.example.passedpath.ui.theme.Gray400
 import com.example.passedpath.ui.theme.Gray700
@@ -157,28 +154,14 @@ private fun PlaceNameEditField(
     onFocusChanged: (Boolean) -> Unit,
     onDone: () -> Unit
 ) {
-    BasicTextField(
+    BaseInputField(
         value = value,
         onValueChange = onValueChange,
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 56.dp)
-            .border(
-                width = 2.dp,
-                color = Green500,
-                shape = RoundedCornerShape(10.dp)
-            )
-            .background(White, RoundedCornerShape(10.dp))
-            .onFocusChanged { onFocusChanged(it.isFocused) }
-            .padding(horizontal = 16.dp, vertical = 16.dp),
+        placeholder = stringResource(R.string.place_edit_name_label),
         singleLine = true,
-        textStyle = MaterialTheme.typography.bodyLarge.copy(
-            color = Gray900,
-            fontWeight = FontWeight.Bold,
-            fontSize = 16.sp
-        ),
-        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-        keyboardActions = KeyboardActions(onDone = { onDone() })
+        imeAction = ImeAction.Done,
+        onFocusChanged = onFocusChanged,
+        onImeAction = onDone
     )
 }
 
