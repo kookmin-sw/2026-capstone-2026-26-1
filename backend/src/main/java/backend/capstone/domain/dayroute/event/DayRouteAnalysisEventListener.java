@@ -1,5 +1,6 @@
 package backend.capstone.domain.dayroute.event;
 
+import backend.capstone.domain.dayroute.service.DayRouteAnalysisLockService;
 import backend.capstone.domain.ongoinghomestatus.service.HomeStatusAnalysisService;
 import backend.capstone.domain.ongoingstay.service.StayAnalysisService;
 import lombok.RequiredArgsConstructor;
@@ -14,14 +15,18 @@ import org.springframework.transaction.event.TransactionalEventListener;
 @Slf4j
 public class DayRouteAnalysisEventListener {
 
+    private final DayRouteAnalysisLockService dayRouteAnalysisLockService;
     private final StayAnalysisService stayAnalysisService;
     private final HomeStatusAnalysisService homeStatusAnalysisService;
 
     @Async("homeStatusAnalysisExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handle(GpsPointsUploadedEvent event) {
-        analyzeHomeStatus(event.dayRouteId());
-        analyzeStay(event.dayRouteId());
+        //dayRouteId 키로 락을 잡은 상태에서 home 분석과 stay 분석을 순차적으로 실행
+        dayRouteAnalysisLockService.withLock(event.dayRouteId(), () -> {
+            analyzeHomeStatus(event.dayRouteId());
+            analyzeStay(event.dayRouteId());
+        });
     }
 
     private void analyzeHomeStatus(Long dayRouteId) {
