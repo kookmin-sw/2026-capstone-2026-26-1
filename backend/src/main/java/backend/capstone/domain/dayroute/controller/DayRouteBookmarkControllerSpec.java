@@ -14,7 +14,7 @@ public interface DayRouteBookmarkControllerSpec {
         summary = "즐겨찾기 토글 API"
     )
     DayRouteBookmarkResponse toggleBookmark(
-        @Parameter(example = "2026-01-01") LocalDate date,
+        @Parameter(name = "date", example = "2026-01-01") LocalDate date,
         UserPrincipal principal
     );
 }

@@ -38,7 +38,7 @@ public class DayRouteController implements DayRouteControllerSpec {
     @Override
     @PostMapping("/{date}/gps-points:batch")
     public GpsPointBatchUploadResponse uploadGpsPoints(
-        @PathVariable LocalDate date,
+        @PathVariable("date") LocalDate date,
         @Valid @RequestBody GpsPointBatchUploadRequest request,
         @AuthenticationPrincipal UserPrincipal principal
     ) {
@@ -48,8 +48,8 @@ public class DayRouteController implements DayRouteControllerSpec {
     @Override
     @GetMapping
     public DayRouteMonthlyResponse getDayRoutesByMonth(
-        @RequestParam @Min(2000) @Max(3000) int year,
-        @RequestParam @Min(1) @Max(12) int month,
+        @RequestParam("year") @Min(2000) @Max(3000) int year,
+        @RequestParam("month") @Min(1) @Max(12) int month,
         @AuthenticationPrincipal UserPrincipal principal
     ) {
         return dayRouteFacade.getDayRoutesByMonth(year, month, principal.userId());
@@ -58,7 +58,7 @@ public class DayRouteController implements DayRouteControllerSpec {
     @Override
     @GetMapping("/{date}")
     public DayRouteDetailResponse getDayRouteDetail(
-        @PathVariable LocalDate date,
+        @PathVariable("date") LocalDate date,
         @AuthenticationPrincipal UserPrincipal principal
     ) {
         return dayRouteFacade.getDayRouteDetail(date, principal.userId());
@@ -67,7 +67,7 @@ public class DayRouteController implements DayRouteControllerSpec {
     @Override
     @GetMapping("/{date}/summary")
     public DayRouteSummaryResponse getDayRouteSummary(
-        @PathVariable LocalDate date,
+        @PathVariable("date") LocalDate date,
         @AuthenticationPrincipal UserPrincipal principal
     ) {
         return dayRouteFacade.getDayRouteSummary(date, principal.userId());
@@ -76,7 +76,7 @@ public class DayRouteController implements DayRouteControllerSpec {
     @Override
     @PatchMapping("/{date}/memo")
     public DayRouteMemoResponse replaceMemo(
-        @PathVariable LocalDate date,
+        @PathVariable("date") LocalDate date,
         @AuthenticationPrincipal UserPrincipal principal,
         @RequestBody DayRouteMemoRequest request
     ) {
@@ -86,7 +86,7 @@ public class DayRouteController implements DayRouteControllerSpec {
     @Override
     @PatchMapping("/{date}/title")
     public DayRouteTitleResponse replaceTitle(
-        @PathVariable LocalDate date,
+        @PathVariable("date") LocalDate date,
         @AuthenticationPrincipal UserPrincipal principal,
         @RequestBody DayRouteTitleRequest request
     ) {

@@ -35,7 +35,7 @@ public interface PlaceControllerSpec {
             """
     )
     PlaceListResponse getPlaces(
-        @Parameter(example = "2026-01-01") LocalDate date,
+        @Parameter(name = "date", example = "2026-01-01") LocalDate date,
         UserPrincipal principal
     );
 
@@ -49,7 +49,7 @@ public interface PlaceControllerSpec {
           """
     )
     PlaceAddResponse addPlaceToDayRoute(
-        @Parameter(example = "2026-01-01") LocalDate date,
+        @Parameter(name = "date", example = "2026-01-01") LocalDate date,
         UserPrincipal principal,
         PlaceAddRequest request
     );
@@ -65,8 +65,8 @@ public interface PlaceControllerSpec {
             """
     )
     PlaceUpdateResponse updatePlace(
-        @Parameter(example = "2026-01-01") LocalDate date,
-        @Parameter(example = "1") Long placeId,
+        @Parameter(name = "date", example = "2026-01-01") LocalDate date,
+        @Parameter(name = "placeId", example = "1") Long placeId,
         UserPrincipal principal,
         PlaceUpdateRequest request
     );
@@ -75,8 +75,8 @@ public interface PlaceControllerSpec {
         summary = "방문 장소 삭제 API"
     )
     void deletePlace(
-        @Parameter(example = "2026-01-01") LocalDate date,
-        @Parameter(example = "1") Long placeId,
+        @Parameter(name = "date", example = "2026-01-01") LocalDate date,
+        @Parameter(name = "placeId", example = "1") Long placeId,
         UserPrincipal principal
     );
 
@@ -87,7 +87,7 @@ public interface PlaceControllerSpec {
             """
     )
     void reorderPlace(
-        @Parameter(example = "2026-01-01") LocalDate date,
+        @Parameter(name = "date", example = "2026-01-01") LocalDate date,
         UserPrincipal principal,
         @Valid @RequestBody(
             content = @Content(

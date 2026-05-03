@@ -33,7 +33,7 @@ public class PlaceController implements PlaceControllerSpec {
     @Override
     @GetMapping("/api/day-routes/{date}/places")
     public PlaceListResponse getPlaces(
-        @PathVariable LocalDate date,
+        @PathVariable("date") LocalDate date,
         @AuthenticationPrincipal UserPrincipal principal
     ) {
         return placeFacade.getPlaces(date, principal.userId());
@@ -43,7 +43,7 @@ public class PlaceController implements PlaceControllerSpec {
     @PostMapping("/api/day-routes/{date}/places")
     @ResponseStatus(HttpStatus.CREATED)
     public PlaceAddResponse addPlaceToDayRoute(
-        @PathVariable LocalDate date,
+        @PathVariable("date") LocalDate date,
         @AuthenticationPrincipal UserPrincipal principal,
         @RequestBody PlaceAddRequest request
     ) {
@@ -53,8 +53,8 @@ public class PlaceController implements PlaceControllerSpec {
     @Override
     @PutMapping("/api/day-routes/{date}/places/{placeId}")
     public PlaceUpdateResponse updatePlace(
-        @PathVariable LocalDate date,
-        @PathVariable Long placeId,
+        @PathVariable("date") LocalDate date,
+        @PathVariable("placeId") Long placeId,
         @AuthenticationPrincipal UserPrincipal principal,
         @RequestBody PlaceUpdateRequest request
     ) {
@@ -65,8 +65,8 @@ public class PlaceController implements PlaceControllerSpec {
     @DeleteMapping("/api/day-routes/{date}/places/{placeId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deletePlace(
-        @PathVariable LocalDate date,
-        @PathVariable Long placeId,
+        @PathVariable("date") LocalDate date,
+        @PathVariable("placeId") Long placeId,
         @AuthenticationPrincipal UserPrincipal principal
     ) {
         placeFacade.deletePlace(date, principal.userId(), placeId);
@@ -76,7 +76,7 @@ public class PlaceController implements PlaceControllerSpec {
     @PutMapping("/api/day-routes/{date}/places:reorder")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void reorderPlace(
-        @PathVariable LocalDate date,
+        @PathVariable("date") LocalDate date,
         @AuthenticationPrincipal UserPrincipal principal,
         @Valid @RequestBody PlaceReorderRequest request
     ) {

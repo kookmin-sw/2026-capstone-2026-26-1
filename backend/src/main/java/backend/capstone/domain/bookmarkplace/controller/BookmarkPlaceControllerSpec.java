@@ -45,7 +45,7 @@ public interface BookmarkPlaceControllerSpec {
     )
     BookmarkPlaceUpdateResponse updateBookmarkPlace(
         UserPrincipal principal,
-        @Parameter(example = "1") Long bookmarkPlaceId,
+        @Parameter(name = "bookmarkPlaceId", example = "1") Long bookmarkPlaceId,
         BookmarkPlaceUpdateRequest request
     );
 
@@ -57,6 +57,6 @@ public interface BookmarkPlaceControllerSpec {
     )
     void deleteBookmarkPlace(
         UserPrincipal principal,
-        @Parameter(example = "1") Long bookmarkPlaceId
+        @Parameter(name = "bookmarkPlaceId", example = "1") Long bookmarkPlaceId
     );
 }

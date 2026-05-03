@@ -32,7 +32,7 @@ public interface DayRouteControllerSpec {
             """
     )
     GpsPointBatchUploadResponse uploadGpsPoints(
-        @Parameter(example = "2026-01-01") LocalDate date,
+        @Parameter(name = "date", example = "2026-01-01") LocalDate date,
         @Valid GpsPointBatchUploadRequest request,
         UserPrincipal principal
     );
@@ -47,7 +47,7 @@ public interface DayRouteControllerSpec {
             """
     )
     DayRouteDetailResponse getDayRouteDetail(
-        @Parameter(example = "2026-01-01") LocalDate date,
+        @Parameter(name = "date", example = "2026-01-01") LocalDate date,
         UserPrincipal principal
     );
 
@@ -62,7 +62,7 @@ public interface DayRouteControllerSpec {
             """
     )
     DayRouteSummaryResponse getDayRouteSummary(
-        @Parameter(example = "2026-01-01") LocalDate date,
+        @Parameter(name = "date", example = "2026-01-01") LocalDate date,
         UserPrincipal principal
     );
 
@@ -74,7 +74,7 @@ public interface DayRouteControllerSpec {
             """
     )
     DayRouteMemoResponse replaceMemo(
-        @Parameter(example = "2026-01-01") LocalDate date,
+        @Parameter(name = "date", example = "2026-01-01") LocalDate date,
         UserPrincipal principal,
         DayRouteMemoRequest request
     );
@@ -87,7 +87,7 @@ public interface DayRouteControllerSpec {
             """
     )
     DayRouteTitleResponse replaceTitle(
-        @Parameter(example = "2026-01-01") LocalDate date,
+        @Parameter(name = "date", example = "2026-01-01") LocalDate date,
         UserPrincipal principal,
         DayRouteTitleRequest request
     );
@@ -103,8 +103,8 @@ public interface DayRouteControllerSpec {
             """
     )
     DayRouteMonthlyResponse getDayRoutesByMonth(
-        @Parameter(example = "2026") @Min(2000) @Max(3000) int year,
-        @Parameter(example = "1") @Min(1) @Max(12) int month,
+        @Parameter(name = "year", example = "2026") @Min(2000) @Max(3000) int year,
+        @Parameter(name = "month", example = "1") @Min(1) @Max(12) int month,
         @AuthenticationPrincipal UserPrincipal principal);
 
 }
