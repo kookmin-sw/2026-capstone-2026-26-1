@@ -65,6 +65,10 @@ import com.example.passedpath.feature.place.domain.usecase.ReorderPlacesUseCase
 import com.example.passedpath.feature.place.domain.usecase.SearchPlacesUseCase
 import com.example.passedpath.feature.place.domain.usecase.UpdateBookmarkPlaceUseCase
 import com.example.passedpath.feature.place.domain.usecase.UpdatePlaceUseCase
+import com.example.passedpath.feature.placebookmark.data.remote.api.PlaceBookmarkApi
+import com.example.passedpath.feature.placebookmark.data.repository.PlaceBookmarkRepositoryImpl
+import com.example.passedpath.feature.placebookmark.domain.repository.PlaceBookmarkRepository
+import com.example.passedpath.feature.placebookmark.domain.usecase.UpdatePlaceBookmarkUseCase
 import com.example.passedpath.interceptor.AccessTokenAuthenticator
 import java.time.LocalTime
 
@@ -192,6 +196,10 @@ class AppContainer(
         retrofit.create(PlaceSearchApi::class.java)
     }
 
+    private val placeBookmarkApi by lazy {
+        retrofit.create(PlaceBookmarkApi::class.java)
+    }
+
     val trackingDebugLogRepository: TrackingDebugLogRepository by lazy {
         RoomTrackingDebugLogRepository(
             trackingDebugLogDao = trackingDatabase.trackingDebugLogDao()
@@ -282,6 +290,10 @@ class AppContainer(
         PlaceGuideRepositoryImpl(appContext)
     }
 
+    val placeBookmarkRepository: PlaceBookmarkRepository by lazy {
+        PlaceBookmarkRepositoryImpl(placeBookmarkApi)
+    }
+
     val uploadGpsPointsBatchUseCase: UploadGpsPointsBatchUseCase by lazy {
         UploadGpsPointsBatchUseCase(
             dayRouteApi = dayRouteApi,
@@ -336,6 +348,10 @@ class AppContainer(
 
     val updateBookmarkPlaceUseCase: UpdateBookmarkPlaceUseCase by lazy {
         UpdateBookmarkPlaceUseCase(placeRepository = placeRepository)
+    }
+
+    val updatePlaceBookmarkUseCase: UpdatePlaceBookmarkUseCase by lazy {
+        UpdatePlaceBookmarkUseCase(placeBookmarkRepository = placeBookmarkRepository)
     }
 
     val reorderPlacesUseCase: ReorderPlacesUseCase by lazy {
