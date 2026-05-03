@@ -7,4 +7,6 @@ interface PlaceBookmarkRepository {
         bookmarkPlaceId: Long,
         placeBookmark: PlaceBookmark
     ): PlaceBookmark
+
+    suspend fun deletePlaceBookmark(bookmarkPlaceId: Long)
 }
