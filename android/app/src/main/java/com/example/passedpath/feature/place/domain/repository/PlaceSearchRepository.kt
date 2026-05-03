@@ -1,11 +1,10 @@
 package com.example.passedpath.feature.place.domain.repository
 
-import com.example.passedpath.feature.place.domain.model.PlaceSearchResult
+import com.example.passedpath.feature.place.domain.model.PlaceSearchPage
 
 interface PlaceSearchRepository {
     suspend fun search(
         query: String,
-        page: Int = 1,
-        size: Int = 10
-    ): List<PlaceSearchResult>
+        page: Int = 1
+    ): PlaceSearchPage
 }

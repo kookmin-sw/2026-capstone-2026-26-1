@@ -12,8 +12,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -25,7 +27,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEventPass
@@ -81,6 +85,7 @@ fun AddPlaceScreen(
         onQueryChanged = viewModel::onQueryChanged,
         onPlaceSelected = viewModel::onPlaceSelected,
         onAddPlaceClick = viewModel::onAddPlaceClicked,
+        onLoadNextPage = viewModel::onLoadNextPage,
         modifier = modifier
     )
 }
@@ -93,6 +98,7 @@ private fun AddPlaceScreenContent(
     onQueryChanged: (String) -> Unit,
     onPlaceSelected: (String) -> Unit,
     onAddPlaceClick: () -> Unit,
+    onLoadNextPage: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val shouldShowConfirmButton = uiState.shouldShowResults
@@ -157,6 +163,15 @@ private fun AddPlaceScreenContent(
                         )
                     }
 
+                    uiState.isAwaitingFirstSearch -> {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f)
+                                .clearFocusOnTap(clearFocus)
+                        )
+                    }
+
                     uiState.isLoading -> {
                         Box(
                             modifier = Modifier
@@ -173,6 +188,7 @@ private fun AddPlaceScreenContent(
                         SearchResultList(
                             uiState = uiState,
                             onPlaceSelected = onPlaceSelected,
+                            onLoadNextPage = onLoadNextPage,
                             onClearFocus = clearFocus,
                             modifier = Modifier
                                 .weight(1f)
@@ -213,9 +229,33 @@ private fun AddPlaceScreenContent(
 private fun SearchResultList(
     uiState: AddPlaceUiState,
     onPlaceSelected: (String) -> Unit,
+    onLoadNextPage: () -> Unit,
     onClearFocus: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val listState = rememberLazyListState()
+    val shouldLoadNextPage by remember(
+        uiState.places,
+        uiState.isLoading,
+        uiState.isLoadingNextPage,
+        uiState.isEnd
+    ) {
+        derivedStateOf {
+            val lastVisibleIndex = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
+            uiState.places.isNotEmpty() &&
+                !uiState.isLoading &&
+                !uiState.isLoadingNextPage &&
+                !uiState.isEnd &&
+                lastVisibleIndex >= uiState.places.lastIndex - 2
+        }
+    }
+
+    LaunchedEffect(shouldLoadNextPage) {
+        if (shouldLoadNextPage) {
+            onLoadNextPage()
+        }
+    }
+
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -237,6 +277,7 @@ private fun SearchResultList(
 
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
+            state = listState,
             verticalArrangement = Arrangement.spacedBy(10.dp),
             contentPadding = PaddingValues(bottom = 96.dp)
         ) {
@@ -254,6 +295,22 @@ private fun SearchResultList(
                         onPlaceSelected(place.stableKey)
                     }
                 )
+            }
+
+            if (uiState.isLoadingNextPage) {
+                item(key = "next_page_loading") {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            strokeWidth = 2.5.dp
+                        )
+                    }
+                }
             }
         }
     }
@@ -286,7 +343,8 @@ private fun AddPlaceScreenInitialPreview() {
             onBackClick = {},
             onQueryChanged = {},
             onPlaceSelected = {},
-            onAddPlaceClick = {}
+            onAddPlaceClick = {},
+            onLoadNextPage = {}
         )
     }
 }
@@ -304,7 +362,8 @@ private fun AddPlaceScreenResultsPreview() {
             onBackClick = {},
             onQueryChanged = {},
             onPlaceSelected = {},
-            onAddPlaceClick = {}
+            onAddPlaceClick = {},
+            onLoadNextPage = {}
         )
     }
 }
@@ -323,7 +382,8 @@ private fun AddPlaceScreenConfirmEnabledPreview() {
             onBackClick = {},
             onQueryChanged = {},
             onPlaceSelected = {},
-            onAddPlaceClick = {}
+            onAddPlaceClick = {},
+            onLoadNextPage = {}
         )
     }
 }

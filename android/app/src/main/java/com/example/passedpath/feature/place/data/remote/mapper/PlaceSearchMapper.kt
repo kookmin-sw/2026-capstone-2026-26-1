@@ -2,10 +2,22 @@ package com.example.passedpath.feature.place.data.remote.mapper
 
 import com.example.passedpath.feature.place.data.remote.dto.PlaceSearchItemDto
 import com.example.passedpath.feature.place.data.remote.dto.PlaceSearchResponseDto
+import com.example.passedpath.feature.place.domain.model.PlaceSearchPage
 import com.example.passedpath.feature.place.domain.model.PlaceSearchResult
 
 fun PlaceSearchResponseDto.toPlaceSearchResults(): List<PlaceSearchResult> {
     return places.mapNotNull(PlaceSearchItemDto::toPlaceSearchResult)
+}
+
+fun PlaceSearchResponseDto.toPlaceSearchPage(): PlaceSearchPage {
+    val mappedPlaces = toPlaceSearchResults()
+    return PlaceSearchPage(
+        page = page ?: 1,
+        size = size ?: mappedPlaces.size,
+        isEnd = isEnd ?: true,
+        pageableCount = pageableCount ?: mappedPlaces.size,
+        places = mappedPlaces
+    )
 }
 
 private fun PlaceSearchItemDto.toPlaceSearchResult(): PlaceSearchResult? {

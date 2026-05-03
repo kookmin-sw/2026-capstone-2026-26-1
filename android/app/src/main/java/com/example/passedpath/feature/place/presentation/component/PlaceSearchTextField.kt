@@ -37,6 +37,7 @@ import com.example.passedpath.R
 import com.example.passedpath.ui.theme.Gray100
 import com.example.passedpath.ui.theme.Gray300
 import com.example.passedpath.ui.theme.Gray400
+import com.example.passedpath.ui.theme.Gray50
 import com.example.passedpath.ui.theme.Gray900
 import com.example.passedpath.ui.theme.Green500
 import com.example.passedpath.ui.theme.PassedPathTheme
@@ -52,7 +53,7 @@ fun PlaceSearchTextField(
 
     val shape = RoundedCornerShape(16.dp)
     val borderColor = if (isFocused) Green500 else Color.Transparent
-    val backgroundColor = if (isFocused) Color.White else Gray100
+    val backgroundColor = if (isFocused) Gray50 else Gray100
     val iconTint = if (isFocused || value.isNotBlank()) Green500 else Gray300
     val textColor = Gray900
     val placeholderColor = Gray400
