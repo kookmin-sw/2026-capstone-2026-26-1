@@ -45,9 +45,7 @@ public class StayAnalysisService {
         List<GpsPoint> newPoints = gpsPointService.getNewPoints(dayRoute,
             dayRoute.getLastAnalyzedAt());
 
-        // 새 점이 없을 때: 마지막 ongoing stay tail 처리
         if (newPoints.isEmpty()) {
-            handleLastTailIfDayEnded(dayRoute, stay);
             return;
         }
 
@@ -97,7 +95,13 @@ public class StayAnalysisService {
         placeService.saveAutoPlace(dayRoute, stay, searchResult);
     }
 
-    private void handleLastTailIfDayEnded(DayRoute dayRoute, OngoingStay stay) {
+    @Transactional
+    public void analyzeStayTail(Long dayRouteId) {
+        DayRoute dayRoute = dayRouteService.getDayRouteById(dayRouteId);
+
+        OngoingStay stay = ongoingStayRepository.findByDayRoute(dayRoute)
+            .orElse(null);
+
         if (stay == null) {
             return;
         }
