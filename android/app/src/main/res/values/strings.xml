@@ -110,7 +110,6 @@
     <string name="place_edit_name_helper">자동 입력된 장소명은 언제든 수정할 수 있어요</string>
     <string name="place_edit_address_label">주소</string>
     <string name="place_edit_submit">수정하기</string>
-    <string name="place_edit_keyboard_title">장소명 수정</string>
     <string name="daynote_sheet_title">지나온 길 메모</string>
     <string name="daynote_sheet_placeholder_body">이 날짜에 남긴 메모와 요약이 이곳에 표시됩니다. 다음 단계에서 입력과 저장 정책을 붙입니다.</string>
     <string name="permission_banner_denied_title">위치 권한이 없어 현재 위치와 기록을 사용할 수 없어요</string>

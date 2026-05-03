@@ -3,11 +3,7 @@ package com.example.passedpath.feature.main.presentation.screen
 import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -19,7 +15,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.example.passedpath.R
 import com.example.passedpath.feature.daynote.presentation.state.DayNoteUiState
@@ -45,7 +40,6 @@ import com.example.passedpath.feature.route.presentation.state.PlaceMarkerUiStat
 import com.example.passedpath.feature.route.presentation.state.RouteUiAction
 import com.example.passedpath.ui.PermissionSettingDialog
 import com.example.passedpath.ui.component.dialog.BaseConfirmDialog
-import com.example.passedpath.ui.component.input.BaseKeyboardInputBar
 import com.example.passedpath.ui.component.modal.PassedPathBottomModal
 import com.example.passedpath.ui.component.toast.ToastOverlayHost
 import com.example.passedpath.ui.component.toast.ToastOverlayItem
@@ -487,25 +481,6 @@ private fun PlaceEditNameOverlay(
             } else {
                 onDismiss()
             }
-        },
-        floatingBottomContent = if (isNameFocused) {
-            {
-                BaseKeyboardInputBar(
-                    title = stringResource(R.string.place_edit_keyboard_title),
-                    value = placeName,
-                    onValueChange = onPlaceNameChange,
-                    onDismiss = onClearInputFocus,
-                    onConfirmInput = onClearInputFocus,
-                    enabled = canSubmit,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .imePadding()
-                        .navigationBarsPadding()
-                        .padding(bottom = 2.dp)
-                )
-            }
-        } else {
-            null
         }
     ) {
         PlaceEditNameBottomSheet(
