@@ -12,6 +12,7 @@ import com.example.passedpath.feature.place.domain.repository.PlaceRepository
 import com.example.passedpath.feature.place.domain.usecase.DeletePlaceUseCase
 import com.example.passedpath.feature.place.domain.usecase.GetVisitedPlacesUseCase
 import com.example.passedpath.feature.place.domain.usecase.ReorderPlacesUseCase
+import com.example.passedpath.feature.place.domain.usecase.UpdatePlaceUseCase
 import com.example.passedpath.testutil.MainDispatcherRule
 import com.example.passedpath.ui.state.ApiFailureMessage
 import kotlinx.coroutines.CompletableDeferred
@@ -609,6 +610,63 @@ class PlaceViewModelTest {
         assertEquals(listOf(1L), repository.deleteRequests)
     }
 
+    @Test
+    fun `updatePlaceName sends current place data and refreshes after success`() = runTest {
+        val repository = FakePlaceRepository(
+            visitedPlaceListByDate = mutableMapOf(
+                "2026-04-03" to VisitedPlaceList(
+                    placeCount = 1,
+                    places = listOf(visitedPlace(placeId = 1L, placeName = "A", orderIndex = 1))
+                )
+            ),
+            onUpdate = { dateKey, placeId, place ->
+                val currentPlaces = visitedPlaceListByDate.getValue(dateKey).places
+                visitedPlaceListByDate[dateKey] = VisitedPlaceList(
+                    placeCount = currentPlaces.size,
+                    places = currentPlaces.map {
+                        if (it.placeId == placeId) it.copy(placeName = place.placeName) else it
+                    }
+                )
+            }
+        )
+        val viewModel = createViewModel(repository = repository, initialDateKey = "2026-04-03")
+
+        viewModel.fetchVisitedPlaces()
+        advanceUntilIdle()
+
+        viewModel.updatePlaceName(1L, "New Place")
+        advanceUntilIdle()
+
+        assertEquals(listOf("2026-04-03"), repository.updateRequestDates)
+        assertEquals(listOf(1L), repository.updateRequests)
+        assertEquals("New Place", repository.updatePlaces.single().placeName)
+        assertEquals("Ttukseom-ro", repository.updatePlaces.single().roadAddress)
+        assertEquals("New Place", viewModel.uiState.value.placeList.places.single().placeName)
+        assertEquals("장소를 수정했습니다.", viewModel.uiState.value.successMessage)
+    }
+
+    @Test
+    fun `updatePlaceName rejects blank name before repository call`() = runTest {
+        val repository = FakePlaceRepository(
+            visitedPlaceListByDate = mutableMapOf(
+                "2026-04-03" to VisitedPlaceList(
+                    placeCount = 1,
+                    places = listOf(visitedPlace(placeId = 1L, placeName = "A", orderIndex = 1))
+                )
+            )
+        )
+        val viewModel = createViewModel(repository = repository, initialDateKey = "2026-04-03")
+
+        viewModel.fetchVisitedPlaces()
+        advanceUntilIdle()
+
+        viewModel.updatePlaceName(1L, "   ")
+        advanceUntilIdle()
+
+        assertTrue(repository.updateRequests.isEmpty())
+        assertEquals("장소명을 입력해 주세요.", viewModel.uiState.value.errorMessage)
+    }
+
     private fun createViewModel(
         repository: FakePlaceRepository,
         initialDateKey: String,
@@ -618,6 +676,7 @@ class PlaceViewModelTest {
             reorderPlacesUseCase = ReorderPlacesUseCase(repository),
             getVisitedPlacesUseCase = GetVisitedPlacesUseCase(repository),
             deletePlaceUseCase = DeletePlaceUseCase(repository),
+            updatePlaceUseCase = UpdatePlaceUseCase(repository),
             placeGuideRepository = guideRepository,
             initialDateKey = initialDateKey
         )
@@ -646,13 +705,18 @@ class PlaceViewModelTest {
         var throwOnReorder: Throwable? = null,
         val onReorder: suspend () -> Unit = {},
         var throwOnDelete: Throwable? = null,
-        val onDelete: suspend FakePlaceRepository.(String, Long) -> Unit = { _, _ -> }
+        val onDelete: suspend FakePlaceRepository.(String, Long) -> Unit = { _, _ -> },
+        var throwOnUpdate: Throwable? = null,
+        val onUpdate: suspend FakePlaceRepository.(String, Long, PlaceRegistration) -> Unit = { _, _, _ -> }
     ) : PlaceRepository {
         val requestedPlaceListDates = mutableListOf<String>()
         val reorderRequestDates = mutableListOf<String>()
         val reorderRequests = mutableListOf<List<Long>>()
         val deleteRequestDates = mutableListOf<String>()
         val deleteRequests = mutableListOf<Long>()
+        val updateRequestDates = mutableListOf<String>()
+        val updateRequests = mutableListOf<Long>()
+        val updatePlaces = mutableListOf<PlaceRegistration>()
 
         override suspend fun getPlaces(dateKey: String): VisitedPlaceList {
             requestedPlaceListDates += dateKey
@@ -679,6 +743,11 @@ class PlaceViewModelTest {
             placeId: Long,
             place: PlaceRegistration
         ): UpdatedPlace {
+            updateRequestDates += dateKey
+            updateRequests += placeId
+            updatePlaces += place
+            onUpdate(dateKey, placeId, place)
+            throwOnUpdate?.let { throw it }
             return UpdatedPlace(
                 placeName = place.placeName,
                 roadAddress = place.roadAddress,

@@ -10,6 +10,7 @@ import com.example.passedpath.feature.place.domain.repository.PlaceGuideReposito
 import com.example.passedpath.feature.place.domain.usecase.DeletePlaceUseCase
 import com.example.passedpath.feature.place.domain.usecase.GetVisitedPlacesUseCase
 import com.example.passedpath.feature.place.domain.usecase.ReorderPlacesUseCase
+import com.example.passedpath.feature.place.domain.usecase.UpdatePlaceUseCase
 import com.example.passedpath.feature.place.presentation.state.PlaceListUiState
 import com.example.passedpath.feature.place.presentation.state.PlaceUiState
 import com.example.passedpath.ui.state.ApiFailureMessage
@@ -29,6 +30,7 @@ class PlaceViewModel(
     private val reorderPlacesUseCase: ReorderPlacesUseCase,
     private val getVisitedPlacesUseCase: GetVisitedPlacesUseCase,
     private val deletePlaceUseCase: DeletePlaceUseCase,
+    private val updatePlaceUseCase: UpdatePlaceUseCase,
     private val placeGuideRepository: PlaceGuideRepository = InMemoryPlaceGuideRepository(),
     initialDateKey: String = todayDateKey()
 ) : ViewModel() {
@@ -243,6 +245,99 @@ class PlaceViewModel(
         }
     }
 
+    fun updatePlaceName(placeId: Long, placeName: String) {
+        val currentState = _uiState.value
+        if (currentState.isSubmitting) return
+
+        if (!isValidDateKey(currentState.dateKey)) {
+            _uiState.update {
+                it.copy(
+                    errorMessage = "날짜는 yyyy-MM-dd 형식이어야 합니다.",
+                    successMessage = null,
+                    feedbackEventId = it.feedbackEventId + 1
+                )
+            }
+            return
+        }
+
+        val currentPlace = currentState.placeList.places.firstOrNull { it.placeId == placeId }
+        if (currentPlace == null) {
+            _uiState.update {
+                it.copy(
+                    errorMessage = "수정할 장소를 찾을 수 없습니다.",
+                    successMessage = null,
+                    feedbackEventId = it.feedbackEventId + 1
+                )
+            }
+            return
+        }
+
+        val trimmedPlaceName = placeName.trim()
+        if (trimmedPlaceName.isBlank()) {
+            _uiState.update {
+                it.copy(
+                    errorMessage = "장소명을 입력해 주세요.",
+                    successMessage = null,
+                    feedbackEventId = it.feedbackEventId + 1
+                )
+            }
+            return
+        }
+
+        if (trimmedPlaceName == currentPlace.placeName.trim()) return
+
+        _uiState.update {
+            it.copy(
+                isSubmitting = true,
+                errorMessage = null,
+                successMessage = null
+            )
+        }
+
+        viewModelScope.launch {
+            try {
+                updatePlaceUseCase(
+                    dateKey = currentState.dateKey,
+                    placeId = placeId,
+                    placeName = trimmedPlaceName,
+                    roadAddress = currentPlace.roadAddress,
+                    latitude = currentPlace.latitude,
+                    longitude = currentPlace.longitude
+                )
+                _uiState.update {
+                    it.copy(
+                        isSubmitting = false,
+                        errorMessage = null,
+                        successMessage = "장소를 수정했습니다.",
+                        feedbackEventId = it.feedbackEventId + 1,
+                        placeList = it.placeList.updatedPlaceName(
+                            placeId = placeId,
+                            placeName = trimmedPlaceName
+                        )
+                    )
+                }
+                refreshVisitedPlaces(
+                    dateKey = currentState.dateKey,
+                    showLoading = false,
+                    surfaceError = false
+                )
+            } catch (throwable: Throwable) {
+                AppDebugLogger.debug(
+                    tag = logTag,
+                    message = "updatePlaceName failed dateKey=${currentState.dateKey} placeId=$placeId error=${throwable.toLogSummary()}"
+                )
+                _uiState.update {
+                    it.copy(
+                        isSubmitting = false,
+                        errorMessage = ApiFailureMessage.fromThrowable(throwable),
+                        successMessage = null,
+                        feedbackEventId = it.feedbackEventId + 1
+                    )
+                }
+            }
+        }
+    }
+
     fun dismissReorderGuideBanner() {
         if (isReorderGuideBannerDismissed) return
 
@@ -372,6 +467,25 @@ class PlaceViewModel(
         ).withReorderGuideBannerVisibility(isReorderGuideBannerDismissed)
     }
 
+    private fun PlaceListUiState.updatedPlaceName(
+        placeId: Long,
+        placeName: String
+    ): PlaceListUiState {
+        return copy(
+            places = places.map { place ->
+                if (place.placeId == placeId) {
+                    place.copy(placeName = placeName)
+                } else {
+                    place
+                }
+            },
+            hasLoaded = true,
+            isLoading = false,
+            errorMessage = null,
+            isStale = false
+        ).withReorderGuideBannerVisibility(isReorderGuideBannerDismissed)
+    }
+
     // 날짜 형식이 맞는지 확인한다.
     private fun isValidDateKey(value: String): Boolean {
         return try {
@@ -416,6 +530,7 @@ class PlaceViewModelFactory(
                 reorderPlacesUseCase = appContainer.reorderPlacesUseCase,
                 getVisitedPlacesUseCase = appContainer.getVisitedPlacesUseCase,
                 deletePlaceUseCase = appContainer.deletePlaceUseCase,
+                updatePlaceUseCase = appContainer.updatePlaceUseCase,
                 placeGuideRepository = appContainer.placeGuideRepository,
                 initialDateKey = initialDateKey
             ) as T

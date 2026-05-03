@@ -152,7 +152,7 @@ fun MainRoute(
         onNavigateToAddPlace = onNavigateToAddPlace,
         onReorderPlaces = placeViewModel::reorderPlaces,
         onCloseReorderGuideBanner = placeViewModel::dismissReorderGuideBanner,
-        onEditPlaceClick = {},
+        onUpdatePlaceName = placeViewModel::updatePlaceName,
         onConfirmDeletePlace = placeViewModel::deletePlace,
         onTrackingPermissionDialogConfirm = {
             viewModel.dismissTrackingPermissionDialog()
