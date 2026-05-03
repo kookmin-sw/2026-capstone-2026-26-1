@@ -40,7 +40,7 @@ class MainScreenInteractionPolicyTest {
     }
 
     @Test
-    fun `marker click from non place tab opens place tab and requests refresh`() {
+    fun `marker click from non place tab opens place tab to expanded and requests refresh`() {
         val initialState = MainScreenLocalUiState(
             selectedBottomSheetTab = MainBottomSheetTab.DAYNOTE
         )
@@ -51,13 +51,13 @@ class MainScreenInteractionPolicyTest {
         )
 
         assertEquals(MainBottomSheetTab.PLACE, result.state.selectedBottomSheetTab)
-        assertEquals(MainBottomSheetValue.MIDDLE, result.state.requestedSheetValue)
+        assertEquals(MainBottomSheetValue.EXPANDED, result.state.requestedSheetValue)
         assertEquals(7L, result.state.selectedPlaceId)
         assertTrue(result.shouldRefreshPlaces)
     }
 
     @Test
-    fun `marker click from place tab keeps refresh off`() {
+    fun `marker click from place tab opens to expanded and keeps refresh off`() {
         val initialState = MainScreenLocalUiState(
             selectedBottomSheetTab = MainBottomSheetTab.PLACE
         )
@@ -67,6 +67,7 @@ class MainScreenInteractionPolicyTest {
             placeId = 3L
         )
 
+        assertEquals(MainBottomSheetValue.EXPANDED, result.state.requestedSheetValue)
         assertFalse(result.shouldRefreshPlaces)
     }
 

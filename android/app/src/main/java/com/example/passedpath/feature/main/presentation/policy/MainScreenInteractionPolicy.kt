@@ -56,7 +56,7 @@ internal fun reduceForPlaceMarkerClick(
         state = state.copy(
             selectedPlaceId = placeId,
             selectedBottomSheetTab = MainBottomSheetTab.PLACE,
-            requestedSheetValue = MainBottomSheetValue.MIDDLE
+            requestedSheetValue = MainBottomSheetValue.EXPANDED
         ),
         shouldRefreshPlaces = state.selectedBottomSheetTab != MainBottomSheetTab.PLACE
     )
