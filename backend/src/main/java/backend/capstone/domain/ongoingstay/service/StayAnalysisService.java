@@ -1,6 +1,5 @@
 package backend.capstone.domain.ongoingstay.service;
 
-import backend.capstone.domain.dayroute.entity.AnalysisStatus;
 import backend.capstone.domain.dayroute.entity.DayRoute;
 import backend.capstone.domain.dayroute.service.DayRouteService;
 import backend.capstone.domain.gpspoint.entity.GpsPoint;
@@ -40,12 +39,6 @@ public class StayAnalysisService {
     @Transactional
     public void analyzeStay(Long dayRouteId) {
         DayRoute dayRoute = dayRouteService.getDayRouteById(dayRouteId);
-        // 이미 분석이 진행 중인 경우, 중복 분석 방지
-        if (dayRoute.getAnalysisStatus() == AnalysisStatus.IN_PROGRESS) {
-            return;
-        }
-
-        dayRoute.markInProgressAnalysis();
 
         //이 dayRoute에 현재 진행 중인 stay가 있는지 조회
         OngoingStay stay = ongoingStayRepository.findByDayRoute(dayRoute)
@@ -57,7 +50,6 @@ public class StayAnalysisService {
         // 새 점이 없을 때: 마지막 ongoing stay tail 처리
         if (newPoints.isEmpty()) {
             handleLastTailIfDayEnded(dayRoute, stay);
-            dayRoute.markIdleAnalysis();
             return;
         }
 

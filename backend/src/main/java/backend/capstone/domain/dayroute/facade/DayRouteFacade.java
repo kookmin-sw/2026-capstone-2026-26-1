@@ -61,7 +61,6 @@ public class DayRouteFacade {
         }
 
         dayRouteService.updateDistance(dayRoute, request.distance());
-        dayRoute.markAnalysisNeeded();
 
         //분석 이벤트 발행
         if (!request.gpsPoints().isEmpty()) {

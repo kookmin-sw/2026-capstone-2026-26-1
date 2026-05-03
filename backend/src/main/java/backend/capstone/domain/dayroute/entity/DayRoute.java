@@ -73,12 +73,7 @@ public class DayRoute {
 
     private boolean hasDetails;
 
-    private boolean analysisNeeded;
-
     private Instant lastAnalyzedAt;
-
-    @Enumerated(EnumType.STRING)
-    private AnalysisStatus analysisStatus;
 
     @Enumerated(EnumType.STRING)
     private DayRouteHomeStatus dayRouteHomeStatus;
@@ -102,7 +97,6 @@ public class DayRoute {
         this.user = user;
         this.date = date;
         gpsPoints = new ArrayList<>();
-        analysisStatus = AnalysisStatus.IDLE;
         dayRouteHomeStatus = DayRouteHomeStatus.UNKNOWN;
     }
 
@@ -141,22 +135,8 @@ public class DayRoute {
         this.totalDistance = distance;
     }
 
-    public void markAnalysisNeeded() {
-        this.analysisNeeded = true;
-    }
-
-    public void markInProgressAnalysis() {
-        this.analysisStatus = AnalysisStatus.IN_PROGRESS;
-    }
-
-    public void markIdleAnalysis() {
-        this.analysisNeeded = false;
-        this.analysisStatus = AnalysisStatus.IDLE;
-    }
-
     public void completeAnalysis(Instant recordedAt) {
         this.lastAnalyzedAt = recordedAt;
-        markIdleAnalysis();
     }
 
     public void markAtHome() {
