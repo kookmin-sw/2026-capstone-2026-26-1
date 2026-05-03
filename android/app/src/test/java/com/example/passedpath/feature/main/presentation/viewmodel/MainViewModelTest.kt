@@ -556,6 +556,49 @@ class MainViewModelTest {
     }
 
     @Test
+    fun `consumeBookmarkFeedback clears current bookmark feedback only when event id matches`() = runTest {
+        val bookmarkRepository = FakeDayRouteBookmarkRepository(
+            throwOnToggle = IllegalStateException("boom")
+        )
+        val repository = FakeDayRouteRepository(
+            resultByDate = mutableMapOf(
+                "2026-03-29" to RemoteDayRouteResult.Success(
+                    routeDetail = DayRouteDetail(
+                        dateKey = "2026-03-29",
+                        totalDistanceKm = 1.2,
+                        isBookmarked = false
+                    )
+                )
+            )
+        )
+        val viewModel = createViewModel(
+            repository = repository,
+            initialDateKey = "2026-03-29",
+            todayDateKey = "2026-03-31",
+            bookmarkRepository = bookmarkRepository
+        )
+        advanceUntilIdle()
+
+        viewModel.toggleSelectedRouteBookmark()
+        advanceUntilIdle()
+
+        assertEquals(1L, viewModel.uiState.value.bookmarkToggleUiState.feedbackEventId)
+        assertEquals(
+            ApiFailureMessage.NETWORK_REQUEST_FAILED,
+            viewModel.uiState.value.bookmarkToggleUiState.feedbackMessage
+        )
+
+        viewModel.consumeBookmarkFeedback(0L)
+        assertEquals(
+            ApiFailureMessage.NETWORK_REQUEST_FAILED,
+            viewModel.uiState.value.bookmarkToggleUiState.feedbackMessage
+        )
+
+        viewModel.consumeBookmarkFeedback(1L)
+        assertNull(viewModel.uiState.value.bookmarkToggleUiState.feedbackMessage)
+    }
+
+    @Test
     fun `toggleSelectedRouteBookmark ignores duplicate clicks while request is in flight`() = runTest {
         val toggleGate = CompletableDeferred<Unit>()
         val bookmarkRepository = FakeDayRouteBookmarkRepository(

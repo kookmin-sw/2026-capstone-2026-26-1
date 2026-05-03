@@ -1,5 +1,6 @@
 ﻿package com.example.passedpath.feature.place.presentation.screen
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
@@ -116,6 +117,8 @@ fun EditPlaceSearchScreen(
     )
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    BackHandler(onBack = onBackClick)
 
     AddPlaceScreenContent(
         uiState = uiState,

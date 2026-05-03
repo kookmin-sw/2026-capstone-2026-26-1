@@ -69,10 +69,14 @@ internal fun PlaceListResponseDto.toVisitedPlaceList(): VisitedPlaceList {
 
 internal fun PlaceUpdateResponseDto.toUpdatedPlace(): UpdatedPlace {
     return UpdatedPlace(
-        placeName = placeName,
-        roadAddress = roadAddress,
-        latitude = latitude,
-        longitude = longitude
+        placeName = requireNotNull(placeName) { "placeName is missing in place update response" },
+        roadAddress = requireNotNull(roadAddress) { "roadAddress is missing in place update response" },
+        latitude = requireNotNull(latitude) { "latitude is missing in place update response" },
+        longitude = requireNotNull(longitude) { "longitude is missing in place update response" },
+        source = source?.toPlaceSourceTypeOrNull(),
+        bookmarkType = type?.toBookmarkPlaceTypeOrNull(),
+        startTime = startTime,
+        endTime = endTime
     )
 }
 

@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.passedpath.app.AppContainer
 import com.example.passedpath.debug.AppDebugLogger
+import com.example.passedpath.feature.place.domain.model.UpdatedPlace
 import com.example.passedpath.feature.place.domain.model.VisitedPlace
 import com.example.passedpath.feature.place.domain.repository.PlaceGuideRepository
 import com.example.passedpath.feature.place.domain.usecase.DeletePlaceUseCase
@@ -72,6 +73,19 @@ class PlaceViewModel(
                 errorMessage = null,
                 successMessage = null
             )
+        }
+    }
+
+    fun consumeFeedback(eventId: Long) {
+        _uiState.update { currentState ->
+            if (currentState.feedbackEventId == eventId) {
+                currentState.copy(
+                    errorMessage = null,
+                    successMessage = null
+                )
+            } else {
+                currentState
+            }
         }
     }
 
@@ -329,7 +343,7 @@ class PlaceViewModel(
 
         viewModelScope.launch {
             try {
-                updatePlaceUseCase(
+                val updatedPlace = updatePlaceUseCase(
                     dateKey = currentState.dateKey,
                     placeId = placeId,
                     placeName = trimmedPlaceName,
@@ -345,10 +359,7 @@ class PlaceViewModel(
                         feedbackEventId = it.feedbackEventId + 1,
                         placeList = it.placeList.updatedPlace(
                             placeId = placeId,
-                            placeName = trimmedPlaceName,
-                            roadAddress = trimmedRoadAddress,
-                            latitude = latitude,
-                            longitude = longitude
+                            updatedPlace = updatedPlace
                         )
                     )
                 }
@@ -505,19 +516,20 @@ class PlaceViewModel(
 
     private fun PlaceListUiState.updatedPlace(
         placeId: Long,
-        placeName: String,
-        roadAddress: String,
-        latitude: Double,
-        longitude: Double
+        updatedPlace: UpdatedPlace
     ): PlaceListUiState {
         return copy(
             places = places.map { place ->
                 if (place.placeId == placeId) {
                     place.copy(
-                        placeName = placeName,
-                        roadAddress = roadAddress,
-                        latitude = latitude,
-                        longitude = longitude
+                        placeName = updatedPlace.placeName,
+                        source = updatedPlace.source ?: place.source,
+                        bookmarkType = updatedPlace.bookmarkType,
+                        roadAddress = updatedPlace.roadAddress,
+                        latitude = updatedPlace.latitude,
+                        longitude = updatedPlace.longitude,
+                        startTime = updatedPlace.startTime,
+                        endTime = updatedPlace.endTime
                     )
                 } else {
                     place

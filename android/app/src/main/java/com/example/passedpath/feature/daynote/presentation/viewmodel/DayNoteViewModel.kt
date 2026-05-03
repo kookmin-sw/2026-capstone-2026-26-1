@@ -82,6 +82,19 @@ class DayNoteViewModel(
         }
     }
 
+    fun consumeFeedback(eventId: Long) {
+        _uiState.update { currentState ->
+            if (currentState.feedbackEventId == eventId) {
+                currentState.copy(
+                    errorMessage = null,
+                    successMessage = null
+                )
+            } else {
+                currentState
+            }
+        }
+    }
+
     fun submitDayNote() {
         val currentState = _uiState.value
         if (!isValidDateKey(currentState.dateKey)) {

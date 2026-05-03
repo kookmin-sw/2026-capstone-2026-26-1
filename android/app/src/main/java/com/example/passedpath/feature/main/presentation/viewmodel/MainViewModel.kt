@@ -140,6 +140,20 @@ class MainViewModel(
         }
     }
 
+    fun consumeBookmarkFeedback(eventId: Long) {
+        _uiState.update { currentState ->
+            if (currentState.bookmarkToggleUiState.feedbackEventId == eventId) {
+                currentState.copy(
+                    bookmarkToggleUiState = currentState.bookmarkToggleUiState.copy(
+                        feedbackMessage = null
+                    )
+                )
+            } else {
+                currentState
+            }
+        }
+    }
+
     fun selectDate(dateKey: String) {
         AppDebugLogger.debug(
             DebugLogTag.MAIN_FLOW,

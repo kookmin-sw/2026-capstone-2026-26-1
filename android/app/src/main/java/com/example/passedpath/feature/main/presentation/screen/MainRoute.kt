@@ -27,8 +27,10 @@ fun MainRoute(
     mainTabReselectionEvent: Int = 0,
     placeCreatedEvent: PlaceCreatedEvent? = null,
     placeEditSearchResultEvent: PlaceEditSearchResultEvent? = null,
+    placeEditSearchCancelledEvent: PlaceEditSearchCancelledEvent? = null,
     onPlaceCreatedEventConsumed: (Int) -> Unit = {},
     onPlaceEditSearchResultEventConsumed: (Int) -> Unit = {},
+    onPlaceEditSearchCancelledEventConsumed: (Int) -> Unit = {},
     onNavigateToAddPlace: (String) -> Unit = {},
     onNavigateToEditPlaceSearch: (String) -> Unit = {},
     viewModel: MainViewModel = viewModel(
@@ -151,6 +153,7 @@ fun MainRoute(
         onDayNoteTitleChanged = dayNoteViewModel::updateTitle,
         onDayNoteMemoChanged = dayNoteViewModel::updateMemo,
         onDayNoteSaveClick = dayNoteViewModel::submitDayNote,
+        onDayNoteFeedbackDismissed = dayNoteViewModel::consumeFeedback,
         onPlaceListRefreshRequested = placeViewModel::fetchVisitedPlaces,
         onNavigateToAddPlace = onNavigateToAddPlace,
         onNavigateToEditPlaceSearch = onNavigateToEditPlaceSearch,
@@ -158,6 +161,8 @@ fun MainRoute(
         onCloseReorderGuideBanner = placeViewModel::dismissReorderGuideBanner,
         onUpdatePlace = placeViewModel::updatePlace,
         onConfirmDeletePlace = placeViewModel::deletePlace,
+        onPlaceFeedbackDismissed = placeViewModel::consumeFeedback,
+        onBookmarkFeedbackDismissed = viewModel::consumeBookmarkFeedback,
         onTrackingPermissionDialogConfirm = {
             viewModel.dismissTrackingPermissionDialog()
             AppSettingsNavigator.openAppSettings(context)
@@ -180,6 +185,8 @@ fun MainRoute(
         onPlaceCreatedEventHandled = onPlaceCreatedEventConsumed,
         placeEditSearchResultEvent = placeEditSearchResultEvent,
         onPlaceEditSearchResultEventHandled = onPlaceEditSearchResultEventConsumed,
+        placeEditSearchCancelledEvent = placeEditSearchCancelledEvent,
+        onPlaceEditSearchCancelledEventHandled = onPlaceEditSearchCancelledEventConsumed,
         showUnsavedDayNoteDialog = dateSelectionGuardState.pendingDateSelection != null,
         onDismissUnsavedDayNoteDialog = dateSelectionGuardCoordinator::dismissPendingDateSelection,
         onConfirmUnsavedDayNoteDialog = dayNoteViewModel::submitDayNote,

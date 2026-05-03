@@ -1,6 +1,7 @@
 package com.example.passedpath.feature.place.presentation.viewmodel
 
 import com.example.passedpath.feature.place.domain.model.BookmarkPlace
+import com.example.passedpath.feature.place.domain.model.BookmarkPlaceType
 import com.example.passedpath.feature.place.domain.model.PlaceRegistration
 import com.example.passedpath.feature.place.domain.model.PlaceSourceType
 import com.example.passedpath.feature.place.domain.model.RegisteredPlace
@@ -512,6 +513,37 @@ class PlaceViewModelTest {
     }
 
     @Test
+    fun `consumeFeedback clears current place feedback only when event id matches`() = runTest {
+        val repository = FakePlaceRepository(
+            visitedPlaceListByDate = mutableMapOf(
+                "2026-04-03" to VisitedPlaceList(
+                    placeCount = 2,
+                    places = listOf(
+                        visitedPlace(placeId = 1L, placeName = "A", orderIndex = 1),
+                        visitedPlace(placeId = 2L, placeName = "B", orderIndex = 2)
+                    )
+                )
+            )
+        )
+        val viewModel = createViewModel(repository = repository, initialDateKey = "2026-04-03")
+
+        viewModel.fetchVisitedPlaces()
+        advanceUntilIdle()
+        viewModel.deletePlace(2L)
+        advanceUntilIdle()
+
+        assertEquals(1L, viewModel.uiState.value.feedbackEventId)
+        assertTrue(viewModel.uiState.value.successMessage?.isNotBlank() == true)
+
+        viewModel.consumeFeedback(0L)
+        assertTrue(viewModel.uiState.value.successMessage?.isNotBlank() == true)
+
+        viewModel.consumeFeedback(1L)
+        assertNull(viewModel.uiState.value.successMessage)
+        assertNull(viewModel.uiState.value.errorMessage)
+    }
+
+    @Test
     fun `deletePlace keeps removed list and success message when silent refresh fails after success`() = runTest {
         val repository = FakePlaceRepository(
             visitedPlaceListByDate = mutableMapOf(
@@ -665,6 +697,61 @@ class PlaceViewModelTest {
     }
 
     @Test
+    fun `updatePlace applies server update response fields before silent refresh`() = runTest {
+        val repository = FakePlaceRepository(
+            visitedPlaceListByDate = mutableMapOf(
+                "2026-04-03" to VisitedPlaceList(
+                    placeCount = 1,
+                    places = listOf(
+                        visitedPlace(
+                            placeId = 1L,
+                            placeName = "A",
+                            source = PlaceSourceType.AUTO,
+                            orderIndex = 1
+                        )
+                    )
+                )
+            ),
+            throwOnGetPlacesAfterFirstSuccess = true,
+            updateResponse = UpdatedPlace(
+                placeName = "Server Place",
+                roadAddress = "Server Road",
+                latitude = 37.6,
+                longitude = 126.9,
+                source = PlaceSourceType.MANUAL,
+                bookmarkType = BookmarkPlaceType.HOME,
+                startTime = null,
+                endTime = null
+            )
+        )
+        val viewModel = createViewModel(repository = repository, initialDateKey = "2026-04-03")
+
+        viewModel.fetchVisitedPlaces()
+        advanceUntilIdle()
+
+        viewModel.updatePlace(
+            placeId = 1L,
+            placeName = "Client Place",
+            roadAddress = "Client Road",
+            latitude = 37.5,
+            longitude = 127.5
+        )
+        advanceUntilIdle()
+
+        val updatedPlace = viewModel.uiState.value.placeList.places.single()
+        assertEquals("Client Place", repository.updatePlaces.single().placeName)
+        assertEquals("Client Road", repository.updatePlaces.single().roadAddress)
+        assertEquals("Server Place", updatedPlace.placeName)
+        assertEquals("Server Road", updatedPlace.roadAddress)
+        assertEquals(37.6, updatedPlace.latitude, 0.0)
+        assertEquals(126.9, updatedPlace.longitude, 0.0)
+        assertEquals(PlaceSourceType.MANUAL, updatedPlace.source)
+        assertEquals(BookmarkPlaceType.HOME, updatedPlace.bookmarkType)
+        assertNull(updatedPlace.startTime)
+        assertNull(updatedPlace.endTime)
+    }
+
+    @Test
     fun `updatePlace rejects blank name before repository call`() = runTest {
         val repository = FakePlaceRepository(
             visitedPlaceListByDate = mutableMapOf(
@@ -727,11 +814,13 @@ class PlaceViewModelTest {
     private class FakePlaceRepository(
         val visitedPlaceListByDate: MutableMap<String, VisitedPlaceList> = mutableMapOf(),
         var throwOnGetPlaces: Throwable? = null,
+        var throwOnGetPlacesAfterFirstSuccess: Boolean = false,
         var throwOnReorder: Throwable? = null,
         val onReorder: suspend () -> Unit = {},
         var throwOnDelete: Throwable? = null,
         val onDelete: suspend FakePlaceRepository.(String, Long) -> Unit = { _, _ -> },
         var throwOnUpdate: Throwable? = null,
+        val updateResponse: UpdatedPlace? = null,
         val onUpdate: suspend FakePlaceRepository.(String, Long, PlaceRegistration) -> Unit = { _, _, _ -> }
     ) : PlaceRepository {
         val requestedPlaceListDates = mutableListOf<String>()
@@ -742,10 +831,15 @@ class PlaceViewModelTest {
         val updateRequestDates = mutableListOf<String>()
         val updateRequests = mutableListOf<Long>()
         val updatePlaces = mutableListOf<PlaceRegistration>()
+        private var successfulGetPlacesCount = 0
 
         override suspend fun getPlaces(dateKey: String): VisitedPlaceList {
             requestedPlaceListDates += dateKey
             throwOnGetPlaces?.let { throw it }
+            if (throwOnGetPlacesAfterFirstSuccess && successfulGetPlacesCount > 0) {
+                throw IllegalStateException("refresh failed")
+            }
+            successfulGetPlacesCount++
             return visitedPlaceListByDate[dateKey] ?: VisitedPlaceList(
                 placeCount = 0,
                 places = emptyList()
@@ -773,7 +867,7 @@ class PlaceViewModelTest {
             updatePlaces += place
             onUpdate(dateKey, placeId, place)
             throwOnUpdate?.let { throw it }
-            return UpdatedPlace(
+            return updateResponse ?: UpdatedPlace(
                 placeName = place.placeName,
                 roadAddress = place.roadAddress,
                 latitude = place.latitude,

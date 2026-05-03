@@ -54,6 +54,10 @@ data class PlaceEditSearchResultEvent(
     val place: PlaceSearchResult
 )
 
+data class PlaceEditSearchCancelledEvent(
+    val id: Int
+)
+
 @Composable
 fun MainScreen(
     uiState: MainUiState,
@@ -68,6 +72,7 @@ fun MainScreen(
     onDayNoteTitleChanged: (String) -> Unit,
     onDayNoteMemoChanged: (String) -> Unit,
     onDayNoteSaveClick: () -> Unit,
+    onDayNoteFeedbackDismissed: (Long) -> Unit,
     onPlaceListRefreshRequested: (String) -> Unit,
     onNavigateToAddPlace: (String) -> Unit,
     onNavigateToEditPlaceSearch: (String) -> Unit,
@@ -75,6 +80,8 @@ fun MainScreen(
     onCloseReorderGuideBanner: () -> Unit,
     onUpdatePlace: (Long, String, String, Double, Double) -> Unit,
     onConfirmDeletePlace: (Long) -> Unit,
+    onPlaceFeedbackDismissed: (Long) -> Unit,
+    onBookmarkFeedbackDismissed: (Long) -> Unit,
     onTrackingPermissionDialogConfirm: () -> Unit,
     onTrackingPermissionDialogDismiss: () -> Unit,
     onPermissionActionClick: () -> Unit,
@@ -83,6 +90,8 @@ fun MainScreen(
     onPlaceCreatedEventHandled: (Int) -> Unit,
     placeEditSearchResultEvent: PlaceEditSearchResultEvent?,
     onPlaceEditSearchResultEventHandled: (Int) -> Unit,
+    placeEditSearchCancelledEvent: PlaceEditSearchCancelledEvent?,
+    onPlaceEditSearchCancelledEventHandled: (Int) -> Unit,
     showUnsavedDayNoteDialog: Boolean,
     onDismissUnsavedDayNoteDialog: () -> Unit,
     onConfirmUnsavedDayNoteDialog: () -> Unit,
@@ -99,6 +108,7 @@ fun MainScreen(
     var editRoadAddress by rememberSaveable { mutableStateOf("") }
     var editLatitude by rememberSaveable { mutableStateOf(0.0) }
     var editLongitude by rememberSaveable { mutableStateOf(0.0) }
+    var isPlaceEditSheetVisible by rememberSaveable { mutableStateOf(false) }
     var isPlaceNameFocused by rememberSaveable { mutableStateOf(false) }
     var observedDateKey by rememberSaveable { mutableStateOf(uiState.selectedDateKey) }
     val pendingEditPlace = pendingEditPlaceId?.let { placeId ->
@@ -117,6 +127,7 @@ fun MainScreen(
         editRoadAddress = ""
         editLatitude = 0.0
         editLongitude = 0.0
+        isPlaceEditSheetVisible = false
         hideEditKeyboard()
     }
 
@@ -124,18 +135,20 @@ fun MainScreen(
         val place = pendingEditPlace ?: return
         val trimmedPlaceName = editPlaceName.trim()
         val trimmedRoadAddress = editRoadAddress.trim()
+        val draftLatitude = editLatitude
+        val draftLongitude = editLongitude
         val isUnchanged = trimmedPlaceName == place.placeName.trim() &&
             trimmedRoadAddress == place.roadAddress.trim() &&
-            editLatitude == place.latitude &&
-            editLongitude == place.longitude
+            draftLatitude == place.latitude &&
+            draftLongitude == place.longitude
         if (trimmedPlaceName.isBlank() || trimmedRoadAddress.isBlank() || isUnchanged) return
         dismissPlaceEdit()
         onUpdatePlace(
             place.placeId,
             trimmedPlaceName,
             trimmedRoadAddress,
-            editLatitude,
-            editLongitude
+            draftLatitude,
+            draftLongitude
         )
     }
 
@@ -207,7 +220,8 @@ fun MainScreen(
             add(
                 ToastOverlayItem(
                     message = dayNoteToastMessage,
-                    triggerKey = "daynote:${dayNoteUiState.feedbackEventId}:$dayNoteToastMessage"
+                    triggerKey = "daynote:${dayNoteUiState.feedbackEventId}:$dayNoteToastMessage",
+                    onDismissed = { onDayNoteFeedbackDismissed(dayNoteUiState.feedbackEventId) }
                 )
             )
         }
@@ -215,7 +229,8 @@ fun MainScreen(
             add(
                 ToastOverlayItem(
                     message = placeToastMessage,
-                    triggerKey = "place:${placeUiState.feedbackEventId}:$placeToastMessage"
+                    triggerKey = "place:${placeUiState.feedbackEventId}:$placeToastMessage",
+                    onDismissed = { onPlaceFeedbackDismissed(placeUiState.feedbackEventId) }
                 )
             )
         }
@@ -223,7 +238,10 @@ fun MainScreen(
             add(
                 ToastOverlayItem(
                     message = bookmarkToastMessage,
-                    triggerKey = "bookmark:${uiState.bookmarkToggleUiState.feedbackEventId}:$bookmarkToastMessage"
+                    triggerKey = "bookmark:${uiState.bookmarkToggleUiState.feedbackEventId}:$bookmarkToastMessage",
+                    onDismissed = {
+                        onBookmarkFeedbackDismissed(uiState.bookmarkToggleUiState.feedbackEventId)
+                    }
                 )
             )
         }
@@ -278,9 +296,19 @@ fun MainScreen(
             editRoadAddress = event.place.displayAddress
             editLatitude = event.place.latitude
             editLongitude = event.place.longitude
+            isPlaceEditSheetVisible = true
             hideEditKeyboard()
         }
         onPlaceEditSearchResultEventHandled(event.id)
+    }
+
+    LaunchedEffect(placeEditSearchCancelledEvent?.id) {
+        val event = placeEditSearchCancelledEvent ?: return@LaunchedEffect
+        if (pendingEditPlaceId != null) {
+            isPlaceEditSheetVisible = true
+            hideEditKeyboard()
+        }
+        onPlaceEditSearchCancelledEventHandled(event.id)
     }
 
     LaunchedEffect(pendingEditPlaceId, placeUiState.placeList.places) {
@@ -292,7 +320,7 @@ fun MainScreen(
         }
     }
 
-    BackHandler(enabled = pendingEditPlaceId != null) {
+    BackHandler(enabled = pendingEditPlaceId != null && isPlaceEditSheetVisible) {
         if (isPlaceNameFocused) {
             hideEditKeyboard()
         } else {
@@ -303,6 +331,7 @@ fun MainScreen(
     Box(modifier = Modifier.fillMaxSize()) {
         MainBottomSheetScaffold(
             modifier = Modifier.fillMaxSize(),
+            initialSheetValue = localUiState.bottomSheetValue,
             requestedSheetValue = localUiState.requestedSheetValue,
             onSheetValueChanged = ::handleSheetValueChanged,
             onSheetCommandConsumed = ::handleSheetCommandConsumed,
@@ -365,6 +394,7 @@ fun MainScreen(
                             editRoadAddress = place.roadAddress
                             editLatitude = place.latitude
                             editLongitude = place.longitude
+                            isPlaceEditSheetVisible = true
                             isPlaceNameFocused = false
                         }
                     },
@@ -385,13 +415,15 @@ fun MainScreen(
                 .zIndex(MainScreenOverlayZIndex.Toast)
         )
 
-        pendingEditPlace?.let { place ->
+        if (pendingEditPlace != null && isPlaceEditSheetVisible) {
+            val place = pendingEditPlace
+            val selectedSearchPlace = placeEditSearchResultEvent?.place
             PlaceEditNameOverlay(
                 place = place,
-                placeName = editPlaceName,
-                roadAddress = editRoadAddress,
-                latitude = editLatitude,
-                longitude = editLongitude,
+                placeName = selectedSearchPlace?.name ?: editPlaceName,
+                roadAddress = selectedSearchPlace?.displayAddress ?: editRoadAddress,
+                latitude = selectedSearchPlace?.latitude ?: editLatitude,
+                longitude = selectedSearchPlace?.longitude ?: editLongitude,
                 isSubmitting = placeUiState.isSubmitting,
                 isNameFocused = isPlaceNameFocused,
                 onPlaceNameChange = { editPlaceName = it },
@@ -399,6 +431,7 @@ fun MainScreen(
                 onClearInputFocus = ::hideEditKeyboard,
                 onAddressClick = {
                     hideEditKeyboard()
+                    isPlaceEditSheetVisible = false
                     onNavigateToEditPlaceSearch(uiState.selectedDateKey)
                 },
                 onDismiss = ::dismissPlaceEdit,

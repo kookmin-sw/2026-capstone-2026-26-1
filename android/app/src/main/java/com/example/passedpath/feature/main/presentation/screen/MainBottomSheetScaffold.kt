@@ -24,6 +24,7 @@ import kotlinx.coroutines.launch
 @Composable
 internal fun MainBottomSheetScaffold(
     modifier: Modifier = Modifier,
+    initialSheetValue: MainBottomSheetValue = MainBottomSheetValue.HIDDEN,
     requestedSheetValue: MainBottomSheetValue? = null,
     onSheetValueChanged: (MainBottomSheetValue) -> Unit = {},
     onSheetCommandConsumed: (MainBottomSheetValue) -> Unit = {},
@@ -50,7 +51,9 @@ internal fun MainBottomSheetScaffold(
                 hidden = hiddenOffset
             )
         }
-        val motionState = rememberMainBottomSheetMotionState(initialOffset = hiddenOffset)
+        val motionState = rememberMainBottomSheetMotionState(
+            initialOffset = sheetAnchors.offsetFor(initialSheetValue)
+        )
         val coroutineScope = rememberCoroutineScope()
 
         LaunchedEffect(expandedOffset, middleOffset, hiddenOffset) {

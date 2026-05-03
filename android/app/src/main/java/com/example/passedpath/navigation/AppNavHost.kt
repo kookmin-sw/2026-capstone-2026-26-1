@@ -14,13 +14,13 @@ import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
 import com.example.passedpath.feature.auth.presentation.screen.LoginRoute
 import com.example.passedpath.feature.auth.presentation.state.AuthEvent
 import com.example.passedpath.feature.friends.presentation.screen.FriendsRoute
 import com.example.passedpath.feature.main.presentation.screen.MainRoute
 import com.example.passedpath.feature.main.presentation.screen.PlaceCreatedEvent
+import com.example.passedpath.feature.main.presentation.screen.PlaceEditSearchCancelledEvent
 import com.example.passedpath.feature.main.presentation.screen.PlaceEditSearchResultEvent
 import com.example.passedpath.feature.mypage.presentation.screen.MyPageRoute
 import com.example.passedpath.feature.permission.presentation.screen.LocationPermissionIntroRoute
@@ -44,8 +44,8 @@ fun AppNavHost(
     var placeCreatedEventId by remember { mutableStateOf(0) }
     var placeEditSearchResultEvent by remember { mutableStateOf<PlaceEditSearchResultEvent?>(null) }
     var placeEditSearchResultEventId by remember { mutableStateOf(0) }
-    val navBackStackEntry = navController.currentBackStackEntryAsState().value
-    val currentRoute = navBackStackEntry?.destination?.route
+    var placeEditSearchCancelledEvent by remember { mutableStateOf<PlaceEditSearchCancelledEvent?>(null) }
+    var placeEditSearchCancelledEventId by remember { mutableStateOf(0) }
 
     LaunchedEffect(Unit) {
         AuthEvent.logoutEvent.collect { event ->
@@ -60,90 +60,59 @@ fun AppNavHost(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        if (!shouldUseAppScaffold(currentRoute)) {
-            AppNavigationGraph(
-                navController = navController,
-                appEntryViewModel = appEntryViewModel,
-                mainTabReselectionEvent = mainTabReselectionEvent,
-                placeCreatedEvent = placeCreatedEvent,
-                placeEditSearchResultEvent = placeEditSearchResultEvent,
-                onPlaceCreatedEventConsumed = { eventId ->
-                    if (placeCreatedEvent?.id == eventId) {
-                        placeCreatedEvent = null
-                    }
-                },
-                onPlaceEditSearchResultEventConsumed = { eventId ->
-                    if (placeEditSearchResultEvent?.id == eventId) {
-                        placeEditSearchResultEvent = null
-                    }
-                },
-                onLoginToastMessage = { message ->
-                    loginToastMessage = message
-                    loginToastTrigger++
-                },
-                onPlaceCreated = { placeId ->
-                    placeCreatedEventId++
-                    placeCreatedEvent = PlaceCreatedEvent(
-                        id = placeCreatedEventId,
-                        placeId = placeId
-                    )
-                },
-                onPlaceEditSearchResult = { place ->
-                    placeEditSearchResultEventId++
-                    placeEditSearchResultEvent = PlaceEditSearchResultEvent(
-                        id = placeEditSearchResultEventId,
-                        place = place
-                    )
-                },
-                modifier = Modifier.fillMaxSize()
-            )
-        } else {
-            AppScaffold(
-                navController = navController,
-                onBottomBarReselected = { route ->
-                    if (route == NavRoute.MAIN) {
-                        mainTabReselectionEvent++
-                    }
+        AppNavigationGraph(
+            navController = navController,
+            appEntryViewModel = appEntryViewModel,
+            mainTabReselectionEvent = mainTabReselectionEvent,
+            placeCreatedEvent = placeCreatedEvent,
+            placeEditSearchResultEvent = placeEditSearchResultEvent,
+            placeEditSearchCancelledEvent = placeEditSearchCancelledEvent,
+            onPlaceCreatedEventConsumed = { eventId ->
+                if (placeCreatedEvent?.id == eventId) {
+                    placeCreatedEvent = null
                 }
-            ) { modifier: Modifier ->
-                AppNavigationGraph(
-                    navController = navController,
-                    appEntryViewModel = appEntryViewModel,
-                    mainTabReselectionEvent = mainTabReselectionEvent,
-                    placeCreatedEvent = placeCreatedEvent,
-                    placeEditSearchResultEvent = placeEditSearchResultEvent,
-                    onPlaceCreatedEventConsumed = { eventId ->
-                        if (placeCreatedEvent?.id == eventId) {
-                            placeCreatedEvent = null
-                        }
-                    },
-                    onPlaceEditSearchResultEventConsumed = { eventId ->
-                        if (placeEditSearchResultEvent?.id == eventId) {
-                            placeEditSearchResultEvent = null
-                        }
-                    },
-                    onLoginToastMessage = { message ->
-                        loginToastMessage = message
-                        loginToastTrigger++
-                    },
-                    onPlaceCreated = { placeId ->
-                        placeCreatedEventId++
-                        placeCreatedEvent = PlaceCreatedEvent(
-                            id = placeCreatedEventId,
-                            placeId = placeId
-                        )
-                    },
-                    onPlaceEditSearchResult = { place ->
-                        placeEditSearchResultEventId++
-                        placeEditSearchResultEvent = PlaceEditSearchResultEvent(
-                            id = placeEditSearchResultEventId,
-                            place = place
-                        )
-                    },
-                    modifier = modifier
+            },
+            onPlaceEditSearchResultEventConsumed = { eventId ->
+                if (placeEditSearchResultEvent?.id == eventId) {
+                    placeEditSearchResultEvent = null
+                }
+            },
+            onPlaceEditSearchCancelledEventConsumed = { eventId ->
+                if (placeEditSearchCancelledEvent?.id == eventId) {
+                    placeEditSearchCancelledEvent = null
+                }
+            },
+            onLoginToastMessage = { message ->
+                loginToastMessage = message
+                loginToastTrigger++
+            },
+            onBottomBarReselected = { route ->
+                if (route == NavRoute.MAIN) {
+                    mainTabReselectionEvent++
+                }
+            },
+            onPlaceCreated = { placeId ->
+                placeCreatedEventId++
+                placeCreatedEvent = PlaceCreatedEvent(
+                    id = placeCreatedEventId,
+                    placeId = placeId
                 )
-            }
-        }
+            },
+            onPlaceEditSearchResult = { place ->
+                placeEditSearchResultEventId++
+                placeEditSearchResultEvent = PlaceEditSearchResultEvent(
+                    id = placeEditSearchResultEventId,
+                    place = place
+                )
+            },
+            onPlaceEditSearchCancelled = {
+                placeEditSearchCancelledEventId++
+                placeEditSearchCancelledEvent = PlaceEditSearchCancelledEvent(
+                    id = placeEditSearchCancelledEventId
+                )
+            },
+            modifier = Modifier.fillMaxSize()
+        )
 
         ToastOverlayHost(
             toasts = buildList {
@@ -169,12 +138,6 @@ fun AppNavHost(
     }
 }
 
-private fun shouldUseAppScaffold(route: String?): Boolean {
-    return route == NavRoute.MAIN ||
-        route == NavRoute.FRIENDS ||
-        route == NavRoute.MYPAGE
-}
-
 @Composable
 private fun AppNavigationGraph(
     navController: NavHostController,
@@ -182,11 +145,15 @@ private fun AppNavigationGraph(
     mainTabReselectionEvent: Int,
     placeCreatedEvent: PlaceCreatedEvent?,
     placeEditSearchResultEvent: PlaceEditSearchResultEvent?,
+    placeEditSearchCancelledEvent: PlaceEditSearchCancelledEvent?,
     onPlaceCreatedEventConsumed: (Int) -> Unit,
     onPlaceEditSearchResultEventConsumed: (Int) -> Unit,
+    onPlaceEditSearchCancelledEventConsumed: (Int) -> Unit,
     onLoginToastMessage: (String) -> Unit,
+    onBottomBarReselected: (String) -> Unit,
     onPlaceCreated: (Long) -> Unit,
     onPlaceEditSearchResult: (PlaceSearchResult) -> Unit,
+    onPlaceEditSearchCancelled: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     NavHost(
@@ -227,23 +194,41 @@ private fun AppNavigationGraph(
         }
 
         composable(NavRoute.FRIENDS) {
-            FriendsRoute()
+            BottomBarScaffold(
+                navController = navController,
+                selectedRoute = NavRoute.FRIENDS,
+                onBottomBarReselected = onBottomBarReselected
+            ) { modifier ->
+                Box(modifier = modifier) {
+                    FriendsRoute()
+                }
+            }
         }
 
         composable(NavRoute.MAIN) {
-            MainRoute(
-                mainTabReselectionEvent = mainTabReselectionEvent,
-                placeCreatedEvent = placeCreatedEvent,
-                placeEditSearchResultEvent = placeEditSearchResultEvent,
-                onPlaceCreatedEventConsumed = onPlaceCreatedEventConsumed,
-                onPlaceEditSearchResultEventConsumed = onPlaceEditSearchResultEventConsumed,
-                onNavigateToAddPlace = { dateKey ->
-                    navController.navigate(NavRoute.addPlace(dateKey))
-                },
-                onNavigateToEditPlaceSearch = { dateKey ->
-                    navController.navigate(NavRoute.editPlaceSearch(dateKey))
+            BottomBarScaffold(
+                navController = navController,
+                selectedRoute = NavRoute.MAIN,
+                onBottomBarReselected = onBottomBarReselected
+            ) { modifier ->
+                Box(modifier = modifier) {
+                    MainRoute(
+                        mainTabReselectionEvent = mainTabReselectionEvent,
+                        placeCreatedEvent = placeCreatedEvent,
+                        placeEditSearchResultEvent = placeEditSearchResultEvent,
+                        placeEditSearchCancelledEvent = placeEditSearchCancelledEvent,
+                        onPlaceCreatedEventConsumed = onPlaceCreatedEventConsumed,
+                        onPlaceEditSearchResultEventConsumed = onPlaceEditSearchResultEventConsumed,
+                        onPlaceEditSearchCancelledEventConsumed = onPlaceEditSearchCancelledEventConsumed,
+                        onNavigateToAddPlace = { dateKey ->
+                            navController.navigate(NavRoute.addPlace(dateKey))
+                        },
+                        onNavigateToEditPlaceSearch = { dateKey ->
+                            navController.navigate(NavRoute.editPlaceSearch(dateKey))
+                        }
+                    )
                 }
-            )
+            }
         }
 
         composable(
@@ -285,6 +270,7 @@ private fun AppNavigationGraph(
             EditPlaceSearchScreen(
                 dateKey = dateKey,
                 onBackClick = {
+                    onPlaceEditSearchCancelled()
                     navController.popBackStack()
                 },
                 onPlaceSelectedForEdit = { place ->
@@ -295,7 +281,15 @@ private fun AppNavigationGraph(
         }
 
         composable(NavRoute.MYPAGE) {
-            MyPageRoute()
+            BottomBarScaffold(
+                navController = navController,
+                selectedRoute = NavRoute.MYPAGE,
+                onBottomBarReselected = onBottomBarReselected
+            ) { modifier ->
+                Box(modifier = modifier) {
+                    MyPageRoute()
+                }
+            }
         }
     }
 }

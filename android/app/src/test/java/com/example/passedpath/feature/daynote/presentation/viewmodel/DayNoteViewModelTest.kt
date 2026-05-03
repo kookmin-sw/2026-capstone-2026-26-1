@@ -138,6 +138,26 @@ class DayNoteViewModelTest {
     }
 
     @Test
+    fun `consumeFeedback clears current feedback only when event id matches`() = runTest {
+        val viewModel = createViewModel()
+        viewModel.syncSelectedDay(dateKey = "2026-04-02", title = "Old", memo = "Old memo")
+        viewModel.updateMemo("New memo")
+
+        viewModel.submitDayNote()
+        advanceUntilIdle()
+
+        assertEquals(1L, viewModel.uiState.value.feedbackEventId)
+        assertTrue(viewModel.uiState.value.successMessage?.isNotBlank() == true)
+
+        viewModel.consumeFeedback(0L)
+        assertTrue(viewModel.uiState.value.successMessage?.isNotBlank() == true)
+
+        viewModel.consumeFeedback(1L)
+        assertNull(viewModel.uiState.value.successMessage)
+        assertNull(viewModel.uiState.value.errorMessage)
+    }
+
+    @Test
     fun `submitDayNote skips unchanged field requests`() = runTest {
         val callOrder = mutableListOf<String>()
         val viewModel = createViewModel(

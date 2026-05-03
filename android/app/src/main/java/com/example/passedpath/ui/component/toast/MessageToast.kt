@@ -10,6 +10,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -24,14 +25,17 @@ fun MessageToast(
     message: String,
     triggerKey: String,
     modifier: Modifier = Modifier,
-    durationMillis: Long = 2500L
+    durationMillis: Long = 2500L,
+    onDismissed: () -> Unit = {}
 ) {
     var isVisible by remember(triggerKey) { mutableStateOf(true) }
+    val currentOnDismissed by rememberUpdatedState(onDismissed)
 
     LaunchedEffect(triggerKey, durationMillis) {
         isVisible = true
         kotlinx.coroutines.delay(durationMillis)
         isVisible = false
+        currentOnDismissed()
     }
 
     if (!isVisible) return
