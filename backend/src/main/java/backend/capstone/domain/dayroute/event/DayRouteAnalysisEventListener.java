@@ -19,7 +19,7 @@ public class DayRouteAnalysisEventListener {
     private final StayAnalysisService stayAnalysisService;
     private final HomeStatusAnalysisService homeStatusAnalysisService;
 
-    @Async("homeStatusAnalysisExecutor")
+    @Async("dayRouteAnalysisExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handle(GpsPointsUploadedEvent event) {
         //dayRouteId 키로 락을 잡은 상태에서 home 분석과 stay 분석을 순차적으로 실행

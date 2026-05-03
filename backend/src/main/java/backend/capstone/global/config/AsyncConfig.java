@@ -10,24 +10,13 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 @EnableAsync
 public class AsyncConfig {
 
-    @Bean(name = "homeStatusAnalysisExecutor")
-    public Executor homeStatusAnalysisExecutor() {
+    @Bean(name = "dayRouteAnalysisExecutor")
+    public Executor DayRouteAnalysisExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(1);
         executor.setMaxPoolSize(2);
         executor.setQueueCapacity(10);
         executor.setThreadNamePrefix("home-analysis-");
-        executor.initialize();
-        return executor;
-    }
-
-    @Bean(name = "stayAnalysisExecutor")
-    public Executor stayAnalysisExecutor() {
-        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(1);
-        executor.setMaxPoolSize(1);
-        executor.setQueueCapacity(200);
-        executor.setThreadNamePrefix("stay-analysis-");
         executor.initialize();
         return executor;
     }
