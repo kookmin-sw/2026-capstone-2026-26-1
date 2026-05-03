@@ -19,7 +19,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -62,6 +61,7 @@ import com.example.passedpath.feature.place.presentation.state.AddPlaceUiState
 import com.example.passedpath.feature.place.presentation.viewmodel.AddPlaceViewModel
 import com.example.passedpath.feature.place.presentation.viewmodel.AddPlaceViewModelFactory
 import com.example.passedpath.ui.component.button.BaseButton
+import com.example.passedpath.ui.component.loading.BaseLoadingIndicator
 import com.example.passedpath.ui.theme.Black
 import com.example.passedpath.ui.theme.Gray200
 import com.example.passedpath.ui.theme.Gray500
@@ -197,7 +197,7 @@ private fun AddPlaceScreenContent(
                                 .weight(1f),
                             contentAlignment = Alignment.Center
                         ) {
-                            CircularProgressIndicator()
+                            BaseLoadingIndicator()
                         }
                     }
 
@@ -322,7 +322,7 @@ private fun SearchResultList(
                             .padding(vertical = 8.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        CircularProgressIndicator(
+                        BaseLoadingIndicator(
                             modifier = Modifier.size(24.dp),
                             strokeWidth = 2.5.dp
                         )

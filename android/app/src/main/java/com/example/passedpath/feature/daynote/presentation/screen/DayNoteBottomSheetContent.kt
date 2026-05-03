@@ -11,7 +11,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,6 +26,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.example.passedpath.feature.daynote.presentation.state.DayNoteUiState
 import com.example.passedpath.ui.component.input.BaseInputField
+import com.example.passedpath.ui.component.loading.BaseLoadingIndicator
 import com.example.passedpath.ui.theme.Gray100
 import com.example.passedpath.ui.theme.Gray400
 import com.example.passedpath.ui.theme.Gray500
@@ -93,7 +93,7 @@ fun DayNoteBottomSheetContent(
                 .height(56.dp)
         ) {
             if (uiState.isSubmitting) {
-                CircularProgressIndicator(
+                BaseLoadingIndicator(
                     color = Color.White,
                     strokeWidth = 2.dp,
                     modifier = Modifier.height(20.dp)
