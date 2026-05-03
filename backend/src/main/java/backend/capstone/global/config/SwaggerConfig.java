@@ -12,25 +12,25 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class SwaggerConfig {
 
-	@Bean
-	public OpenAPI openAPI() {
+    @Bean
+    public OpenAPI openAPI() {
 
-		SecurityScheme bearerAuth = new SecurityScheme()
-			.type(Type.HTTP)
-			.scheme("bearer")
-			.bearerFormat("JWT");
+        SecurityScheme bearerAuth = new SecurityScheme()
+            .type(Type.HTTP)
+            .scheme("bearer")
+            .bearerFormat("JWT");
 
-		return new OpenAPI()
-			.components(new Components().addSecuritySchemes("bearerAuth", bearerAuth))
-			.addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
-			.info(apiInfo());
-	}
+        return new OpenAPI()
+            .components(new Components().addSecuritySchemes("bearerAuth", bearerAuth))
+            .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
+            .info(apiInfo());
+    }
 
-	private Info apiInfo() {
-		return new Info()
-			.title("지나온길 API 명세서")
-			.description("지나온길 백엔드 API 명세서")
-			.version("v0");
-	}
+    private Info apiInfo() {
+        return new Info()
+            .title("길벗 API 명세서")
+            .description("길벗 백엔드 API 명세서")
+            .version("v0");
+    }
 
 }
