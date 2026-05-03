@@ -1,23 +1,17 @@
 package com.example.passedpath.feature.place.presentation.component
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -26,19 +20,18 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.passedpath.R
 import com.example.passedpath.ui.component.button.BaseButton
+import com.example.passedpath.ui.component.input.BaseInputButton
 import com.example.passedpath.ui.component.input.BaseInputField
-import com.example.passedpath.ui.theme.Gray100
 import com.example.passedpath.ui.theme.Gray400
-import com.example.passedpath.ui.theme.Gray700
 import com.example.passedpath.ui.theme.Gray900
 import com.example.passedpath.ui.theme.Green500
 import com.example.passedpath.ui.theme.PassedPathTheme
@@ -52,14 +45,17 @@ fun PlaceEditNameBottomSheet(
     onPlaceNameChange: (String) -> Unit,
     onNameFocusChanged: (Boolean) -> Unit,
     onClearInputFocus: () -> Unit,
+    onAddressClick: () -> Unit,
     onDismiss: () -> Unit,
     onSubmit: () -> Unit,
     modifier: Modifier = Modifier,
-    isSubmitting: Boolean = false
+    isSubmitting: Boolean = false,
+    isSubmitEnabled: Boolean? = null
 ) {
-    val canSubmit = placeName.trim().isNotBlank() &&
+    val defaultSubmitEnabled = placeName.trim().isNotBlank() &&
         placeName.trim() != originalPlaceName.trim() &&
         !isSubmitting
+    val canSubmit = isSubmitEnabled ?: defaultSubmitEnabled
 
     Surface(
         modifier = modifier.fillMaxWidth(),
@@ -72,7 +68,7 @@ fun PlaceEditNameBottomSheet(
             modifier = Modifier
                 .navigationBarsPadding()
                 .clickable(onClick = onClearInputFocus)
-                .padding(start = 20.dp, top = 26.dp, end = 20.dp, bottom = 48.dp)
+                .padding(start = 20.dp, top = 26.dp, end = 20.dp, bottom = 40.dp)
         ) {
             Box(modifier = Modifier.fillMaxWidth()) {
                 Text(
@@ -98,7 +94,7 @@ fun PlaceEditNameBottomSheet(
                 }
             }
 
-            Spacer(modifier = Modifier.height(30.dp))
+            Spacer(modifier = Modifier.height(24.dp))
             FieldLabel(text = stringResource(R.string.place_edit_name_label))
             Spacer(modifier = Modifier.height(10.dp))
             PlaceNameEditField(
@@ -120,10 +116,10 @@ fun PlaceEditNameBottomSheet(
             Spacer(modifier = Modifier.height(10.dp))
             ReadOnlyAddressField(
                 roadAddress = roadAddress,
-                onClick = onClearInputFocus
+                onClick = onAddressClick
             )
 
-            Spacer(modifier = Modifier.height(52.dp))
+            Spacer(modifier = Modifier.height(44.dp))
             BaseButton(
                 text = stringResource(R.string.place_edit_submit),
                 onClick = onSubmit,
@@ -170,36 +166,19 @@ private fun ReadOnlyAddressField(
     roadAddress: String,
     onClick: () -> Unit
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 56.dp)
-            .background(Gray100, RoundedCornerShape(10.dp))
-            .border(
-                width = 1.dp,
-                color = Gray100,
-                shape = RoundedCornerShape(10.dp)
+    BaseInputButton(
+        text = roadAddress,
+        onClick = onClick,
+        placeholder = stringResource(R.string.place_edit_address_label),
+        leadingContent = {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_search),
+                contentDescription = null,
+                tint = Green500,
+                modifier = Modifier.size(20.dp)
             )
-            .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            imageVector = Icons.Rounded.Search,
-            contentDescription = null,
-            tint = Green500,
-            modifier = Modifier.size(28.dp)
-        )
-        Text(
-            text = roadAddress,
-            style = MaterialTheme.typography.bodyLarge,
-            color = Gray900,
-            fontWeight = FontWeight.Bold,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
-    }
+        }
+    )
 }
 
 @Preview(showBackground = true, backgroundColor = 0xFF4B5563)
@@ -213,6 +192,7 @@ private fun PlaceEditNameBottomSheetPreview() {
             onPlaceNameChange = {},
             onNameFocusChanged = {},
             onClearInputFocus = {},
+            onAddressClick = {},
             onDismiss = {},
             onSubmit = {}
         )

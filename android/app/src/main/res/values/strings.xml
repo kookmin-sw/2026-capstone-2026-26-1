@@ -102,6 +102,9 @@
     <string name="place_sheet_banner_close">닫기</string>
     <string name="place_menu_edit">수정하기</string>
     <string name="place_menu_delete">삭제하기</string>
+    <string name="place_search_title">장소 검색</string>
+    <string name="place_search_add_confirm">이 장소 추가하기</string>
+    <string name="place_search_edit_confirm">이 장소로 변경하기</string>
     <string name="place_edit_title">방문 장소 수정</string>
     <string name="place_edit_name_label">장소명</string>
     <string name="place_edit_name_helper">자동 입력된 장소명은 언제든 수정할 수 있어요</string>

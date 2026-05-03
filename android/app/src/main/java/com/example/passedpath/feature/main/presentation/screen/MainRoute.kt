@@ -26,8 +26,11 @@ import com.example.passedpath.util.AppSettingsNavigator
 fun MainRoute(
     mainTabReselectionEvent: Int = 0,
     placeCreatedEvent: PlaceCreatedEvent? = null,
+    placeEditSearchResultEvent: PlaceEditSearchResultEvent? = null,
     onPlaceCreatedEventConsumed: (Int) -> Unit = {},
+    onPlaceEditSearchResultEventConsumed: (Int) -> Unit = {},
     onNavigateToAddPlace: (String) -> Unit = {},
+    onNavigateToEditPlaceSearch: (String) -> Unit = {},
     viewModel: MainViewModel = viewModel(
         factory = MainViewModelFactory(LocalContext.current.appContainer)
     )
@@ -150,9 +153,10 @@ fun MainRoute(
         onDayNoteSaveClick = dayNoteViewModel::submitDayNote,
         onPlaceListRefreshRequested = placeViewModel::fetchVisitedPlaces,
         onNavigateToAddPlace = onNavigateToAddPlace,
+        onNavigateToEditPlaceSearch = onNavigateToEditPlaceSearch,
         onReorderPlaces = placeViewModel::reorderPlaces,
         onCloseReorderGuideBanner = placeViewModel::dismissReorderGuideBanner,
-        onUpdatePlaceName = placeViewModel::updatePlaceName,
+        onUpdatePlace = placeViewModel::updatePlace,
         onConfirmDeletePlace = placeViewModel::deletePlace,
         onTrackingPermissionDialogConfirm = {
             viewModel.dismissTrackingPermissionDialog()
@@ -174,6 +178,8 @@ fun MainRoute(
         mainTabReselectionEvent = mainTabReselectionEvent,
         placeCreatedEvent = placeCreatedEvent,
         onPlaceCreatedEventHandled = onPlaceCreatedEventConsumed,
+        placeEditSearchResultEvent = placeEditSearchResultEvent,
+        onPlaceEditSearchResultEventHandled = onPlaceEditSearchResultEventConsumed,
         showUnsavedDayNoteDialog = dateSelectionGuardState.pendingDateSelection != null,
         onDismissUnsavedDayNoteDialog = dateSelectionGuardCoordinator::dismissPendingDateSelection,
         onConfirmUnsavedDayNoteDialog = dayNoteViewModel::submitDayNote,

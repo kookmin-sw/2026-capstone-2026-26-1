@@ -21,9 +21,12 @@ import com.example.passedpath.feature.auth.presentation.state.AuthEvent
 import com.example.passedpath.feature.friends.presentation.screen.FriendsRoute
 import com.example.passedpath.feature.main.presentation.screen.MainRoute
 import com.example.passedpath.feature.main.presentation.screen.PlaceCreatedEvent
+import com.example.passedpath.feature.main.presentation.screen.PlaceEditSearchResultEvent
 import com.example.passedpath.feature.mypage.presentation.screen.MyPageRoute
 import com.example.passedpath.feature.permission.presentation.screen.LocationPermissionIntroRoute
+import com.example.passedpath.feature.place.domain.model.PlaceSearchResult
 import com.example.passedpath.feature.place.presentation.screen.AddPlaceScreen
+import com.example.passedpath.feature.place.presentation.screen.EditPlaceSearchScreen
 import com.example.passedpath.ui.component.toast.ToastOverlayHost
 import com.example.passedpath.ui.component.toast.ToastOverlayItem
 
@@ -39,6 +42,8 @@ fun AppNavHost(
     var mainTabReselectionEvent by remember { mutableStateOf(0) }
     var placeCreatedEvent by remember { mutableStateOf<PlaceCreatedEvent?>(null) }
     var placeCreatedEventId by remember { mutableStateOf(0) }
+    var placeEditSearchResultEvent by remember { mutableStateOf<PlaceEditSearchResultEvent?>(null) }
+    var placeEditSearchResultEventId by remember { mutableStateOf(0) }
     val navBackStackEntry = navController.currentBackStackEntryAsState().value
     val currentRoute = navBackStackEntry?.destination?.route
 
@@ -61,9 +66,15 @@ fun AppNavHost(
                 appEntryViewModel = appEntryViewModel,
                 mainTabReselectionEvent = mainTabReselectionEvent,
                 placeCreatedEvent = placeCreatedEvent,
+                placeEditSearchResultEvent = placeEditSearchResultEvent,
                 onPlaceCreatedEventConsumed = { eventId ->
                     if (placeCreatedEvent?.id == eventId) {
                         placeCreatedEvent = null
+                    }
+                },
+                onPlaceEditSearchResultEventConsumed = { eventId ->
+                    if (placeEditSearchResultEvent?.id == eventId) {
+                        placeEditSearchResultEvent = null
                     }
                 },
                 onLoginToastMessage = { message ->
@@ -75,6 +86,13 @@ fun AppNavHost(
                     placeCreatedEvent = PlaceCreatedEvent(
                         id = placeCreatedEventId,
                         placeId = placeId
+                    )
+                },
+                onPlaceEditSearchResult = { place ->
+                    placeEditSearchResultEventId++
+                    placeEditSearchResultEvent = PlaceEditSearchResultEvent(
+                        id = placeEditSearchResultEventId,
+                        place = place
                     )
                 },
                 modifier = Modifier.fillMaxSize()
@@ -93,9 +111,15 @@ fun AppNavHost(
                     appEntryViewModel = appEntryViewModel,
                     mainTabReselectionEvent = mainTabReselectionEvent,
                     placeCreatedEvent = placeCreatedEvent,
+                    placeEditSearchResultEvent = placeEditSearchResultEvent,
                     onPlaceCreatedEventConsumed = { eventId ->
                         if (placeCreatedEvent?.id == eventId) {
                             placeCreatedEvent = null
+                        }
+                    },
+                    onPlaceEditSearchResultEventConsumed = { eventId ->
+                        if (placeEditSearchResultEvent?.id == eventId) {
+                            placeEditSearchResultEvent = null
                         }
                     },
                     onLoginToastMessage = { message ->
@@ -107,6 +131,13 @@ fun AppNavHost(
                         placeCreatedEvent = PlaceCreatedEvent(
                             id = placeCreatedEventId,
                             placeId = placeId
+                        )
+                    },
+                    onPlaceEditSearchResult = { place ->
+                        placeEditSearchResultEventId++
+                        placeEditSearchResultEvent = PlaceEditSearchResultEvent(
+                            id = placeEditSearchResultEventId,
+                            place = place
                         )
                     },
                     modifier = modifier
@@ -150,9 +181,12 @@ private fun AppNavigationGraph(
     appEntryViewModel: AppEntryViewModel,
     mainTabReselectionEvent: Int,
     placeCreatedEvent: PlaceCreatedEvent?,
+    placeEditSearchResultEvent: PlaceEditSearchResultEvent?,
     onPlaceCreatedEventConsumed: (Int) -> Unit,
+    onPlaceEditSearchResultEventConsumed: (Int) -> Unit,
     onLoginToastMessage: (String) -> Unit,
     onPlaceCreated: (Long) -> Unit,
+    onPlaceEditSearchResult: (PlaceSearchResult) -> Unit,
     modifier: Modifier = Modifier
 ) {
     NavHost(
@@ -200,9 +234,14 @@ private fun AppNavigationGraph(
             MainRoute(
                 mainTabReselectionEvent = mainTabReselectionEvent,
                 placeCreatedEvent = placeCreatedEvent,
+                placeEditSearchResultEvent = placeEditSearchResultEvent,
                 onPlaceCreatedEventConsumed = onPlaceCreatedEventConsumed,
+                onPlaceEditSearchResultEventConsumed = onPlaceEditSearchResultEventConsumed,
                 onNavigateToAddPlace = { dateKey ->
                     navController.navigate(NavRoute.addPlace(dateKey))
+                },
+                onNavigateToEditPlaceSearch = { dateKey ->
+                    navController.navigate(NavRoute.editPlaceSearch(dateKey))
                 }
             )
         }
@@ -226,6 +265,30 @@ private fun AppNavigationGraph(
                 },
                 onPlaceCreated = { placeId ->
                     onPlaceCreated(placeId)
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable(
+            route = NavRoute.EDIT_PLACE_SEARCH_WITH_DATE,
+            arguments = listOf(
+                navArgument(NavRoute.EDIT_PLACE_SEARCH_DATE_KEY) {
+                    type = NavType.StringType
+                }
+            )
+        ) { backStackEntry ->
+            val dateKey = backStackEntry.arguments
+                ?.getString(NavRoute.EDIT_PLACE_SEARCH_DATE_KEY)
+                .orEmpty()
+
+            EditPlaceSearchScreen(
+                dateKey = dateKey,
+                onBackClick = {
+                    navController.popBackStack()
+                },
+                onPlaceSelectedForEdit = { place ->
+                    onPlaceEditSearchResult(place)
                     navController.popBackStack()
                 }
             )

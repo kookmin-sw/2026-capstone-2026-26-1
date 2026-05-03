@@ -246,6 +246,23 @@ class PlaceViewModel(
     }
 
     fun updatePlaceName(placeId: Long, placeName: String) {
+        val currentPlace = _uiState.value.placeList.places.firstOrNull { it.placeId == placeId }
+        updatePlace(
+            placeId = placeId,
+            placeName = placeName,
+            roadAddress = currentPlace?.roadAddress.orEmpty(),
+            latitude = currentPlace?.latitude ?: 0.0,
+            longitude = currentPlace?.longitude ?: 0.0
+        )
+    }
+
+    fun updatePlace(
+        placeId: Long,
+        placeName: String,
+        roadAddress: String,
+        latitude: Double,
+        longitude: Double
+    ) {
         val currentState = _uiState.value
         if (currentState.isSubmitting) return
 
@@ -273,6 +290,7 @@ class PlaceViewModel(
         }
 
         val trimmedPlaceName = placeName.trim()
+        val trimmedRoadAddress = roadAddress.trim()
         if (trimmedPlaceName.isBlank()) {
             _uiState.update {
                 it.copy(
@@ -284,7 +302,22 @@ class PlaceViewModel(
             return
         }
 
-        if (trimmedPlaceName == currentPlace.placeName.trim()) return
+        if (trimmedRoadAddress.isBlank()) {
+            _uiState.update {
+                it.copy(
+                    errorMessage = "주소를 선택해 주세요.",
+                    successMessage = null,
+                    feedbackEventId = it.feedbackEventId + 1
+                )
+            }
+            return
+        }
+
+        val isUnchanged = trimmedPlaceName == currentPlace.placeName.trim() &&
+            trimmedRoadAddress == currentPlace.roadAddress.trim() &&
+            latitude == currentPlace.latitude &&
+            longitude == currentPlace.longitude
+        if (isUnchanged) return
 
         _uiState.update {
             it.copy(
@@ -300,9 +333,9 @@ class PlaceViewModel(
                     dateKey = currentState.dateKey,
                     placeId = placeId,
                     placeName = trimmedPlaceName,
-                    roadAddress = currentPlace.roadAddress,
-                    latitude = currentPlace.latitude,
-                    longitude = currentPlace.longitude
+                    roadAddress = trimmedRoadAddress,
+                    latitude = latitude,
+                    longitude = longitude
                 )
                 _uiState.update {
                     it.copy(
@@ -310,9 +343,12 @@ class PlaceViewModel(
                         errorMessage = null,
                         successMessage = "장소를 수정했습니다.",
                         feedbackEventId = it.feedbackEventId + 1,
-                        placeList = it.placeList.updatedPlaceName(
+                        placeList = it.placeList.updatedPlace(
                             placeId = placeId,
-                            placeName = trimmedPlaceName
+                            placeName = trimmedPlaceName,
+                            roadAddress = trimmedRoadAddress,
+                            latitude = latitude,
+                            longitude = longitude
                         )
                     )
                 }
@@ -324,7 +360,7 @@ class PlaceViewModel(
             } catch (throwable: Throwable) {
                 AppDebugLogger.debug(
                     tag = logTag,
-                    message = "updatePlaceName failed dateKey=${currentState.dateKey} placeId=$placeId error=${throwable.toLogSummary()}"
+                    message = "updatePlace failed dateKey=${currentState.dateKey} placeId=$placeId error=${throwable.toLogSummary()}"
                 )
                 _uiState.update {
                     it.copy(
@@ -467,14 +503,22 @@ class PlaceViewModel(
         ).withReorderGuideBannerVisibility(isReorderGuideBannerDismissed)
     }
 
-    private fun PlaceListUiState.updatedPlaceName(
+    private fun PlaceListUiState.updatedPlace(
         placeId: Long,
-        placeName: String
+        placeName: String,
+        roadAddress: String,
+        latitude: Double,
+        longitude: Double
     ): PlaceListUiState {
         return copy(
             places = places.map { place ->
                 if (place.placeId == placeId) {
-                    place.copy(placeName = placeName)
+                    place.copy(
+                        placeName = placeName,
+                        roadAddress = roadAddress,
+                        latitude = latitude,
+                        longitude = longitude
+                    )
                 } else {
                     place
                 }

@@ -611,7 +611,7 @@ class PlaceViewModelTest {
     }
 
     @Test
-    fun `updatePlaceName sends current place data and refreshes after success`() = runTest {
+    fun `updatePlace sends selected place data and refreshes after success`() = runTest {
         val repository = FakePlaceRepository(
             visitedPlaceListByDate = mutableMapOf(
                 "2026-04-03" to VisitedPlaceList(
@@ -624,7 +624,16 @@ class PlaceViewModelTest {
                 visitedPlaceListByDate[dateKey] = VisitedPlaceList(
                     placeCount = currentPlaces.size,
                     places = currentPlaces.map {
-                        if (it.placeId == placeId) it.copy(placeName = place.placeName) else it
+                        if (it.placeId == placeId) {
+                            it.copy(
+                                placeName = place.placeName,
+                                roadAddress = place.roadAddress,
+                                latitude = place.latitude,
+                                longitude = place.longitude
+                            )
+                        } else {
+                            it
+                        }
                     }
                 )
             }
@@ -634,19 +643,29 @@ class PlaceViewModelTest {
         viewModel.fetchVisitedPlaces()
         advanceUntilIdle()
 
-        viewModel.updatePlaceName(1L, "New Place")
+        viewModel.updatePlace(
+            placeId = 1L,
+            placeName = "New Place",
+            roadAddress = "New Road",
+            latitude = 37.5,
+            longitude = 127.5
+        )
         advanceUntilIdle()
 
         assertEquals(listOf("2026-04-03"), repository.updateRequestDates)
         assertEquals(listOf(1L), repository.updateRequests)
         assertEquals("New Place", repository.updatePlaces.single().placeName)
-        assertEquals("Ttukseom-ro", repository.updatePlaces.single().roadAddress)
-        assertEquals("New Place", viewModel.uiState.value.placeList.places.single().placeName)
+        assertEquals("New Road", repository.updatePlaces.single().roadAddress)
+        assertEquals(37.5, repository.updatePlaces.single().latitude, 0.0)
+        assertEquals(127.5, repository.updatePlaces.single().longitude, 0.0)
+        val updatedPlace = viewModel.uiState.value.placeList.places.single()
+        assertEquals("New Place", updatedPlace.placeName)
+        assertEquals("New Road", updatedPlace.roadAddress)
         assertEquals("장소를 수정했습니다.", viewModel.uiState.value.successMessage)
     }
 
     @Test
-    fun `updatePlaceName rejects blank name before repository call`() = runTest {
+    fun `updatePlace rejects blank name before repository call`() = runTest {
         val repository = FakePlaceRepository(
             visitedPlaceListByDate = mutableMapOf(
                 "2026-04-03" to VisitedPlaceList(
@@ -660,7 +679,13 @@ class PlaceViewModelTest {
         viewModel.fetchVisitedPlaces()
         advanceUntilIdle()
 
-        viewModel.updatePlaceName(1L, "   ")
+        viewModel.updatePlace(
+            placeId = 1L,
+            placeName = "   ",
+            roadAddress = "New Road",
+            latitude = 37.5,
+            longitude = 127.5
+        )
         advanceUntilIdle()
 
         assertTrue(repository.updateRequests.isEmpty())

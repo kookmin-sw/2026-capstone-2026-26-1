@@ -45,6 +45,7 @@ import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -95,7 +96,36 @@ fun AddPlaceScreen(
         onBackClick = onBackClick,
         onQueryChanged = viewModel::onQueryChanged,
         onPlaceSelected = viewModel::onPlaceSelected,
-        onAddPlaceClick = viewModel::onAddPlaceClicked,
+        onConfirmPlaceClick = viewModel::onAddPlaceClicked,
+        onLoadNextPage = viewModel::onLoadNextPage,
+        modifier = modifier
+    )
+}
+
+@Composable
+fun EditPlaceSearchScreen(
+    dateKey: String,
+    onBackClick: () -> Unit,
+    onPlaceSelectedForEdit: (PlaceSearchResult) -> Unit,
+    modifier: Modifier = Modifier,
+    viewModel: AddPlaceViewModel = viewModel(
+        factory = AddPlaceViewModelFactory(
+            appContainer = androidx.compose.ui.platform.LocalContext.current.appContainer,
+            dateKey = dateKey
+        )
+    )
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    AddPlaceScreenContent(
+        uiState = uiState,
+        confirmButtonText = stringResource(R.string.place_search_edit_confirm),
+        onBackClick = onBackClick,
+        onQueryChanged = viewModel::onQueryChanged,
+        onPlaceSelected = viewModel::onPlaceSelected,
+        onConfirmPlaceClick = {
+            uiState.selectedPlace?.let(onPlaceSelectedForEdit)
+        },
         onLoadNextPage = viewModel::onLoadNextPage,
         modifier = modifier
     )
@@ -105,10 +135,12 @@ fun AddPlaceScreen(
 @Composable
 private fun AddPlaceScreenContent(
     uiState: AddPlaceUiState,
+    title: String = stringResource(R.string.place_search_title),
+    confirmButtonText: String = stringResource(R.string.place_search_add_confirm),
     onBackClick: () -> Unit,
     onQueryChanged: (String) -> Unit,
     onPlaceSelected: (String) -> Unit,
-    onAddPlaceClick: () -> Unit,
+    onConfirmPlaceClick: () -> Unit,
     onLoadNextPage: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -129,7 +161,7 @@ private fun AddPlaceScreenContent(
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        text = "장소 추가하기",
+                        text = title,
                         fontSize = 18.sp,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
@@ -222,10 +254,10 @@ private fun AddPlaceScreenContent(
 
             if (shouldShowConfirmButton) {
                 BaseButton(
-                    text = "이 장소 추가하기",
+                    text = confirmButtonText,
                     onClick = {
                         clearFocus()
-                        onAddPlaceClick()
+                        onConfirmPlaceClick()
                     },
                     enabled = uiState.canConfirmPlace,
                     modifier = Modifier
@@ -383,7 +415,7 @@ private fun AddPlaceScreenInitialPreview() {
             onBackClick = {},
             onQueryChanged = {},
             onPlaceSelected = {},
-            onAddPlaceClick = {},
+            onConfirmPlaceClick = {},
             onLoadNextPage = {}
         )
     }
@@ -402,7 +434,7 @@ private fun AddPlaceScreenResultsPreview() {
             onBackClick = {},
             onQueryChanged = {},
             onPlaceSelected = {},
-            onAddPlaceClick = {},
+            onConfirmPlaceClick = {},
             onLoadNextPage = {}
         )
     }
@@ -422,7 +454,7 @@ private fun AddPlaceScreenConfirmEnabledPreview() {
             onBackClick = {},
             onQueryChanged = {},
             onPlaceSelected = {},
-            onAddPlaceClick = {},
+            onConfirmPlaceClick = {},
             onLoadNextPage = {}
         )
     }
