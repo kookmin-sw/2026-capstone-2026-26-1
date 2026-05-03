@@ -29,11 +29,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -104,10 +109,15 @@ private fun AddPlaceScreenContent(
     val shouldShowConfirmButton = uiState.shouldShowResults
     val focusManager = LocalFocusManager.current
     val clearFocus = { focusManager.clearFocus(force = true) }
+    var searchFieldBounds by remember { mutableStateOf<Rect?>(null) }
 
     Scaffold(
         modifier = modifier
             .fillMaxSize()
+            .clearFocusOutsideBoundsOnTap(
+                excludedBounds = searchFieldBounds,
+                onTap = clearFocus
+            )
             .imePadding(),
         topBar = {
             CenterAlignedTopAppBar(
@@ -150,7 +160,11 @@ private fun AddPlaceScreenContent(
             ) {
                 PlaceSearchTextField(
                     value = uiState.query,
-                    onValueChange = onQueryChanged
+                    onValueChange = onQueryChanged,
+                    onImeDone = clearFocus,
+                    modifier = Modifier.onGloballyPositioned { coordinates ->
+                        searchFieldBounds = coordinates.boundsInRoot()
+                    }
                 )
 
                 when {
@@ -159,7 +173,6 @@ private fun AddPlaceScreenContent(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .weight(1f)
-                                .clearFocusOnTap(clearFocus)
                         )
                     }
 
@@ -168,7 +181,6 @@ private fun AddPlaceScreenContent(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .weight(1f)
-                                .clearFocusOnTap(clearFocus)
                         )
                     }
 
@@ -176,8 +188,7 @@ private fun AddPlaceScreenContent(
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .weight(1f)
-                                .clearFocusOnTap(clearFocus),
+                                .weight(1f),
                             contentAlignment = Alignment.Center
                         ) {
                             CircularProgressIndicator()
@@ -190,18 +201,14 @@ private fun AddPlaceScreenContent(
                             onPlaceSelected = onPlaceSelected,
                             onLoadNextPage = onLoadNextPage,
                             onClearFocus = clearFocus,
-                            modifier = Modifier
-                                .weight(1f)
-                                .clearFocusOnTap(clearFocus)
+                            modifier = Modifier.weight(1f)
                         )
                     }
 
                     else -> {
                         SearchEmptyResult(
                             errorMessage = uiState.errorMessage,
-                            modifier = Modifier
-                                .weight(1f)
-                                .clearFocusOnTap(clearFocus)
+                            modifier = Modifier.weight(1f)
                         )
                     }
                 }
@@ -388,16 +395,17 @@ private fun AddPlaceScreenConfirmEnabledPreview() {
     }
 }
 
-private fun Modifier.clearFocusOnTap(
+private fun Modifier.clearFocusOutsideBoundsOnTap(
+    excludedBounds: Rect?,
     onTap: () -> Unit
-): Modifier = pointerInput(onTap) {
+): Modifier = pointerInput(excludedBounds, onTap) {
     awaitEachGesture {
-        awaitFirstDown(
+        val down = awaitFirstDown(
             requireUnconsumed = false,
             pass = PointerEventPass.Final
         )
         val up = waitForUpOrCancellation(pass = PointerEventPass.Final)
-        if (up != null) {
+        if (up != null && excludedBounds?.contains(down.position) != true) {
             onTap()
         }
     }

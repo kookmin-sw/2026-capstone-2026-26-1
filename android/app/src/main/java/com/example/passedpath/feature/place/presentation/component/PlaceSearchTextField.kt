@@ -21,7 +21,8 @@ fun PlaceSearchTextField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
-    placeholder: String = "\uC7A5\uC18C \uC774\uB984 \uB610\uB294 \uC8FC\uC18C\uB97C \uAC80\uC0C9\uD574 \uBCF4\uC138\uC694"
+    placeholder: String = "\uC7A5\uC18C \uC774\uB984 \uB610\uB294 \uC8FC\uC18C\uB97C \uAC80\uC0C9\uD574 \uBCF4\uC138\uC694",
+    onImeDone: () -> Unit = {}
 ) {
     var isFocused by remember { mutableStateOf(false) }
     val iconTint = if (isFocused || value.isNotBlank()) Green500 else Gray300
@@ -32,7 +33,8 @@ fun PlaceSearchTextField(
         placeholder = placeholder,
         modifier = modifier,
         singleLine = true,
-        imeAction = ImeAction.Search,
+        imeAction = ImeAction.Done,
+        onImeAction = onImeDone,
         onFocusChanged = { isFocused = it },
         leadingContent = {
             Icon(
