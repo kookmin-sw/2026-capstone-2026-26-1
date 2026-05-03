@@ -108,11 +108,6 @@ public class StayAnalysisService {
 
         Instant dayRouteEndTime = dayRoute.getEndTime();
 
-        // 아직 이 dayRoute의 종료 기준 시각이 지나지 않았으면 아무것도 하지 않음
-        if (Instant.now().isBefore(dayRouteEndTime)) {
-            return;
-        }
-
         if (Duration.between(stay.getStartTime(), dayRouteEndTime).toMinutes()
             >= STAY_MIN_DURATION_MINUTE) {
             stay.updateLastTime(dayRouteEndTime);
