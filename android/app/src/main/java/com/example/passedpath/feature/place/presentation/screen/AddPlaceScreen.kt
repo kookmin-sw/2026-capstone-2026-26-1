@@ -7,8 +7,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -34,7 +36,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInRoot
@@ -58,6 +63,7 @@ import com.example.passedpath.feature.place.presentation.viewmodel.AddPlaceViewM
 import com.example.passedpath.feature.place.presentation.viewmodel.AddPlaceViewModelFactory
 import com.example.passedpath.ui.component.button.BaseButton
 import com.example.passedpath.ui.theme.Black
+import com.example.passedpath.ui.theme.Gray200
 import com.example.passedpath.ui.theme.Gray500
 import com.example.passedpath.ui.theme.Gray900
 import com.example.passedpath.ui.theme.PassedPathTheme
@@ -156,7 +162,7 @@ private fun AddPlaceScreenContent(
                     .fillMaxSize()
                     .padding(horizontal = 16.dp)
                     .padding(top = 20.dp),
-                verticalArrangement = Arrangement.spacedBy(18.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 PlaceSearchTextField(
                     value = uiState.query,
@@ -256,6 +262,12 @@ private fun SearchResultList(
                 lastVisibleIndex >= uiState.places.lastIndex - 2
         }
     }
+    val isResultScrolled by remember {
+        derivedStateOf {
+            listState.firstVisibleItemIndex > 0 ||
+                listState.firstVisibleItemScrollOffset > 0
+        }
+    }
 
     LaunchedEffect(shouldLoadNextPage) {
         if (shouldLoadNextPage) {
@@ -264,15 +276,12 @@ private fun SearchResultList(
     }
 
     Column(
-        modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        modifier = modifier
     ) {
-        Text(
-            text = "검색 결과",
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.SemiBold,
-            color = Gray900
-        )
+
+
+        Spacer(modifier = Modifier.height(4.dp))
+        SearchResultDivider(visible = isResultScrolled)
 
         uiState.errorMessage?.let { message ->
             Text(
@@ -280,6 +289,7 @@ private fun SearchResultList(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.error
             )
+            Spacer(modifier = Modifier.height(12.dp))
         }
 
         LazyColumn(
@@ -321,6 +331,29 @@ private fun SearchResultList(
             }
         }
     }
+}
+
+@Composable
+private fun SearchResultDivider(visible: Boolean) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(1.dp)
+            .drawBehind {
+                val horizontalOverflow = 16.dp.toPx()
+                drawRect(
+                    color = if (visible) Gray200 else Color.Transparent,
+                    topLeft = androidx.compose.ui.geometry.Offset(
+                        x = -horizontalOverflow,
+                        y = 0f
+                    ),
+                    size = Size(
+                        width = size.width + horizontalOverflow * 2,
+                        height = size.height
+                    )
+                )
+            }
+    )
 }
 
 @Composable
