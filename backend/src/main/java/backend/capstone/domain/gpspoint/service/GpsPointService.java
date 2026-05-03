@@ -3,7 +3,6 @@ package backend.capstone.domain.gpspoint.service;
 import backend.capstone.domain.dayroute.dto.GpsPointBatchUploadRequest;
 import backend.capstone.domain.dayroute.dto.GpsPointBatchUploadRequest.GpsPointRequest;
 import backend.capstone.domain.dayroute.entity.DayRoute;
-import backend.capstone.domain.gpspoint.dto.GpsPointRecordedAtRange;
 import backend.capstone.domain.gpspoint.entity.GpsPoint;
 import backend.capstone.domain.gpspoint.repository.GpsPointRepository;
 import java.time.Instant;
@@ -38,11 +37,6 @@ public class GpsPointService {
             ps.setObject(4, gpsPoint.recordedAt());
         });
 
-    }
-
-    @Transactional(readOnly = true)
-    public GpsPointRecordedAtRange getGpsPointRange(DayRoute dayRoute) {
-        return gpsPointRepository.findRecordedAtRange(dayRoute);
     }
 
     @Transactional(readOnly = true)

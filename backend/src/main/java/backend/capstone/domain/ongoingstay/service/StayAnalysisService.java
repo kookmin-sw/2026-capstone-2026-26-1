@@ -12,7 +12,6 @@ import backend.capstone.domain.place.service.PlaceService;
 import backend.capstone.global.util.GeoUtils;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +27,6 @@ public class StayAnalysisService {
 
     private static final int STAY_RADIUS_METER = 50;
     private static final int STAY_MIN_DURATION_MINUTE = 10;
-    private static final ZoneId KST_ZONE_ID = ZoneId.of("Asia/Seoul");
 
     private final OngoingStayRepository ongoingStayRepository;
     private final GpsPointService gpsPointService;
@@ -104,9 +102,7 @@ public class StayAnalysisService {
             return;
         }
 
-        Instant dayRouteEndTime = dayRouteService.getDayRouteEndTime(dayRoute)
-            .atZone(KST_ZONE_ID)
-            .toInstant();
+        Instant dayRouteEndTime = dayRoute.getEndTime();
 
         // 아직 이 dayRoute의 종료 기준 시각이 지나지 않았으면 아무것도 하지 않음
         if (Instant.now().isBefore(dayRouteEndTime)) {

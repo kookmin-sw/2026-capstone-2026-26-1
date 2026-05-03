@@ -15,7 +15,6 @@ import backend.capstone.domain.dayroute.event.GpsPointsUploadedEvent;
 import backend.capstone.domain.dayroute.exception.DayRouteErrorCode;
 import backend.capstone.domain.dayroute.mapper.DayRouteMapper;
 import backend.capstone.domain.dayroute.service.DayRouteService;
-import backend.capstone.domain.gpspoint.dto.GpsPointRecordedAtRange;
 import backend.capstone.domain.gpspoint.entity.GpsPoint;
 import backend.capstone.domain.gpspoint.service.GpsPointService;
 import backend.capstone.global.exception.BusinessException;
@@ -53,11 +52,6 @@ public class DayRouteFacade {
         if (!request.gpsPoints().isEmpty()) {
             gpsPointService.batchInsert(dayRoute.getId(), request);
             dayRouteService.markHasGpsPoints(dayRoute);
-
-            // 업로드된 좌표의 시간 범위로 DayRoute 시간 업데이트
-            GpsPointRecordedAtRange gpsPointRange = gpsPointService.getGpsPointRange(dayRoute);
-            dayRouteService.updateTime(dayRoute, gpsPointRange.startTime(),
-                gpsPointRange.endTime());
         }
 
         dayRouteService.updateDistance(dayRoute, request.distance());
@@ -125,7 +119,6 @@ public class DayRouteFacade {
     @Recover
     public GpsPointBatchUploadResponse recover(RuntimeException e, Long userId,
         GpsPointBatchUploadRequest request) {
-        // 예: 도메인 예외로 변환
         throw new BusinessException(DayRouteErrorCode.GPS_POINT_UPLOAD_FAILURE);
     }
 }

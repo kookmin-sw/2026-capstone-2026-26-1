@@ -17,6 +17,9 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.AccessLevel;
@@ -35,6 +38,8 @@ import lombok.NoArgsConstructor;
 )
 public class DayRoute {
 
+    private static final ZoneId KST_ZONE_ID = ZoneId.of("Asia/Seoul");
+
     @Id
     @Column(name = "day_route_id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -46,9 +51,9 @@ public class DayRoute {
 
     private LocalDate date;
 
-    private Instant startTime;
+    private Instant startTime; //route 시작 시간
 
-    private Instant endTime;
+    private Instant endTime; //route 종료 시간
 
     private double totalDistance;
 
@@ -64,10 +69,10 @@ public class DayRoute {
     @OneToMany(mappedBy = "dayRoute")
     private List<GpsPoint> gpsPoints;
 
-    @Column(columnDefinition = "LONGTEXT")
-    private String encodedPath;
-
-    private Integer pathPointCount;
+//    @Column(columnDefinition = "LONGTEXT")
+//    private String encodedPath;
+//
+//    private Integer pathPointCount;
 
     private boolean hasPolyline;
 
@@ -96,13 +101,9 @@ public class DayRoute {
     public DayRoute(User user, LocalDate date) {
         this.user = user;
         this.date = date;
+        initializeRouteWindow();
         gpsPoints = new ArrayList<>();
         dayRouteHomeStatus = DayRouteHomeStatus.UNKNOWN;
-    }
-
-    public void updateTime(Instant startTime, Instant endTime) {
-        this.startTime = startTime;
-        this.endTime = endTime;
     }
 
 //    public void updateEncodedPath(String encodedPath, int pathPointCount) {
@@ -174,5 +175,25 @@ public class DayRoute {
 
     public void updateHomeAnalysisLastPointAt(Instant homeAnalysisLastPointAt) {
         this.homeAnalysisLastPointAt = homeAnalysisLastPointAt;
+    }
+
+    private void initializeRouteWindow() {
+        //TODO: @notnull 제약조건으로 제거
+        if (user == null || date == null) {
+            return;
+        }
+
+        LocalTime routeStartTime = user.getDayStartTime();
+        LocalTime routeEndTime = user.getDayEndTime();
+        LocalDateTime routeStartDateTime = LocalDateTime.of(date, routeStartTime);
+
+        LocalDate endDate = date;
+        if (routeEndTime.isBefore(routeStartTime) || routeEndTime.equals(routeStartTime)) {
+            endDate = date.plusDays(1);
+        }
+
+        LocalDateTime routeEndDateTime = LocalDateTime.of(endDate, routeEndTime);
+        this.startTime = routeStartDateTime.atZone(KST_ZONE_ID).toInstant();
+        this.endTime = routeEndDateTime.atZone(KST_ZONE_ID).toInstant();
     }
 }
