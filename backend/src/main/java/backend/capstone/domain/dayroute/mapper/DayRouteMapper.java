@@ -5,6 +5,7 @@ import backend.capstone.domain.dayroute.dto.DayRouteMonthlyResponse;
 import backend.capstone.domain.dayroute.entity.DayRoute;
 import backend.capstone.domain.gpspoint.entity.GpsPoint;
 import backend.capstone.domain.user.entity.User;
+import backend.capstone.global.util.KstDateTimeUtils;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
@@ -36,7 +37,7 @@ public class DayRouteMapper {
 //            .pathPointCount(dayRoute.getPathPointCount())
             .gpsPoints(gpsPoints.stream()
                 .map(gp -> new DayRouteDetailResponse.GpsPointItem(
-                    gp.getRecordedAt(),
+                    KstDateTimeUtils.toKstOffsetDateTime(gp.getRecordedAt()),
                     gp.getLatitude(),
                     gp.getLongitude()
                 ))

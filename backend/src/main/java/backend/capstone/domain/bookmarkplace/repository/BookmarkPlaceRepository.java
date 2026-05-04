@@ -1,6 +1,7 @@
 package backend.capstone.domain.bookmarkplace.repository;
 
 import backend.capstone.domain.bookmarkplace.entity.BookmarkPlace;
+import backend.capstone.domain.bookmarkplace.entity.BookmarkPlaceType;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -24,4 +25,7 @@ public interface BookmarkPlaceRepository extends JpaRepository<BookmarkPlace, Lo
         """)
     Optional<BookmarkPlace> findByIdAndUserId(@Param("bookmarkPlaceId") Long bookmarkPlaceId,
         @Param("userId") Long userId);
+
+    //TODO: JPQL로 변경
+    boolean existsByUserIdAndType(Long userId, BookmarkPlaceType type);
 }

@@ -15,8 +15,8 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.AccessLevel;
@@ -46,9 +46,9 @@ public class DayRoute {
 
     private LocalDate date;
 
-    private LocalDateTime startTime;
+    private Instant startTime;
 
-    private LocalDateTime endTime;
+    private Instant endTime;
 
     private double totalDistance;
 
@@ -76,7 +76,7 @@ public class DayRoute {
     // stay 분석 flag
     private boolean analysisNeeded;
 
-    private LocalDateTime lastAnalyzedAt;
+    private Instant lastAnalyzedAt;
 
     @Enumerated(EnumType.STRING)
     private AnalysisStatus analysisStatus;
@@ -89,7 +89,7 @@ public class DayRoute {
         analysisStatus = AnalysisStatus.IDLE;
     }
 
-    public void updateTime(LocalDateTime startTime, LocalDateTime endTime) {
+    public void updateTime(Instant startTime, Instant endTime) {
         this.startTime = startTime;
         this.endTime = endTime;
     }
@@ -138,7 +138,7 @@ public class DayRoute {
         this.analysisStatus = AnalysisStatus.IDLE;
     }
 
-    public void completeAnalysis(LocalDateTime recordedAt) {
+    public void completeAnalysis(Instant recordedAt) {
         lastAnalyzedAt = recordedAt;
         markIdleAnalysis();
     }

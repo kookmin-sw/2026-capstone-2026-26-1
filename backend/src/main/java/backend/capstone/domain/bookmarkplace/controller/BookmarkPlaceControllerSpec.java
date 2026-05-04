@@ -26,7 +26,8 @@ public interface BookmarkPlaceControllerSpec {
         summary = "즐겨찾기 장소 등록 API",
         description = """
             type 필드의 값은 HOME/COMPANY/SCHOOL/ETC 중 하나를 선택해 주세요.<br>
-            카카오 장소 검색 api에서 받은 longitude와 latitude 값을 요청값에 넣어주세요.
+            카카오 장소 검색 api에서 받은 longitude와 latitude 값을 요청값에 넣어주세요.<br>
+            이미 type이 HOME인 즐찾 장소가 존재하는데, HOME type 즐찾 장소를 등록하려는 경우 예외가 발생합니다. (집주소 중복 등록 방지)
             """
     )
     BookmarkPlaceCreateResponse createBookmarkPlace(
@@ -38,7 +39,8 @@ public interface BookmarkPlaceControllerSpec {
         summary = "즐겨찾기 장소 수정 API",
         description = """
             type 필드의 값은 HOME/COMPANY/SCHOOL/ETC 중 하나를 선택해 주세요.<br>
-            해당 api는 put 메서드로 해당 BookmarkPlace의 모든 필드들을 덮어씌워서 저장합니다. 변경되지 않은 필드도 원래값들을 넣어주세요.
+            해당 api는 put 메서드로 해당 BookmarkPlace의 모든 필드들을 덮어씌워서 저장합니다. 변경되지 않은 필드도 원래값들을 넣어주세요.<br>
+            type이 HOME인 즐겨찾기 장소가 존재하는데, 기존 type에서 HOME으로 변경 요청이 들어온 경우 예외가 발생합니다. (집주소 중복 등록 방지)<br>
             """
     )
     BookmarkPlaceUpdateResponse updateBookmarkPlace(

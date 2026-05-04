@@ -3,7 +3,7 @@ package backend.capstone.domain.gpspoint.repository;
 import backend.capstone.domain.dayroute.entity.DayRoute;
 import backend.capstone.domain.gpspoint.dto.GpsPointRecordedAtRange;
 import backend.capstone.domain.gpspoint.entity.GpsPoint;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -39,7 +39,7 @@ public interface GpsPointRepository extends
         """)
     List<GpsPoint> findNewPointsAfterCursor(
         @Param("dayRoute") DayRoute dayRoute,
-        @Param("lastRecordedAt") LocalDateTime lastRecordedAt
+        @Param("lastRecordedAt") Instant lastRecordedAt
     );
 
     List<GpsPoint> findByDayRouteOrderByRecordedAtAsc(@Param("dayRoute") DayRoute dayRoute);

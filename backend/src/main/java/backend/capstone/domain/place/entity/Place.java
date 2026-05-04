@@ -15,7 +15,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -54,16 +54,16 @@ public class Place extends BaseTimeEntity {
     @Enumerated(EnumType.STRING)
     private PlaceSource source;
 
-    private LocalDateTime startTime;
+    private Instant startTime;
 
-    private LocalDateTime endTime;
+    private Instant endTime;
 
     @Enumerated(EnumType.STRING)
     private BookmarkPlaceType type;
 
     @Builder
     Place(DayRoute dayRoute, String roadAddress, String name, double latitude, double longitude,
-        int orderIndex, PlaceSource source, LocalDateTime startTime, LocalDateTime endTime) {
+        int orderIndex, PlaceSource source, Instant startTime, Instant endTime) {
         this.dayRoute = dayRoute;
         this.roadAddress = roadAddress;
         this.name = name;

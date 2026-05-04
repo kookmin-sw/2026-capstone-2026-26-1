@@ -1,10 +1,10 @@
 package backend.capstone.domain.gpspoint.dto;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 public record GpsPointRecordedAtRange(
-    LocalDateTime startTime,
-    LocalDateTime endTime
+    Instant startTime,
+    Instant endTime
 ) {
 
 }
