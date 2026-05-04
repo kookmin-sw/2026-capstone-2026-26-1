@@ -2,12 +2,9 @@ package com.example.passedpath.feature.main.presentation.screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -23,7 +20,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.passedpath.BuildConfig
 import com.example.passedpath.R
-import com.example.passedpath.feature.main.presentation.component.MainMorePopupMenu
 import com.example.passedpath.feature.main.presentation.state.MainUiState
 import com.example.passedpath.feature.permission.presentation.state.LocationPermissionUiState
 import com.example.passedpath.feature.route.presentation.screen.RouteMapContent
@@ -148,6 +144,22 @@ internal fun MainMapSection(
             uiState = uiState,
             onDateSelected = onDateSelected,
             onBookmarkClick = onBookmarkClick,
+            isMoreMenuVisible = isMoreMenuVisible,
+            onMoreClick = {
+                isMoreMenuVisible = !isMoreMenuVisible
+                onMoreClick()
+            },
+            onMoreDismissRequest = {
+                isMoreMenuVisible = false
+            },
+            onMorePlaceBookmarkClick = {
+                isMoreMenuVisible = false
+                onMorePlaceBookmarkClick()
+            },
+            onMoreDeleteRecordClick = {
+                isMoreMenuVisible = false
+                onMoreDeleteRecordClick()
+            },
             onRouteAction = onRouteAction,
             onPermissionActionClick = onPermissionActionClick,
             debugActions = debugActions,
@@ -166,24 +178,6 @@ internal fun MainMapSection(
                         modifier = Modifier
                     )
                 }
-            },
-            topEndControls = {
-                MainMoreButtonMenu(
-                    isMenuVisible = isMoreMenuVisible,
-                    onMoreClick = {
-                        isMoreMenuVisible = !isMoreMenuVisible
-                        onMoreClick()
-                    },
-                    onPlaceBookmarkClick = {
-                        isMoreMenuVisible = false
-                        onMorePlaceBookmarkClick()
-                    },
-                    onDeleteRecordClick = {
-                        isMoreMenuVisible = false
-                        onMoreDeleteRecordClick()
-                    },
-                    modifier = Modifier
-                )
             },
             floatingControls = {
                 FloatingMapButtons(
@@ -204,34 +198,6 @@ internal fun MainMapSection(
                 )
             }
         )
-    }
-}
-
-@Composable
-private fun MainMoreButtonMenu(
-    isMenuVisible: Boolean,
-    onMoreClick: () -> Unit,
-    onPlaceBookmarkClick: () -> Unit,
-    onDeleteRecordClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier,
-        horizontalAlignment = androidx.compose.ui.Alignment.End
-    ) {
-        MoreButton(
-            onClick = onMoreClick,
-            modifier = Modifier
-        )
-
-        if (isMenuVisible) {
-            Spacer(modifier = Modifier.height(8.dp))
-            MainMorePopupMenu(
-                onPlaceBookmarkClick = onPlaceBookmarkClick,
-                onDeleteRecordClick = onDeleteRecordClick,
-                modifier = Modifier
-            )
-        }
     }
 }
 
@@ -283,19 +249,6 @@ private fun DebugPanelButton(
         onClick = onClick,
         iconResId = R.drawable.ic_info_circle,
         contentDescriptionResId = R.string.debug_panel_open,
-        modifier = modifier
-    )
-}
-
-@Composable
-private fun MoreButton(
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    FloatingCircleIconButton(
-        onClick = onClick,
-        iconResId = R.drawable.ic_more,
-        contentDescriptionResId = R.string.main_more,
         modifier = modifier
     )
 }
