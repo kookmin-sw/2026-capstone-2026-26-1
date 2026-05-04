@@ -118,18 +118,71 @@ fun EditPlaceSearchScreen(
         )
     )
 ) {
+    PlaceSearchSelectionScreen(
+        dateKey = dateKey,
+        title = stringResource(R.string.place_search_title),
+        confirmButtonText = stringResource(R.string.place_search_edit_confirm),
+        onBackClick = onBackClick,
+        onPlaceSelected = onPlaceSelectedForEdit,
+        modifier = modifier,
+        viewModel = viewModel
+    )
+}
+
+@Composable
+fun PlaceBookmarkSearchScreen(
+    onBackClick: () -> Unit,
+    onPlaceSelected: (PlaceSearchResult) -> Unit,
+    modifier: Modifier = Modifier,
+    dateKey: String = "",
+    viewModel: AddPlaceViewModel = viewModel(
+        factory = AddPlaceViewModelFactory(
+            appContainer = androidx.compose.ui.platform.LocalContext.current.appContainer,
+            dateKey = dateKey
+        )
+    )
+) {
+    PlaceSearchSelectionScreen(
+        dateKey = dateKey,
+        title = stringResource(R.string.place_search_title),
+        confirmButtonText = stringResource(R.string.place_search_add_confirm),
+        onBackClick = onBackClick,
+        onPlaceSelected = onPlaceSelected,
+        modifier = modifier,
+        viewModel = viewModel
+    )
+}
+
+@Composable
+fun PlaceSearchSelectionScreen(
+    dateKey: String,
+    title: String,
+    confirmButtonText: String,
+    onBackClick: () -> Unit,
+    onPlaceSelected: (PlaceSearchResult) -> Unit,
+    modifier: Modifier = Modifier,
+    viewModelKey: String? = null,
+    viewModel: AddPlaceViewModel = viewModel(
+        key = viewModelKey,
+        factory = AddPlaceViewModelFactory(
+            appContainer = androidx.compose.ui.platform.LocalContext.current.appContainer,
+            dateKey = dateKey
+        )
+    )
+) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     BackHandler(onBack = onBackClick)
 
     AddPlaceScreenContent(
         uiState = uiState,
-        confirmButtonText = stringResource(R.string.place_search_edit_confirm),
+        title = title,
+        confirmButtonText = confirmButtonText,
         onBackClick = onBackClick,
         onQueryChanged = viewModel::onQueryChanged,
         onPlaceSelected = viewModel::onPlaceSelected,
         onConfirmPlaceClick = {
-            uiState.selectedPlace?.let(onPlaceSelectedForEdit)
+            uiState.selectedPlace?.let(onPlaceSelected)
         },
         onLoadNextPage = viewModel::onLoadNextPage,
         modifier = modifier

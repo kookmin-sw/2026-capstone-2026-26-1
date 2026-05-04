@@ -9,6 +9,8 @@ object NavRoute {
     const val ADD_PLACE = "add_place"
     const val ADD_PLACE_DATE_KEY = "dateKey"
     const val ADD_PLACE_WITH_DATE = "$ADD_PLACE/{$ADD_PLACE_DATE_KEY}"
+    const val PLACE_BOOKMARKS = "place_bookmarks"
+    const val PLACE_BOOKMARK_SEARCH = "place_bookmark_search"
     const val MYPAGE = "mypage"
 
     fun addPlace(dateKey: String): String = "$ADD_PLACE/$dateKey"

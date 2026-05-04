@@ -1,5 +1,6 @@
 package com.example.passedpath.ui.component.modal
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.tween
@@ -14,10 +15,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun PassedPathBottomModal(
     onDimClick: () -> Unit,
@@ -29,16 +34,28 @@ fun PassedPathBottomModal(
     Dialog(
         onDismissRequest = onBackPress,
         properties = DialogProperties(
-            dismissOnBackPress = true,
+            dismissOnBackPress = false,
             dismissOnClickOutside = false,
             usePlatformDefaultWidth = false
         )
     ) {
+        val focusManager = LocalFocusManager.current
+        val keyboardController = LocalSoftwareKeyboardController.current
         val dimInteractionSource = remember { MutableInteractionSource() }
         val modalVisibleState = remember {
             MutableTransitionState(false).apply {
                 targetState = true
             }
+        }
+
+        fun clearDialogInputFocus() {
+            focusManager.clearFocus(force = true)
+            keyboardController?.hide()
+        }
+
+        BackHandler {
+            clearDialogInputFocus()
+            onBackPress()
         }
 
         Box(modifier = modifier.fillMaxSize()) {
@@ -48,7 +65,10 @@ fun PassedPathBottomModal(
                     .clickable(
                         interactionSource = dimInteractionSource,
                         indication = null,
-                        onClick = onDimClick
+                        onClick = {
+                            clearDialogInputFocus()
+                            onDimClick()
+                        }
                     )
             )
             AnimatedVisibility(

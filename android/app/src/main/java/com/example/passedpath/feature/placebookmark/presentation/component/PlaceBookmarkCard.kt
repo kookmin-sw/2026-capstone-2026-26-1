@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -113,9 +112,9 @@ private fun PlaceBookmarkCardContent(
             .padding(
                 PaddingValues(
                     start = 20.dp,
-                    top = 16.dp,
-                    end = 16.dp,
-                    bottom = 20.dp
+                    top = 14.dp,
+                    end = 12.dp,
+                    bottom = 14.dp
                 )
             ),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -152,17 +151,19 @@ private fun PlaceBookmarkCardTextSection(
         Text(
             text = name,
             style = MaterialTheme.typography.bodyLarge,
+            fontSize = 16.sp,
             color = Gray900,
             fontWeight = FontWeight.SemiBold,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
 
-        Spacer(modifier = Modifier.height(6.dp))
+        Spacer(modifier = Modifier.height(4.dp))
 
         Text(
             text = address,
             style = MaterialTheme.typography.bodyMedium,
+            fontSize = 13.sp,
             color = Gray400,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
@@ -178,7 +179,6 @@ private fun PlaceBookmarkCardMoreButton(
     Box(
         modifier = Modifier
             .size(36.dp)
-            .offset(y = 6.dp)
             .clip(CircleShape)
             .background(if (isMenuVisible) Gray100 else Color.Transparent)
             .clickable(enabled = onClick != null) {

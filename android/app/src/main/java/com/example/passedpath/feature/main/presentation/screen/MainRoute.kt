@@ -28,6 +28,7 @@ fun MainRoute(
     placeCreatedEvent: PlaceCreatedEvent? = null,
     onPlaceCreatedEventConsumed: (Int) -> Unit = {},
     onNavigateToAddPlace: (String) -> Unit = {},
+    onNavigateToPlaceBookmarks: () -> Unit = {},
     viewModel: MainViewModel = viewModel(
         factory = MainViewModelFactory(LocalContext.current.appContainer)
     )
@@ -151,6 +152,7 @@ fun MainRoute(
         onDayNoteFeedbackDismissed = dayNoteViewModel::consumeFeedback,
         onPlaceListRefreshRequested = placeViewModel::fetchVisitedPlaces,
         onNavigateToAddPlace = onNavigateToAddPlace,
+        onNavigateToPlaceBookmarks = onNavigateToPlaceBookmarks,
         onReorderPlaces = placeViewModel::reorderPlaces,
         onCloseReorderGuideBanner = placeViewModel::dismissReorderGuideBanner,
         onUpdatePlace = placeViewModel::updatePlace,

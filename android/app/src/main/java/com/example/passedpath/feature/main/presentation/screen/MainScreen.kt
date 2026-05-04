@@ -76,6 +76,7 @@ fun MainScreen(
     onDayNoteFeedbackDismissed: (Long) -> Unit,
     onPlaceListRefreshRequested: (String) -> Unit,
     onNavigateToAddPlace: (String) -> Unit,
+    onNavigateToPlaceBookmarks: () -> Unit,
     onReorderPlaces: (List<Long>) -> Unit,
     onCloseReorderGuideBanner: () -> Unit,
     onUpdatePlace: (Long, String, String, Double, Double) -> Unit,
@@ -371,6 +372,7 @@ fun MainScreen(
                     onRouteAction = onRouteAction,
                     onStatsClick = {},
                     onMoreClick = {},
+                    onMorePlaceBookmarkClick = onNavigateToPlaceBookmarks,
                     onMapClick = {
                         focusManager.clearFocus(force = true)
                         hideBottomSheet()
