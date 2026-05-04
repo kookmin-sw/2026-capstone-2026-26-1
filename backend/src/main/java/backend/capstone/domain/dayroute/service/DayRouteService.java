@@ -1,6 +1,5 @@
 package backend.capstone.domain.dayroute.service;
 
-import backend.capstone.domain.dayroute.entity.AnalysisStatus;
 import backend.capstone.domain.dayroute.entity.DayRoute;
 import backend.capstone.domain.dayroute.exception.DayRouteErrorCode;
 import backend.capstone.domain.dayroute.mapper.DayRouteMapper;
@@ -8,10 +7,7 @@ import backend.capstone.domain.dayroute.repository.DayRouteRepository;
 import backend.capstone.domain.place.repository.PlaceRepository;
 import backend.capstone.domain.user.service.UserService;
 import backend.capstone.global.exception.BusinessException;
-import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.YearMonth;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -56,20 +52,6 @@ public class DayRouteService {
     }
 
     @Transactional(readOnly = true)
-    public LocalDateTime getDayRouteEndTime(DayRoute dayRoute) {
-        //TODO: fetch join 적용
-        LocalDate routeDate = dayRoute.getDate();
-        LocalTime dayStartTime = dayRoute.getUser().getDayStartTime();
-        LocalTime dayEndTime = dayRoute.getUser().getDayEndTime();
-
-        LocalDate endDate = routeDate;
-        if (dayEndTime.isBefore(dayStartTime) || dayEndTime.equals(dayStartTime)) {
-            endDate = routeDate.plusDays(1);
-        }
-        return LocalDateTime.of(endDate, dayEndTime);
-    }
-
-    @Transactional(readOnly = true)
     public List<DayRoute> getDayRoutesByMonth(Long userId, int year, int month) {
         YearMonth yearMonth = YearMonth.of(year, month);
         return dayRouteRepository.findByUserIdAndDateBetweenOrderByDate(userId,
@@ -94,11 +76,6 @@ public class DayRouteService {
     }
 
     @Transactional
-    public void updateTime(DayRoute dayRoute, Instant startTime, Instant endTime) {
-        dayRoute.updateTime(startTime, endTime);
-    }
-
-    @Transactional
     public void updateDistance(DayRoute dayRoute, double distance) {
         dayRoute.updateDistance(distance);
     }
@@ -111,11 +88,6 @@ public class DayRouteService {
     @Transactional
     public void refreshHasManualData(DayRoute dayRoute) {
         dayRoute.updateHasManualData(hasManualData(dayRoute));
-    }
-
-    @Transactional(readOnly = true)
-    public List<DayRoute> getStayAnalysisTargetDayRoute(AnalysisStatus status) {
-        return dayRouteRepository.findStayAnalysisTargets(status);
     }
 
     private boolean hasManualData(DayRoute dayRoute) {

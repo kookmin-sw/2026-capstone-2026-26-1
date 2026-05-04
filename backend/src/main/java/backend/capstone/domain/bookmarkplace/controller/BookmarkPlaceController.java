@@ -49,7 +49,7 @@ public class BookmarkPlaceController implements BookmarkPlaceControllerSpec {
     @PutMapping("/{bookmarkPlaceId}")
     public BookmarkPlaceUpdateResponse updateBookmarkPlace(
         @AuthenticationPrincipal UserPrincipal principal,
-        @PathVariable Long bookmarkPlaceId,
+        @PathVariable("bookmarkPlaceId") Long bookmarkPlaceId,
         @RequestBody BookmarkPlaceUpdateRequest request
     ) {
         return bookmarkPlaceService.updateBookmarkPlace(principal.userId(), bookmarkPlaceId,
@@ -61,7 +61,7 @@ public class BookmarkPlaceController implements BookmarkPlaceControllerSpec {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteBookmarkPlace(
         @AuthenticationPrincipal UserPrincipal principal,
-        @PathVariable Long bookmarkPlaceId
+        @PathVariable("bookmarkPlaceId") Long bookmarkPlaceId
     ) {
         bookmarkPlaceService.deleteBookmarkPlace(principal.userId(), bookmarkPlaceId);
     }

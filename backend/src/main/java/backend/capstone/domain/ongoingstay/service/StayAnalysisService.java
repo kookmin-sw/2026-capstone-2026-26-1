@@ -1,6 +1,5 @@
 package backend.capstone.domain.ongoingstay.service;
 
-import backend.capstone.domain.dayroute.entity.AnalysisStatus;
 import backend.capstone.domain.dayroute.entity.DayRoute;
 import backend.capstone.domain.dayroute.service.DayRouteService;
 import backend.capstone.domain.gpspoint.entity.GpsPoint;
@@ -10,9 +9,9 @@ import backend.capstone.domain.kakaoplace.service.KakaoSearchByCategoryService;
 import backend.capstone.domain.ongoingstay.entity.OngoingStay;
 import backend.capstone.domain.ongoingstay.repository.OngoingStayRepository;
 import backend.capstone.domain.place.service.PlaceService;
+import backend.capstone.global.util.GeoUtils;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -27,8 +26,7 @@ import org.springframework.web.reactive.function.client.WebClientException;
 public class StayAnalysisService {
 
     private static final int STAY_RADIUS_METER = 50;
-    private static final int STAY_MIN_DURATION_MINUTE = 15;
-    private static final ZoneId KST_ZONE_ID = ZoneId.of("Asia/Seoul");
+    private static final int STAY_MIN_DURATION_MINUTE = 10;
 
     private final OngoingStayRepository ongoingStayRepository;
     private final GpsPointService gpsPointService;
@@ -39,12 +37,6 @@ public class StayAnalysisService {
     @Transactional
     public void analyzeStay(Long dayRouteId) {
         DayRoute dayRoute = dayRouteService.getDayRouteById(dayRouteId);
-        // 이미 분석이 진행 중인 경우, 중복 분석 방지
-        if (dayRoute.getAnalysisStatus() == AnalysisStatus.IN_PROGRESS) {
-            return;
-        }
-
-        dayRoute.markInProgressAnalysis();
 
         //이 dayRoute에 현재 진행 중인 stay가 있는지 조회
         OngoingStay stay = ongoingStayRepository.findByDayRoute(dayRoute)
@@ -53,10 +45,7 @@ public class StayAnalysisService {
         List<GpsPoint> newPoints = gpsPointService.getNewPoints(dayRoute,
             dayRoute.getLastAnalyzedAt());
 
-        // 새 점이 없을 때: 마지막 ongoing stay tail 처리
         if (newPoints.isEmpty()) {
-            handleLastTailIfDayEnded(dayRoute, stay);
-            dayRoute.markIdleAnalysis();
             return;
         }
 
@@ -68,9 +57,9 @@ public class StayAnalysisService {
             }
 
             //현재 point가 ongoing stay 중심점에서 몇 m 떨어져 있는지 계산
-            double distance = distanceMeter(stay.getCenterLatitude(), stay.getCenterLongitude(),
-                point.getLatitude(),
-                point.getLongitude());
+            double distance = GeoUtils.distanceMeter(
+                stay.getCenterLatitude(), stay.getCenterLongitude(),
+                point.getLatitude(), point.getLongitude());
 
             //현재 point가 기존 stay 중심에서 50m 이내면 같은 체류장소로 판단
             if (distance <= STAY_RADIUS_METER) {
@@ -106,19 +95,18 @@ public class StayAnalysisService {
         placeService.saveAutoPlace(dayRoute, stay, searchResult);
     }
 
-    private void handleLastTailIfDayEnded(DayRoute dayRoute, OngoingStay stay) {
+    @Transactional
+    public void analyzeStayTail(Long dayRouteId) {
+        DayRoute dayRoute = dayRouteService.getDayRouteById(dayRouteId);
+
+        OngoingStay stay = ongoingStayRepository.findByDayRoute(dayRoute)
+            .orElse(null);
+
         if (stay == null) {
             return;
         }
 
-        Instant dayRouteEndTime = dayRouteService.getDayRouteEndTime(dayRoute)
-            .atZone(KST_ZONE_ID)
-            .toInstant();
-
-        // 아직 이 dayRoute의 종료 기준 시각이 지나지 않았으면 아무것도 하지 않음
-        if (Instant.now().isBefore(dayRouteEndTime)) {
-            return;
-        }
+        Instant dayRouteEndTime = dayRoute.getEndTime();
 
         if (Duration.between(stay.getStartTime(), dayRouteEndTime).toMinutes()
             >= STAY_MIN_DURATION_MINUTE) {
@@ -127,25 +115,5 @@ public class StayAnalysisService {
         }
 
         ongoingStayRepository.delete(stay);
-    }
-
-    private double distanceMeter(
-        double lat1, double lon1,
-        double lat2, double lon2
-    ) {
-        double earthRadius = 6371000;
-
-        double dLat = Math.toRadians(lat2 - lat1);
-        double dLon = Math.toRadians(lon2 - lon1);
-
-        double a =
-            Math.sin(dLat / 2) * Math.sin(dLat / 2)
-                + Math.cos(Math.toRadians(lat1))
-                * Math.cos(Math.toRadians(lat2))
-                * Math.sin(dLon / 2) * Math.sin(dLon / 2);
-
-        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-        return earthRadius * c;
     }
 }

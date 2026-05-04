@@ -30,6 +30,8 @@ server:
   forward-headers-strategy: framework
 
 kakao:
+  auth:
+    base-url: https://kapi.kakao.com
   local:
     base-url: https://dapi.kakao.com
     rest-api-key: ${KAKAO_REST_API_KEY}

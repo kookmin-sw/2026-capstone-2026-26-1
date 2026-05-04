@@ -5,6 +5,7 @@ import backend.capstone.domain.dayroute.dto.DayRouteDetailResponse;
 import backend.capstone.domain.dayroute.dto.DayRouteMemoRequest;
 import backend.capstone.domain.dayroute.dto.DayRouteMemoResponse;
 import backend.capstone.domain.dayroute.dto.DayRouteMonthlyResponse;
+import backend.capstone.domain.dayroute.dto.DayRouteSummaryResponse;
 import backend.capstone.domain.dayroute.dto.DayRouteTitleRequest;
 import backend.capstone.domain.dayroute.dto.DayRouteTitleResponse;
 import backend.capstone.domain.dayroute.dto.GpsPointBatchUploadRequest;
@@ -37,7 +38,7 @@ public class DayRouteController implements DayRouteControllerSpec {
     @Override
     @PostMapping("/{date}/gps-points:batch")
     public GpsPointBatchUploadResponse uploadGpsPoints(
-        @PathVariable LocalDate date,
+        @PathVariable("date") LocalDate date,
         @Valid @RequestBody GpsPointBatchUploadRequest request,
         @AuthenticationPrincipal UserPrincipal principal
     ) {
@@ -47,8 +48,8 @@ public class DayRouteController implements DayRouteControllerSpec {
     @Override
     @GetMapping
     public DayRouteMonthlyResponse getDayRoutesByMonth(
-        @RequestParam @Min(2000) @Max(3000) int year,
-        @RequestParam @Min(1) @Max(12) int month,
+        @RequestParam("year") @Min(2000) @Max(3000) int year,
+        @RequestParam("month") @Min(1) @Max(12) int month,
         @AuthenticationPrincipal UserPrincipal principal
     ) {
         return dayRouteFacade.getDayRoutesByMonth(year, month, principal.userId());
@@ -57,16 +58,25 @@ public class DayRouteController implements DayRouteControllerSpec {
     @Override
     @GetMapping("/{date}")
     public DayRouteDetailResponse getDayRouteDetail(
-        @PathVariable LocalDate date,
+        @PathVariable("date") LocalDate date,
         @AuthenticationPrincipal UserPrincipal principal
     ) {
         return dayRouteFacade.getDayRouteDetail(date, principal.userId());
     }
 
     @Override
+    @GetMapping("/{date}/summary")
+    public DayRouteSummaryResponse getDayRouteSummary(
+        @PathVariable("date") LocalDate date,
+        @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        return dayRouteFacade.getDayRouteSummary(date, principal.userId());
+    }
+
+    @Override
     @PatchMapping("/{date}/memo")
     public DayRouteMemoResponse replaceMemo(
-        @PathVariable LocalDate date,
+        @PathVariable("date") LocalDate date,
         @AuthenticationPrincipal UserPrincipal principal,
         @RequestBody DayRouteMemoRequest request
     ) {
@@ -76,7 +86,7 @@ public class DayRouteController implements DayRouteControllerSpec {
     @Override
     @PatchMapping("/{date}/title")
     public DayRouteTitleResponse replaceTitle(
-        @PathVariable LocalDate date,
+        @PathVariable("date") LocalDate date,
         @AuthenticationPrincipal UserPrincipal principal,
         @RequestBody DayRouteTitleRequest request
     ) {

@@ -11,6 +11,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 import java.time.Duration;
 import java.time.Instant;
 import lombok.Getter;
@@ -26,7 +27,7 @@ public class OngoingStay extends BaseTimeEntity {
     @Column(name = "ongoing_stay_id")
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "day_route_id")
     private DayRoute dayRoute;
 

@@ -2,31 +2,22 @@ package backend.capstone.domain.kakaoplace.service;
 
 import backend.capstone.domain.kakaoplace.service.dto.KakaoSearchByCoordResult;
 import backend.capstone.domain.kakaoplace.dto.SearchResultByCategoryAndCoord;
+import backend.capstone.domain.kakaoplace.service.client.KakaoLocalApiClient;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
 
 @Service
 @RequiredArgsConstructor
 public class KakaoSearchByCoordService {
 
-    private final WebClient kakaoLocalWebClient;
+    private final KakaoLocalApiClient kakaoLocalApiClient;
 
     /**
      * 적절한 POI가 없을 때 중심좌표 기반 주소 fallback
      */
     public Optional<SearchResultByCategoryAndCoord> searchByCoord(double latitude, double longitude) {
-        KakaoSearchByCoordResult response = kakaoLocalWebClient.get()
-            .uri(uriBuilder -> uriBuilder
-                .path("/v2/local/geo/coord2address.json")
-                .queryParam("x", longitude)
-                .queryParam("y", latitude)
-                .queryParam("input_coord", "WGS84")
-                .build())
-            .retrieve()
-            .bodyToMono(KakaoSearchByCoordResult.class)
-            .block();
+        KakaoSearchByCoordResult response = kakaoLocalApiClient.searchByCoord(latitude, longitude);
 
         if (response == null || response.documents() == null || response.documents().isEmpty()) {
             return Optional.empty();

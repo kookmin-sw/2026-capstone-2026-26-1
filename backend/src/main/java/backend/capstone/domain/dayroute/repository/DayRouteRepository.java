@@ -1,6 +1,5 @@
 package backend.capstone.domain.dayroute.repository;
 
-import backend.capstone.domain.dayroute.entity.AnalysisStatus;
 import backend.capstone.domain.dayroute.entity.DayRoute;
 import java.time.LocalDate;
 import java.util.List;
@@ -29,16 +28,4 @@ public interface DayRouteRepository extends JpaRepository<DayRoute, Long> {
         """)
     List<DayRoute> findByUserIdAndDateBetweenOrderByDate(@Param("userId") Long userId,
         @Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
-
-    @Query("""
-        select distinct dr
-        from DayRoute dr
-        left join OngoingStay os on os.dayRoute.id = dr.id
-        where dr.analysisStatus = :status
-          and (
-                dr.analysisNeeded = true
-                or os.id is not null
-              )
-        """)
-    List<DayRoute> findStayAnalysisTargets(@Param("status") AnalysisStatus status);
 }

@@ -5,7 +5,7 @@ import backend.capstone.auth.dto.TokenPair;
 import backend.capstone.auth.exception.AuthErrorCode;
 import backend.capstone.auth.jwt.TokenStatus;
 import backend.capstone.auth.jwt.service.JwtTokenProvider;
-import backend.capstone.auth.service.client.KakaoApiClient;
+import backend.capstone.auth.service.client.KakaoAuthApiClient;
 import backend.capstone.auth.service.dto.KakaoUserInfoResponse;
 import backend.capstone.domain.user.entity.User;
 import backend.capstone.domain.user.service.UserService;
@@ -19,7 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class AuthService {
 
-    private final KakaoApiClient kakaoApiClient;
+    private final KakaoAuthApiClient kakaoAuthApiClient;
     private final UserService userService;
     private final JwtTokenProvider jwtTokenProvider;
     private final RefreshTokenService refreshTokenService;
@@ -27,7 +27,7 @@ public class AuthService {
 
     @Transactional
     public LoginResponse kakaoLogin(String kakaoAccessToken) {
-        KakaoUserInfoResponse kakaoUser = kakaoApiClient.getUserInfo(kakaoAccessToken);
+        KakaoUserInfoResponse kakaoUser = kakaoAuthApiClient.getUserInfo(kakaoAccessToken);
         User user = userService.upsertKakaoUser(kakaoUser);
         String accessToken = jwtTokenProvider.createAccessToken(user.getId());
         String refreshToken = jwtTokenProvider.createRefreshToken(user.getId());

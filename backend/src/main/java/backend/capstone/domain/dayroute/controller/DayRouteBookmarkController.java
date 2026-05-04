@@ -23,7 +23,7 @@ public class DayRouteBookmarkController implements DayRouteBookmarkControllerSpe
     @Override
     @PatchMapping("/{date}/bookmark")
     public DayRouteBookmarkResponse toggleBookmark(
-        @PathVariable LocalDate date,
+        @PathVariable("date") LocalDate date,
         @AuthenticationPrincipal UserPrincipal principal
     ) {
         return dayRouteFacade.toggleBookmark(date, principal.userId());

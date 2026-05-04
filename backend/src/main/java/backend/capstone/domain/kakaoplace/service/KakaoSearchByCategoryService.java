@@ -5,6 +5,8 @@ import backend.capstone.domain.bookmarkplace.service.BookmarkPlaceService;
 import backend.capstone.domain.kakaoplace.service.dto.KakaoSearchByCategoryResult;
 import backend.capstone.domain.kakaoplace.service.dto.KakaoSearchByCategoryResult.Document;
 import backend.capstone.domain.kakaoplace.dto.SearchResultByCategoryAndCoord;
+import backend.capstone.domain.kakaoplace.service.client.KakaoLocalApiClient;
+import backend.capstone.global.util.GeoUtils;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -12,7 +14,6 @@ import java.util.Map;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
 
 @Service
 @RequiredArgsConstructor
@@ -50,7 +51,7 @@ public class KakaoSearchByCategoryService {
         "SW8" //지하철역
     );
 
-    private final WebClient kakaoLocalWebClient;
+    private final KakaoLocalApiClient kakaoLocalApiClient;
     private final KakaoSearchByCoordService kakaoSearchByCoordService;
     private final BookmarkPlaceService bookmarkPlaceService;
 
@@ -104,19 +105,13 @@ public class KakaoSearchByCategoryService {
         Map<String, Document> uniqueCandidates = new LinkedHashMap<>();
 
         for (String categoryGroupCode : categoryGroupCodes) {
-            KakaoSearchByCategoryResult response = kakaoLocalWebClient.get()
-                .uri(uriBuilder -> uriBuilder
-                    .path("/v2/local/search/category.json")
-                    .queryParam("category_group_code", categoryGroupCode)
-                    .queryParam("x", longitude)
-                    .queryParam("y", latitude)
-                    .queryParam("radius", DEFAULT_RADIUS_METER)
-                    .queryParam("sort", "distance")
-                    .queryParam("size", DEFAULT_SIZE)
-                    .build())
-                .retrieve()
-                .bodyToMono(KakaoSearchByCategoryResult.class)
-                .block();
+            KakaoSearchByCategoryResult response = kakaoLocalApiClient.searchByCategory(
+                categoryGroupCode,
+                latitude,
+                longitude,
+                DEFAULT_RADIUS_METER,
+                DEFAULT_SIZE
+            );
 
             if (response == null || response.documents() == null || response.documents()
                 .isEmpty()) {
@@ -184,7 +179,7 @@ public class KakaoSearchByCategoryService {
             return false;
         }
 
-        return distanceMeter(latitude, longitude, bookmarkPlace.getLatitude(),
+        return GeoUtils.distanceMeter(latitude, longitude, bookmarkPlace.getLatitude(),
             bookmarkPlace.getLongitude()) <= BOOKMARK_MATCH_RADIUS_METER;
     }
 
@@ -225,25 +220,4 @@ public class KakaoSearchByCategoryService {
     private String emptyToNull(String value) {
         return (value == null || value.isBlank()) ? null : value;
     }
-
-    private double distanceMeter(
-        double lat1, double lon1,
-        double lat2, double lon2
-    ) {
-        double earthRadius = 6371000;
-
-        double dLat = Math.toRadians(lat2 - lat1);
-        double dLon = Math.toRadians(lon2 - lon1);
-
-        double a =
-            Math.sin(dLat / 2) * Math.sin(dLat / 2)
-                + Math.cos(Math.toRadians(lat1))
-                * Math.cos(Math.toRadians(lat2))
-                * Math.sin(dLon / 2) * Math.sin(dLon / 2);
-
-        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-        return earthRadius * c;
-    }
-
 }

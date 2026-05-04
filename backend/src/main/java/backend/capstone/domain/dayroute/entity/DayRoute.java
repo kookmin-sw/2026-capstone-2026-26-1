@@ -17,6 +17,9 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.AccessLevel;
@@ -35,6 +38,8 @@ import lombok.NoArgsConstructor;
 )
 public class DayRoute {
 
+    private static final ZoneId KST_ZONE_ID = ZoneId.of("Asia/Seoul");
+
     @Id
     @Column(name = "day_route_id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -46,9 +51,9 @@ public class DayRoute {
 
     private LocalDate date;
 
-    private Instant startTime;
+    private Instant startTime; //route 시작 시간
 
-    private Instant endTime;
+    private Instant endTime; //route 종료 시간
 
     private double totalDistance;
 
@@ -64,40 +69,47 @@ public class DayRoute {
     @OneToMany(mappedBy = "dayRoute")
     private List<GpsPoint> gpsPoints;
 
-    @Column(columnDefinition = "LONGTEXT")
-    private String encodedPath;
-
-    private Integer pathPointCount;
+//    @Column(columnDefinition = "LONGTEXT")
+//    private String encodedPath;
+//
+//    private Integer pathPointCount;
 
     private boolean hasPolyline;
 
     private boolean hasDetails;
 
-    // stay 분석 flag
-    private boolean analysisNeeded;
-
     private Instant lastAnalyzedAt;
 
     @Enumerated(EnumType.STRING)
-    private AnalysisStatus analysisStatus;
+    private DayRouteHomeStatus dayRouteHomeStatus;
+
+    //첫 외출 시간
+    private Instant outingTime;
+
+    //마지막 귀가 시간
+    private Instant enterHomeTime;
+
+    //총 외출 횟수
+    private int totalOutingCount;
+
+    //외출 시간
+    private long totalOutingSeconds;
+
+    private Instant homeAnalysisLastPointAt;
 
     @Builder
     public DayRoute(User user, LocalDate date) {
         this.user = user;
         this.date = date;
+        initializeRouteWindow();
         gpsPoints = new ArrayList<>();
-        analysisStatus = AnalysisStatus.IDLE;
+        dayRouteHomeStatus = DayRouteHomeStatus.UNKNOWN;
     }
 
-    public void updateTime(Instant startTime, Instant endTime) {
-        this.startTime = startTime;
-        this.endTime = endTime;
-    }
-
-    public void updateEncodedPath(String encodedPath, int pathPointCount) {
-        this.encodedPath = encodedPath;
-        this.pathPointCount = pathPointCount;
-    }
+//    public void updateEncodedPath(String encodedPath, int pathPointCount) {
+//        this.encodedPath = encodedPath;
+//        this.pathPointCount = pathPointCount;
+//    }
 
     public void updateTitle(String title) {
         this.title = title;
@@ -124,22 +136,64 @@ public class DayRoute {
         this.totalDistance = distance;
     }
 
-    // 분석용 업데이트
-    public void markAnalysisNeeded() {
-        this.analysisNeeded = true;
-    }
-
-    public void markInProgressAnalysis() {
-        this.analysisStatus = AnalysisStatus.IN_PROGRESS;
-    }
-
-    public void markIdleAnalysis() {
-        this.analysisNeeded = false;
-        this.analysisStatus = AnalysisStatus.IDLE;
-    }
-
     public void completeAnalysis(Instant recordedAt) {
-        lastAnalyzedAt = recordedAt;
-        markIdleAnalysis();
+        this.lastAnalyzedAt = recordedAt;
+    }
+
+    public void markAtHome() {
+        this.dayRouteHomeStatus = DayRouteHomeStatus.AT_HOME;
+    }
+
+    public void markOuting(Instant outingTime) {
+        this.dayRouteHomeStatus = DayRouteHomeStatus.OUTING;
+        if (this.outingTime == null) {
+            this.outingTime = outingTime;
+        }
+        this.totalOutingCount++;
+    }
+
+    public void markOutingWithoutTime() {
+        this.dayRouteHomeStatus = DayRouteHomeStatus.OUTING;
+    }
+
+    public void markReturnedHome(Instant homeComingTime) {
+        this.dayRouteHomeStatus = DayRouteHomeStatus.RETURNED_HOME;
+        this.enterHomeTime = homeComingTime;
+    }
+
+    public void markNoHomeBookmark() {
+        this.dayRouteHomeStatus = DayRouteHomeStatus.NO_HOME_BOOKMARK;
+    }
+
+    public void addOutingDurationSeconds(long outingSeconds) {
+        if (outingSeconds <= 0) {
+            return;
+        }
+
+        this.totalOutingSeconds += outingSeconds;
+    }
+
+    public void updateHomeAnalysisLastPointAt(Instant homeAnalysisLastPointAt) {
+        this.homeAnalysisLastPointAt = homeAnalysisLastPointAt;
+    }
+
+    private void initializeRouteWindow() {
+        //TODO: @notnull 제약조건으로 제거
+        if (user == null || date == null) {
+            return;
+        }
+
+        LocalTime routeStartTime = user.getDayStartTime();
+        LocalTime routeEndTime = user.getDayEndTime();
+        LocalDateTime routeStartDateTime = LocalDateTime.of(date, routeStartTime);
+
+        LocalDate endDate = date;
+        if (routeEndTime.isBefore(routeStartTime) || routeEndTime.equals(routeStartTime)) {
+            endDate = date.plusDays(1);
+        }
+
+        LocalDateTime routeEndDateTime = LocalDateTime.of(endDate, routeEndTime);
+        this.startTime = routeStartDateTime.atZone(KST_ZONE_ID).toInstant();
+        this.endTime = routeEndDateTime.atZone(KST_ZONE_ID).toInstant();
     }
 }
