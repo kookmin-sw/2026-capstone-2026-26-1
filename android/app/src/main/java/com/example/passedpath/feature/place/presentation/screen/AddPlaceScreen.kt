@@ -109,7 +109,9 @@ fun EditPlaceSearchScreen(
     onBackClick: () -> Unit,
     onPlaceSelectedForEdit: (PlaceSearchResult) -> Unit,
     modifier: Modifier = Modifier,
+    viewModelKey: String? = null,
     viewModel: AddPlaceViewModel = viewModel(
+        key = viewModelKey,
         factory = AddPlaceViewModelFactory(
             appContainer = androidx.compose.ui.platform.LocalContext.current.appContainer,
             dateKey = dateKey

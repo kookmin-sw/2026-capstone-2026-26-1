@@ -2,6 +2,13 @@ package com.example.passedpath.feature.main.presentation.screen
 
 import android.util.Log
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -16,6 +23,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.zIndex
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.example.passedpath.R
 import com.example.passedpath.feature.daynote.presentation.state.DayNoteUiState
 import com.example.passedpath.feature.main.presentation.policy.reduceForBottomSheetTabSelection
@@ -34,6 +43,7 @@ import com.example.passedpath.feature.place.domain.model.PlaceSearchResult
 import com.example.passedpath.feature.place.domain.model.VisitedPlace
 import com.example.passedpath.feature.place.presentation.component.PlaceDeleteConfirmDialog
 import com.example.passedpath.feature.place.presentation.component.PlaceEditNameBottomSheet
+import com.example.passedpath.feature.place.presentation.screen.EditPlaceSearchScreen
 import com.example.passedpath.feature.place.presentation.state.PlaceUiState
 import com.example.passedpath.feature.route.presentation.state.MainRouteModeUiState
 import com.example.passedpath.feature.route.presentation.state.PlaceMarkerUiState
@@ -47,15 +57,6 @@ import com.example.passedpath.ui.component.toast.ToastOverlayItem
 data class PlaceCreatedEvent(
     val id: Int,
     val placeId: Long
-)
-
-data class PlaceEditSearchResultEvent(
-    val id: Int,
-    val place: PlaceSearchResult
-)
-
-data class PlaceEditSearchCancelledEvent(
-    val id: Int
 )
 
 @Composable
@@ -75,7 +76,6 @@ fun MainScreen(
     onDayNoteFeedbackDismissed: (Long) -> Unit,
     onPlaceListRefreshRequested: (String) -> Unit,
     onNavigateToAddPlace: (String) -> Unit,
-    onNavigateToEditPlaceSearch: (String) -> Unit,
     onReorderPlaces: (List<Long>) -> Unit,
     onCloseReorderGuideBanner: () -> Unit,
     onUpdatePlace: (Long, String, String, Double, Double) -> Unit,
@@ -88,10 +88,6 @@ fun MainScreen(
     mainTabReselectionEvent: Int,
     placeCreatedEvent: PlaceCreatedEvent?,
     onPlaceCreatedEventHandled: (Int) -> Unit,
-    placeEditSearchResultEvent: PlaceEditSearchResultEvent?,
-    onPlaceEditSearchResultEventHandled: (Int) -> Unit,
-    placeEditSearchCancelledEvent: PlaceEditSearchCancelledEvent?,
-    onPlaceEditSearchCancelledEventHandled: (Int) -> Unit,
     showUnsavedDayNoteDialog: Boolean,
     onDismissUnsavedDayNoteDialog: () -> Unit,
     onConfirmUnsavedDayNoteDialog: () -> Unit,
@@ -109,7 +105,12 @@ fun MainScreen(
     var editLatitude by rememberSaveable { mutableStateOf(0.0) }
     var editLongitude by rememberSaveable { mutableStateOf(0.0) }
     var isPlaceEditSheetVisible by rememberSaveable { mutableStateOf(false) }
+    var isPlaceEditSearchVisible by rememberSaveable { mutableStateOf(false) }
+    var shouldRenderPlaceEditSearch by rememberSaveable { mutableStateOf(false) }
+    var placeEditSearchSessionId by rememberSaveable { mutableStateOf(0) }
     var isPlaceNameFocused by rememberSaveable { mutableStateOf(false) }
+    var submittedEditPlaceId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var submittedEditStartedFeedbackEventId by rememberSaveable { mutableStateOf<Long?>(null) }
     var observedDateKey by rememberSaveable { mutableStateOf(uiState.selectedDateKey) }
     val pendingEditPlace = pendingEditPlaceId?.let { placeId ->
         placeUiState.placeList.places.firstOrNull { place -> place.placeId == placeId }
@@ -128,7 +129,25 @@ fun MainScreen(
         editLatitude = 0.0
         editLongitude = 0.0
         isPlaceEditSheetVisible = false
+        isPlaceEditSearchVisible = false
+        shouldRenderPlaceEditSearch = false
+        submittedEditPlaceId = null
+        submittedEditStartedFeedbackEventId = null
         hideEditKeyboard()
+    }
+
+    fun showPlaceEditSearch() {
+        placeEditSearchSessionId += 1
+        shouldRenderPlaceEditSearch = true
+        isPlaceEditSearchVisible = true
+    }
+
+    fun hidePlaceEditSearch() {
+        isPlaceEditSearchVisible = false
+    }
+
+    fun removePlaceEditSearch() {
+        shouldRenderPlaceEditSearch = false
     }
 
     fun submitPlaceEdit() {
@@ -142,7 +161,9 @@ fun MainScreen(
             draftLatitude == place.latitude &&
             draftLongitude == place.longitude
         if (trimmedPlaceName.isBlank() || trimmedRoadAddress.isBlank() || isUnchanged) return
-        dismissPlaceEdit()
+        if (placeUiState.isSubmitting) return
+        submittedEditPlaceId = place.placeId
+        submittedEditStartedFeedbackEventId = placeUiState.feedbackEventId
         onUpdatePlace(
             place.placeId,
             trimmedPlaceName,
@@ -263,6 +284,29 @@ fun MainScreen(
         )
     }
 
+    LaunchedEffect(
+        submittedEditPlaceId,
+        submittedEditStartedFeedbackEventId,
+        placeUiState.isSubmitting,
+        placeUiState.feedbackEventId,
+        placeUiState.successMessage,
+        placeUiState.errorMessage
+    ) {
+        val submittedPlaceId = submittedEditPlaceId ?: return@LaunchedEffect
+        if (placeUiState.isSubmitting) return@LaunchedEffect
+        if (placeUiState.feedbackEventId == submittedEditStartedFeedbackEventId) return@LaunchedEffect
+
+        when {
+            placeUiState.successMessage != null -> dismissPlaceEdit()
+            placeUiState.errorMessage != null -> {
+                if (pendingEditPlaceId == submittedPlaceId) {
+                    submittedEditPlaceId = null
+                    submittedEditStartedFeedbackEventId = null
+                }
+            }
+        }
+    }
+
     LaunchedEffect(uiState.selectedDateKey) {
         if (observedDateKey != uiState.selectedDateKey) {
             observedDateKey = uiState.selectedDateKey
@@ -289,28 +333,6 @@ fun MainScreen(
         onPlaceCreatedEventHandled(event.id)
     }
 
-    LaunchedEffect(placeEditSearchResultEvent?.id) {
-        val event = placeEditSearchResultEvent ?: return@LaunchedEffect
-        if (pendingEditPlaceId != null) {
-            editPlaceName = event.place.name
-            editRoadAddress = event.place.displayAddress
-            editLatitude = event.place.latitude
-            editLongitude = event.place.longitude
-            isPlaceEditSheetVisible = true
-            hideEditKeyboard()
-        }
-        onPlaceEditSearchResultEventHandled(event.id)
-    }
-
-    LaunchedEffect(placeEditSearchCancelledEvent?.id) {
-        val event = placeEditSearchCancelledEvent ?: return@LaunchedEffect
-        if (pendingEditPlaceId != null) {
-            isPlaceEditSheetVisible = true
-            hideEditKeyboard()
-        }
-        onPlaceEditSearchCancelledEventHandled(event.id)
-    }
-
     LaunchedEffect(pendingEditPlaceId, placeUiState.placeList.places) {
         val placeId = pendingEditPlaceId ?: return@LaunchedEffect
         if (placeUiState.placeList.hasLoaded &&
@@ -320,7 +342,7 @@ fun MainScreen(
         }
     }
 
-    BackHandler(enabled = pendingEditPlaceId != null && isPlaceEditSheetVisible) {
+    BackHandler(enabled = pendingEditPlaceId != null && isPlaceEditSheetVisible && !shouldRenderPlaceEditSearch) {
         if (isPlaceNameFocused) {
             hideEditKeyboard()
         } else {
@@ -395,6 +417,8 @@ fun MainScreen(
                             editLatitude = place.latitude
                             editLongitude = place.longitude
                             isPlaceEditSheetVisible = true
+                            isPlaceEditSearchVisible = false
+                            shouldRenderPlaceEditSearch = false
                             isPlaceNameFocused = false
                         }
                     },
@@ -417,13 +441,12 @@ fun MainScreen(
 
         if (pendingEditPlace != null && isPlaceEditSheetVisible) {
             val place = pendingEditPlace
-            val selectedSearchPlace = placeEditSearchResultEvent?.place
             PlaceEditNameOverlay(
                 place = place,
-                placeName = selectedSearchPlace?.name ?: editPlaceName,
-                roadAddress = selectedSearchPlace?.displayAddress ?: editRoadAddress,
-                latitude = selectedSearchPlace?.latitude ?: editLatitude,
-                longitude = selectedSearchPlace?.longitude ?: editLongitude,
+                placeName = editPlaceName,
+                roadAddress = editRoadAddress,
+                latitude = editLatitude,
+                longitude = editLongitude,
                 isSubmitting = placeUiState.isSubmitting,
                 isNameFocused = isPlaceNameFocused,
                 onPlaceNameChange = { editPlaceName = it },
@@ -431,12 +454,30 @@ fun MainScreen(
                 onClearInputFocus = ::hideEditKeyboard,
                 onAddressClick = {
                     hideEditKeyboard()
-                    isPlaceEditSheetVisible = false
-                    onNavigateToEditPlaceSearch(uiState.selectedDateKey)
+                    showPlaceEditSearch()
                 },
                 onDismiss = ::dismissPlaceEdit,
                 onSubmit = ::submitPlaceEdit,
                 modifier = Modifier.zIndex(MainScreenOverlayZIndex.PlaceEdit)
+            )
+        }
+
+        if (pendingEditPlace != null && shouldRenderPlaceEditSearch) {
+            PlaceEditSearchOverlay(
+                visible = isPlaceEditSearchVisible,
+                dateKey = uiState.selectedDateKey,
+                viewModelKey = "place-edit-search:${uiState.selectedDateKey}:$placeEditSearchSessionId",
+                onBackClick = ::hidePlaceEditSearch,
+                onPlaceSelected = { place ->
+                    editPlaceName = place.name
+                    editRoadAddress = place.displayAddress
+                    editLatitude = place.latitude
+                    editLongitude = place.longitude
+                    hideEditKeyboard()
+                    hidePlaceEditSearch()
+                },
+                onDismissed = ::removePlaceEditSearch,
+                modifier = Modifier.zIndex(MainScreenOverlayZIndex.PlaceEditSearch)
             )
         }
     }
@@ -476,6 +517,64 @@ fun MainScreen(
 private object MainScreenOverlayZIndex {
     const val Toast = 1f
     const val PlaceEdit = 2f
+    const val PlaceEditSearch = 3f
+}
+
+@Composable
+private fun PlaceEditSearchOverlay(
+    visible: Boolean,
+    dateKey: String,
+    viewModelKey: String,
+    onBackClick: () -> Unit,
+    onPlaceSelected: (PlaceSearchResult) -> Unit,
+    onDismissed: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val visibleState = remember {
+        MutableTransitionState(false).apply {
+            targetState = visible
+        }
+    }
+
+    LaunchedEffect(visible) {
+        visibleState.targetState = visible
+    }
+
+    LaunchedEffect(visible, visibleState.currentState, visibleState.isIdle) {
+        if (!visible && visibleState.isIdle && !visibleState.currentState) {
+            onDismissed()
+        }
+    }
+
+    Dialog(
+        onDismissRequest = onBackClick,
+        properties = DialogProperties(
+            dismissOnBackPress = false,
+            dismissOnClickOutside = false,
+            usePlatformDefaultWidth = false
+        )
+    ) {
+        AnimatedVisibility(
+            visibleState = visibleState,
+            modifier = modifier.fillMaxSize(),
+            enter = slideInHorizontally(
+                animationSpec = tween(durationMillis = PlaceEditSearchEnterTransitionMillis),
+                initialOffsetX = { fullWidth -> fullWidth }
+            ) + fadeIn(animationSpec = tween(durationMillis = PlaceEditSearchEnterTransitionMillis)),
+            exit = slideOutHorizontally(
+                animationSpec = tween(durationMillis = PlaceEditSearchExitTransitionMillis),
+                targetOffsetX = { fullWidth -> fullWidth }
+            ) + fadeOut(animationSpec = tween(durationMillis = PlaceEditSearchExitTransitionMillis))
+        ) {
+            EditPlaceSearchScreen(
+                dateKey = dateKey,
+                onBackClick = onBackClick,
+                onPlaceSelectedForEdit = onPlaceSelected,
+                modifier = Modifier.fillMaxSize(),
+                viewModelKey = viewModelKey
+            )
+        }
+    }
 }
 
 @Composable
@@ -531,3 +630,6 @@ private fun PlaceEditNameOverlay(
         )
     }
 }
+
+private const val PlaceEditSearchEnterTransitionMillis = 250
+private const val PlaceEditSearchExitTransitionMillis = 230
