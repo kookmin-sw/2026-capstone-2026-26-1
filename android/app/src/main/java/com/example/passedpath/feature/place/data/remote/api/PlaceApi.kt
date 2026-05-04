@@ -39,7 +39,7 @@ interface PlaceApi {
     suspend fun reorderPlaces(
         @Path("date") date: String,
         @Body request: PlaceReorderRequestDto
-    )
+    ): Response<Unit>
 
     @PUT("/api/bookmark-places/{bookmarkPlaceId}")
     suspend fun updateBookmarkPlace(

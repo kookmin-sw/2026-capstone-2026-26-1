@@ -53,10 +53,13 @@ class PlaceRepositoryImpl(
     }
 
     override suspend fun reorderPlaces(dateKey: String, placeIds: List<Long>) {
-        placeApi.reorderPlaces(
+        val response = placeApi.reorderPlaces(
             date = dateKey,
             request = PlaceReorderRequestDto(placeIds = placeIds)
         )
+        if (!response.isSuccessful) {
+            throw HttpException(response)
+        }
     }
 
     override suspend fun updateBookmarkPlace(bookmarkPlaceId: Long, bookmarkPlace: BookmarkPlace): BookmarkPlace {
