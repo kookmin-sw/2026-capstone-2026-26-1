@@ -11,8 +11,11 @@ import com.example.passedpath.feature.placebookmark.domain.usecase.CreatePlaceBo
 import com.example.passedpath.feature.placebookmark.domain.usecase.GetPlaceBookmarksUseCase
 import com.example.passedpath.feature.placebookmark.presentation.state.PlaceBookmarkUiState
 import com.example.passedpath.ui.state.ApiFailureMessage
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -23,6 +26,8 @@ class PlaceBookmarkViewModel(
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(PlaceBookmarkUiState())
     val uiState: StateFlow<PlaceBookmarkUiState> = _uiState.asStateFlow()
+    private val _placeBookmarkCreated = MutableSharedFlow<Long>(extraBufferCapacity = 1)
+    val placeBookmarkCreated: SharedFlow<Long> = _placeBookmarkCreated.asSharedFlow()
 
     fun fetchPlaceBookmarks() {
         if (_uiState.value.isLoading) return
@@ -118,6 +123,7 @@ class PlaceBookmarkViewModel(
                         feedbackEventId = state.feedbackEventId + 1
                     )
                 }
+                _placeBookmarkCreated.emit(registeredPlaceBookmark.bookmarkPlaceId)
             }.onFailure { throwable ->
                 _uiState.update {
                     it.copy(

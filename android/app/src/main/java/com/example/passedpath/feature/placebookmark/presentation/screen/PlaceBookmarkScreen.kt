@@ -111,6 +111,7 @@ data class PlaceBookmarkSearchResultEvent(
 fun PlaceBookmarkRoute(
     onBackClick: () -> Unit,
     onNavigateToPlaceBookmarkSearch: () -> Unit,
+    onPlaceBookmarkChanged: (Long) -> Unit = {},
     searchResultEvent: PlaceBookmarkSearchResultEvent? = null,
     onSearchResultEventConsumed: (Int) -> Unit = {},
     viewModel: PlaceBookmarkViewModel = viewModel(
@@ -121,6 +122,12 @@ fun PlaceBookmarkRoute(
 
     LaunchedEffect(viewModel) {
         viewModel.fetchPlaceBookmarks()
+    }
+
+    LaunchedEffect(viewModel) {
+        viewModel.placeBookmarkCreated.collect { bookmarkPlaceId ->
+            onPlaceBookmarkChanged(bookmarkPlaceId)
+        }
     }
 
     PlaceBookmarkScreen(

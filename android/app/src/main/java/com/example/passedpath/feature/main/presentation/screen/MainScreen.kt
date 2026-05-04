@@ -45,6 +45,7 @@ import com.example.passedpath.feature.place.presentation.component.PlaceDeleteCo
 import com.example.passedpath.feature.place.presentation.component.PlaceEditNameBottomSheet
 import com.example.passedpath.feature.place.presentation.screen.EditPlaceSearchScreen
 import com.example.passedpath.feature.place.presentation.state.PlaceUiState
+import com.example.passedpath.feature.placebookmark.domain.model.PlaceBookmarkSummary
 import com.example.passedpath.feature.route.presentation.state.MainRouteModeUiState
 import com.example.passedpath.feature.route.presentation.state.PlaceMarkerUiState
 import com.example.passedpath.feature.route.presentation.state.RouteUiAction
@@ -59,12 +60,18 @@ data class PlaceCreatedEvent(
     val placeId: Long
 )
 
+data class PlaceBookmarkChangedEvent(
+    val id: Int,
+    val bookmarkPlaceId: Long
+)
+
 @Composable
 fun MainScreen(
     uiState: MainUiState,
     dayNoteUiState: DayNoteUiState,
     placeUiState: PlaceUiState,
     markerPlaces: List<PlaceMarkerUiState>,
+    bookmarkMarkers: List<PlaceBookmarkSummary>,
     onCameraIntentConsumed: () -> Unit,
     onDateSelected: (String) -> Unit,
     onDateSelectionRequested: (String) -> Unit,
@@ -362,6 +369,7 @@ fun MainScreen(
                 MainMapSection(
                     uiState = uiState,
                     markerPlaces = markerPlaces,
+                    bookmarkMarkers = bookmarkMarkers,
                     focusedPlaceId = localUiState.focusedPlaceId,
                     onFocusedPlaceHandled = {
                         dispatchInteraction(reduceForMapFocusHandled(localUiState))

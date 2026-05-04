@@ -18,6 +18,8 @@ import com.example.passedpath.feature.main.presentation.viewmodel.MainViewModel
 import com.example.passedpath.feature.main.presentation.viewmodel.MainViewModelFactory
 import com.example.passedpath.feature.place.presentation.viewmodel.PlaceViewModel
 import com.example.passedpath.feature.place.presentation.viewmodel.PlaceViewModelFactory
+import com.example.passedpath.feature.placebookmark.presentation.viewmodel.PlaceBookmarkMapMarkerViewModel
+import com.example.passedpath.feature.placebookmark.presentation.viewmodel.PlaceBookmarkMapMarkerViewModelFactory
 import com.example.passedpath.feature.permission.presentation.policy.PermissionActionTarget
 import com.example.passedpath.feature.permission.presentation.policy.resolvePermissionActionTarget
 import com.example.passedpath.util.AppSettingsNavigator
@@ -26,7 +28,9 @@ import com.example.passedpath.util.AppSettingsNavigator
 fun MainRoute(
     mainTabReselectionEvent: Int = 0,
     placeCreatedEvent: PlaceCreatedEvent? = null,
+    placeBookmarkChangedEvent: PlaceBookmarkChangedEvent? = null,
     onPlaceCreatedEventConsumed: (Int) -> Unit = {},
+    onPlaceBookmarkChangedEventConsumed: (Int) -> Unit = {},
     onNavigateToAddPlace: (String) -> Unit = {},
     onNavigateToPlaceBookmarks: () -> Unit = {},
     viewModel: MainViewModel = viewModel(
@@ -50,6 +54,10 @@ fun MainRoute(
         )
     )
     val placeUiState by placeViewModel.uiState.collectAsStateWithLifecycle()
+    val placeBookmarkMapMarkerViewModel: PlaceBookmarkMapMarkerViewModel = viewModel(
+        factory = PlaceBookmarkMapMarkerViewModelFactory(appContainer)
+    )
+    val placeBookmarkMapMarkerUiState by placeBookmarkMapMarkerViewModel.uiState.collectAsStateWithLifecycle()
     val markerPlaces = resolveMainMarkerPlaces(
         placeListUiState = placeUiState.placeList,
         route = uiState.selectedRoute
@@ -80,6 +88,16 @@ fun MainRoute(
     LaunchedEffect(uiState.selectedDateKey) {
         placeViewModel.updateDateKey(uiState.selectedDateKey)
         placeViewModel.fetchVisitedPlaces(uiState.selectedDateKey)
+    }
+
+    LaunchedEffect(placeBookmarkMapMarkerViewModel) {
+        placeBookmarkMapMarkerViewModel.fetchPlaceBookmarkMarkers()
+    }
+
+    LaunchedEffect(placeBookmarkChangedEvent?.id) {
+        val event = placeBookmarkChangedEvent ?: return@LaunchedEffect
+        placeBookmarkMapMarkerViewModel.fetchPlaceBookmarkMarkers()
+        onPlaceBookmarkChangedEventConsumed(event.id)
     }
 
     LaunchedEffect(placeCreatedEvent?.id) {
@@ -141,6 +159,7 @@ fun MainRoute(
         dayNoteUiState = dayNoteUiState,
         placeUiState = placeUiState,
         markerPlaces = markerPlaces,
+        bookmarkMarkers = placeBookmarkMapMarkerUiState.bookmarkPlaces,
         onCameraIntentConsumed = viewModel::consumeCameraIntent,
         onDateSelected = viewModel::selectDate,
         onDateSelectionRequested = ::requestDateSelection,

@@ -15,6 +15,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.passedpath.R
 import com.example.passedpath.ui.component.button.BasePillButton
 import com.example.passedpath.ui.theme.Gray400
@@ -42,7 +43,7 @@ internal fun TrackingToggleButton(
     BasePillButton(
         modifier = modifier,
         onClick = onClick,
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
         contentSpacing = 10.dp,
         shadowElevation = 4.dp
     ) {
@@ -61,7 +62,8 @@ internal fun TrackingToggleButton(
                     R.string.route_tracking_inactive
                 }
             ),
-            color = contentColor
+            color = contentColor,
+            fontSize = 16.sp
         )
 
         Icon(
