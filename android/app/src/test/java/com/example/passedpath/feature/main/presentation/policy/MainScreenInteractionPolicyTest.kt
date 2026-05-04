@@ -12,7 +12,35 @@ import org.junit.Test
 class MainScreenInteractionPolicyTest {
 
     @Test
-    fun `marker click from non place tab opens place tab and requests refresh`() {
+    fun `tab selection policy opens hidden sheet to middle`() {
+        val decision = resolveBottomSheetTabSelection(
+            currentSheetValue = MainBottomSheetValue.HIDDEN,
+            currentTab = MainBottomSheetTab.PLACE,
+            selectedTab = MainBottomSheetTab.DAYNOTE,
+            selectedPlaceId = 9L
+        )
+
+        assertEquals(MainBottomSheetValue.MIDDLE, decision.requestedSheetValue)
+        assertNull(decision.selectedPlaceId)
+        assertFalse(decision.shouldRefreshPlaces)
+    }
+
+    @Test
+    fun `tab selection policy keeps visible sheet height unchanged`() {
+        val decision = resolveBottomSheetTabSelection(
+            currentSheetValue = MainBottomSheetValue.EXPANDED,
+            currentTab = MainBottomSheetTab.DAYNOTE,
+            selectedTab = MainBottomSheetTab.PLACE,
+            selectedPlaceId = 9L
+        )
+
+        assertNull(decision.requestedSheetValue)
+        assertEquals(9L, decision.selectedPlaceId)
+        assertTrue(decision.shouldRefreshPlaces)
+    }
+
+    @Test
+    fun `marker click from non place tab opens place tab to expanded and requests refresh`() {
         val initialState = MainScreenLocalUiState(
             selectedBottomSheetTab = MainBottomSheetTab.DAYNOTE
         )
@@ -23,13 +51,13 @@ class MainScreenInteractionPolicyTest {
         )
 
         assertEquals(MainBottomSheetTab.PLACE, result.state.selectedBottomSheetTab)
-        assertEquals(MainBottomSheetValue.MIDDLE, result.state.requestedSheetValue)
+        assertEquals(MainBottomSheetValue.EXPANDED, result.state.requestedSheetValue)
         assertEquals(7L, result.state.selectedPlaceId)
         assertTrue(result.shouldRefreshPlaces)
     }
 
     @Test
-    fun `marker click from place tab keeps refresh off`() {
+    fun `marker click from place tab opens to expanded and keeps refresh off`() {
         val initialState = MainScreenLocalUiState(
             selectedBottomSheetTab = MainBottomSheetTab.PLACE
         )
@@ -39,13 +67,15 @@ class MainScreenInteractionPolicyTest {
             placeId = 3L
         )
 
+        assertEquals(MainBottomSheetValue.EXPANDED, result.state.requestedSheetValue)
         assertFalse(result.shouldRefreshPlaces)
     }
 
     @Test
-    fun `place tab reselection keeps place tab open at middle and requests refresh`() {
+    fun `place tab reselection opens hidden sheet to middle and requests refresh`() {
         val initialState = MainScreenLocalUiState(
             selectedBottomSheetTab = MainBottomSheetTab.PLACE,
+            bottomSheetValue = MainBottomSheetValue.HIDDEN,
             requestedSheetValue = MainBottomSheetValue.HIDDEN
         )
 
@@ -60,9 +90,10 @@ class MainScreenInteractionPolicyTest {
     }
 
     @Test
-    fun `daynote tab selection clears selected place without refresh`() {
+    fun `daynote tab selection keeps expanded sheet height and clears selected place`() {
         val initialState = MainScreenLocalUiState(
             selectedBottomSheetTab = MainBottomSheetTab.PLACE,
+            bottomSheetValue = MainBottomSheetValue.EXPANDED,
             selectedPlaceId = 9L
         )
 
@@ -72,9 +103,83 @@ class MainScreenInteractionPolicyTest {
         )
 
         assertEquals(MainBottomSheetTab.DAYNOTE, result.state.selectedBottomSheetTab)
-        assertEquals(MainBottomSheetValue.MIDDLE, result.state.requestedSheetValue)
+        assertNull(result.state.requestedSheetValue)
         assertNull(result.state.selectedPlaceId)
         assertFalse(result.shouldRefreshPlaces)
+    }
+
+    @Test
+    fun `sheet value change keeps requested command until command completion callback`() {
+        val initialState = MainScreenLocalUiState(
+            bottomSheetValue = MainBottomSheetValue.HIDDEN,
+            requestedSheetValue = MainBottomSheetValue.MIDDLE
+        )
+
+        val result = reduceForSheetValueChange(
+            state = initialState,
+            bottomSheetValue = MainBottomSheetValue.MIDDLE
+        )
+
+        assertEquals(MainBottomSheetValue.MIDDLE, result.state.bottomSheetValue)
+        assertEquals(MainBottomSheetValue.MIDDLE, result.state.requestedSheetValue)
+    }
+
+    @Test
+    fun `stale hidden sheet value does not cancel pending expanded command`() {
+        val initialState = MainScreenLocalUiState(
+            bottomSheetValue = MainBottomSheetValue.HIDDEN,
+            requestedSheetValue = MainBottomSheetValue.EXPANDED,
+            selectedPlaceId = 12L
+        )
+
+        val result = reduceForSheetValueChange(
+            state = initialState,
+            bottomSheetValue = MainBottomSheetValue.HIDDEN
+        )
+
+        assertEquals(MainBottomSheetValue.HIDDEN, result.state.bottomSheetValue)
+        assertEquals(MainBottomSheetValue.EXPANDED, result.state.requestedSheetValue)
+        assertEquals(12L, result.state.selectedPlaceId)
+    }
+
+    @Test
+    fun `hidden value during pending hidden command does not clear command early`() {
+        val initialState = MainScreenLocalUiState(
+            bottomSheetValue = MainBottomSheetValue.MIDDLE,
+            requestedSheetValue = MainBottomSheetValue.HIDDEN,
+            focusedPlaceId = 12L
+        )
+
+        val valueChangeResult = reduceForSheetValueChange(
+            state = initialState,
+            bottomSheetValue = MainBottomSheetValue.HIDDEN
+        )
+
+        assertEquals(MainBottomSheetValue.HIDDEN, valueChangeResult.state.bottomSheetValue)
+        assertEquals(MainBottomSheetValue.HIDDEN, valueChangeResult.state.requestedSheetValue)
+        assertEquals(12L, valueChangeResult.state.focusedPlaceId)
+
+        val consumedResult = reduceForSheetCommandConsumed(
+            state = valueChangeResult.state,
+            consumedValue = MainBottomSheetValue.HIDDEN
+        )
+
+        assertNull(consumedResult.state.requestedSheetValue)
+    }
+
+    @Test
+    fun `sheet command consumed clears matching requested value`() {
+        val initialState = MainScreenLocalUiState(
+            bottomSheetValue = MainBottomSheetValue.HIDDEN,
+            requestedSheetValue = MainBottomSheetValue.MIDDLE
+        )
+
+        val result = reduceForSheetCommandConsumed(
+            state = initialState,
+            consumedValue = MainBottomSheetValue.MIDDLE
+        )
+
+        assertNull(result.state.requestedSheetValue)
     }
 
     @Test
@@ -97,20 +202,77 @@ class MainScreenInteractionPolicyTest {
         val initialState = MainScreenLocalUiState(
             bottomSheetValue = MainBottomSheetValue.EXPANDED,
             requestedSheetValue = MainBottomSheetValue.EXPANDED,
-            selectedPlaceId = 4L
+            selectedPlaceId = 4L,
+            focusedPlaceId = 8L
         )
 
         val result = reduceForSheetHideRequest(initialState)
 
         assertEquals(MainBottomSheetValue.HIDDEN, result.state.requestedSheetValue)
         assertNull(result.state.selectedPlaceId)
+        assertNull(result.state.focusedPlaceId)
+    }
+
+    @Test
+    fun `place card click hides sheet clears selected place and requests map focus`() {
+        val initialState = MainScreenLocalUiState(
+            bottomSheetValue = MainBottomSheetValue.EXPANDED,
+            requestedSheetValue = MainBottomSheetValue.EXPANDED,
+            selectedPlaceId = 4L
+        )
+
+        val result = reduceForPlaceCardClick(
+            state = initialState,
+            placeId = 12L
+        )
+
+        assertEquals(MainBottomSheetValue.HIDDEN, result.state.requestedSheetValue)
+        assertNull(result.state.selectedPlaceId)
+        assertEquals(12L, result.state.focusedPlaceId)
+        assertFalse(result.shouldRefreshPlaces)
+    }
+
+    @Test
+    fun `map focus handled clears one time focus request only`() {
+        val initialState = MainScreenLocalUiState(
+            selectedBottomSheetTab = MainBottomSheetTab.PLACE,
+            bottomSheetValue = MainBottomSheetValue.HIDDEN,
+            requestedSheetValue = MainBottomSheetValue.HIDDEN,
+            focusedPlaceId = 12L
+        )
+
+        val result = reduceForMapFocusHandled(initialState)
+
+        assertEquals(MainBottomSheetTab.PLACE, result.state.selectedBottomSheetTab)
+        assertEquals(MainBottomSheetValue.HIDDEN, result.state.bottomSheetValue)
+        assertEquals(MainBottomSheetValue.HIDDEN, result.state.requestedSheetValue)
+        assertNull(result.state.focusedPlaceId)
+    }
+
+    @Test
+    fun `place created opens place tab to expanded and selects created place`() {
+        val initialState = MainScreenLocalUiState(
+            selectedBottomSheetTab = MainBottomSheetTab.DAYNOTE,
+            bottomSheetValue = MainBottomSheetValue.HIDDEN,
+            requestedSheetValue = MainBottomSheetValue.HIDDEN,
+            selectedPlaceId = 4L
+        )
+
+        val result = reduceForPlaceCreated(
+            state = initialState,
+            placeId = 12L
+        )
+
+        assertEquals(MainBottomSheetTab.PLACE, result.state.selectedBottomSheetTab)
+        assertEquals(MainBottomSheetValue.EXPANDED, result.state.requestedSheetValue)
+        assertEquals(12L, result.state.selectedPlaceId)
+        assertFalse(result.shouldRefreshPlaces)
     }
 
     @Test
     fun `hidden sheet clears selected place and requested value`() {
         val initialState = MainScreenLocalUiState(
             bottomSheetValue = MainBottomSheetValue.MIDDLE,
-            requestedSheetValue = MainBottomSheetValue.MIDDLE,
             selectedPlaceId = 5L
         )
 
@@ -122,5 +284,12 @@ class MainScreenInteractionPolicyTest {
         assertEquals(MainBottomSheetValue.HIDDEN, result.state.bottomSheetValue)
         assertNull(result.state.requestedSheetValue)
         assertNull(result.state.selectedPlaceId)
+    }
+
+    @Test
+    fun `current location button shows only when sheet is hidden`() {
+        assertTrue(shouldShowCurrentLocationButton(MainBottomSheetValue.HIDDEN))
+        assertFalse(shouldShowCurrentLocationButton(MainBottomSheetValue.MIDDLE))
+        assertFalse(shouldShowCurrentLocationButton(MainBottomSheetValue.EXPANDED))
     }
 }

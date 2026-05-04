@@ -13,6 +13,7 @@ import com.example.passedpath.feature.daynote.presentation.viewmodel.DayNoteView
 import com.example.passedpath.feature.daynote.presentation.viewmodel.DayNoteViewModelFactory
 import com.example.passedpath.feature.main.presentation.coordinator.DateSelectionDecision
 import com.example.passedpath.feature.main.presentation.coordinator.DateSelectionGuardCoordinator
+import com.example.passedpath.feature.main.presentation.mapper.resolveMainMarkerPlaces
 import com.example.passedpath.feature.main.presentation.viewmodel.MainViewModel
 import com.example.passedpath.feature.main.presentation.viewmodel.MainViewModelFactory
 import com.example.passedpath.feature.place.presentation.viewmodel.PlaceViewModel
@@ -24,7 +25,8 @@ import com.example.passedpath.util.AppSettingsNavigator
 @Composable
 fun MainRoute(
     mainTabReselectionEvent: Int = 0,
-    placeCreatedEvent: Int = 0,
+    placeCreatedEvent: PlaceCreatedEvent? = null,
+    onPlaceCreatedEventConsumed: (Int) -> Unit = {},
     onNavigateToAddPlace: (String) -> Unit = {},
     viewModel: MainViewModel = viewModel(
         factory = MainViewModelFactory(LocalContext.current.appContainer)
@@ -47,6 +49,10 @@ fun MainRoute(
         )
     )
     val placeUiState by placeViewModel.uiState.collectAsStateWithLifecycle()
+    val markerPlaces = resolveMainMarkerPlaces(
+        placeListUiState = placeUiState.placeList,
+        route = uiState.selectedRoute
+    )
     val dateSelectionGuardCoordinator = remember { DateSelectionGuardCoordinator() }
     val dateSelectionGuardState by dateSelectionGuardCoordinator.state.collectAsStateWithLifecycle()
 
@@ -71,36 +77,13 @@ fun MainRoute(
     }
 
     LaunchedEffect(uiState.selectedDateKey) {
-        viewModel.clearFetchedMapPlaces(uiState.selectedDateKey)
         placeViewModel.updateDateKey(uiState.selectedDateKey)
         placeViewModel.fetchVisitedPlaces(uiState.selectedDateKey)
     }
 
-    LaunchedEffect(placeCreatedEvent) {
-        if (placeCreatedEvent == 0) return@LaunchedEffect
+    LaunchedEffect(placeCreatedEvent?.id) {
+        if (placeCreatedEvent == null) return@LaunchedEffect
         placeViewModel.fetchVisitedPlaces(uiState.selectedDateKey)
-    }
-
-    LaunchedEffect(
-        placeUiState.placeList.dateKey,
-        placeUiState.placeList.places,
-        placeUiState.placeList.hasLoaded,
-        placeUiState.placeList.isLoading,
-        placeUiState.placeList.errorMessage
-    ) {
-        val placeListState = placeUiState.placeList
-        if (placeListState.dateKey != uiState.selectedDateKey) {
-            return@LaunchedEffect
-        }
-
-        if (!placeListState.hasLoaded || placeListState.isLoading || placeListState.errorMessage != null) {
-            return@LaunchedEffect
-        }
-
-        viewModel.updateFetchedMapPlaces(
-            dateKey = placeListState.dateKey,
-            places = placeListState.places
-        )
     }
 
     LaunchedEffect(
@@ -156,6 +139,7 @@ fun MainRoute(
         uiState = uiState,
         dayNoteUiState = dayNoteUiState,
         placeUiState = placeUiState,
+        markerPlaces = markerPlaces,
         onCameraIntentConsumed = viewModel::consumeCameraIntent,
         onDateSelected = viewModel::selectDate,
         onDateSelectionRequested = ::requestDateSelection,
@@ -164,8 +148,15 @@ fun MainRoute(
         onDayNoteTitleChanged = dayNoteViewModel::updateTitle,
         onDayNoteMemoChanged = dayNoteViewModel::updateMemo,
         onDayNoteSaveClick = dayNoteViewModel::submitDayNote,
+        onDayNoteFeedbackDismissed = dayNoteViewModel::consumeFeedback,
         onPlaceListRefreshRequested = placeViewModel::fetchVisitedPlaces,
         onNavigateToAddPlace = onNavigateToAddPlace,
+        onReorderPlaces = placeViewModel::reorderPlaces,
+        onCloseReorderGuideBanner = placeViewModel::dismissReorderGuideBanner,
+        onUpdatePlace = placeViewModel::updatePlace,
+        onConfirmDeletePlace = placeViewModel::deletePlace,
+        onPlaceFeedbackDismissed = placeViewModel::consumeFeedback,
+        onBookmarkFeedbackDismissed = viewModel::consumeBookmarkFeedback,
         onTrackingPermissionDialogConfirm = {
             viewModel.dismissTrackingPermissionDialog()
             AppSettingsNavigator.openAppSettings(context)
@@ -184,6 +175,8 @@ fun MainRoute(
             }
         },
         mainTabReselectionEvent = mainTabReselectionEvent,
+        placeCreatedEvent = placeCreatedEvent,
+        onPlaceCreatedEventHandled = onPlaceCreatedEventConsumed,
         showUnsavedDayNoteDialog = dateSelectionGuardState.pendingDateSelection != null,
         onDismissUnsavedDayNoteDialog = dateSelectionGuardCoordinator::dismissPendingDateSelection,
         onConfirmUnsavedDayNoteDialog = dayNoteViewModel::submitDayNote,

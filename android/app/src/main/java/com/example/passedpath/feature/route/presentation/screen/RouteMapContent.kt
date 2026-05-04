@@ -24,10 +24,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.passedpath.R
-import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiState
 import com.example.passedpath.feature.route.presentation.state.MainRouteModeUiState
 import com.example.passedpath.feature.route.presentation.state.PlaceMarkerUiState
 import com.example.passedpath.feature.route.presentation.state.RouteUiAction
+import com.example.passedpath.ui.state.CoordinateUiState
 import com.example.passedpath.ui.theme.Green50
 import com.google.android.gms.maps.model.JointType
 import com.google.android.gms.maps.model.LatLng
@@ -47,7 +47,7 @@ fun RouteMapContent(
 ) {
     val selectedRoute = routeModeUiState.route
     if (selectedRoute.polylinePoints.size >= 2) {
-        val routePoints = selectedRoute.polylinePoints.map(MainCoordinateUiState::toLatLng)
+        val routePoints = selectedRoute.polylinePoints.map(CoordinateUiState::toLatLng)
 
         Polyline(
             points = routePoints,
@@ -157,6 +157,6 @@ fun RouteStatusOverlay(
     }
 }
 
-private fun MainCoordinateUiState.toLatLng(): LatLng {
+private fun CoordinateUiState.toLatLng(): LatLng {
     return LatLng(latitude, longitude)
 }

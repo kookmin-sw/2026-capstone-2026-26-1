@@ -1,23 +1,34 @@
 package com.example.passedpath.feature.place.presentation.screen
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -27,18 +38,22 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
@@ -46,9 +61,9 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import com.example.passedpath.R
 import com.example.passedpath.feature.place.domain.model.BookmarkPlaceType
 import com.example.passedpath.feature.place.domain.model.PlaceSourceType
@@ -57,6 +72,7 @@ import com.example.passedpath.feature.place.presentation.component.PlaceCard
 import com.example.passedpath.feature.place.presentation.state.PlaceListUiState
 import com.example.passedpath.ui.component.button.BaseButton
 import com.example.passedpath.ui.component.button.BaseButtonVariant
+import com.example.passedpath.ui.component.menu.MenuActionItem
 import com.example.passedpath.ui.theme.Gray100
 import com.example.passedpath.ui.theme.Gray400
 import com.example.passedpath.ui.theme.Gray500
@@ -67,9 +83,10 @@ import com.example.passedpath.ui.theme.Green50
 import com.example.passedpath.ui.theme.Green500
 import com.example.passedpath.ui.theme.Green600
 import com.example.passedpath.ui.theme.PassedPathTheme
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
-import java.time.Instant
-import java.time.ZoneId
+import kotlinx.coroutines.launch
+import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -81,24 +98,108 @@ fun PlaceBottomSheetContent(
     onSelectedPlaceHandled: () -> Unit,
     onRetryClick: () -> Unit,
     onAddPlaceClick: () -> Unit,
+    onReorderPlaces: (List<Long>) -> Unit,
+    onCloseReorderGuideBanner: () -> Unit,
     modifier: Modifier = Modifier,
+    isReorderSubmitting: Boolean = false,
+    onEditPlaceClick: (Long) -> Unit = {},
+    onPlaceClick: (Long) -> Unit = {},
+    onDeletePlaceRequested: (Long) -> Unit = {},
+    onScrollStateChanged: (Boolean) -> Unit = {}
 ) {
-    var isBannerVisible by rememberSaveable { mutableStateOf(true) }
+    val isBannerVisible = placeListUiState.isReorderGuideBannerVisible
     var animatedPlaceId by remember { mutableStateOf<Long?>(null) }
     val sortedPlaces = placeListUiState.places.sortedBy(VisitedPlace::orderIndex)
+    var reorderedPlaces by remember { mutableStateOf(sortedPlaces) }
+    val currentReorderedPlaces by rememberUpdatedState(reorderedPlaces)
+    var draggedPlaceId by remember { mutableStateOf<Long?>(null) }
+    var settlingPlaceId by remember { mutableStateOf<Long?>(null) }
+    var dragOffsetY by remember { mutableStateOf(0f) }
+    var openedMenuPlaceId by remember { mutableStateOf<Long?>(null) }
+    var wasReorderSubmitting by remember { mutableStateOf(false) }
+    val activeDragPlaceId = draggedPlaceId ?: settlingPlaceId
+    val visualDragOffsetY by animateFloatAsState(
+        targetValue = dragOffsetY,
+        animationSpec = if (draggedPlaceId != null) {
+            tween(durationMillis = 0)
+        } else {
+            tween(durationMillis = ReorderSettleDurationMillis)
+        },
+        label = "placeReorderDragOffset"
+    )
+    val canReorder = sortedPlaces.size > 1 &&
+        !isReorderSubmitting &&
+        !placeListUiState.isLoading &&
+        !(placeListUiState.errorMessage != null && !placeListUiState.isStale)
     val listState = rememberLazyListState()
+    val isContentScrolled by remember {
+        derivedStateOf {
+            listState.firstVisibleItemIndex > 0 ||
+                listState.firstVisibleItemScrollOffset > 0
+        }
+    }
+    val footerTopSpacing = if (reorderedPlaces.isEmpty()) 0.dp else PlaceTimelineItemSpacing
     val placeSectionStartIndex = (if (isBannerVisible) 1 else 0) + 1
 
-    LaunchedEffect(selectedPlaceId, sortedPlaces) {
+    fun closeOpenedMenu() {
+        openedMenuPlaceId = null
+    }
+
+    fun settleDraggedPlace(placeId: Long?) {
+        settlingPlaceId = placeId
+        draggedPlaceId = null
+        dragOffsetY = 0f
+    }
+
+    LaunchedEffect(isContentScrolled) {
+        onScrollStateChanged(isContentScrolled)
+    }
+
+    LaunchedEffect(listState.isScrollInProgress) {
+        if (listState.isScrollInProgress) {
+            closeOpenedMenu()
+        }
+    }
+
+    LaunchedEffect(sortedPlaces) {
+        if (draggedPlaceId == null && settlingPlaceId == null) {
+            reorderedPlaces = sortedPlaces
+        }
+        if (openedMenuPlaceId != null && sortedPlaces.none { it.placeId == openedMenuPlaceId }) {
+            closeOpenedMenu()
+        }
+    }
+
+    LaunchedEffect(selectedDateKey) {
+        closeOpenedMenu()
+    }
+
+    LaunchedEffect(isReorderSubmitting, placeListUiState.errorMessage, sortedPlaces) {
+        if (wasReorderSubmitting && !isReorderSubmitting && placeListUiState.errorMessage != null) {
+            reorderedPlaces = sortedPlaces
+            draggedPlaceId = null
+            settlingPlaceId = null
+            dragOffsetY = 0f
+        }
+        wasReorderSubmitting = isReorderSubmitting
+    }
+
+    LaunchedEffect(settlingPlaceId) {
+        if (settlingPlaceId == null) return@LaunchedEffect
+        delay(ReorderSettleDurationMillis.toLong())
+        settlingPlaceId = null
+    }
+
+    LaunchedEffect(selectedPlaceId, reorderedPlaces) {
         val placeId = selectedPlaceId ?: return@LaunchedEffect
-        val selectedIndex = sortedPlaces.indexOfFirst { it.placeId == placeId }
+        val selectedIndex = reorderedPlaces.indexOfFirst { it.placeId == placeId }
         if (selectedIndex < 0) {
-            onSelectedPlaceHandled()
             return@LaunchedEffect
         }
+        closeOpenedMenu()
         listState.animateScrollToItem(placeSectionStartIndex + selectedIndex)
         animatedPlaceId = placeId
-        delay(320)
+        delay(1_700)
         animatedPlaceId = null
         onSelectedPlaceHandled()
     }
@@ -106,69 +207,153 @@ fun PlaceBottomSheetContent(
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
+            .placeReorderGesture(
+                enabled = canReorder,
+                placesProvider = { currentReorderedPlaces },
+                listState = listState,
+                onDragStartPlace = { placeId ->
+                    settlingPlaceId = null
+                    draggedPlaceId = placeId
+                    dragOffsetY = 0f
+                    closeOpenedMenu()
+                },
+                onDragPlace = { dragDeltaY ->
+                    dragOffsetY += dragDeltaY
+                },
+                onMovePlace = { fromIndex, toIndex, slotOffsetDeltaPx ->
+                    dragOffsetY -= slotOffsetDeltaPx
+                    reorderedPlaces = reorderedPlaces.moved(fromIndex, toIndex)
+                },
+                onAutoScroll = { consumedScrollDelta ->
+                    dragOffsetY += consumedScrollDelta
+                },
+                onDragFinished = {
+                    val nextPlaceIds = reorderedPlaces.map(VisitedPlace::placeId)
+                    if (nextPlaceIds != sortedPlaces.map(VisitedPlace::placeId)) {
+                        onReorderPlaces(nextPlaceIds)
+                    }
+                    settleDraggedPlace(draggedPlaceId)
+                },
+                onDragCancelled = {
+                    val cancelledPlaceId = draggedPlaceId
+                    reorderedPlaces = sortedPlaces
+                    settleDraggedPlace(cancelledPlaceId)
+                }
+            )
             .graphicsLayer {
                 clip = true
                 shape = RectangleShape
             },
         state = listState,
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+        verticalArrangement = Arrangement.spacedBy(0.dp)
     ) {
         if (isBannerVisible) {
             item(key = "banner") {
-                PlaceGuideBanner(onClose = { isBannerVisible = false })
+                Box(modifier = Modifier.padding(bottom = PlaceTimelineItemSpacing)) {
+                    PlaceGuideBanner(onClose = onCloseReorderGuideBanner)
+                }
             }
         }
 
         item(key = "summary") {
-            PlaceSummarySection(placeCount = placeListUiState.placeCount)
+            Box(modifier = Modifier.padding(bottom = PlaceTimelineItemSpacing)) {
+                PlaceSummarySection(placeCount = placeListUiState.placeCount)
+            }
         }
 
         if (placeListUiState.isStale && placeListUiState.errorMessage != null) {
             item(key = "stale_notice") {
-                StalePlaceSection(
-                    message = placeListUiState.errorMessage,
-                    onRetryClick = onRetryClick
-                )
-            }
-        }
-
-        when {
-            placeListUiState.isLoading && !placeListUiState.hasRetainedContent -> {
-                item(key = "loading") { LoadingPlaceNotice() }
-            }
-
-            placeListUiState.errorMessage != null && !placeListUiState.isStale -> {
-                item(key = "error") {
-                    ErrorPlaceNotice(
+                Box(modifier = Modifier.padding(bottom = PlaceTimelineItemSpacing)) {
+                    StalePlaceSection(
                         message = placeListUiState.errorMessage,
                         onRetryClick = onRetryClick
                     )
                 }
             }
+        }
 
-            sortedPlaces.isEmpty() -> Unit
+        when {
+            placeListUiState.isLoading && !placeListUiState.hasRetainedContent -> {
+                item(key = "loading") {
+                    Box(modifier = Modifier.padding(bottom = PlaceTimelineItemSpacing)) {
+                        PlaceLoadingSkeletonList()
+                    }
+                }
+            }
+
+            placeListUiState.errorMessage != null && !placeListUiState.isStale -> {
+                item(key = "error") {
+                    Box(modifier = Modifier.padding(bottom = PlaceTimelineItemSpacing)) {
+                        ErrorPlaceNotice(
+                            message = placeListUiState.errorMessage,
+                            onRetryClick = onRetryClick
+                        )
+                    }
+                }
+            }
+
+            reorderedPlaces.isEmpty() -> Unit
 
             else -> {
                 itemsIndexed(
-                    items = sortedPlaces,
+                    items = reorderedPlaces,
                     key = { _, place -> place.placeId }
                 ) { index, place ->
-                    PlaceTimelineItem(
-                        place = place,
-                        shouldAnimate = place.placeId == animatedPlaceId,
-                        isFirst = index == 0,
-                        isLast = index == sortedPlaces.lastIndex
-                    )
+                    val isActiveDragItem = place.placeId == activeDragPlaceId
+                    Box(
+                        modifier = Modifier
+                            .animateItem(
+                                fadeInSpec = null,
+                                placementSpec = tween(durationMillis = 180),
+                                fadeOutSpec = null
+                            )
+                            .zIndex(if (isActiveDragItem) 1f else 0f)
+                            .graphicsLayer {
+                                translationY = if (isActiveDragItem) visualDragOffsetY else 0f
+                            }
+                    ) {
+                        PlaceTimelineItem(
+                            place = place,
+                            shouldAnimate = place.placeId == animatedPlaceId,
+                            isDragging = isActiveDragItem,
+                            isFirst = index == 0,
+                            isLast = index == reorderedPlaces.lastIndex,
+                            displayOrderIndex = index + 1,
+                            isMenuVisible = openedMenuPlaceId == place.placeId,
+                            onMoreClick = {
+                                openedMenuPlaceId = if (openedMenuPlaceId == place.placeId) {
+                                    null
+                                } else {
+                                    place.placeId
+                                }
+                            },
+                            onDismissMenu = ::closeOpenedMenu,
+                            onEditPlaceClick = {
+                                closeOpenedMenu()
+                                onEditPlaceClick(place.placeId)
+                            },
+                            onPlaceClick = {
+                                closeOpenedMenu()
+                                onPlaceClick(place.placeId)
+                            },
+                            onDeletePlaceClick = {
+                                closeOpenedMenu()
+                                onDeletePlaceRequested(place.placeId)
+                            }
+                        )
+                    }
                 }
             }
         }
 
         item(key = "footer") {
-            PlaceAddButton(onClick = onAddPlaceClick)
+            Box(modifier = Modifier.padding(top = footerTopSpacing)) {
+                PlaceAddButton(onClick = onAddPlaceClick)
+            }
         }
 
         item(key = "bottom_spacer") {
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
@@ -192,22 +377,6 @@ private fun PlaceSummarySection(placeCount: Int) {
                 fontWeight = FontWeight.SemiBold
             ),
             color = Gray500
-        )
-    }
-}
-
-@Composable
-private fun LoadingPlaceNotice() {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(color = Gray100, shape = RoundedCornerShape(16.dp))
-            .padding(horizontal = 16.dp, vertical = 18.dp)
-    ) {
-        Text(
-            text = stringResource(R.string.place_sheet_loading),
-            style = MaterialTheme.typography.bodyMedium,
-            color = Gray400
         )
     }
 }
@@ -272,6 +441,168 @@ private fun StalePlaceSection(
 }
 
 @Composable
+private fun PlaceLoadingSkeletonList() {
+    val shimmerBrush = rememberPlaceSkeletonBrush()
+
+    Column(verticalArrangement = Arrangement.spacedBy(PlaceTimelineItemSpacing)) {
+        repeat(2) { index ->
+            PlaceTimelineSkeletonItem(
+                shimmerBrush = shimmerBrush,
+                isFirst = index == 0,
+                isLast = index == 1
+            )
+        }
+    }
+}
+
+@Composable
+private fun PlaceTimelineSkeletonItem(
+    shimmerBrush: Brush,
+    isFirst: Boolean,
+    isLast: Boolean
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.Top
+    ) {
+        SkeletonTimelineDecoration(
+            shimmerBrush = shimmerBrush,
+            isFirst = isFirst,
+            isLast = isLast
+        )
+        SkeletonPlaceCard(
+            shimmerBrush = shimmerBrush,
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+@Composable
+private fun SkeletonPlaceCard(
+    shimmerBrush: Brush,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .height(PlaceTimelineCardHeight)
+            .background(
+                brush = shimmerBrush,
+                shape = RoundedCornerShape(18.dp)
+            )
+            .padding(start = 16.dp, top = 15.dp, end = 16.dp, bottom = 15.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        SkeletonBlock(
+            shimmerBrush = shimmerBrush,
+            modifier = Modifier
+                .fillMaxWidth(0.46f)
+                .height(14.dp)
+        )
+        SkeletonBlock(
+            shimmerBrush = shimmerBrush,
+            modifier = Modifier
+                .fillMaxWidth(0.78f)
+                .height(12.dp)
+        )
+        SkeletonBlock(
+            shimmerBrush = shimmerBrush,
+            modifier = Modifier
+                .width(96.dp)
+                .height(10.dp)
+        )
+    }
+}
+
+@Composable
+private fun SkeletonTimelineDecoration(
+    shimmerBrush: Brush,
+    isFirst: Boolean,
+    isLast: Boolean
+) {
+    val decorationHeight = PlaceTimelineCardHeight + if (isLast) 0.dp else PlaceTimelineItemSpacing
+
+    Box(
+        modifier = Modifier
+            .size(width = 22.dp, height = decorationHeight),
+        contentAlignment = Alignment.TopCenter
+    ) {
+        Canvas(modifier = Modifier.matchParentSize()) {
+            val centerX = size.width / 2f
+            val pointCenterY = PlaceTimelinePointCenterY.toPx()
+            val pointRadius = 8.dp.toPx()
+            val dashEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 14f), 0f)
+            val strokeWidth = 1.dp.toPx()
+            val gap = 4.dp.toPx()
+
+            if (!isFirst) {
+                drawLine(
+                    color = Gray100,
+                    start = Offset(centerX, 0f),
+                    end = Offset(centerX, pointCenterY - pointRadius - gap),
+                    strokeWidth = strokeWidth,
+                    cap = StrokeCap.Round,
+                    pathEffect = dashEffect
+                )
+            }
+            if (!isLast) {
+                drawLine(
+                    color = Gray100,
+                    start = Offset(centerX, pointCenterY + pointRadius + gap),
+                    end = Offset(centerX, size.height),
+                    strokeWidth = strokeWidth,
+                    cap = StrokeCap.Round,
+                    pathEffect = dashEffect
+                )
+            }
+        }
+        Box(
+            modifier = Modifier
+                .padding(top = PlaceTimelinePointCenterY - 8.dp)
+                .size(16.dp)
+                .background(brush = shimmerBrush, shape = RoundedCornerShape(8.dp))
+        )
+    }
+}
+
+@Composable
+private fun SkeletonBlock(
+    shimmerBrush: Brush,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier.background(
+            brush = shimmerBrush,
+            shape = RoundedCornerShape(8.dp)
+        )
+    )
+}
+
+@Composable
+private fun rememberPlaceSkeletonBrush(): Brush {
+    val transition = rememberInfiniteTransition(label = "place_skeleton")
+    val shimmerOffset by transition.animateFloat(
+        initialValue = -320f,
+        targetValue = 720f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1_250, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "place_skeleton_offset"
+    )
+
+    return Brush.linearGradient(
+        colors = listOf(
+            Gray100,
+            Color.White.copy(alpha = 0.88f),
+            Gray100
+        ),
+        start = Offset(shimmerOffset, shimmerOffset),
+        end = Offset(shimmerOffset + 220f, shimmerOffset + 220f)
+    )
+}
+
+@Composable
 private fun PlaceGuideBanner(onClose: () -> Unit) {
     Row(
         modifier = Modifier
@@ -309,63 +640,221 @@ private fun PlaceGuideBanner(onClose: () -> Unit) {
 private fun PlaceTimelineItem(
     place: VisitedPlace,
     shouldAnimate: Boolean,
+    isDragging: Boolean,
     isFirst: Boolean,
-    isLast: Boolean
+    isLast: Boolean,
+    displayOrderIndex: Int,
+    isMenuVisible: Boolean,
+    onMoreClick: () -> Unit,
+    onDismissMenu: () -> Unit,
+    onEditPlaceClick: () -> Unit,
+    onPlaceClick: () -> Unit,
+    onDeletePlaceClick: () -> Unit
 ) {
-    val horizontalOffset = remember(place.placeId) { Animatable(0f) }
+    val highlightProgress = remember(place.placeId) { Animatable(0f) }
+    val bottomSpacing = if (isLast) 0.dp else PlaceTimelineItemSpacing
+    val editMenuText = stringResource(R.string.place_menu_edit)
+    val deleteMenuText = stringResource(R.string.place_menu_delete)
 
     LaunchedEffect(shouldAnimate) {
         if (!shouldAnimate) {
-            horizontalOffset.snapTo(0f)
+            highlightProgress.snapTo(0f)
             return@LaunchedEffect
         }
 
-        horizontalOffset.snapTo(0f)
-        horizontalOffset.animateTo(10f, animationSpec = tween(durationMillis = 70))
-        horizontalOffset.animateTo(-8f, animationSpec = tween(durationMillis = 90))
-        horizontalOffset.animateTo(6f, animationSpec = tween(durationMillis = 80))
-        horizontalOffset.animateTo(0f, animationSpec = tween(durationMillis = 70))
+        highlightProgress.snapTo(0f)
+        highlightProgress.animateTo(1f, animationSpec = tween(durationMillis = 350))
+        delay(500)
+        highlightProgress.animateTo(0f, animationSpec = tween(durationMillis = 850))
     }
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .offset(x = horizontalOffset.value.toCardOffset()),
+            .height(IntrinsicSize.Min),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.Top
     ) {
         TimelineDecoration(
-            orderIndex = place.orderIndex,
+            orderIndex = displayOrderIndex,
             isFirst = isFirst,
             isLast = isLast
         )
-        PlaceCard(
-            name = place.placeName.ifBlank {
-                stringResource(R.string.route_place_fallback_title, place.orderIndex)
-            },
-            address = place.roadAddress.ifBlank {
-                stringResource(
-                    R.string.place_card_coordinate,
-                    place.latitude,
-                    place.longitude
-                )
-            },
-            startTimeText = place.startTime.toPlaceCardTimeText(),
-            endTimeText = place.endTime.toPlaceCardTimeText(),
-            isFavoritePlace = place.bookmarkType != null,
-            modifier = Modifier.weight(1f),
-            isCompact = true
-        )
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .padding(bottom = bottomSpacing)
+        ) {
+            PlaceCard(
+                name = place.placeName.ifBlank {
+                    stringResource(R.string.route_place_fallback_title, displayOrderIndex)
+                },
+                address = place.roadAddress.ifBlank {
+                    stringResource(
+                        R.string.place_card_coordinate,
+                        place.latitude,
+                        place.longitude
+                    )
+                },
+                startTimeText = place.startTime.toPlaceCardTimeText(),
+                endTimeText = place.endTime.toPlaceCardTimeText(),
+                isFavoritePlace = place.bookmarkType != null,
+                onClick = onPlaceClick,
+                onMoreClick = onMoreClick,
+                onDismissMenu = onDismissMenu,
+                isMenuVisible = isMenuVisible,
+                menuItems = listOf(
+                    MenuActionItem(
+                        text = editMenuText,
+                        iconResId = R.drawable.ic_check,
+                        onClick = onEditPlaceClick
+                    ),
+                    MenuActionItem(
+                        text = deleteMenuText,
+                        iconResId = R.drawable.ic_trash,
+                        onClick = onDeletePlaceClick
+                    )
+                ),
+                highlightProgress = highlightProgress.value,
+                modifier = Modifier.fillMaxWidth(),
+                isCompact = true,
+                isDragging = isDragging
+            )
+        }
     }
 }
 
-private fun Float.toCardOffset(): Dp = this.dp
+private fun Modifier.placeReorderGesture(
+    enabled: Boolean,
+    placesProvider: () -> List<VisitedPlace>,
+    listState: LazyListState,
+    onDragStartPlace: (Long) -> Unit,
+    onDragPlace: (dragDeltaY: Float) -> Unit,
+    onMovePlace: (fromIndex: Int, toIndex: Int, slotOffsetDeltaPx: Float) -> Unit,
+    onAutoScroll: (consumedScrollDelta: Float) -> Unit,
+    onDragFinished: () -> Unit,
+    onDragCancelled: () -> Unit
+): Modifier {
+    if (!enabled) return this
+
+    return pointerInput(enabled, listState) {
+        var draggedPlaceId: Long? = null
+
+        coroutineScope {
+            detectDragGesturesAfterLongPress(
+                onDragStart = { offset ->
+                    val places = placesProvider()
+                    val placeId = listState.placeIdAtOffset(offset.y, places)
+                    draggedPlaceId = placeId
+                    placeId?.let(onDragStartPlace)
+                },
+                onDrag = { change, dragAmount ->
+                    val placeId = draggedPlaceId ?: return@detectDragGesturesAfterLongPress
+                    change.consume()
+                    onDragPlace(dragAmount.y)
+                    val places = placesProvider()
+                    val fromIndex = places.indexOfFirst { it.placeId == placeId }
+                    val toIndex = listState.placeIndexAtOffset(change.position.y, places)
+                    if (fromIndex >= 0 && toIndex != null && fromIndex != toIndex) {
+                        val slotOffsetDeltaPx = listState.placeSlotOffsetDelta(
+                            places = places,
+                            fromIndex = fromIndex,
+                            toIndex = toIndex
+                        )
+                        onMovePlace(fromIndex, toIndex, slotOffsetDeltaPx)
+                    }
+                    val scrollDelta = listState.edgeScrollDelta(change.position.y)
+                    if (scrollDelta != 0f) {
+                        launch {
+                            val consumedScrollDelta = listState.scrollBy(scrollDelta)
+                            if (consumedScrollDelta != 0f) {
+                                onAutoScroll(consumedScrollDelta)
+                            }
+                        }
+                    }
+                },
+                onDragEnd = {
+                    if (draggedPlaceId != null) {
+                        onDragFinished()
+                    }
+                    draggedPlaceId = null
+                },
+                onDragCancel = {
+                    if (draggedPlaceId != null) {
+                        onDragCancelled()
+                    }
+                    draggedPlaceId = null
+                }
+            )
+        }
+    }
+}
+
+private fun LazyListState.placeIdAtOffset(offsetY: Float, places: List<VisitedPlace>): Long? {
+    val itemKey = layoutInfo.visibleItemsInfo
+        .firstOrNull { item ->
+            item.key is Long &&
+                offsetY.toInt() in item.offset..(item.offset + item.size)
+        }
+        ?.key as? Long
+
+    return itemKey?.takeIf { key -> places.any { it.placeId == key } }
+}
+
+private fun LazyListState.placeIndexAtOffset(offsetY: Float, places: List<VisitedPlace>): Int? {
+    val placeId = placeIdAtOffset(offsetY, places) ?: return null
+    return places.indexOfFirst { it.placeId == placeId }.takeIf { it >= 0 }
+}
+
+private fun LazyListState.placeSlotOffsetDelta(
+    places: List<VisitedPlace>,
+    fromIndex: Int,
+    toIndex: Int
+): Float {
+    val fromPlaceId = places.getOrNull(fromIndex)?.placeId ?: return 0f
+    val toPlaceId = places.getOrNull(toIndex)?.placeId ?: return 0f
+    val fromOffset = placeItemOffset(fromPlaceId) ?: return 0f
+    val toOffset = placeItemOffset(toPlaceId) ?: return 0f
+    return (toOffset - fromOffset).toFloat()
+}
+
+private fun LazyListState.placeItemOffset(placeId: Long): Int? {
+    return layoutInfo.visibleItemsInfo
+        .firstOrNull { item -> item.key == placeId }
+        ?.offset
+}
+
+private fun LazyListState.edgeScrollDelta(offsetY: Float): Float {
+    val viewportStart = layoutInfo.viewportStartOffset.toFloat()
+    val viewportEnd = layoutInfo.viewportEndOffset.toFloat()
+    val edgeSize = ReorderAutoScrollEdgeSizePx
+
+    return when {
+        offsetY < viewportStart + edgeSize -> -ReorderAutoScrollStepPx
+        offsetY > viewportEnd - edgeSize -> ReorderAutoScrollStepPx
+        else -> 0f
+    }
+}
+
+private fun List<VisitedPlace>.moved(fromIndex: Int, toIndex: Int): List<VisitedPlace> {
+    if (fromIndex !in indices || toIndex !in indices || fromIndex == toIndex) return this
+
+    return toMutableList().apply {
+        add(toIndex, removeAt(fromIndex))
+    }
+}
+
+private const val ReorderAutoScrollEdgeSizePx = 96f
+private const val ReorderAutoScrollStepPx = 28f
+private const val ReorderSettleDurationMillis = 140
+private val PlaceTimelineCardHeight = 78.dp
+private val PlaceTimelineItemSpacing = 16.dp
+private val PlaceTimelinePointCenterY = 34.dp
 
 private fun String?.toPlaceCardTimeText(): String? {
     val timestamp = this ?: return null
     return runCatching {
-        Instant.parse(timestamp)
-            .atZone(ZoneId.systemDefault())
+        OffsetDateTime.parse(timestamp)
             .format(PlaceCardTimeFormatter)
     }.getOrNull()
 }
@@ -378,13 +867,13 @@ private fun TimelineDecoration(
 ) {
     Box(
         modifier = Modifier
-            .padding(top = 6.dp)
-            .size(width = 22.dp, height = 78.dp),
+            .width(22.dp)
+            .fillMaxHeight(),
         contentAlignment = Alignment.TopCenter
     ) {
         Canvas(modifier = Modifier.matchParentSize()) {
             val centerX = size.width / 2f
-            val pointCenterY = 11.dp.toPx()
+            val pointCenterY = PlaceTimelinePointCenterY.toPx()
             val pointRadius = 8.dp.toPx()
             val dashEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 14f), 0f)
             val dashColor = Green500.copy(alpha = 0.24f)
@@ -418,7 +907,9 @@ private fun TimelineDecoration(
             )
         }
         Box(
-            modifier = Modifier.size(22.dp),
+            modifier = Modifier
+                .padding(top = PlaceTimelinePointCenterY - 11.dp)
+                .size(22.dp),
             contentAlignment = Alignment.Center
         ) {
             Text(
@@ -458,6 +949,8 @@ private fun PlaceBottomSheetContentPreview() {
             onSelectedPlaceHandled = {},
             onRetryClick = {},
             onAddPlaceClick = {},
+            onReorderPlaces = {},
+            onCloseReorderGuideBanner = {},
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 20.dp)
@@ -479,6 +972,8 @@ private fun PlaceBottomSheetContentEmptyPreview() {
             onSelectedPlaceHandled = {},
             onRetryClick = {},
             onAddPlaceClick = {},
+            onReorderPlaces = {},
+            onCloseReorderGuideBanner = {},
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 20.dp)
@@ -506,8 +1001,8 @@ private fun previewVisitedPlaces(): List<VisitedPlace> {
             latitude = 37.5839,
             longitude = 127.0008,
             orderIndex = 2,
-            startTime = "2026-04-23T09:00:00Z",
-            endTime = "2026-04-23T10:10:00Z"
+            startTime = "2026-04-23T09:00:00+09:00",
+            endTime = "2026-04-23T10:10:00+09:00"
         ),
         VisitedPlace(
             placeId = 3L,

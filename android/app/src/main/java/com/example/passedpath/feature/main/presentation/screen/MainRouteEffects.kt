@@ -8,17 +8,17 @@ import com.example.passedpath.feature.main.presentation.effect.MainLifecycleRefr
 import com.example.passedpath.feature.main.presentation.effect.MainLocationUpdatesEffect
 import com.example.passedpath.feature.main.presentation.effect.MainTrackingRecoveryEffect
 import com.example.passedpath.feature.permission.presentation.state.LocationPermissionUiState
-import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiState
+import com.example.passedpath.ui.state.CoordinateUiState
 
 @Composable
 internal fun MainRouteEffects(
     permissionState: LocationPermissionUiState,
     isLocationServiceEnabled: Boolean,
-    currentLocation: MainCoordinateUiState?,
+    currentLocation: CoordinateUiState?,
     isTrackingActive: Boolean,
     onRefreshPermissionState: () -> Unit,
     onRefreshLocationServiceState: () -> Unit,
-    onCurrentLocationUpdated: (MainCoordinateUiState) -> Unit,
+    onCurrentLocationUpdated: (CoordinateUiState) -> Unit,
     locationTracker: LocationTracker,
     trackingServiceStateReader: LocationTrackingServiceStateReader,
     startLocationTracking: (Boolean) -> Unit,

@@ -2,6 +2,7 @@ package com.example.passedpath.feature.place.data.remote.mapper
 
 import com.example.passedpath.feature.place.data.remote.dto.PlaceListItemDto
 import com.example.passedpath.feature.place.data.remote.dto.PlaceListResponseDto
+import com.example.passedpath.feature.place.data.remote.dto.PlaceUpdateResponseDto
 import com.example.passedpath.feature.place.domain.model.BookmarkPlaceType
 import com.example.passedpath.feature.place.domain.model.PlaceSourceType
 import org.junit.Assert.assertEquals
@@ -36,8 +37,8 @@ class PlaceRemoteMapperTest {
                     latitude = 37.4,
                     longitude = 127.4,
                     orderIndex = 1,
-                    startTime = "2026-04-23T18:26:07.620Z",
-                    endTime = "2026-04-23T18:26:07.620Z"
+                    startTime = "2026-04-23T18:26:07.620+09:00",
+                    endTime = "2026-04-23T19:10:07.620+09:00"
                 )
             )
         )
@@ -49,6 +50,8 @@ class PlaceRemoteMapperTest {
         assertEquals(1L, result.places.first().placeId)
         assertEquals(PlaceSourceType.AUTO, result.places.first().source)
         assertEquals(BookmarkPlaceType.HOME, result.places.first().bookmarkType)
+        assertEquals("2026-04-23T18:26:07.620+09:00", result.places.first().startTime)
+        assertEquals("2026-04-23T19:10:07.620+09:00", result.places.first().endTime)
         assertEquals(2L, result.places.last().placeId)
     }
 
@@ -89,5 +92,30 @@ class PlaceRemoteMapperTest {
         assertEquals(2, result.placeCount)
         assertEquals(1, result.places.size)
         assertTrue(result.places.all { it.placeId == 1L })
+    }
+
+    @Test
+    fun `toUpdatedPlace maps full update response spec`() {
+        val response = PlaceUpdateResponseDto(
+            roadAddress = "서울 성북구 정릉로 77",
+            placeName = "국민대학교 복지관",
+            source = "AUTO",
+            type = "HOME",
+            latitude = 37.6109,
+            longitude = 126.9970,
+            startTime = "2026-04-29T13:32:43.059+09:00",
+            endTime = "2026-04-29T14:32:43.059+09:00"
+        )
+
+        val result = response.toUpdatedPlace()
+
+        assertEquals("국민대학교 복지관", result.placeName)
+        assertEquals("서울 성북구 정릉로 77", result.roadAddress)
+        assertEquals(PlaceSourceType.AUTO, result.source)
+        assertEquals(BookmarkPlaceType.HOME, result.bookmarkType)
+        assertEquals(37.6109, result.latitude, 0.0)
+        assertEquals(126.9970, result.longitude, 0.0)
+        assertEquals("2026-04-29T13:32:43.059+09:00", result.startTime)
+        assertEquals("2026-04-29T14:32:43.059+09:00", result.endTime)
     }
 }

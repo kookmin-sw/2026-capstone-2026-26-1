@@ -1,18 +1,26 @@
 package com.example.passedpath.feature.place.presentation.viewmodel
 
 import com.example.passedpath.feature.place.domain.model.BookmarkPlace
+import com.example.passedpath.feature.place.domain.model.BookmarkPlaceType
 import com.example.passedpath.feature.place.domain.model.PlaceRegistration
 import com.example.passedpath.feature.place.domain.model.PlaceSourceType
 import com.example.passedpath.feature.place.domain.model.RegisteredPlace
 import com.example.passedpath.feature.place.domain.model.UpdatedPlace
 import com.example.passedpath.feature.place.domain.model.VisitedPlace
 import com.example.passedpath.feature.place.domain.model.VisitedPlaceList
+import com.example.passedpath.feature.place.domain.repository.PlaceGuideRepository
 import com.example.passedpath.feature.place.domain.repository.PlaceRepository
+import com.example.passedpath.feature.place.domain.usecase.DeletePlaceUseCase
 import com.example.passedpath.feature.place.domain.usecase.GetVisitedPlacesUseCase
 import com.example.passedpath.feature.place.domain.usecase.ReorderPlacesUseCase
+import com.example.passedpath.feature.place.domain.usecase.UpdatePlaceUseCase
 import com.example.passedpath.testutil.MainDispatcherRule
 import com.example.passedpath.ui.state.ApiFailureMessage
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -63,6 +71,73 @@ class PlaceViewModelTest {
         assertEquals(2, state.placeList.placeCount)
         assertEquals(2, state.placeList.places.size)
         assertEquals(listOf("2026-04-03"), repository.requestedPlaceListDates)
+    }
+
+    @Test
+    fun `reorder guide banner shows only when two or more places are loaded and not dismissed`() = runTest {
+        val repository = FakePlaceRepository(
+            visitedPlaceListByDate = mutableMapOf(
+                "2026-04-03" to VisitedPlaceList(
+                    placeCount = 2,
+                    places = listOf(
+                        visitedPlace(placeId = 1L, placeName = "Seoul Forest", orderIndex = 1),
+                        visitedPlace(placeId = 2L, placeName = "Cafe", orderIndex = 2)
+                    )
+                ),
+                "2026-04-04" to VisitedPlaceList(
+                    placeCount = 1,
+                    places = listOf(visitedPlace(placeId = 3L, placeName = "Library", orderIndex = 1))
+                )
+            )
+        )
+        val viewModel = createViewModel(repository = repository, initialDateKey = "2026-04-03")
+
+        viewModel.fetchVisitedPlaces()
+        advanceUntilIdle()
+
+        assertTrue(viewModel.uiState.value.placeList.isReorderGuideBannerVisible)
+
+        viewModel.updateDateKey("2026-04-04")
+        viewModel.fetchVisitedPlaces()
+        advanceUntilIdle()
+
+        assertFalse(viewModel.uiState.value.placeList.isReorderGuideBannerVisible)
+    }
+
+    @Test
+    fun `dismissReorderGuideBanner hides banner and keeps it hidden after reloads`() = runTest {
+        val repository = FakePlaceRepository(
+            visitedPlaceListByDate = mutableMapOf(
+                "2026-04-03" to VisitedPlaceList(
+                    placeCount = 2,
+                    places = listOf(
+                        visitedPlace(placeId = 1L, placeName = "Seoul Forest", orderIndex = 1),
+                        visitedPlace(placeId = 2L, placeName = "Cafe", orderIndex = 2)
+                    )
+                )
+            )
+        )
+        val guideRepository = FakePlaceGuideRepository()
+        val viewModel = createViewModel(
+            repository = repository,
+            guideRepository = guideRepository,
+            initialDateKey = "2026-04-03"
+        )
+
+        viewModel.fetchVisitedPlaces()
+        advanceUntilIdle()
+        assertTrue(viewModel.uiState.value.placeList.isReorderGuideBannerVisible)
+
+        viewModel.dismissReorderGuideBanner()
+        advanceUntilIdle()
+
+        assertTrue(guideRepository.dismissRequested)
+        assertFalse(viewModel.uiState.value.placeList.isReorderGuideBannerVisible)
+
+        viewModel.fetchVisitedPlaces()
+        advanceUntilIdle()
+
+        assertFalse(viewModel.uiState.value.placeList.isReorderGuideBannerVisible)
     }
 
     @Test
@@ -185,30 +260,536 @@ class PlaceViewModelTest {
     }
 
     @Test
-    fun `reorderPlaces refreshes place list after success`() = runTest {
-        val repository = FakePlaceRepository()
+    fun `reorderPlaces sends current date and requested place ids then refreshes after success`() = runTest {
+        val repository = FakePlaceRepository(
+            visitedPlaceListByDate = mutableMapOf(
+                "2026-04-03" to VisitedPlaceList(
+                    placeCount = 3,
+                    places = listOf(
+                        visitedPlace(placeId = 1L, placeName = "A", orderIndex = 1),
+                        visitedPlace(placeId = 2L, placeName = "B", orderIndex = 2),
+                        visitedPlace(placeId = 3L, placeName = "C", orderIndex = 3)
+                    )
+                )
+            )
+        )
         val viewModel = createViewModel(repository = repository, initialDateKey = "2026-04-03")
 
-        viewModel.updateReorderPlaceIdsInput("3,1,2")
-
-        viewModel.reorderPlaces()
+        viewModel.fetchVisitedPlaces()
         advanceUntilIdle()
 
-        assertEquals(listOf("2026-04-03"), repository.requestedPlaceListDates)
+        viewModel.reorderPlaces(listOf(3L, 1L, 2L))
+        advanceUntilIdle()
+
+        assertEquals(listOf("2026-04-03", "2026-04-03"), repository.requestedPlaceListDates)
+        assertEquals(listOf("2026-04-03"), repository.reorderRequestDates)
         assertEquals(listOf(listOf(3L, 1L, 2L)), repository.reorderRequests)
-        assertEquals(
-            "\uc7a5\uc18c \uc21c\uc11c\uac00 \ubcc0\uacbd\ub418\uc5c8\uc2b5\ub2c8\ub2e4. ids=3,1,2",
-            viewModel.uiState.value.successMessage
+        assertEquals("\uc7a5\uc18c \uc21c\uc11c\uac00 \ubcc0\uacbd\ub418\uc5c8\uc2b5\ub2c8\ub2e4.", viewModel.uiState.value.successMessage)
+    }
+
+    @Test
+    fun `reorderPlaces skips repository call when requested order is unchanged`() = runTest {
+        val repository = FakePlaceRepository(
+            visitedPlaceListByDate = mutableMapOf(
+                "2026-04-03" to VisitedPlaceList(
+                    placeCount = 2,
+                    places = listOf(
+                        visitedPlace(placeId = 1L, placeName = "A", orderIndex = 1),
+                        visitedPlace(placeId = 2L, placeName = "B", orderIndex = 2)
+                    )
+                )
+            )
         )
+        val viewModel = createViewModel(repository = repository, initialDateKey = "2026-04-03")
+
+        viewModel.fetchVisitedPlaces()
+        advanceUntilIdle()
+
+        viewModel.reorderPlaces(listOf(1L, 2L))
+        advanceUntilIdle()
+
+        assertTrue(repository.reorderRequests.isEmpty())
+    }
+
+    @Test
+    fun `reorderPlaces rejects ids that do not match current place list`() = runTest {
+        val repository = FakePlaceRepository(
+            visitedPlaceListByDate = mutableMapOf(
+                "2026-04-03" to VisitedPlaceList(
+                    placeCount = 2,
+                    places = listOf(
+                        visitedPlace(placeId = 1L, placeName = "A", orderIndex = 1),
+                        visitedPlace(placeId = 2L, placeName = "B", orderIndex = 2)
+                    )
+                )
+            )
+        )
+        val viewModel = createViewModel(repository = repository, initialDateKey = "2026-04-03")
+
+        viewModel.fetchVisitedPlaces()
+        advanceUntilIdle()
+
+        viewModel.reorderPlaces(listOf(1L, 3L))
+        advanceUntilIdle()
+
+        assertTrue(repository.reorderRequests.isEmpty())
+        assertEquals(
+            "\ud604\uc7ac \uc7a5\uc18c \ubaa9\ub85d\uacfc \uc21c\uc11c \ubcc0\uacbd \uc694\uccad\uc774 \uc77c\uce58\ud558\uc9c0 \uc54a\uc2b5\ub2c8\ub2e4.",
+            viewModel.uiState.value.errorMessage
+        )
+    }
+
+    @Test
+    fun `reorderPlaces keeps existing list and exposes error on failure`() = runTest {
+        val repository = FakePlaceRepository(
+            visitedPlaceListByDate = mutableMapOf(
+                "2026-04-03" to VisitedPlaceList(
+                    placeCount = 2,
+                    places = listOf(
+                        visitedPlace(placeId = 1L, placeName = "A", orderIndex = 1),
+                        visitedPlace(placeId = 2L, placeName = "B", orderIndex = 2)
+                    )
+                )
+            ),
+            throwOnReorder = IllegalStateException("boom")
+        )
+        val viewModel = createViewModel(repository = repository, initialDateKey = "2026-04-03")
+
+        viewModel.fetchVisitedPlaces()
+        advanceUntilIdle()
+
+        viewModel.reorderPlaces(listOf(2L, 1L))
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertFalse(state.isSubmitting)
+        assertEquals(ApiFailureMessage.NETWORK_REQUEST_FAILED, state.errorMessage)
+        assertEquals(listOf(1L, 2L), state.placeList.places.sortedBy(VisitedPlace::orderIndex).map { it.placeId })
+        assertEquals(listOf(listOf(2L, 1L)), repository.reorderRequests)
+    }
+
+    @Test
+    fun `reorderPlaces ignores duplicate request while submitting`() = runTest {
+        val reorderStarted = CompletableDeferred<Unit>()
+        val finishReorder = CompletableDeferred<Unit>()
+        val repository = FakePlaceRepository(
+            visitedPlaceListByDate = mutableMapOf(
+                "2026-04-03" to VisitedPlaceList(
+                    placeCount = 2,
+                    places = listOf(
+                        visitedPlace(placeId = 1L, placeName = "A", orderIndex = 1),
+                        visitedPlace(placeId = 2L, placeName = "B", orderIndex = 2)
+                    )
+                )
+            ),
+            onReorder = {
+                reorderStarted.complete(Unit)
+                finishReorder.await()
+            }
+        )
+        val viewModel = createViewModel(repository = repository, initialDateKey = "2026-04-03")
+
+        viewModel.fetchVisitedPlaces()
+        advanceUntilIdle()
+
+        val firstJob = launch {
+            viewModel.reorderPlaces(listOf(2L, 1L))
+        }
+        reorderStarted.await()
+
+        viewModel.reorderPlaces(listOf(2L, 1L))
+        advanceUntilIdle()
+
+        finishReorder.complete(Unit)
+        firstJob.join()
+        advanceUntilIdle()
+
+        assertEquals(listOf(listOf(2L, 1L)), repository.reorderRequests)
+    }
+
+    @Test
+    fun `reorderPlaces keeps optimistic order when refresh fails after reorder success`() = runTest {
+        val repository = FakePlaceRepository(
+            visitedPlaceListByDate = mutableMapOf(
+                "2026-04-03" to VisitedPlaceList(
+                    placeCount = 3,
+                    places = listOf(
+                        visitedPlace(placeId = 1L, placeName = "A", orderIndex = 1),
+                        visitedPlace(placeId = 2L, placeName = "B", orderIndex = 2),
+                        visitedPlace(placeId = 3L, placeName = "C", orderIndex = 3)
+                    )
+                )
+            )
+        )
+        val viewModel = createViewModel(repository = repository, initialDateKey = "2026-04-03")
+
+        viewModel.fetchVisitedPlaces()
+        advanceUntilIdle()
+
+        repository.throwOnGetPlaces = IllegalStateException("refresh failed")
+        viewModel.reorderPlaces(listOf(3L, 1L, 2L))
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertTrue(state.placeList.isStale)
+        assertEquals(ApiFailureMessage.NETWORK_REQUEST_FAILED, state.placeList.errorMessage)
+        assertEquals(listOf(3L, 1L, 2L), state.placeList.places.sortedBy(VisitedPlace::orderIndex).map { it.placeId })
+        assertEquals(listOf(1, 2, 3), state.placeList.places.sortedBy(VisitedPlace::orderIndex).map { it.orderIndex })
+    }
+
+    @Test
+    fun `deletePlace sends current date and place id then refreshes after success`() = runTest {
+        val repository = FakePlaceRepository(
+            visitedPlaceListByDate = mutableMapOf(
+                "2026-04-03" to VisitedPlaceList(
+                    placeCount = 2,
+                    places = listOf(
+                        visitedPlace(placeId = 1L, placeName = "A", orderIndex = 1),
+                        visitedPlace(placeId = 2L, placeName = "B", orderIndex = 2)
+                    )
+                )
+            ),
+            onDelete = { dateKey, placeId ->
+                val currentPlaces = visitedPlaceListByDate.getValue(dateKey).places
+                val nextPlaces = currentPlaces.filterNot { it.placeId == placeId }
+                visitedPlaceListByDate[dateKey] = VisitedPlaceList(
+                    placeCount = nextPlaces.size,
+                    places = nextPlaces
+                )
+            }
+        )
+        val viewModel = createViewModel(repository = repository, initialDateKey = "2026-04-03")
+
+        viewModel.fetchVisitedPlaces()
+        advanceUntilIdle()
+
+        viewModel.deletePlace(2L)
+        advanceUntilIdle()
+
+        assertEquals(listOf("2026-04-03"), repository.deleteRequestDates)
+        assertEquals(listOf(2L), repository.deleteRequests)
+        assertEquals(listOf("2026-04-03", "2026-04-03"), repository.requestedPlaceListDates)
+        assertEquals("장소를 삭제했습니다.", viewModel.uiState.value.successMessage)
+        assertEquals(1L, viewModel.uiState.value.feedbackEventId)
+        assertEquals(listOf(1L), viewModel.uiState.value.placeList.places.map { it.placeId })
+    }
+
+    @Test
+    fun `deletePlace replaces local removal with refreshed server list after success`() = runTest {
+        val repository = FakePlaceRepository(
+            visitedPlaceListByDate = mutableMapOf(
+                "2026-04-03" to VisitedPlaceList(
+                    placeCount = 2,
+                    places = listOf(
+                        visitedPlace(placeId = 1L, placeName = "A", orderIndex = 1),
+                        visitedPlace(placeId = 2L, placeName = "B", orderIndex = 2)
+                    )
+                )
+            ),
+            onDelete = { dateKey, _ ->
+                visitedPlaceListByDate[dateKey] = VisitedPlaceList(
+                    placeCount = 2,
+                    places = listOf(
+                        visitedPlace(placeId = 1L, placeName = "A", orderIndex = 1),
+                        visitedPlace(placeId = 3L, placeName = "C", orderIndex = 2)
+                    )
+                )
+            }
+        )
+        val viewModel = createViewModel(repository = repository, initialDateKey = "2026-04-03")
+
+        viewModel.fetchVisitedPlaces()
+        advanceUntilIdle()
+
+        viewModel.deletePlace(2L)
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertEquals(listOf(1L, 3L), state.placeList.places.map { it.placeId })
+        assertEquals(2, state.placeList.placeCount)
+        assertNull(state.errorMessage)
+        assertNull(state.placeList.errorMessage)
+        assertFalse(state.placeList.isLoading)
+    }
+
+    @Test
+    fun `consumeFeedback clears current place feedback only when event id matches`() = runTest {
+        val repository = FakePlaceRepository(
+            visitedPlaceListByDate = mutableMapOf(
+                "2026-04-03" to VisitedPlaceList(
+                    placeCount = 2,
+                    places = listOf(
+                        visitedPlace(placeId = 1L, placeName = "A", orderIndex = 1),
+                        visitedPlace(placeId = 2L, placeName = "B", orderIndex = 2)
+                    )
+                )
+            )
+        )
+        val viewModel = createViewModel(repository = repository, initialDateKey = "2026-04-03")
+
+        viewModel.fetchVisitedPlaces()
+        advanceUntilIdle()
+        viewModel.deletePlace(2L)
+        advanceUntilIdle()
+
+        assertEquals(1L, viewModel.uiState.value.feedbackEventId)
+        assertTrue(viewModel.uiState.value.successMessage?.isNotBlank() == true)
+
+        viewModel.consumeFeedback(0L)
+        assertTrue(viewModel.uiState.value.successMessage?.isNotBlank() == true)
+
+        viewModel.consumeFeedback(1L)
+        assertNull(viewModel.uiState.value.successMessage)
+        assertNull(viewModel.uiState.value.errorMessage)
+    }
+
+    @Test
+    fun `deletePlace keeps removed list and success message when silent refresh fails after success`() = runTest {
+        val repository = FakePlaceRepository(
+            visitedPlaceListByDate = mutableMapOf(
+                "2026-04-03" to VisitedPlaceList(
+                    placeCount = 2,
+                    places = listOf(
+                        visitedPlace(placeId = 1L, placeName = "A", orderIndex = 1),
+                        visitedPlace(placeId = 2L, placeName = "B", orderIndex = 2)
+                    )
+                )
+            )
+        )
+        val viewModel = createViewModel(repository = repository, initialDateKey = "2026-04-03")
+
+        viewModel.fetchVisitedPlaces()
+        advanceUntilIdle()
+
+        repository.throwOnGetPlaces = IllegalStateException("refresh failed")
+        viewModel.deletePlace(2L)
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertEquals(listOf(2L), repository.deleteRequests)
+        assertEquals(listOf(1L), state.placeList.places.map { it.placeId })
+        assertEquals(1, state.placeList.placeCount)
+        assertFalse(state.placeList.isStale)
+        assertNull(state.placeList.errorMessage)
+        assertNull(state.errorMessage)
+        assertTrue(state.successMessage?.isNotBlank() == true)
+        assertEquals(1L, state.feedbackEventId)
+    }
+
+    @Test
+    fun `deletePlace keeps existing list and exposes error on failure`() = runTest {
+        val repository = FakePlaceRepository(
+            visitedPlaceListByDate = mutableMapOf(
+                "2026-04-03" to VisitedPlaceList(
+                    placeCount = 2,
+                    places = listOf(
+                        visitedPlace(placeId = 1L, placeName = "A", orderIndex = 1),
+                        visitedPlace(placeId = 2L, placeName = "B", orderIndex = 2)
+                    )
+                )
+            ),
+            throwOnDelete = IllegalStateException("boom")
+        )
+        val viewModel = createViewModel(repository = repository, initialDateKey = "2026-04-03")
+
+        viewModel.fetchVisitedPlaces()
+        advanceUntilIdle()
+
+        viewModel.deletePlace(2L)
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertFalse(state.isSubmitting)
+        assertEquals(ApiFailureMessage.NETWORK_REQUEST_FAILED, state.errorMessage)
+        assertEquals(listOf(1L, 2L), state.placeList.places.map { it.placeId })
+        assertEquals(listOf(2L), repository.deleteRequests)
+        assertEquals(1L, state.feedbackEventId)
+    }
+
+    @Test
+    fun `deletePlace ignores duplicate request while submitting`() = runTest {
+        val deleteStarted = CompletableDeferred<Unit>()
+        val finishDelete = CompletableDeferred<Unit>()
+        val repository = FakePlaceRepository(
+            visitedPlaceListByDate = mutableMapOf(
+                "2026-04-03" to VisitedPlaceList(
+                    placeCount = 1,
+                    places = listOf(visitedPlace(placeId = 1L, placeName = "A", orderIndex = 1))
+                )
+            ),
+            onDelete = { _, _ ->
+                deleteStarted.complete(Unit)
+                finishDelete.await()
+            }
+        )
+        val viewModel = createViewModel(repository = repository, initialDateKey = "2026-04-03")
+
+        viewModel.fetchVisitedPlaces()
+        advanceUntilIdle()
+
+        val firstJob = launch {
+            viewModel.deletePlace(1L)
+        }
+        deleteStarted.await()
+
+        viewModel.deletePlace(1L)
+        advanceUntilIdle()
+
+        finishDelete.complete(Unit)
+        firstJob.join()
+        advanceUntilIdle()
+
+        assertEquals(listOf(1L), repository.deleteRequests)
+    }
+
+    @Test
+    fun `updatePlace sends selected place data and refreshes after success`() = runTest {
+        val repository = FakePlaceRepository(
+            visitedPlaceListByDate = mutableMapOf(
+                "2026-04-03" to VisitedPlaceList(
+                    placeCount = 1,
+                    places = listOf(visitedPlace(placeId = 1L, placeName = "A", orderIndex = 1))
+                )
+            ),
+            onUpdate = { dateKey, placeId, place ->
+                val currentPlaces = visitedPlaceListByDate.getValue(dateKey).places
+                visitedPlaceListByDate[dateKey] = VisitedPlaceList(
+                    placeCount = currentPlaces.size,
+                    places = currentPlaces.map {
+                        if (it.placeId == placeId) {
+                            it.copy(
+                                placeName = place.placeName,
+                                roadAddress = place.roadAddress,
+                                latitude = place.latitude,
+                                longitude = place.longitude
+                            )
+                        } else {
+                            it
+                        }
+                    }
+                )
+            }
+        )
+        val viewModel = createViewModel(repository = repository, initialDateKey = "2026-04-03")
+
+        viewModel.fetchVisitedPlaces()
+        advanceUntilIdle()
+
+        viewModel.updatePlace(
+            placeId = 1L,
+            placeName = "New Place",
+            roadAddress = "New Road",
+            latitude = 37.5,
+            longitude = 127.5
+        )
+        advanceUntilIdle()
+
+        assertEquals(listOf("2026-04-03"), repository.updateRequestDates)
+        assertEquals(listOf(1L), repository.updateRequests)
+        assertEquals("New Place", repository.updatePlaces.single().placeName)
+        assertEquals("New Road", repository.updatePlaces.single().roadAddress)
+        assertEquals(37.5, repository.updatePlaces.single().latitude, 0.0)
+        assertEquals(127.5, repository.updatePlaces.single().longitude, 0.0)
+        val updatedPlace = viewModel.uiState.value.placeList.places.single()
+        assertEquals("New Place", updatedPlace.placeName)
+        assertEquals("New Road", updatedPlace.roadAddress)
+        assertEquals("장소를 수정했습니다.", viewModel.uiState.value.successMessage)
+    }
+
+    @Test
+    fun `updatePlace applies server update response fields before silent refresh`() = runTest {
+        val repository = FakePlaceRepository(
+            visitedPlaceListByDate = mutableMapOf(
+                "2026-04-03" to VisitedPlaceList(
+                    placeCount = 1,
+                    places = listOf(
+                        visitedPlace(
+                            placeId = 1L,
+                            placeName = "A",
+                            source = PlaceSourceType.AUTO,
+                            orderIndex = 1
+                        )
+                    )
+                )
+            ),
+            throwOnGetPlacesAfterFirstSuccess = true,
+            updateResponse = UpdatedPlace(
+                placeName = "Server Place",
+                roadAddress = "Server Road",
+                latitude = 37.6,
+                longitude = 126.9,
+                source = PlaceSourceType.MANUAL,
+                bookmarkType = BookmarkPlaceType.HOME,
+                startTime = null,
+                endTime = null
+            )
+        )
+        val viewModel = createViewModel(repository = repository, initialDateKey = "2026-04-03")
+
+        viewModel.fetchVisitedPlaces()
+        advanceUntilIdle()
+
+        viewModel.updatePlace(
+            placeId = 1L,
+            placeName = "Client Place",
+            roadAddress = "Client Road",
+            latitude = 37.5,
+            longitude = 127.5
+        )
+        advanceUntilIdle()
+
+        val updatedPlace = viewModel.uiState.value.placeList.places.single()
+        assertEquals("Client Place", repository.updatePlaces.single().placeName)
+        assertEquals("Client Road", repository.updatePlaces.single().roadAddress)
+        assertEquals("Server Place", updatedPlace.placeName)
+        assertEquals("Server Road", updatedPlace.roadAddress)
+        assertEquals(37.6, updatedPlace.latitude, 0.0)
+        assertEquals(126.9, updatedPlace.longitude, 0.0)
+        assertEquals(PlaceSourceType.MANUAL, updatedPlace.source)
+        assertEquals(BookmarkPlaceType.HOME, updatedPlace.bookmarkType)
+        assertNull(updatedPlace.startTime)
+        assertNull(updatedPlace.endTime)
+    }
+
+    @Test
+    fun `updatePlace rejects blank name before repository call`() = runTest {
+        val repository = FakePlaceRepository(
+            visitedPlaceListByDate = mutableMapOf(
+                "2026-04-03" to VisitedPlaceList(
+                    placeCount = 1,
+                    places = listOf(visitedPlace(placeId = 1L, placeName = "A", orderIndex = 1))
+                )
+            )
+        )
+        val viewModel = createViewModel(repository = repository, initialDateKey = "2026-04-03")
+
+        viewModel.fetchVisitedPlaces()
+        advanceUntilIdle()
+
+        viewModel.updatePlace(
+            placeId = 1L,
+            placeName = "   ",
+            roadAddress = "New Road",
+            latitude = 37.5,
+            longitude = 127.5
+        )
+        advanceUntilIdle()
+
+        assertTrue(repository.updateRequests.isEmpty())
+        assertEquals("장소명을 입력해 주세요.", viewModel.uiState.value.errorMessage)
     }
 
     private fun createViewModel(
         repository: FakePlaceRepository,
-        initialDateKey: String
+        initialDateKey: String,
+        guideRepository: FakePlaceGuideRepository = FakePlaceGuideRepository()
     ): PlaceViewModel {
         return PlaceViewModel(
             reorderPlacesUseCase = ReorderPlacesUseCase(repository),
             getVisitedPlacesUseCase = GetVisitedPlacesUseCase(repository),
+            deletePlaceUseCase = DeletePlaceUseCase(repository),
+            updatePlaceUseCase = UpdatePlaceUseCase(repository),
+            placeGuideRepository = guideRepository,
             initialDateKey = initialDateKey
         )
     }
@@ -232,14 +813,33 @@ class PlaceViewModelTest {
 
     private class FakePlaceRepository(
         val visitedPlaceListByDate: MutableMap<String, VisitedPlaceList> = mutableMapOf(),
-        var throwOnGetPlaces: Throwable? = null
+        var throwOnGetPlaces: Throwable? = null,
+        var throwOnGetPlacesAfterFirstSuccess: Boolean = false,
+        var throwOnReorder: Throwable? = null,
+        val onReorder: suspend () -> Unit = {},
+        var throwOnDelete: Throwable? = null,
+        val onDelete: suspend FakePlaceRepository.(String, Long) -> Unit = { _, _ -> },
+        var throwOnUpdate: Throwable? = null,
+        val updateResponse: UpdatedPlace? = null,
+        val onUpdate: suspend FakePlaceRepository.(String, Long, PlaceRegistration) -> Unit = { _, _, _ -> }
     ) : PlaceRepository {
         val requestedPlaceListDates = mutableListOf<String>()
+        val reorderRequestDates = mutableListOf<String>()
         val reorderRequests = mutableListOf<List<Long>>()
+        val deleteRequestDates = mutableListOf<String>()
+        val deleteRequests = mutableListOf<Long>()
+        val updateRequestDates = mutableListOf<String>()
+        val updateRequests = mutableListOf<Long>()
+        val updatePlaces = mutableListOf<PlaceRegistration>()
+        private var successfulGetPlacesCount = 0
 
         override suspend fun getPlaces(dateKey: String): VisitedPlaceList {
             requestedPlaceListDates += dateKey
             throwOnGetPlaces?.let { throw it }
+            if (throwOnGetPlacesAfterFirstSuccess && successfulGetPlacesCount > 0) {
+                throw IllegalStateException("refresh failed")
+            }
+            successfulGetPlacesCount++
             return visitedPlaceListByDate[dateKey] ?: VisitedPlaceList(
                 placeCount = 0,
                 places = emptyList()
@@ -262,7 +862,12 @@ class PlaceViewModelTest {
             placeId: Long,
             place: PlaceRegistration
         ): UpdatedPlace {
-            return UpdatedPlace(
+            updateRequestDates += dateKey
+            updateRequests += placeId
+            updatePlaces += place
+            onUpdate(dateKey, placeId, place)
+            throwOnUpdate?.let { throw it }
+            return updateResponse ?: UpdatedPlace(
                 placeName = place.placeName,
                 roadAddress = place.roadAddress,
                 latitude = place.latitude,
@@ -271,7 +876,10 @@ class PlaceViewModelTest {
         }
 
         override suspend fun reorderPlaces(dateKey: String, placeIds: List<Long>) {
+            reorderRequestDates += dateKey
             reorderRequests += placeIds
+            onReorder()
+            throwOnReorder?.let { throw it }
         }
 
         override suspend fun updateBookmarkPlace(
@@ -281,6 +889,23 @@ class PlaceViewModelTest {
             return bookmarkPlace
         }
 
-        override suspend fun deletePlace(dateKey: String, placeId: Long) = Unit
+        override suspend fun deletePlace(dateKey: String, placeId: Long) {
+            deleteRequestDates += dateKey
+            deleteRequests += placeId
+            onDelete(dateKey, placeId)
+            throwOnDelete?.let { throw it }
+        }
+    }
+
+    private class FakePlaceGuideRepository : PlaceGuideRepository {
+        private val dismissed = MutableStateFlow(false)
+        var dismissRequested = false
+
+        override val isReorderGuideBannerDismissed: Flow<Boolean> = dismissed
+
+        override suspend fun dismissReorderGuideBanner() {
+            dismissRequested = true
+            dismissed.value = true
+        }
     }
 }

@@ -33,6 +33,25 @@ class PlaceSearchMapperTest {
     }
 
     @Test
+    fun `toPlaceSearchResults keeps only leaf category`() {
+        val response = PlaceSearchResponseDto(
+            places = listOf(
+                PlaceSearchItemDto(
+                    placeName = "Theme Cafe",
+                    category = "음식점 > 카페 > 테마카페",
+                    roadAddress = "Road Address",
+                    latitude = 37.1,
+                    longitude = 127.1
+                )
+            )
+        )
+
+        val result = response.toPlaceSearchResults()
+
+        assertEquals("테마카페", result.first().category)
+    }
+
+    @Test
     fun `toPlaceSearchResults drops invalid results when road address is missing`() {
         val response = PlaceSearchResponseDto(
             places = listOf(

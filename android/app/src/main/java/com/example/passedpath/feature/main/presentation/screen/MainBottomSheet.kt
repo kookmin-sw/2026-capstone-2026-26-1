@@ -24,6 +24,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -68,9 +73,19 @@ internal fun MainBottomSheet(
     onTabSelected: (MainBottomSheetTab) -> Unit,
     onPlaceRetryClick: () -> Unit,
     onAddPlaceClick: () -> Unit,
+    onReorderPlaces: (List<Long>) -> Unit,
+    onCloseReorderGuideBanner: () -> Unit,
+    onEditPlaceClick: (Long) -> Unit,
+    onPlaceClick: (Long) -> Unit,
+    onDeletePlaceRequested: (Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val focusManager = LocalFocusManager.current
+    var isContentScrolled by remember(selectedTab) { mutableStateOf(false) }
+
+    LaunchedEffect(selectedTab) {
+        isContentScrolled = false
+    }
 
     Surface(
         modifier = modifier
@@ -84,7 +99,7 @@ internal fun MainBottomSheet(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = 10.dp, bottom = 22.dp)
+                .padding(top = 10.dp)
         ) {
             BottomSheetHandle(
                 modifier = Modifier.align(Alignment.CenterHorizontally)
@@ -94,7 +109,8 @@ internal fun MainBottomSheet(
                 selectedTab = selectedTab,
                 onTabSelected = onTabSelected
             )
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
+            BottomSheetContentDivider(visible = isContentScrolled)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -112,6 +128,13 @@ internal fun MainBottomSheet(
                         onSelectedPlaceHandled = onSelectedPlaceHandled,
                         onRetryClick = onPlaceRetryClick,
                         onAddPlaceClick = onAddPlaceClick,
+                        onReorderPlaces = onReorderPlaces,
+                        onCloseReorderGuideBanner = onCloseReorderGuideBanner,
+                        onEditPlaceClick = onEditPlaceClick,
+                        onPlaceClick = onPlaceClick,
+                        onDeletePlaceRequested = onDeletePlaceRequested,
+                        onScrollStateChanged = { isContentScrolled = it },
+                        isReorderSubmitting = placeUiState.isSubmitting,
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(horizontal = 20.dp)
@@ -121,6 +144,7 @@ internal fun MainBottomSheet(
                         onTitleChanged = onDayNoteTitleChanged,
                         onMemoChanged = onDayNoteMemoChanged,
                         onSaveClick = onDayNoteSaveClick,
+                        onScrollStateChanged = { isContentScrolled = it },
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(horizontal = 20.dp)
@@ -212,6 +236,16 @@ private fun BottomSheetTabRow(
     }
 }
 
+@Composable
+private fun BottomSheetContentDivider(visible: Boolean) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(1.dp)
+            .background(if (visible) Gray200 else Color.Transparent)
+    )
+}
+
 internal enum class MainBottomSheetTab {
     PLACE,
     DAYNOTE
@@ -259,6 +293,11 @@ private fun MainBottomSheetPreview() {
                 onTabSelected = {},
                 onPlaceRetryClick = {},
                 onAddPlaceClick = {},
+                onReorderPlaces = {},
+                onCloseReorderGuideBanner = {},
+                onEditPlaceClick = {},
+                onPlaceClick = {},
+                onDeletePlaceRequested = {},
                 modifier = Modifier.fillMaxSize()
             )
         }

@@ -13,7 +13,8 @@ internal fun reduceForDateChange(state: MainScreenLocalUiState): MainScreenInter
     return MainScreenInteractionResult(
         state = state.copy(
             selectedPlaceId = null,
-            requestedSheetValue = null
+            requestedSheetValue = null,
+            focusedPlaceId = null
         )
     )
 }
@@ -22,6 +23,12 @@ internal fun reduceForSheetValueChange(
     state: MainScreenLocalUiState,
     bottomSheetValue: MainBottomSheetValue
 ): MainScreenInteractionResult {
+    if (state.requestedSheetValue != null) {
+        return MainScreenInteractionResult(
+            state = state.copy(bottomSheetValue = bottomSheetValue)
+        )
+    }
+
     return MainScreenInteractionResult(
         state = if (bottomSheetValue == MainBottomSheetValue.HIDDEN) {
             state.copy(
@@ -35,6 +42,12 @@ internal fun reduceForSheetValueChange(
     )
 }
 
+internal fun shouldShowCurrentLocationButton(
+    bottomSheetValue: MainBottomSheetValue
+): Boolean {
+    return bottomSheetValue == MainBottomSheetValue.HIDDEN
+}
+
 internal fun reduceForPlaceMarkerClick(
     state: MainScreenLocalUiState,
     placeId: Long
@@ -43,7 +56,7 @@ internal fun reduceForPlaceMarkerClick(
         state = state.copy(
             selectedPlaceId = placeId,
             selectedBottomSheetTab = MainBottomSheetTab.PLACE,
-            requestedSheetValue = MainBottomSheetValue.MIDDLE
+            requestedSheetValue = MainBottomSheetValue.EXPANDED
         ),
         shouldRefreshPlaces = state.selectedBottomSheetTab != MainBottomSheetTab.PLACE
     )
@@ -55,7 +68,35 @@ internal fun reduceForSheetHideRequest(
     return MainScreenInteractionResult(
         state = state.copy(
             requestedSheetValue = MainBottomSheetValue.HIDDEN,
-            selectedPlaceId = null
+            selectedPlaceId = null,
+            focusedPlaceId = null
+        )
+    )
+}
+
+internal fun reduceForPlaceCardClick(
+    state: MainScreenLocalUiState,
+    placeId: Long
+): MainScreenInteractionResult {
+    return MainScreenInteractionResult(
+        state = state.copy(
+            requestedSheetValue = MainBottomSheetValue.HIDDEN,
+            selectedPlaceId = null,
+            focusedPlaceId = placeId
+        )
+    )
+}
+
+internal fun reduceForPlaceCreated(
+    state: MainScreenLocalUiState,
+    placeId: Long
+): MainScreenInteractionResult {
+    return MainScreenInteractionResult(
+        state = state.copy(
+            selectedBottomSheetTab = MainBottomSheetTab.PLACE,
+            requestedSheetValue = MainBottomSheetValue.EXPANDED,
+            selectedPlaceId = placeId,
+            focusedPlaceId = null
         )
     )
 }
@@ -64,23 +105,21 @@ internal fun reduceForBottomSheetTabSelection(
     state: MainScreenLocalUiState,
     selectedTab: MainBottomSheetTab
 ): MainScreenInteractionResult {
-    return if (selectedTab == MainBottomSheetTab.PLACE) {
-        MainScreenInteractionResult(
-            state = state.copy(
-                selectedBottomSheetTab = selectedTab,
-                requestedSheetValue = MainBottomSheetValue.MIDDLE
-            ),
-            shouldRefreshPlaces = true
-        )
-    } else {
-        MainScreenInteractionResult(
-            state = state.copy(
-                selectedBottomSheetTab = selectedTab,
-                requestedSheetValue = MainBottomSheetValue.MIDDLE,
-                selectedPlaceId = null
-            )
-        )
-    }
+    val decision = resolveBottomSheetTabSelection(
+        currentSheetValue = state.bottomSheetValue,
+        currentTab = state.selectedBottomSheetTab,
+        selectedTab = selectedTab,
+        selectedPlaceId = state.selectedPlaceId
+    )
+
+    return MainScreenInteractionResult(
+        state = state.copy(
+            selectedBottomSheetTab = selectedTab,
+            requestedSheetValue = decision.requestedSheetValue,
+            selectedPlaceId = decision.selectedPlaceId
+        ),
+        shouldRefreshPlaces = decision.shouldRefreshPlaces
+    )
 }
 
 internal fun reduceForSelectedPlaceHandled(
@@ -88,5 +127,26 @@ internal fun reduceForSelectedPlaceHandled(
 ): MainScreenInteractionResult {
     return MainScreenInteractionResult(
         state = state.copy(selectedPlaceId = null)
+    )
+}
+
+internal fun reduceForMapFocusHandled(
+    state: MainScreenLocalUiState
+): MainScreenInteractionResult {
+    return MainScreenInteractionResult(
+        state = state.copy(focusedPlaceId = null)
+    )
+}
+
+internal fun reduceForSheetCommandConsumed(
+    state: MainScreenLocalUiState,
+    consumedValue: MainBottomSheetValue
+): MainScreenInteractionResult {
+    return MainScreenInteractionResult(
+        state = if (state.requestedSheetValue == consumedValue) {
+            state.copy(requestedSheetValue = null)
+        } else {
+            state
+        }
     )
 }

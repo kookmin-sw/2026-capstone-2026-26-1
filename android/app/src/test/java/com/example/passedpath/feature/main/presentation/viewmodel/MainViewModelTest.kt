@@ -14,10 +14,8 @@ import com.example.passedpath.feature.locationtracking.domain.repository.RemoteD
 import com.example.passedpath.feature.locationtracking.domain.repository.TrackingDebugLogRepository
 import com.example.passedpath.feature.locationtracking.domain.usecase.ObserveRecentTrackingEventsUseCase
 import com.example.passedpath.feature.main.presentation.state.MainCameraIntent
-import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiState
 import com.example.passedpath.feature.permission.presentation.mapper.createPermissionOverlayUiModel
-import com.example.passedpath.feature.place.domain.model.PlaceSourceType
-import com.example.passedpath.feature.place.domain.model.VisitedPlace
+import com.example.passedpath.feature.permission.presentation.policy.LocationAccessStateResolver
 import com.example.passedpath.feature.permission.presentation.state.LocationPermissionUiState
 import com.example.passedpath.feature.permission.data.manager.LocationPermissionStatusReader
 import com.example.passedpath.feature.permission.data.manager.LocationServiceStatusReader
@@ -26,6 +24,7 @@ import com.example.passedpath.feature.route.presentation.state.MainRouteModeUiSt
 import com.example.passedpath.feature.route.presentation.state.RouteUiAction
 import com.example.passedpath.testutil.MainDispatcherRule
 import com.example.passedpath.ui.state.ApiFailureMessage
+import com.example.passedpath.ui.state.CoordinateUiState
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -91,7 +90,6 @@ class MainViewModelTest {
         assertEquals("Han River", state.selectedRoute.title)
         assertEquals("Windy evening walk", state.selectedRoute.memo)
         assertEquals(3, state.selectedRoute.polylinePoints.size)
-        assertTrue(state.mapPlaces.isEmpty())
         assertEquals(1, state.selectedRoute.places.size)
         assertEquals(listOf("2026-03-29"), repository.requestedRemoteDates)
         assertTrue(repository.observedLocalDates.isEmpty())
@@ -181,7 +179,7 @@ class MainViewModelTest {
         advanceUntilIdle()
 
         viewModel.updateCurrentLocation(
-            MainCoordinateUiState(latitude = 37.1, longitude = 127.1)
+            CoordinateUiState(latitude = 37.1, longitude = 127.1)
         )
 
         assertEquals(
@@ -204,7 +202,7 @@ class MainViewModelTest {
         advanceUntilIdle()
 
         viewModel.updateCurrentLocation(
-            MainCoordinateUiState(latitude = 37.1, longitude = 127.1)
+            CoordinateUiState(latitude = 37.1, longitude = 127.1)
         )
         viewModel.consumeCameraIntent()
 
@@ -558,6 +556,49 @@ class MainViewModelTest {
     }
 
     @Test
+    fun `consumeBookmarkFeedback clears current bookmark feedback only when event id matches`() = runTest {
+        val bookmarkRepository = FakeDayRouteBookmarkRepository(
+            throwOnToggle = IllegalStateException("boom")
+        )
+        val repository = FakeDayRouteRepository(
+            resultByDate = mutableMapOf(
+                "2026-03-29" to RemoteDayRouteResult.Success(
+                    routeDetail = DayRouteDetail(
+                        dateKey = "2026-03-29",
+                        totalDistanceKm = 1.2,
+                        isBookmarked = false
+                    )
+                )
+            )
+        )
+        val viewModel = createViewModel(
+            repository = repository,
+            initialDateKey = "2026-03-29",
+            todayDateKey = "2026-03-31",
+            bookmarkRepository = bookmarkRepository
+        )
+        advanceUntilIdle()
+
+        viewModel.toggleSelectedRouteBookmark()
+        advanceUntilIdle()
+
+        assertEquals(1L, viewModel.uiState.value.bookmarkToggleUiState.feedbackEventId)
+        assertEquals(
+            ApiFailureMessage.NETWORK_REQUEST_FAILED,
+            viewModel.uiState.value.bookmarkToggleUiState.feedbackMessage
+        )
+
+        viewModel.consumeBookmarkFeedback(0L)
+        assertEquals(
+            ApiFailureMessage.NETWORK_REQUEST_FAILED,
+            viewModel.uiState.value.bookmarkToggleUiState.feedbackMessage
+        )
+
+        viewModel.consumeBookmarkFeedback(1L)
+        assertNull(viewModel.uiState.value.bookmarkToggleUiState.feedbackMessage)
+    }
+
+    @Test
     fun `toggleSelectedRouteBookmark ignores duplicate clicks while request is in flight`() = runTest {
         val toggleGate = CompletableDeferred<Unit>()
         val bookmarkRepository = FakeDayRouteBookmarkRepository(
@@ -630,132 +671,6 @@ class MainViewModelTest {
         assertEquals(listOf("2026-03-31"), repository.observedLocalDates)
     }
 
-    @Test
-    fun `updateFetchedMapPlaces overrides route seed markers with fetched places`() = runTest {
-        val repository = FakeDayRouteRepository(
-            resultByDate = mutableMapOf(
-                "2026-03-29" to RemoteDayRouteResult.Success(
-                    routeDetail = DayRouteDetail(
-                        dateKey = "2026-03-29",
-                        totalDistanceKm = 12.3,
-                        title = "Han River",
-                        memo = "Windy evening walk",
-                        pathPointCount = 3,
-                        polylinePoints = listOf(
-                            RoutePoint(37.1, 127.1),
-                            RoutePoint(37.2, 127.2),
-                            RoutePoint(37.3, 127.3)
-                        ),
-                        places = listOf(
-                            DayRoutePlace(1L, "Seed Place", "Road", 37.1, 127.1, 1)
-                        )
-                    )
-                )
-            )
-        )
-        val viewModel = createViewModel(
-            repository = repository,
-            initialDateKey = "2026-03-29",
-            todayDateKey = "2026-03-31",
-            backgroundGranted = true
-        )
-        advanceUntilIdle()
-
-        viewModel.updateFetchedMapPlaces(
-            dateKey = "2026-03-29",
-            places = listOf(
-                VisitedPlace(
-                    placeId = 4L,
-                    placeName = "Fetched B",
-                    source = PlaceSourceType.MANUAL,
-                    roadAddress = "Address B",
-                    latitude = 37.4,
-                    longitude = 127.4,
-                    orderIndex = 2
-                ),
-                VisitedPlace(
-                    placeId = 3L,
-                    placeName = "Fetched A",
-                    source = PlaceSourceType.AUTO,
-                    roadAddress = "Address A",
-                    latitude = 37.3,
-                    longitude = 127.3,
-                    orderIndex = 1
-                )
-            )
-        )
-
-        val state = viewModel.uiState.value
-        assertEquals(2, state.mapPlaces.size)
-        assertEquals(listOf(3L, 4L), state.mapPlaces.map { it.placeId })
-        assertEquals("Fetched A", state.mapPlaces.first().placeName)
-    }
-
-    @Test
-    fun `selectDate clears fetched markers until places are fetched again`() = runTest {
-        val repository = FakeDayRouteRepository(
-            resultByDate = mutableMapOf(
-                "2026-03-29" to RemoteDayRouteResult.Success(
-                    routeDetail = DayRouteDetail(
-                        dateKey = "2026-03-29",
-                        totalDistanceKm = 1.0,
-                        title = "",
-                        memo = "",
-                        pathPointCount = 1,
-                        polylinePoints = listOf(RoutePoint(37.1, 127.1)),
-                        places = listOf(
-                            DayRoutePlace(1L, "Seed A", "Road A", 37.1, 127.1, 1)
-                        )
-                    )
-                ),
-                "2026-03-30" to RemoteDayRouteResult.Success(
-                    routeDetail = DayRouteDetail(
-                        dateKey = "2026-03-30",
-                        totalDistanceKm = 2.0,
-                        title = "",
-                        memo = "",
-                        pathPointCount = 1,
-                        polylinePoints = listOf(RoutePoint(37.2, 127.2)),
-                        places = listOf(
-                            DayRoutePlace(2L, "Seed B", "Road B", 37.2, 127.2, 1)
-                        )
-                    )
-                )
-            )
-        )
-        val viewModel = createViewModel(
-            repository = repository,
-            initialDateKey = "2026-03-29",
-            todayDateKey = "2026-03-31",
-            backgroundGranted = true
-        )
-        advanceUntilIdle()
-
-        viewModel.updateFetchedMapPlaces(
-            dateKey = "2026-03-29",
-            places = listOf(
-                VisitedPlace(
-                    placeId = 9L,
-                    placeName = "Fetched Place",
-                    source = PlaceSourceType.MANUAL,
-                    roadAddress = "Fetched Road",
-                    latitude = 37.9,
-                    longitude = 127.9,
-                    orderIndex = 1
-                )
-            )
-        )
-        assertEquals(listOf(9L), viewModel.uiState.value.mapPlaces.map { it.placeId })
-
-        viewModel.selectDate("2026-03-30")
-        advanceUntilIdle()
-
-        val state = viewModel.uiState.value
-        assertEquals("2026-03-30", state.selectedDateKey)
-        assertTrue(state.mapPlaces.isEmpty())
-        assertNull(state.fetchedMapPlaces)
-    }
-
     private fun createViewModel(
         repository: FakeDayRouteRepository,
         initialDateKey: String,
@@ -772,8 +687,10 @@ class MainViewModelTest {
         bookmarkRepository: DayRouteBookmarkRepository = FakeDayRouteBookmarkRepository()
     ): MainViewModel {
         return MainViewModel(
-            locationPermissionStatusReader = permissionReader,
-            locationServiceStatusReader = locationServiceReader,
+            locationAccessStateResolver = LocationAccessStateResolver(
+                locationPermissionStatusReader = permissionReader,
+                locationServiceStatusReader = locationServiceReader
+            ),
             initialDateKeyProvider = { initialDateKey },
             routeStateCoordinator = RouteStateCoordinator(
                 dayRouteRepository = repository,

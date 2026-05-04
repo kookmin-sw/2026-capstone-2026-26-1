@@ -26,15 +26,19 @@ internal fun BoxScope.MainMapOverlayContent(
     uiState: MainUiState,
     onDateSelected: (String) -> Unit,
     onBookmarkClick: () -> Unit,
+    isMoreMenuVisible: Boolean,
+    onMoreClick: () -> Unit,
+    onMoreDismissRequest: () -> Unit,
+    onMorePlaceBookmarkClick: () -> Unit,
+    onMoreDeleteRecordClick: () -> Unit,
     onRouteAction: (RouteUiAction) -> Unit,
     onPermissionActionClick: () -> Unit,
     debugActions: MainDebugActions,
     floatingBottomPadding: Dp,
     bottomEndControlsBottomPadding: Dp = floatingBottomPadding,
-    isDebugPanelExpanded: Boolean,
-    onToggleDebugPanelExpanded: () -> Unit,
+    isDebugPanelVisible: Boolean,
+    onCloseDebugPanel: () -> Unit,
     topStartControls: @Composable (() -> Unit)? = null,
-    topEndControls: @Composable (() -> Unit)? = null,
     floatingControls: @Composable (() -> Unit)? = null
 ) {
     val permissionOverlayUiModel = createPermissionOverlayUiModel(
@@ -52,6 +56,11 @@ internal fun BoxScope.MainMapOverlayContent(
         isBookmarkUpdating = uiState.bookmarkToggleUiState.isUpdating(uiState.selectedDateKey),
         onDateSelected = onDateSelected,
         onBookmarkClick = onBookmarkClick,
+        isMoreMenuVisible = isMoreMenuVisible,
+        onMoreClick = onMoreClick,
+        onMoreDismissRequest = onMoreDismissRequest,
+        onMorePlaceBookmarkClick = onMorePlaceBookmarkClick,
+        onMoreDeleteRecordClick = onMoreDeleteRecordClick,
         modifier = Modifier
             .align(Alignment.TopCenter)
             .fillMaxWidth()
@@ -76,7 +85,6 @@ internal fun BoxScope.MainMapOverlayContent(
             routeMode = uiState.routeModeUiState,
             onRouteAction = onRouteAction
         )
-        topEndControls?.invoke()
     }
 
     androidx.compose.foundation.layout.Column(
@@ -92,13 +100,12 @@ internal fun BoxScope.MainMapOverlayContent(
             routeMode = uiState.routeModeUiState,
             onRouteAction = onRouteAction
         )
-        if (BuildConfig.DEBUG) {
+        if (BuildConfig.DEBUG && isDebugPanelVisible) {
             MainDebugPanel(
                 debugUiState = uiState.debugUiState,
                 onRefreshSystemState = debugActions.refreshSystemState,
                 onReloadRoute = debugActions.reloadRoute,
-                isExpanded = isDebugPanelExpanded,
-                onToggleExpanded = onToggleDebugPanelExpanded
+                onClose = onCloseDebugPanel
             )
         }
     }

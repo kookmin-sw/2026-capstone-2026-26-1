@@ -107,7 +107,7 @@ fun PlaceSearchResultCard(
                 if (category.isNotBlank()) {
                     Text(
                         text = category,
-                        modifier = Modifier.width(72.dp),
+                        modifier = Modifier.width(112.dp),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
                         color = Gray700,

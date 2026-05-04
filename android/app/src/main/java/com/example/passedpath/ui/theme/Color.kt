@@ -40,6 +40,11 @@ val kakaoYello = Color(0xFFFEE500)
 val White = Color(0xFFFFFFFF)
 val Black = Color(0xFF000000)
 
+//bookmark
+val BookmarkHomeColor = Color(0xFFFF5701)
+val BookmarkCompanyColor = Color(0xFF00BC06)
+val BookmarkSchoolColor = Color(0xFF1A73E8)
+val BookmarkOtherColor = Color(0xFFF1B934)
 
 val Primary = Green500
 

@@ -22,8 +22,7 @@ internal fun MainDebugPanel(
     debugUiState: MainDebugUiState,
     onRefreshSystemState: () -> Unit,
     onReloadRoute: () -> Unit,
-    isExpanded: Boolean,
-    onToggleExpanded: () -> Unit,
+    onClose: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -45,15 +44,10 @@ internal fun MainDebugPanel(
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onSurface
             )
-            TextButton(onClick = onToggleExpanded) {
-                Text(
-                    text = stringResource(
-                        if (isExpanded) R.string.debug_panel_collapse else R.string.debug_panel_expand
-                    )
-                )
+            TextButton(onClick = onClose) {
+                Text(text = stringResource(R.string.debug_panel_close))
             }
         }
-        if (!isExpanded) return@Column
         Text(
             text = stringResource(R.string.debug_panel_date, debugUiState.selectedDateKey),
             style = MaterialTheme.typography.bodySmall

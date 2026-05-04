@@ -2,25 +2,24 @@ package com.example.passedpath.feature.main.presentation.screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.passedpath.BuildConfig
 import com.example.passedpath.R
-import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiState
 import com.example.passedpath.feature.main.presentation.state.MainUiState
 import com.example.passedpath.feature.permission.presentation.state.LocationPermissionUiState
 import com.example.passedpath.feature.route.presentation.screen.RouteMapContent
@@ -28,7 +27,7 @@ import com.example.passedpath.feature.route.presentation.state.PlaceMarkerUiStat
 import com.example.passedpath.feature.route.presentation.state.RouteUiAction
 import com.example.passedpath.ui.component.floating.FloatingButtonColumn
 import com.example.passedpath.ui.component.floating.FloatingCircleIconButton
-import com.example.passedpath.feature.main.presentation.component.MainMorePopupMenu
+import com.example.passedpath.ui.state.CoordinateUiState
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -40,6 +39,9 @@ import kotlinx.coroutines.launch
 @Composable
 internal fun MainMapSection(
     uiState: MainUiState,
+    markerPlaces: List<PlaceMarkerUiState>,
+    focusedPlaceId: Long?,
+    onFocusedPlaceHandled: () -> Unit,
     onCameraIntentConsumed: () -> Unit,
     onDateSelected: (String) -> Unit,
     onBookmarkClick: () -> Unit,
@@ -52,7 +54,8 @@ internal fun MainMapSection(
     onPlaceMarkerClick: (Long) -> Unit,
     onPermissionActionClick: () -> Unit,
     debugActions: MainDebugActions,
-    floatingBottomPadding: androidx.compose.ui.unit.Dp
+    floatingBottomPadding: androidx.compose.ui.unit.Dp,
+    showCurrentLocationButton: Boolean
 ) {
     val routeAccentColor = androidx.compose.material3.MaterialTheme.colorScheme.primary
     val fallbackPosition = LatLng(37.5662952, 126.9779451)
@@ -64,7 +67,7 @@ internal fun MainMapSection(
     } else {
         uiState.currentLocation
     }
-    val routePoints = uiState.selectedRoute.polylinePoints.map(MainCoordinateUiState::toLatLng)
+    val routePoints = uiState.selectedRoute.polylinePoints.map(CoordinateUiState::toLatLng)
     val initialCameraTarget =
         routePoints.firstOrNull() ?: currentLocation?.toLatLng() ?: fallbackPosition
     val cameraPositionState = rememberCameraPositionState {
@@ -72,8 +75,9 @@ internal fun MainMapSection(
     }
     val coroutineScope = rememberCoroutineScope()
     var isMapLoaded by remember { mutableStateOf(false) }
-    var isDebugPanelExpanded by rememberSaveable { mutableStateOf(true) }
+    var isDebugPanelVisible by rememberSaveable { mutableStateOf(false) }
     var isMoreMenuVisible by rememberSaveable { mutableStateOf(false) }
+    val currentOnFocusedPlaceHandled by rememberUpdatedState(onFocusedPlaceHandled)
 
     MainMapCameraEffects(
         isMapLoaded = isMapLoaded,
@@ -83,6 +87,22 @@ internal fun MainMapSection(
         cameraPositionState = cameraPositionState,
         onCameraIntentConsumed = onCameraIntentConsumed
     )
+
+    LaunchedEffect(isMapLoaded, focusedPlaceId, markerPlaces) {
+        val placeId = focusedPlaceId ?: return@LaunchedEffect
+        if (!isMapLoaded) return@LaunchedEffect
+
+        val target = markerCameraTarget(
+            markerPlaces = markerPlaces,
+            placeId = placeId
+        )
+        if (target != null) {
+            cameraPositionState.animate(
+                CameraUpdateFactory.newLatLngZoom(target, 17f)
+            )
+        }
+        currentOnFocusedPlaceHandled()
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         GoogleMap(
@@ -98,11 +118,11 @@ internal fun MainMapSection(
         ) {
             RouteMapContent(
                 routeModeUiState = uiState.routeModeUiState,
-                markerPlaces = uiState.mapPlaces,
+                markerPlaces = markerPlaces,
                 routeAccentColor = routeAccentColor,
                 onPlaceMarkerClick = { placeId ->
                     markerCameraTarget(
-                        markerPlaces = uiState.mapPlaces,
+                        markerPlaces = markerPlaces,
                         placeId = placeId
                     )?.let { target ->
                         coroutineScope.launch {
@@ -124,40 +144,46 @@ internal fun MainMapSection(
             uiState = uiState,
             onDateSelected = onDateSelected,
             onBookmarkClick = onBookmarkClick,
+            isMoreMenuVisible = isMoreMenuVisible,
+            onMoreClick = {
+                isMoreMenuVisible = !isMoreMenuVisible
+                onMoreClick()
+            },
+            onMoreDismissRequest = {
+                isMoreMenuVisible = false
+            },
+            onMorePlaceBookmarkClick = {
+                isMoreMenuVisible = false
+                onMorePlaceBookmarkClick()
+            },
+            onMoreDeleteRecordClick = {
+                isMoreMenuVisible = false
+                onMoreDeleteRecordClick()
+            },
             onRouteAction = onRouteAction,
             onPermissionActionClick = onPermissionActionClick,
             debugActions = debugActions,
             floatingBottomPadding = floatingBottomPadding,
             bottomEndControlsBottomPadding = currentLocationBottomPadding,
-            isDebugPanelExpanded = isDebugPanelExpanded,
-            onToggleDebugPanelExpanded = { isDebugPanelExpanded = !isDebugPanelExpanded },
+            isDebugPanelVisible = isDebugPanelVisible,
+            onCloseDebugPanel = { isDebugPanelVisible = false },
             topStartControls = {
                 StatsButton(
                     onClick = onStatsClick,
                     modifier = Modifier
                 )
-            },
-            topEndControls = {
-                MainMoreButtonMenu(
-                    isMenuVisible = isMoreMenuVisible,
-                    onMoreClick = {
-                        isMoreMenuVisible = !isMoreMenuVisible
-                        onMoreClick()
-                    },
-                    onPlaceBookmarkClick = {
-                        isMoreMenuVisible = false
-                        onMorePlaceBookmarkClick()
-                    },
-                    onDeleteRecordClick = {
-                        isMoreMenuVisible = false
-                        onMoreDeleteRecordClick()
-                    },
-                    modifier = Modifier
-                )
+                if (BuildConfig.DEBUG) {
+                    DebugPanelButton(
+                        onClick = { isDebugPanelVisible = !isDebugPanelVisible },
+                        modifier = Modifier
+                    )
+                }
             },
             floatingControls = {
                 FloatingMapButtons(
-                    onCurrentLocationClick = currentLocation?.let {
+                    onCurrentLocationClick = currentLocation?.takeIf {
+                        showCurrentLocationButton
+                    }?.let {
                         {
                             coroutineScope.launch {
                                 cameraPositionState.animate(
@@ -176,34 +202,6 @@ internal fun MainMapSection(
 }
 
 @Composable
-private fun MainMoreButtonMenu(
-    isMenuVisible: Boolean,
-    onMoreClick: () -> Unit,
-    onPlaceBookmarkClick: () -> Unit,
-    onDeleteRecordClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier,
-        horizontalAlignment = androidx.compose.ui.Alignment.End
-    ) {
-        MoreButton(
-            onClick = onMoreClick,
-            modifier = Modifier
-        )
-
-        if (isMenuVisible) {
-            Spacer(modifier = Modifier.height(8.dp))
-            MainMorePopupMenu(
-                onPlaceBookmarkClick = onPlaceBookmarkClick,
-                onDeleteRecordClick = onDeleteRecordClick,
-                modifier = Modifier
-            )
-        }
-    }
-}
-
-@Composable
 private fun FloatingMapButtons(
     onCurrentLocationClick: (() -> Unit)?,
     modifier: Modifier = Modifier
@@ -218,7 +216,7 @@ private fun FloatingMapButtons(
     }
 }
 
-internal fun MainCoordinateUiState.toLatLng(): LatLng = LatLng(latitude, longitude)
+internal fun CoordinateUiState.toLatLng(): LatLng = LatLng(latitude, longitude)
 
 private fun markerCameraTarget(
     markerPlaces: List<PlaceMarkerUiState>,
@@ -243,14 +241,14 @@ private fun StatsButton(
 }
 
 @Composable
-private fun MoreButton(
+private fun DebugPanelButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     FloatingCircleIconButton(
         onClick = onClick,
-        iconResId = R.drawable.ic_more,
-        contentDescriptionResId = R.string.main_more,
+        iconResId = R.drawable.ic_info_circle,
+        contentDescriptionResId = R.string.debug_panel_open,
         modifier = modifier
     )
 }

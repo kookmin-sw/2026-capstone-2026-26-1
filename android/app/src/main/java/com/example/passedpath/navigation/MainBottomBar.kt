@@ -3,10 +3,12 @@ package com.example.passedpath.navigation
 import androidx.annotation.StringRes
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -18,7 +20,6 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -35,10 +36,8 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.passedpath.R
 import com.example.passedpath.ui.theme.Gray300
 import com.example.passedpath.ui.theme.Green500
@@ -67,8 +66,6 @@ private val bottomNavItems = listOf(
         icon = Icons.Filled.Person
     )
 )
-
-private val bottomBarRoutes = bottomNavItems.map { it.route }.toSet()
 
 private object BottomBarTokens {
     val containerHeight = 84.dp
@@ -152,67 +149,63 @@ private fun BottomBarItem(
 }
 
 @Composable
-fun AppScaffold(
+fun BottomBarScaffold(
     navController: NavHostController,
+    selectedRoute: String,
     onBottomBarReselected: (String) -> Unit = {},
     content: @Composable (Modifier) -> Unit
 ) {
-    val navBackStackEntry = navController.currentBackStackEntryAsState().value
-    val currentDestination = navBackStackEntry?.destination
-    val showBottomBar = currentDestination?.route in bottomBarRoutes
+    val contentModifier = Modifier
+        .fillMaxSize()
+        .padding(bottom = BottomBarTokens.containerHeight)
 
-    Scaffold(
-        bottomBar = {
-            if (showBottomBar) {
-                NavigationBar(
+    Box(modifier = Modifier.fillMaxSize()) {
+        content(contentModifier)
+
+        NavigationBar(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .height(BottomBarTokens.containerHeight)
+                .topShadow(),
+            containerColor = BottomBarTokens.containerColor
+        ) {
+            BoxWithConstraints(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight()
+            ) {
+                val itemWidth = maxWidth * BottomBarTokens.itemWidthRatio
+
+                Row(
                     modifier = Modifier
-                        .height(BottomBarTokens.containerHeight)
-                        .topShadow(),
-                    containerColor = BottomBarTokens.containerColor
+                        .fillMaxWidth()
+                        .fillMaxHeight(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    BoxWithConstraints(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .fillMaxHeight()
-                    ) {
-                        val itemWidth = maxWidth * BottomBarTokens.itemWidthRatio
+                    bottomNavItems.forEach { item ->
+                        val selected = item.route == selectedRoute
 
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .fillMaxHeight(),
-                            horizontalArrangement = Arrangement.SpaceEvenly
-                        ) {
-                            bottomNavItems.forEach { item ->
-                                val selected = currentDestination
-                                    ?.hierarchy
-                                    ?.any { it.route == item.route } == true
-
-                                BottomBarItem(
-                                    item = item,
-                                    selected = selected,
-                                    width = itemWidth,
-                                    onClick = {
-                                        if (selected) {
-                                            onBottomBarReselected(item.route)
-                                        } else {
-                                            navController.navigate(item.route) {
-                                                popUpTo(navController.graph.findStartDestination().id) {
-                                                    saveState = true
-                                                }
-                                                launchSingleTop = true
-                                                restoreState = true
-                                            }
+                        BottomBarItem(
+                            item = item,
+                            selected = selected,
+                            width = itemWidth,
+                            onClick = {
+                                if (selected) {
+                                    onBottomBarReselected(item.route)
+                                } else {
+                                    navController.navigate(item.route) {
+                                        popUpTo(navController.graph.findStartDestination().id) {
+                                            saveState = true
                                         }
+                                        launchSingleTop = true
+                                        restoreState = true
                                     }
-                                )
+                                }
                             }
-                        }
+                        )
                     }
                 }
             }
         }
-    ) { innerPadding ->
-        content(Modifier.padding(innerPadding))
     }
 }

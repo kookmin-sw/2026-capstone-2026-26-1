@@ -1,10 +1,10 @@
 package com.example.passedpath.feature.main.presentation.effect
 
 import com.example.passedpath.feature.locationtracking.domain.model.TrackedLocation
-import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiState
+import com.example.passedpath.ui.state.CoordinateUiState
 
-internal fun TrackedLocation.toMainCoordinateUiState(): MainCoordinateUiState {
-    return MainCoordinateUiState(
+internal fun TrackedLocation.toCoordinateUiState(): CoordinateUiState {
+    return CoordinateUiState(
         latitude = latitude,
         longitude = longitude
     )

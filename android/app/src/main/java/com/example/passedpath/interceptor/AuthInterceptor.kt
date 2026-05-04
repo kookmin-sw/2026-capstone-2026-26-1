@@ -1,6 +1,8 @@
 package com.example.passedpath.interceptor
 
+import android.util.Log
 import com.example.passedpath.data.datastore.AuthSessionStorage
+import com.google.gson.JsonParser
 import kotlinx.coroutines.runBlocking
 import okhttp3.Interceptor
 import okhttp3.Response
@@ -43,16 +45,38 @@ class AuthInterceptor(
         }.build()
 
         val response = chain.proceed(authRequest)
+        val responseBodyPreview = response.peekBody(1024).string()
+        val responseCode = responseBodyPreview.extractResponseCode()
+        val responseLogMessage =
+            "response path=$path method=${originalRequest.method} httpStatus=${response.code} code=$responseCode"
+
+        if (response.isSuccessful) {
+            Log.d(logTag, responseLogMessage)
+        } else {
+            Log.w(logTag, responseLogMessage)
+        }
 
         if (response.code == 401) {
-            android.util.Log.w(
+            Log.w(
                 logTag,
-                "received 401 path=$path method=${originalRequest.method} body=${response.peekBody(1024).string()}"
+                "received 401 path=$path method=${originalRequest.method} body=$responseBodyPreview"
             )
         }
 
         return response
     }
+}
+
+private fun String.extractResponseCode(): String {
+    if (isBlank()) return "none"
+
+    return runCatching {
+        JsonParser.parseString(this)
+            .asJsonObject
+            .get("code")
+            ?.asString
+            ?: "none"
+    }.getOrDefault("none")
 }
 
 private fun String?.toTokenPreview(): String {

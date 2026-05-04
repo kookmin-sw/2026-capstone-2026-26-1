@@ -11,10 +11,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -23,6 +26,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.example.passedpath.feature.daynote.presentation.state.DayNoteUiState
 import com.example.passedpath.ui.component.input.BaseInputField
+import com.example.passedpath.ui.component.loading.BaseLoadingIndicator
 import com.example.passedpath.ui.theme.Gray100
 import com.example.passedpath.ui.theme.Gray400
 import com.example.passedpath.ui.theme.Gray500
@@ -34,12 +38,22 @@ fun DayNoteBottomSheetContent(
     onTitleChanged: (String) -> Unit,
     onMemoChanged: (String) -> Unit,
     onSaveClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onScrollStateChanged: (Boolean) -> Unit = {}
 ) {
+    val scrollState = rememberScrollState()
+    val isContentScrolled by remember {
+        derivedStateOf { scrollState.value > 0 }
+    }
+
+    LaunchedEffect(isContentScrolled) {
+        onScrollStateChanged(isContentScrolled)
+    }
+
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .verticalScroll(rememberScrollState()),
+            .verticalScroll(scrollState),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         DayNoteFieldSection(
@@ -79,7 +93,7 @@ fun DayNoteBottomSheetContent(
                 .height(56.dp)
         ) {
             if (uiState.isSubmitting) {
-                CircularProgressIndicator(
+                BaseLoadingIndicator(
                     color = Color.White,
                     strokeWidth = 2.dp,
                     modifier = Modifier.height(20.dp)

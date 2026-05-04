@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.passedpath.app.AppContainer
+import com.example.passedpath.feature.place.domain.model.PlaceSearchPage
 import com.example.passedpath.feature.place.domain.usecase.CreatePlaceFromSearchResultUseCase
 import com.example.passedpath.feature.place.domain.usecase.SearchPlacesUseCase
 import com.example.passedpath.feature.place.presentation.state.AddPlaceUiState
@@ -27,34 +28,61 @@ class AddPlaceViewModel(
     private val _uiState = MutableStateFlow(AddPlaceUiState())
     val uiState: StateFlow<AddPlaceUiState> = _uiState.asStateFlow()
 
-    private val _placeCreated = MutableSharedFlow<Unit>()
-    val placeCreated: SharedFlow<Unit> = _placeCreated.asSharedFlow()
+    private val _placeCreated = MutableSharedFlow<Long>()
+    val placeCreated: SharedFlow<Long> = _placeCreated.asSharedFlow()
 
     private var searchJob: Job? = null
     private var lastRequestedQuery: String? = null
 
     fun onQueryChanged(query: String) {
+        val normalizedQuery = query.trim()
         _uiState.update {
             it.copy(
                 query = query,
                 selectedPlaceId = null,
                 errorMessage = null,
-                places = if (query.isBlank()) emptyList() else it.places,
-                isLoading = if (query.isBlank()) false else it.isLoading
+                places = emptyList(),
+                isLoading = false,
+                isAwaitingFirstSearch = normalizedQuery.isNotBlank(),
+                isLoadingNextPage = false,
+                currentPage = 0,
+                isEnd = false,
+                pageableCount = 0
             )
         }
 
         searchJob?.cancel()
-        val normalizedQuery = query.trim()
         if (normalizedQuery.isBlank()) {
             lastRequestedQuery = null
+            _uiState.update {
+                it.copy(
+                    places = emptyList(),
+                    isAwaitingFirstSearch = false,
+                    currentPage = 0,
+                    isEnd = false,
+                    pageableCount = 0
+                )
+            }
             return
         }
 
         searchJob = viewModelScope.launch {
             delay(SEARCH_DEBOUNCE_MS)
             if (lastRequestedQuery == normalizedQuery) return@launch
-            searchPlaces(normalizedQuery)
+            searchFirstPage(normalizedQuery)
+        }
+    }
+
+    fun onLoadNextPage() {
+        val state = _uiState.value
+        val normalizedQuery = state.query.trim()
+        if (normalizedQuery.isBlank()) return
+        if (state.isLoading || state.isLoadingNextPage) return
+        if (state.isEnd) return
+        if (state.places.isEmpty()) return
+
+        viewModelScope.launch {
+            loadNextPage(normalizedQuery, state.currentPage + 1)
         }
     }
 
@@ -81,12 +109,12 @@ class AddPlaceViewModel(
             }
 
             try {
-                createPlaceFromSearchResultUseCase(
+                val registeredPlace = createPlaceFromSearchResultUseCase(
                     dateKey = dateKey,
                     place = selectedPlace
                 )
                 _uiState.update { it.copy(isSubmitting = false) }
-                _placeCreated.emit(Unit)
+                _placeCreated.emit(registeredPlace.placeId)
             } catch (throwable: Throwable) {
                 _uiState.update {
                     it.copy(
@@ -98,26 +126,30 @@ class AddPlaceViewModel(
         }
     }
 
-    private suspend fun searchPlaces(query: String) {
+    private suspend fun searchFirstPage(query: String) {
         lastRequestedQuery = query
         _uiState.update {
             it.copy(
                 isLoading = true,
+                isAwaitingFirstSearch = false,
+                isLoadingNextPage = false,
                 errorMessage = null,
-                selectedPlaceId = null
+                selectedPlaceId = null,
+                places = emptyList(),
+                currentPage = 0,
+                isEnd = false,
+                pageableCount = 0
             )
         }
 
         try {
-            val results = searchPlacesUseCase(query)
+            val resultPage = searchPlacesUseCase(query = query, page = 1)
             _uiState.update { state ->
                 if (state.query.trim() != query) {
                     state
                 } else {
-                    state.copy(
-                        isLoading = false,
-                        places = results,
-                        selectedPlaceId = null,
+                    state.withFirstPage(
+                        resultPage = resultPage,
                         errorMessage = null
                     )
                 }
@@ -129,8 +161,56 @@ class AddPlaceViewModel(
                 } else {
                     state.copy(
                         isLoading = false,
+                        isAwaitingFirstSearch = false,
                         places = emptyList(),
+                        currentPage = 0,
+                        isEnd = false,
+                        pageableCount = 0,
                         selectedPlaceId = null,
+                        errorMessage = ApiFailureMessage.fromThrowable(throwable)
+                    )
+                }
+            }
+        }
+    }
+
+    private suspend fun loadNextPage(query: String, page: Int) {
+        _uiState.update { state ->
+            if (state.query.trim() != query) {
+                state
+            } else {
+                state.copy(
+                    isLoadingNextPage = true,
+                    errorMessage = null
+                )
+            }
+        }
+
+        try {
+            val resultPage = searchPlacesUseCase(query = query, page = page)
+            _uiState.update { state ->
+                if (state.query.trim() != query) {
+                    state
+                } else {
+                    val existingKeys = state.places.mapTo(linkedSetOf()) { it.stableKey }
+                    val nextPlaces = resultPage.places.filter { existingKeys.add(it.stableKey) }
+                    state.copy(
+                        isLoadingNextPage = false,
+                        places = state.places + nextPlaces,
+                        currentPage = resultPage.page,
+                        isEnd = resultPage.isEnd,
+                        pageableCount = resultPage.pageableCount,
+                        errorMessage = null
+                    )
+                }
+            }
+        } catch (throwable: Throwable) {
+            _uiState.update { state ->
+                if (state.query.trim() != query) {
+                    state
+                } else {
+                    state.copy(
+                        isLoadingNextPage = false,
                         errorMessage = ApiFailureMessage.fromThrowable(throwable)
                     )
                 }
@@ -141,6 +221,22 @@ class AddPlaceViewModel(
     companion object {
         private const val SEARCH_DEBOUNCE_MS = 400L
     }
+}
+
+private fun AddPlaceUiState.withFirstPage(
+    resultPage: PlaceSearchPage,
+    errorMessage: String?
+): AddPlaceUiState {
+    return copy(
+        isLoading = false,
+        isAwaitingFirstSearch = false,
+        places = resultPage.places,
+        currentPage = resultPage.page,
+        isEnd = resultPage.isEnd,
+        pageableCount = resultPage.pageableCount,
+        selectedPlaceId = null,
+        errorMessage = errorMessage
+    )
 }
 
 class AddPlaceViewModelFactory(

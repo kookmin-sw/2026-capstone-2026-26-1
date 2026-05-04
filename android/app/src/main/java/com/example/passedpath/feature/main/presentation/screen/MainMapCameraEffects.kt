@@ -4,7 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import com.example.passedpath.feature.main.presentation.policy.createRouteCameraUpdate
 import com.example.passedpath.feature.main.presentation.state.MainCameraIntent
-import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiState
+import com.example.passedpath.ui.state.CoordinateUiState
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.maps.android.compose.CameraPositionState
 
@@ -13,7 +13,7 @@ internal fun MainMapCameraEffects(
     isMapLoaded: Boolean,
     pendingCameraIntent: MainCameraIntent?,
     routePoints: List<com.google.android.gms.maps.model.LatLng>,
-    currentLocation: MainCoordinateUiState?,
+    currentLocation: CoordinateUiState?,
     cameraPositionState: CameraPositionState,
     onCameraIntentConsumed: () -> Unit
 ) {

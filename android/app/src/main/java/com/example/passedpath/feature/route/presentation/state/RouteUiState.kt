@@ -1,6 +1,6 @@
 package com.example.passedpath.feature.route.presentation.state
 
-import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiState
+import com.example.passedpath.ui.state.CoordinateUiState
 
 data class PlaceMarkerUiState(
     val placeId: Long,
@@ -12,8 +12,8 @@ data class PlaceMarkerUiState(
 )
 
 data class RoutePolylineSegmentUiState(
-    val start: MainCoordinateUiState,
-    val end: MainCoordinateUiState
+    val start: CoordinateUiState,
+    val end: CoordinateUiState
 )
 
 data class SelectedDayRouteUiState(
@@ -21,7 +21,7 @@ data class SelectedDayRouteUiState(
     val title: String = "",
     val memo: String = "",
     val isBookmarked: Boolean = false,
-    val polylinePoints: List<MainCoordinateUiState> = emptyList(),
+    val polylinePoints: List<CoordinateUiState> = emptyList(),
     val routeSegments: List<RoutePolylineSegmentUiState> = emptyList(),
     val totalDistanceKm: Double = 0.0,
     val pathPointCount: Int = 0,

@@ -5,14 +5,14 @@ import androidx.compose.runtime.LaunchedEffect
 import com.example.passedpath.feature.locationtracking.domain.tracker.LocationTracker
 import com.example.passedpath.feature.permission.presentation.policy.canReceiveLocationUpdates
 import com.example.passedpath.feature.permission.presentation.state.LocationPermissionUiState
-import com.example.passedpath.feature.main.presentation.state.MainCoordinateUiState
+import com.example.passedpath.ui.state.CoordinateUiState
 
 @Composable
 internal fun MainInitialLocationEffect(
     permissionState: LocationPermissionUiState,
     isLocationServiceEnabled: Boolean,
-    currentLocation: MainCoordinateUiState?,
-    onCurrentLocationUpdated: (MainCoordinateUiState) -> Unit,
+    currentLocation: CoordinateUiState?,
+    onCurrentLocationUpdated: (CoordinateUiState) -> Unit,
     locationTracker: LocationTracker
 ) {
     LaunchedEffect(permissionState, isLocationServiceEnabled, currentLocation) {
@@ -23,7 +23,7 @@ internal fun MainInitialLocationEffect(
             ) && currentLocation == null
         ) {
             locationTracker.getCurrentLocation()?.let { trackedLocation ->
-                onCurrentLocationUpdated(trackedLocation.toMainCoordinateUiState())
+                onCurrentLocationUpdated(trackedLocation.toCoordinateUiState())
             }
         }
     }
