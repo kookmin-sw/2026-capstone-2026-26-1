@@ -1,22 +1,17 @@
 package com.example.passedpath.feature.main.presentation.screen
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -29,13 +24,23 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.passedpath.BuildConfig
@@ -48,12 +53,15 @@ import com.example.passedpath.feature.placebookmark.presentation.component.Place
 import com.example.passedpath.feature.route.presentation.screen.RouteMapContent
 import com.example.passedpath.feature.route.presentation.state.PlaceMarkerUiState
 import com.example.passedpath.feature.route.presentation.state.RouteUiAction
+import com.example.passedpath.ui.component.button.BaseCircleButton
 import com.example.passedpath.ui.component.floating.FloatingButtonColumn
 import com.example.passedpath.ui.component.floating.FloatingCircleIconButton
 import com.example.passedpath.ui.state.CoordinateUiState
+import com.example.passedpath.ui.theme.Gray400
 import com.example.passedpath.ui.theme.Gray500
 import com.example.passedpath.ui.theme.Gray900
 import com.example.passedpath.ui.theme.Green100
+import com.example.passedpath.ui.theme.Green500
 import com.example.passedpath.ui.theme.White
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
@@ -121,6 +129,7 @@ internal fun MainMapSection(
     var isDebugPanelVisible by rememberSaveable { mutableStateOf(false) }
     var isMoreMenuVisible by rememberSaveable { mutableStateOf(false) }
     var selectedBookmarkPlaceId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var isBookmarkMarkersVisible by rememberSaveable { mutableStateOf(true) }
     val currentOnFocusedPlaceHandled by rememberUpdatedState(onFocusedPlaceHandled)
 
     MainMapCameraEffects(
@@ -155,6 +164,12 @@ internal fun MainMapSection(
         }
     }
 
+    LaunchedEffect(isBookmarkMarkersVisible) {
+        if (!isBookmarkMarkersVisible) {
+            selectedBookmarkPlaceId = null
+        }
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
@@ -172,13 +187,15 @@ internal fun MainMapSection(
                 onMapClick()
             }
         ) {
-            PlaceBookmarkMapMarkers(
-                bookmarkMarkers = bookmarkMarkers,
-                selectedBookmarkPlaceId = selectedBookmarkPlaceId,
-                onBookmarkMarkerClick = { bookmarkPlaceId ->
-                    selectedBookmarkPlaceId = bookmarkPlaceId
-                }
-            )
+            if (isBookmarkMarkersVisible) {
+                PlaceBookmarkMapMarkers(
+                    bookmarkMarkers = bookmarkMarkers,
+                    selectedBookmarkPlaceId = selectedBookmarkPlaceId,
+                    onBookmarkMarkerClick = { bookmarkPlaceId ->
+                        selectedBookmarkPlaceId = bookmarkPlaceId
+                    }
+                )
+            }
 
             RouteMapContent(
                 routeModeUiState = uiState.routeModeUiState,
@@ -246,6 +263,10 @@ internal fun MainMapSection(
             },
             floatingControls = {
                 FloatingMapButtons(
+                    isBookmarkMarkersVisible = isBookmarkMarkersVisible,
+                    onBookmarkMarkersToggleClick = {
+                        isBookmarkMarkersVisible = !isBookmarkMarkersVisible
+                    },
                     onCurrentLocationClick = currentLocation?.takeIf {
                         showCurrentLocationButton
                     }?.let {
@@ -308,17 +329,43 @@ private fun PlaceBookmarkCalloutMarker(placeBookmark: PlaceBookmarkSummary) {
 
 @Composable
 private fun PlaceBookmarkCallout(placeBookmark: PlaceBookmarkSummary) {
+    val calloutShape = PlaceBookmarkCalloutShape(
+        cornerRadius = 12.dp,
+        tailWidth = 16.dp,
+        tailHeight = 8.dp
+    )
+
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Surface(
-            modifier = Modifier.widthIn(min = 132.dp, max = 220.dp),
-            shape = RoundedCornerShape(12.dp),
-            color = White,
-            border = BorderStroke(width = 1.dp, color = Green100),
-            shadowElevation = 12.dp,
-            tonalElevation = 0.dp
+        Box(
+            modifier = Modifier
+                .widthIn(min = 132.dp, max = 220.dp)
+                .shadow(
+                    elevation = 12.dp,
+                    shape = calloutShape,
+                    clip = false
+                )
+                .drawBehind {
+                    val path = createPlaceBookmarkCalloutPath(
+                        size = size,
+                        cornerRadius = 12.dp.toPx(),
+                        tailWidth = 16.dp.toPx(),
+                        tailHeight = 8.dp.toPx()
+                    )
+                    drawPath(path = path, color = White)
+                    drawPath(
+                        path = path,
+                        color = Green100,
+                        style = Stroke(width = 1.dp.toPx())
+                    )
+                }
         ) {
             Column(
-                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)
+                modifier = Modifier.padding(
+                    start = 14.dp,
+                    top = 10.dp,
+                    end = 14.dp,
+                    bottom = 18.dp
+                )
             ) {
                 Text(
                     text = placeBookmark.placeName.ifBlank { placeBookmark.roadAddress },
@@ -338,16 +385,60 @@ private fun PlaceBookmarkCallout(placeBookmark: PlaceBookmarkSummary) {
                 )
             }
         }
-        Canvas(modifier = Modifier.size(width = 16.dp, height = 8.dp)) {
-            val tail = Path().apply {
-                moveTo(0f, 0f)
-                lineTo(size.width, 0f)
-                lineTo(size.width / 2f, size.height)
-                close()
-            }
-            drawPath(path = tail, color = White)
+        Box(modifier = Modifier.size(height = 24.dp, width = 1.dp))
+    }
+}
+
+private class PlaceBookmarkCalloutShape(
+    private val cornerRadius: androidx.compose.ui.unit.Dp,
+    private val tailWidth: androidx.compose.ui.unit.Dp,
+    private val tailHeight: androidx.compose.ui.unit.Dp
+) : Shape {
+    override fun createOutline(
+        size: Size,
+        layoutDirection: LayoutDirection,
+        density: Density
+    ): Outline {
+        return with(density) {
+            Outline.Generic(
+                createPlaceBookmarkCalloutPath(
+                    size = size,
+                    cornerRadius = cornerRadius.toPx(),
+                    tailWidth = tailWidth.toPx(),
+                    tailHeight = tailHeight.toPx()
+                )
+            )
         }
-        Spacer(modifier = Modifier.height(24.dp))
+    }
+}
+
+private fun createPlaceBookmarkCalloutPath(
+    size: Size,
+    cornerRadius: Float,
+    tailWidth: Float,
+    tailHeight: Float
+): Path {
+    val width = size.width
+    val height = size.height
+    val bodyBottom = (height - tailHeight).coerceAtLeast(0f)
+    val radius = cornerRadius.coerceAtMost(width / 2f).coerceAtMost(bodyBottom / 2f)
+    val tailHalfWidth = (tailWidth / 2f).coerceAtMost(width / 2f)
+    val centerX = width / 2f
+
+    return Path().apply {
+        moveTo(radius, 0f)
+        lineTo(width - radius, 0f)
+        quadraticTo(width, 0f, width, radius)
+        lineTo(width, bodyBottom - radius)
+        quadraticTo(width, bodyBottom, width - radius, bodyBottom)
+        lineTo(centerX + tailHalfWidth, bodyBottom)
+        lineTo(centerX, height)
+        lineTo(centerX - tailHalfWidth, bodyBottom)
+        lineTo(radius, bodyBottom)
+        quadraticTo(0f, bodyBottom, 0f, bodyBottom - radius)
+        lineTo(0f, radius)
+        quadraticTo(0f, 0f, radius, 0f)
+        close()
     }
 }
 
@@ -383,16 +474,49 @@ private fun PlaceBookmarkMapMarker(type: BookmarkPlaceType) {
 
 @Composable
 private fun FloatingMapButtons(
+    isBookmarkMarkersVisible: Boolean,
+    onBookmarkMarkersToggleClick: () -> Unit,
     onCurrentLocationClick: (() -> Unit)?,
     modifier: Modifier = Modifier
 ) {
     FloatingButtonColumn(modifier = modifier) {
+        BookmarkMarkerToggleButton(
+            isVisible = isBookmarkMarkersVisible,
+            onClick = onBookmarkMarkersToggleClick,
+            modifier = Modifier
+        )
         onCurrentLocationClick?.let { onClick ->
             CurrentLocationButton(
                 onClick = onClick,
                 modifier = Modifier
             )
         }
+    }
+}
+
+@Composable
+private fun BookmarkMarkerToggleButton(
+    isVisible: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    BaseCircleButton(
+        onClick = onClick,
+        modifier = modifier,
+        containerColor = White
+    ) {
+        Icon(
+            painter = painterResource(
+                id = if (isVisible) {
+                    R.drawable.ic_bookmark_pin_filled
+                } else {
+                    R.drawable.ic_bookmark_other
+                }
+            ),
+            contentDescription = stringResource(R.string.main_toggle_place_bookmark_markers),
+            tint = if (isVisible) Green500 else Gray400,
+            modifier = Modifier.size(20.dp)
+        )
     }
 }
 
