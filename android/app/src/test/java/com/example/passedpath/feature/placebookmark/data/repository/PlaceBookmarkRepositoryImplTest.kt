@@ -2,6 +2,8 @@ package com.example.passedpath.feature.placebookmark.data.repository
 
 import com.example.passedpath.feature.place.domain.model.BookmarkPlaceType
 import com.example.passedpath.feature.placebookmark.data.remote.api.PlaceBookmarkApi
+import com.example.passedpath.feature.placebookmark.data.remote.dto.PlaceBookmarkCreateRequestDto
+import com.example.passedpath.feature.placebookmark.data.remote.dto.PlaceBookmarkCreateResponseDto
 import com.example.passedpath.feature.placebookmark.data.remote.dto.PlaceBookmarkListResponseDto
 import com.example.passedpath.feature.placebookmark.data.remote.dto.PlaceBookmarkSummaryResponseDto
 import com.example.passedpath.feature.placebookmark.data.remote.dto.PlaceBookmarkUpdateRequestDto
@@ -42,9 +44,40 @@ class PlaceBookmarkRepositoryImplTest {
 
         assertEquals(1, result.placeCount)
         assertEquals(1, result.bookmarkPlaces.size)
-        assertEquals(5L, result.bookmarkPlaces.first().placeId)
+        assertEquals(5L, result.bookmarkPlaces.first().bookmarkPlaceId)
         assertEquals(BookmarkPlaceType.COMPANY, result.bookmarkPlaces.first().type)
         assertEquals("Office", result.bookmarkPlaces.first().placeName)
+    }
+
+    @Test
+    fun `createPlaceBookmark forwards request body then maps created response`() = runTest {
+        val fakeApi = FakePlaceBookmarkApi()
+        val repository = PlaceBookmarkRepositoryImpl(placeBookmarkApi = fakeApi)
+
+        val result = repository.createPlaceBookmark(
+            placeBookmark = PlaceBookmark(
+                type = BookmarkPlaceType.HOME,
+                placeName = "Home",
+                roadAddress = "Seoul Gangnam-gu 123",
+                latitude = 37.498095,
+                longitude = 127.02761
+            )
+        )
+
+        assertEquals(
+            PlaceBookmarkCreateRequestDto(
+                type = "HOME",
+                placeName = "Home",
+                roadAddress = "Seoul Gangnam-gu 123",
+                latitude = 37.498095,
+                longitude = 127.02761
+            ),
+            fakeApi.receivedCreateRequest
+        )
+        assertEquals(21L, result.bookmarkPlaceId)
+        assertEquals(BookmarkPlaceType.HOME, result.type)
+        assertEquals("Home", result.placeName)
+        assertEquals("Seoul Gangnam-gu 123", result.roadAddress)
     }
 
     @Test
@@ -121,12 +154,27 @@ class PlaceBookmarkRepositoryImplTest {
             bookmarkPlaces = emptyList()
         )
         private var deleteResponse: Response<Unit> = Response.success(Unit)
+        var receivedCreateRequest: PlaceBookmarkCreateRequestDto? = null
         var receivedBookmarkPlaceId: Long? = null
         var receivedRequest: PlaceBookmarkUpdateRequestDto? = null
         var deletedBookmarkPlaceId: Long? = null
 
         override suspend fun getPlaceBookmarks(): PlaceBookmarkListResponseDto {
             return listResponse
+        }
+
+        override suspend fun createPlaceBookmark(
+            request: PlaceBookmarkCreateRequestDto
+        ): PlaceBookmarkCreateResponseDto {
+            receivedCreateRequest = request
+            return PlaceBookmarkCreateResponseDto(
+                bookmarkPlaceId = 21L,
+                type = request.type,
+                placeName = request.placeName,
+                roadAddress = request.roadAddress,
+                latitude = request.latitude,
+                longitude = request.longitude
+            )
         }
 
         override suspend fun updatePlaceBookmark(

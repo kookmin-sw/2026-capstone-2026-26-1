@@ -2,7 +2,7 @@ package com.example.passedpath.feature.placebookmark.domain.model
 
 import com.example.passedpath.feature.place.domain.model.BookmarkPlaceType
 
-data class PlaceBookmarkSummary(
+data class RegisteredPlaceBookmark(
     val bookmarkPlaceId: Long,
     val type: BookmarkPlaceType,
     val placeName: String,
