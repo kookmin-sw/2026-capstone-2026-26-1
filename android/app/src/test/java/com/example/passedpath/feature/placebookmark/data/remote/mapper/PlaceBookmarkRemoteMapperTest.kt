@@ -1,12 +1,78 @@
 package com.example.passedpath.feature.placebookmark.data.remote.mapper
 
 import com.example.passedpath.feature.place.domain.model.BookmarkPlaceType
+import com.example.passedpath.feature.placebookmark.data.remote.dto.PlaceBookmarkListResponseDto
+import com.example.passedpath.feature.placebookmark.data.remote.dto.PlaceBookmarkSummaryResponseDto
 import com.example.passedpath.feature.placebookmark.data.remote.dto.PlaceBookmarkUpdateResponseDto
 import com.example.passedpath.feature.placebookmark.domain.model.PlaceBookmark
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class PlaceBookmarkRemoteMapperTest {
+
+    @Test
+    fun `toPlaceBookmarkList maps valid items and preserves response count`() {
+        val response = PlaceBookmarkListResponseDto(
+            placeCount = 2,
+            bookmarkPlaces = listOf(
+                PlaceBookmarkSummaryResponseDto(
+                    placeId = 1L,
+                    type = "HOME",
+                    placeName = "Home",
+                    roadAddress = "Seoul Jung-gu 45",
+                    latitude = 37.5665,
+                    longitude = 126.978
+                ),
+                PlaceBookmarkSummaryResponseDto(
+                    placeId = 2L,
+                    type = "SCHOOL",
+                    placeName = "Kookmin University",
+                    roadAddress = "Seoul Seongbuk-gu 77",
+                    latitude = 37.6109,
+                    longitude = 126.997
+                )
+            )
+        )
+
+        val result = response.toPlaceBookmarkList()
+
+        assertEquals(2, result.placeCount)
+        assertEquals(2, result.bookmarkPlaces.size)
+        assertEquals(1L, result.bookmarkPlaces.first().placeId)
+        assertEquals(BookmarkPlaceType.HOME, result.bookmarkPlaces.first().type)
+        assertEquals("Home", result.bookmarkPlaces.first().placeName)
+    }
+
+    @Test
+    fun `toPlaceBookmarkList drops invalid items and falls back to mapped size when count is null`() {
+        val response = PlaceBookmarkListResponseDto(
+            placeCount = null,
+            bookmarkPlaces = listOf(
+                PlaceBookmarkSummaryResponseDto(
+                    placeId = 1L,
+                    type = "ETC",
+                    placeName = "Cafe",
+                    roadAddress = "Road",
+                    latitude = 37.5,
+                    longitude = 127.5
+                ),
+                PlaceBookmarkSummaryResponseDto(
+                    placeId = null,
+                    type = "HOME",
+                    placeName = "Broken",
+                    roadAddress = "Road",
+                    latitude = 37.6,
+                    longitude = 127.6
+                )
+            )
+        )
+
+        val result = response.toPlaceBookmarkList()
+
+        assertEquals(1, result.placeCount)
+        assertEquals(1, result.bookmarkPlaces.size)
+        assertEquals(BookmarkPlaceType.ETC, result.bookmarkPlaces.first().type)
+    }
 
     @Test
     fun `toUpdateRequestDto serializes bookmark type name`() {

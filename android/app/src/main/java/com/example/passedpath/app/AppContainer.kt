@@ -69,6 +69,7 @@ import com.example.passedpath.feature.placebookmark.data.remote.api.PlaceBookmar
 import com.example.passedpath.feature.placebookmark.data.repository.PlaceBookmarkRepositoryImpl
 import com.example.passedpath.feature.placebookmark.domain.repository.PlaceBookmarkRepository
 import com.example.passedpath.feature.placebookmark.domain.usecase.DeletePlaceBookmarkUseCase
+import com.example.passedpath.feature.placebookmark.domain.usecase.GetPlaceBookmarksUseCase
 import com.example.passedpath.feature.placebookmark.domain.usecase.UpdatePlaceBookmarkUseCase
 import com.example.passedpath.interceptor.AccessTokenAuthenticator
 import java.time.LocalTime
@@ -357,6 +358,10 @@ class AppContainer(
 
     val deletePlaceBookmarkUseCase: DeletePlaceBookmarkUseCase by lazy {
         DeletePlaceBookmarkUseCase(placeBookmarkRepository = placeBookmarkRepository)
+    }
+
+    val getPlaceBookmarksUseCase: GetPlaceBookmarksUseCase by lazy {
+        GetPlaceBookmarksUseCase(placeBookmarkRepository = placeBookmarkRepository)
     }
 
     val reorderPlacesUseCase: ReorderPlacesUseCase by lazy {

@@ -2,6 +2,8 @@ package com.example.passedpath.feature.placebookmark.data.repository
 
 import com.example.passedpath.feature.place.domain.model.BookmarkPlaceType
 import com.example.passedpath.feature.placebookmark.data.remote.api.PlaceBookmarkApi
+import com.example.passedpath.feature.placebookmark.data.remote.dto.PlaceBookmarkListResponseDto
+import com.example.passedpath.feature.placebookmark.data.remote.dto.PlaceBookmarkSummaryResponseDto
 import com.example.passedpath.feature.placebookmark.data.remote.dto.PlaceBookmarkUpdateRequestDto
 import com.example.passedpath.feature.placebookmark.data.remote.dto.PlaceBookmarkUpdateResponseDto
 import com.example.passedpath.feature.placebookmark.domain.model.PlaceBookmark
@@ -16,6 +18,34 @@ import retrofit2.Response
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class PlaceBookmarkRepositoryImplTest {
+
+    @Test
+    fun `getPlaceBookmarks fetches and maps bookmark list`() = runTest {
+        val fakeApi = FakePlaceBookmarkApi(
+            listResponse = PlaceBookmarkListResponseDto(
+                placeCount = 1,
+                bookmarkPlaces = listOf(
+                    PlaceBookmarkSummaryResponseDto(
+                        placeId = 5L,
+                        type = "COMPANY",
+                        placeName = "Office",
+                        roadAddress = "Seoul Gangnam-gu 123",
+                        latitude = 37.4979,
+                        longitude = 127.0276
+                    )
+                )
+            )
+        )
+        val repository = PlaceBookmarkRepositoryImpl(placeBookmarkApi = fakeApi)
+
+        val result = repository.getPlaceBookmarks()
+
+        assertEquals(1, result.placeCount)
+        assertEquals(1, result.bookmarkPlaces.size)
+        assertEquals(5L, result.bookmarkPlaces.first().placeId)
+        assertEquals(BookmarkPlaceType.COMPANY, result.bookmarkPlaces.first().type)
+        assertEquals("Office", result.bookmarkPlaces.first().placeName)
+    }
 
     @Test
     fun `updatePlaceBookmark forwards path and request body then maps response`() = runTest {
@@ -76,15 +106,28 @@ class PlaceBookmarkRepositoryImplTest {
 
     private class FakePlaceBookmarkApi : PlaceBookmarkApi {
         constructor(
+            listResponse: PlaceBookmarkListResponseDto = PlaceBookmarkListResponseDto(
+                placeCount = 0,
+                bookmarkPlaces = emptyList()
+            ),
             deleteResponse: Response<Unit> = Response.success(Unit)
         ) {
+            this.listResponse = listResponse
             this.deleteResponse = deleteResponse
         }
 
+        private var listResponse: PlaceBookmarkListResponseDto = PlaceBookmarkListResponseDto(
+            placeCount = 0,
+            bookmarkPlaces = emptyList()
+        )
         private var deleteResponse: Response<Unit> = Response.success(Unit)
         var receivedBookmarkPlaceId: Long? = null
         var receivedRequest: PlaceBookmarkUpdateRequestDto? = null
         var deletedBookmarkPlaceId: Long? = null
+
+        override suspend fun getPlaceBookmarks(): PlaceBookmarkListResponseDto {
+            return listResponse
+        }
 
         override suspend fun updatePlaceBookmark(
             bookmarkPlaceId: Long,
