@@ -23,6 +23,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.example.passedpath.ui.component.button.BaseButton
 import com.example.passedpath.ui.component.button.BaseButtonVariant
 import com.example.passedpath.ui.theme.Gray300
@@ -43,56 +44,64 @@ fun BaseConfirmDialog(
     onDismiss: () -> Unit,
     onConfirm: () -> Unit
 ) {
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            shape = RoundedCornerShape(30.dp),
-            color = White,
-            tonalElevation = 0.dp,
-            shadowElevation = 8.dp,
-            modifier = Modifier.fillMaxWidth(0.92f)
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.Center
         ) {
-            Column(
-                modifier = Modifier.padding(horizontal = 30.dp, vertical = 36.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+            Surface(
+                shape = RoundedCornerShape(30.dp),
+                color = White,
+                tonalElevation = 0.dp,
+                shadowElevation = 8.dp,
+                modifier = Modifier.fillMaxWidth(0.92f)
             ) {
-                topContent?.invoke()
-                Text(
-                    text = title,
-                    color = Gray900,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    lineHeight = 34.sp,
-                    textAlign = TextAlign.Center
-                )
-                Text(
-                    text = message,
-                    color = Gray400,
-                    fontSize = 14.sp,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Medium,
-                    textAlign = TextAlign.Center
-                )
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 34.dp),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                Column(
+                    modifier = Modifier.padding(horizontal = 30.dp, vertical = 34.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    BaseButton(
-                        text = dismissText,
-                        onClick = onDismiss,
-                        modifier = Modifier.weight(1f),
-                        variant = BaseButtonVariant.SECONDARY,
-                        border = BorderStroke(1.dp, Gray300),
-                        containerColor = White,
-                        contentColor = Gray400
+                    topContent?.invoke()
+                    Text(
+                        text = title,
+                        color = Gray900,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        lineHeight = 34.sp,
+                        textAlign = TextAlign.Center
                     )
-                    BaseButton(
-                        text = confirmText,
-                        onClick = onConfirm,
-                        modifier = Modifier.weight(1f)
+                    Text(
+                        text = message,
+                        color = Gray400,
+                        fontSize = 14.sp,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Medium,
+                        textAlign = TextAlign.Center
                     )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 28.dp),
+                        horizontalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
+                        BaseButton(
+                            text = dismissText,
+                            onClick = onDismiss,
+                            modifier = Modifier.weight(1f),
+                            variant = BaseButtonVariant.SECONDARY,
+                            border = BorderStroke(1.dp, Gray300),
+                            containerColor = White,
+                            contentColor = Gray400
+                        )
+                        BaseButton(
+                            text = confirmText,
+                            onClick = onConfirm,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
                 }
             }
         }

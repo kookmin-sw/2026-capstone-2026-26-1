@@ -63,6 +63,7 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -83,6 +84,7 @@ import com.example.passedpath.feature.placebookmark.presentation.state.PlaceBook
 import com.example.passedpath.feature.placebookmark.presentation.viewmodel.PlaceBookmarkViewModel
 import com.example.passedpath.feature.placebookmark.presentation.viewmodel.PlaceBookmarkViewModelFactory
 import com.example.passedpath.ui.component.button.BaseButton
+import com.example.passedpath.ui.component.dialog.BaseConfirmDialog
 import com.example.passedpath.ui.component.input.BaseInputButton
 import com.example.passedpath.ui.component.input.BaseInputField
 import com.example.passedpath.ui.component.loading.BaseLoadingIndicator
@@ -107,6 +109,11 @@ data class PlaceBookmarkSearchResultEvent(
     val place: PlaceSearchResult
 )
 
+private enum class PlaceBookmarkFormMode {
+    ADD,
+    EDIT
+}
+
 @Composable
 fun PlaceBookmarkRoute(
     onBackClick: () -> Unit,
@@ -125,7 +132,7 @@ fun PlaceBookmarkRoute(
     }
 
     LaunchedEffect(viewModel) {
-        viewModel.placeBookmarkCreated.collect { bookmarkPlaceId ->
+        viewModel.placeBookmarkChanged.collect { bookmarkPlaceId ->
             onPlaceBookmarkChanged(bookmarkPlaceId)
         }
     }
@@ -138,6 +145,8 @@ fun PlaceBookmarkRoute(
         onAddPlaceBookmarkClick = onNavigateToPlaceBookmarkSearch,
         onRetryClick = viewModel::fetchPlaceBookmarks,
         onCreatePlaceBookmark = viewModel::createPlaceBookmark,
+        onUpdatePlaceBookmark = viewModel::updatePlaceBookmark,
+        onDeletePlaceBookmark = viewModel::deletePlaceBookmark,
         onFeedbackDismissed = viewModel::consumeFeedback
     )
 }
@@ -152,73 +161,120 @@ private fun PlaceBookmarkScreen(
     onAddPlaceBookmarkClick: () -> Unit,
     onRetryClick: () -> Unit,
     onCreatePlaceBookmark: (BookmarkPlaceType, String, String, Double, Double) -> Unit,
+    onUpdatePlaceBookmark: (Long, BookmarkPlaceType, String, String, Double, Double) -> Unit,
+    onDeletePlaceBookmark: (Long) -> Unit,
     onFeedbackDismissed: (Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var openedMenuBookmarkId by rememberSaveable { mutableStateOf<Long?>(null) }
-    var isAddSheetVisible by rememberSaveable { mutableStateOf(false) }
-    var addPlaceName by rememberSaveable { mutableStateOf("") }
-    var addRoadAddress by rememberSaveable { mutableStateOf("") }
-    var addLatitude by rememberSaveable { mutableStateOf(0.0) }
-    var addLongitude by rememberSaveable { mutableStateOf(0.0) }
+    var formMode by rememberSaveable { mutableStateOf<PlaceBookmarkFormMode?>(null) }
+    var editingBookmarkId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var originalPlaceName by rememberSaveable { mutableStateOf("") }
+    var originalRoadAddress by rememberSaveable { mutableStateOf("") }
+    var originalLatitude by rememberSaveable { mutableStateOf(0.0) }
+    var originalLongitude by rememberSaveable { mutableStateOf(0.0) }
+    var originalType by rememberSaveable { mutableStateOf(BookmarkPlaceType.ETC) }
+    var formPlaceName by rememberSaveable { mutableStateOf("") }
+    var formRoadAddress by rememberSaveable { mutableStateOf("") }
+    var formLatitude by rememberSaveable { mutableStateOf(0.0) }
+    var formLongitude by rememberSaveable { mutableStateOf(0.0) }
     var selectedType by rememberSaveable { mutableStateOf(BookmarkPlaceType.ETC) }
     var isNameFocused by rememberSaveable { mutableStateOf(false) }
     var submittedFeedbackEventId by rememberSaveable { mutableStateOf<Long?>(null) }
-    var isAddSearchVisible by rememberSaveable { mutableStateOf(false) }
-    var shouldRenderAddSearch by rememberSaveable { mutableStateOf(false) }
-    var addSearchSessionId by rememberSaveable { mutableStateOf(0) }
+    var isFormSearchVisible by rememberSaveable { mutableStateOf(false) }
+    var shouldRenderFormSearch by rememberSaveable { mutableStateOf(false) }
+    var formSearchSessionId by rememberSaveable { mutableStateOf(0) }
+    var pendingDeleteBookmark by remember { mutableStateOf<PlaceBookmarkSummary?>(null) }
     val feedbackMessage = uiState.errorMessage ?: uiState.successMessage
 
     fun clearInputFocus() {
         isNameFocused = false
     }
 
-    fun dismissAddSheet() {
-        isAddSheetVisible = false
-        addPlaceName = ""
-        addRoadAddress = ""
-        addLatitude = 0.0
-        addLongitude = 0.0
+    fun dismissFormSheet() {
+        formMode = null
+        editingBookmarkId = null
+        originalPlaceName = ""
+        originalRoadAddress = ""
+        originalLatitude = 0.0
+        originalLongitude = 0.0
+        originalType = BookmarkPlaceType.ETC
+        formPlaceName = ""
+        formRoadAddress = ""
+        formLatitude = 0.0
+        formLongitude = 0.0
         selectedType = BookmarkPlaceType.ETC
         submittedFeedbackEventId = null
-        isAddSearchVisible = false
-        shouldRenderAddSearch = false
+        isFormSearchVisible = false
+        shouldRenderFormSearch = false
         clearInputFocus()
     }
 
     fun openAddSheet(place: PlaceSearchResult) {
-        addPlaceName = place.name
-        addRoadAddress = place.displayAddress
-        addLatitude = place.latitude
-        addLongitude = place.longitude
+        formMode = PlaceBookmarkFormMode.ADD
+        editingBookmarkId = null
+        originalPlaceName = ""
+        originalRoadAddress = ""
+        originalLatitude = 0.0
+        originalLongitude = 0.0
+        originalType = BookmarkPlaceType.ETC
+        formPlaceName = place.name
+        formRoadAddress = place.displayAddress
+        formLatitude = place.latitude
+        formLongitude = place.longitude
         selectedType = BookmarkPlaceType.ETC
-        isAddSheetVisible = true
-        isAddSearchVisible = false
-        shouldRenderAddSearch = false
+        isFormSearchVisible = false
+        shouldRenderFormSearch = false
         clearInputFocus()
     }
 
-    fun showAddSearch() {
-        addSearchSessionId += 1
-        shouldRenderAddSearch = true
-        isAddSearchVisible = true
+    fun openEditSheet(placeBookmark: PlaceBookmarkSummary) {
+        formMode = PlaceBookmarkFormMode.EDIT
+        editingBookmarkId = placeBookmark.bookmarkPlaceId
+        originalPlaceName = placeBookmark.placeName
+        originalRoadAddress = placeBookmark.roadAddress
+        originalLatitude = placeBookmark.latitude
+        originalLongitude = placeBookmark.longitude
+        originalType = placeBookmark.type
+        formPlaceName = placeBookmark.placeName
+        formRoadAddress = placeBookmark.roadAddress
+        formLatitude = placeBookmark.latitude
+        formLongitude = placeBookmark.longitude
+        selectedType = placeBookmark.type
+        isFormSearchVisible = false
+        shouldRenderFormSearch = false
         clearInputFocus()
     }
 
-    fun hideAddSearch() {
-        isAddSearchVisible = false
+    fun showFormSearch() {
+        formSearchSessionId += 1
+        shouldRenderFormSearch = true
+        isFormSearchVisible = true
+        clearInputFocus()
     }
 
-    fun removeAddSearch() {
-        shouldRenderAddSearch = false
+    fun hideFormSearch() {
+        isFormSearchVisible = false
     }
 
-    fun applyAddSearchResult(place: PlaceSearchResult) {
-        addPlaceName = place.name
-        addRoadAddress = place.displayAddress
-        addLatitude = place.latitude
-        addLongitude = place.longitude
-        hideAddSearch()
+    fun removeFormSearch() {
+        shouldRenderFormSearch = false
+    }
+
+    fun applyFormSearchResult(place: PlaceSearchResult) {
+        formPlaceName = place.name
+        formRoadAddress = place.displayAddress
+        formLatitude = place.latitude
+        formLongitude = place.longitude
+        hideFormSearch()
+    }
+
+    fun hasFormChanges(): Boolean {
+        return formPlaceName.trim() != originalPlaceName.trim() ||
+            formRoadAddress.trim() != originalRoadAddress.trim() ||
+            formLatitude != originalLatitude ||
+            formLongitude != originalLongitude ||
+            selectedType != originalType
     }
 
     LaunchedEffect(searchResultEvent?.id) {
@@ -239,7 +295,7 @@ private fun PlaceBookmarkScreen(
         if (uiState.feedbackEventId == startEventId) return@LaunchedEffect
 
         when {
-            uiState.successMessage != null -> dismissAddSheet()
+            uiState.successMessage != null -> dismissFormSheet()
             uiState.errorMessage != null -> submittedFeedbackEventId = null
         }
     }
@@ -278,6 +334,8 @@ private fun PlaceBookmarkScreen(
                 openedMenuBookmarkId = openedMenuBookmarkId,
                 onMenuOpenedChange = { openedMenuBookmarkId = it },
                 onAddPlaceBookmarkClick = onAddPlaceBookmarkClick,
+                onEditPlaceBookmarkClick = ::openEditSheet,
+                onDeletePlaceBookmarkClick = { pendingDeleteBookmark = it },
                 onRetryClick = onRetryClick,
                 modifier = Modifier
                     .fillMaxSize()
@@ -300,39 +358,82 @@ private fun PlaceBookmarkScreen(
             modifier = Modifier.align(Alignment.BottomCenter)
         )
 
-        if (isAddSheetVisible) {
-            PlaceBookmarkAddOverlay(
-                placeName = addPlaceName,
-                roadAddress = addRoadAddress,
+        if (formMode != null) {
+            val isEditForm = formMode == PlaceBookmarkFormMode.EDIT
+            PlaceBookmarkFormOverlay(
+                title = stringResource(
+                    if (isEditForm) {
+                        R.string.place_bookmark_edit_title
+                    } else {
+                        R.string.place_bookmark_add_title
+                    }
+                ),
+                submitText = stringResource(
+                    if (isEditForm) {
+                        R.string.place_bookmark_edit_submit
+                    } else {
+                        R.string.place_bookmark_add_submit
+                    }
+                ),
+                placeName = formPlaceName,
+                roadAddress = formRoadAddress,
                 selectedType = selectedType,
                 isSubmitting = uiState.isSubmitting,
+                isSubmitEnabled = formPlaceName.trim().isNotBlank() &&
+                    formRoadAddress.trim().isNotBlank() &&
+                    !uiState.isSubmitting &&
+                    (!isEditForm || hasFormChanges()),
                 isNameFocused = isNameFocused,
-                onPlaceNameChange = { addPlaceName = it },
+                onPlaceNameChange = { formPlaceName = it },
                 onNameFocusChanged = { isNameFocused = it },
                 onTypeSelected = { selectedType = it },
                 onClearInputFocus = ::clearInputFocus,
-                onAddressClick = ::showAddSearch,
-                onDismiss = ::dismissAddSheet,
+                onAddressClick = ::showFormSearch,
+                onDismiss = ::dismissFormSheet,
                 onSubmit = {
                     submittedFeedbackEventId = uiState.feedbackEventId
-                    onCreatePlaceBookmark(
-                        selectedType,
-                        addPlaceName,
-                        addRoadAddress,
-                        addLatitude,
-                        addLongitude
-                    )
+                    if (isEditForm) {
+                        editingBookmarkId?.let { bookmarkPlaceId ->
+                            onUpdatePlaceBookmark(
+                                bookmarkPlaceId,
+                                selectedType,
+                                formPlaceName,
+                                formRoadAddress,
+                                formLatitude,
+                                formLongitude
+                            )
+                        }
+                    } else {
+                        onCreatePlaceBookmark(
+                            selectedType,
+                            formPlaceName,
+                            formRoadAddress,
+                            formLatitude,
+                            formLongitude
+                        )
+                    }
                 }
             )
         }
 
-        if (isAddSheetVisible && shouldRenderAddSearch) {
-            PlaceBookmarkAddSearchOverlay(
-                visible = isAddSearchVisible,
-                viewModelKey = "place-bookmark-add-search-$addSearchSessionId",
-                onBackClick = ::hideAddSearch,
-                onPlaceSelected = ::applyAddSearchResult,
-                onDismissed = ::removeAddSearch
+        if (formMode != null && shouldRenderFormSearch) {
+            PlaceBookmarkFormSearchOverlay(
+                visible = isFormSearchVisible,
+                viewModelKey = "place-bookmark-form-search-$formSearchSessionId",
+                onBackClick = ::hideFormSearch,
+                onPlaceSelected = ::applyFormSearchResult,
+                onDismissed = ::removeFormSearch
+            )
+        }
+
+        pendingDeleteBookmark?.let { placeBookmark ->
+            PlaceBookmarkDeleteConfirmDialog(
+                placeName = placeBookmark.placeName,
+                onDismiss = { pendingDeleteBookmark = null },
+                onConfirm = {
+                    pendingDeleteBookmark = null
+                    onDeletePlaceBookmark(placeBookmark.bookmarkPlaceId)
+                }
             )
         }
     }
@@ -344,6 +445,8 @@ private fun PlaceBookmarkListContent(
     openedMenuBookmarkId: Long?,
     onMenuOpenedChange: (Long?) -> Unit,
     onAddPlaceBookmarkClick: () -> Unit,
+    onEditPlaceBookmarkClick: (PlaceBookmarkSummary) -> Unit,
+    onDeletePlaceBookmarkClick: (PlaceBookmarkSummary) -> Unit,
     onRetryClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -439,7 +542,15 @@ private fun PlaceBookmarkListContent(
                                         }
                                     )
                                 },
-                                onDismissMenu = { onMenuOpenedChange(null) }
+                                onDismissMenu = { onMenuOpenedChange(null) },
+                                onEditClick = {
+                                    onMenuOpenedChange(null)
+                                    onEditPlaceBookmarkClick(placeBookmark)
+                                },
+                                onDeleteClick = {
+                                    onMenuOpenedChange(null)
+                                    onDeletePlaceBookmarkClick(placeBookmark)
+                                }
                             )
                         }
                     }
@@ -490,6 +601,8 @@ private fun PlaceBookmarkListItem(
     isMenuVisible: Boolean,
     onMoreClick: () -> Unit,
     onDismissMenu: () -> Unit,
+    onEditClick: () -> Unit,
+    onDeleteClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val editText = stringResource(R.string.place_menu_edit)
@@ -504,12 +617,12 @@ private fun PlaceBookmarkListItem(
             MenuActionItem(
                 text = editText,
                 iconResId = R.drawable.ic_check,
-                onClick = onDismissMenu
+                onClick = onEditClick
             ),
             MenuActionItem(
                 text = deleteText,
                 iconResId = R.drawable.ic_trash,
-                onClick = onDismissMenu
+                onClick = onDeleteClick
             )
         ),
         modifier = modifier
@@ -578,11 +691,57 @@ private fun PlaceBookmarkEmptyContent(
 }
 
 @Composable
-private fun PlaceBookmarkAddOverlay(
+private fun PlaceBookmarkDeleteConfirmDialog(
+    placeName: String,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit
+) {
+    BaseConfirmDialog(
+        title = stringResource(R.string.place_bookmark_delete_title),
+        message = stringResource(R.string.place_bookmark_delete_message),
+        dismissText = stringResource(R.string.place_bookmark_delete_cancel),
+        confirmText = stringResource(R.string.place_bookmark_delete_confirm),
+        topContent = {
+            PlaceBookmarkNamePill(placeName = placeName)
+        },
+        onDismiss = onDismiss,
+        onConfirm = onConfirm
+    )
+}
+
+@Composable
+private fun PlaceBookmarkNamePill(
+    placeName: String,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(50))
+            .background(Green50)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = placeName,
+            color = Green500,
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.Bold,
+            fontSize = 12.sp,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
+@Composable
+private fun PlaceBookmarkFormOverlay(
+    title: String,
+    submitText: String,
     placeName: String,
     roadAddress: String,
     selectedType: BookmarkPlaceType,
     isSubmitting: Boolean,
+    isSubmitEnabled: Boolean,
     isNameFocused: Boolean,
     onPlaceNameChange: (String) -> Unit,
     onNameFocusChanged: (Boolean) -> Unit,
@@ -605,11 +764,14 @@ private fun PlaceBookmarkAddOverlay(
             }
         }
     ) {
-        PlaceBookmarkAddBottomSheet(
+        PlaceBookmarkFormBottomSheet(
+            title = title,
+            submitText = submitText,
             placeName = placeName,
             roadAddress = roadAddress,
             selectedType = selectedType,
             isSubmitting = isSubmitting,
+            isSubmitEnabled = isSubmitEnabled,
             onPlaceNameChange = onPlaceNameChange,
             onNameFocusChanged = onNameFocusChanged,
             onTypeSelected = onTypeSelected,
@@ -622,7 +784,7 @@ private fun PlaceBookmarkAddOverlay(
 }
 
 @Composable
-private fun PlaceBookmarkAddSearchOverlay(
+private fun PlaceBookmarkFormSearchOverlay(
     visible: Boolean,
     viewModelKey: String,
     onBackClick: () -> Unit,
@@ -658,13 +820,13 @@ private fun PlaceBookmarkAddSearchOverlay(
             visibleState = visibleState,
             modifier = modifier.fillMaxSize(),
             enter = slideInHorizontally(
-                animationSpec = tween(durationMillis = PlaceBookmarkAddSearchEnterTransitionMillis),
+                animationSpec = tween(durationMillis = PlaceBookmarkFormSearchEnterTransitionMillis),
                 initialOffsetX = { fullWidth -> fullWidth }
-            ) + fadeIn(animationSpec = tween(durationMillis = PlaceBookmarkAddSearchEnterTransitionMillis)),
+            ) + fadeIn(animationSpec = tween(durationMillis = PlaceBookmarkFormSearchEnterTransitionMillis)),
             exit = slideOutHorizontally(
-                animationSpec = tween(durationMillis = PlaceBookmarkAddSearchExitTransitionMillis),
+                animationSpec = tween(durationMillis = PlaceBookmarkFormSearchExitTransitionMillis),
                 targetOffsetX = { fullWidth -> fullWidth }
-            ) + fadeOut(animationSpec = tween(durationMillis = PlaceBookmarkAddSearchExitTransitionMillis))
+            ) + fadeOut(animationSpec = tween(durationMillis = PlaceBookmarkFormSearchExitTransitionMillis))
         ) {
             PlaceSearchSelectionScreen(
                 dateKey = "",
@@ -681,11 +843,14 @@ private fun PlaceBookmarkAddSearchOverlay(
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-private fun PlaceBookmarkAddBottomSheet(
+private fun PlaceBookmarkFormBottomSheet(
+    title: String,
+    submitText: String,
     placeName: String,
     roadAddress: String,
     selectedType: BookmarkPlaceType,
     isSubmitting: Boolean,
+    isSubmitEnabled: Boolean,
     onPlaceNameChange: (String) -> Unit,
     onNameFocusChanged: (Boolean) -> Unit,
     onTypeSelected: (BookmarkPlaceType) -> Unit,
@@ -695,9 +860,6 @@ private fun PlaceBookmarkAddBottomSheet(
     onSubmit: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val canSubmit = placeName.trim().isNotBlank() &&
-        roadAddress.trim().isNotBlank() &&
-        !isSubmitting
     val sheetInteractionSource = remember { MutableInteractionSource() }
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -727,7 +889,7 @@ private fun PlaceBookmarkAddBottomSheet(
         ) {
             Box(modifier = Modifier.fillMaxWidth()) {
                 Text(
-                    text = stringResource(R.string.place_bookmark_add_title),
+                    text = title,
                     modifier = Modifier.align(Alignment.Center),
                     style = MaterialTheme.typography.titleMedium,
                     color = Gray900,
@@ -805,12 +967,12 @@ private fun PlaceBookmarkAddBottomSheet(
 
             Spacer(modifier = Modifier.height(32.dp))
             BaseButton(
-                text = stringResource(R.string.place_bookmark_add_submit),
+                text = submitText,
                 onClick = {
                     clearSheetInputFocus()
                     onSubmit()
                 },
-                enabled = canSubmit,
+                enabled = isSubmitEnabled && !isSubmitting,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(64.dp)
@@ -907,8 +1069,8 @@ private val BookmarkPlaceType.displayName: String
         BookmarkPlaceType.ETC -> "기타"
 }
 
-private const val PlaceBookmarkAddSearchEnterTransitionMillis = 250
-private const val PlaceBookmarkAddSearchExitTransitionMillis = 230
+private const val PlaceBookmarkFormSearchEnterTransitionMillis = 250
+private const val PlaceBookmarkFormSearchExitTransitionMillis = 230
 
 @Preview(showBackground = true)
 @Composable
@@ -930,6 +1092,8 @@ private fun PlaceBookmarkScreenPreview() {
             onAddPlaceBookmarkClick = {},
             onRetryClick = {},
             onCreatePlaceBookmark = { _, _, _, _, _ -> },
+            onUpdatePlaceBookmark = { _, _, _, _, _, _ -> },
+            onDeletePlaceBookmark = {},
             onFeedbackDismissed = {}
         )
     }

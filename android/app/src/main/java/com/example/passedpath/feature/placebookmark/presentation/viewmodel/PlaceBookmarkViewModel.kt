@@ -5,10 +5,13 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.passedpath.app.AppContainer
 import com.example.passedpath.feature.place.domain.model.BookmarkPlaceType
+import com.example.passedpath.feature.placebookmark.domain.model.PlaceBookmark
 import com.example.passedpath.feature.placebookmark.domain.model.PlaceBookmarkSummary
 import com.example.passedpath.feature.placebookmark.domain.model.RegisteredPlaceBookmark
 import com.example.passedpath.feature.placebookmark.domain.usecase.CreatePlaceBookmarkUseCase
+import com.example.passedpath.feature.placebookmark.domain.usecase.DeletePlaceBookmarkUseCase
 import com.example.passedpath.feature.placebookmark.domain.usecase.GetPlaceBookmarksUseCase
+import com.example.passedpath.feature.placebookmark.domain.usecase.UpdatePlaceBookmarkUseCase
 import com.example.passedpath.feature.placebookmark.presentation.state.PlaceBookmarkUiState
 import com.example.passedpath.ui.state.ApiFailureMessage
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -22,12 +25,14 @@ import kotlinx.coroutines.launch
 
 class PlaceBookmarkViewModel(
     private val getPlaceBookmarksUseCase: GetPlaceBookmarksUseCase,
-    private val createPlaceBookmarkUseCase: CreatePlaceBookmarkUseCase
+    private val createPlaceBookmarkUseCase: CreatePlaceBookmarkUseCase,
+    private val updatePlaceBookmarkUseCase: UpdatePlaceBookmarkUseCase,
+    private val deletePlaceBookmarkUseCase: DeletePlaceBookmarkUseCase
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(PlaceBookmarkUiState())
     val uiState: StateFlow<PlaceBookmarkUiState> = _uiState.asStateFlow()
-    private val _placeBookmarkCreated = MutableSharedFlow<Long>(extraBufferCapacity = 1)
-    val placeBookmarkCreated: SharedFlow<Long> = _placeBookmarkCreated.asSharedFlow()
+    private val _placeBookmarkChanged = MutableSharedFlow<Long>(extraBufferCapacity = 1)
+    val placeBookmarkChanged: SharedFlow<Long> = _placeBookmarkChanged.asSharedFlow()
 
     fun fetchPlaceBookmarks() {
         if (_uiState.value.isLoading) return
@@ -123,7 +128,125 @@ class PlaceBookmarkViewModel(
                         feedbackEventId = state.feedbackEventId + 1
                     )
                 }
-                _placeBookmarkCreated.emit(registeredPlaceBookmark.bookmarkPlaceId)
+                _placeBookmarkChanged.emit(registeredPlaceBookmark.bookmarkPlaceId)
+            }.onFailure { throwable ->
+                _uiState.update {
+                    it.copy(
+                        isSubmitting = false,
+                        errorMessage = ApiFailureMessage.fromThrowable(throwable),
+                        successMessage = null,
+                        feedbackEventId = it.feedbackEventId + 1
+                    )
+                }
+            }
+        }
+    }
+
+    fun updatePlaceBookmark(
+        bookmarkPlaceId: Long,
+        type: BookmarkPlaceType,
+        placeName: String,
+        roadAddress: String,
+        latitude: Double,
+        longitude: Double
+    ) {
+        val trimmedPlaceName = placeName.trim()
+        val trimmedRoadAddress = roadAddress.trim()
+        if (_uiState.value.isSubmitting) return
+
+        when {
+            trimmedPlaceName.isBlank() -> {
+                emitValidationError("장소명을 입력해 주세요")
+                return
+            }
+
+            trimmedRoadAddress.isBlank() -> {
+                emitValidationError("주소를 선택해 주세요")
+                return
+            }
+        }
+
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(
+                    isSubmitting = true,
+                    errorMessage = null,
+                    successMessage = null
+                )
+            }
+
+            runCatching {
+                updatePlaceBookmarkUseCase(
+                    bookmarkPlaceId = bookmarkPlaceId,
+                    type = type,
+                    placeName = trimmedPlaceName,
+                    roadAddress = trimmedRoadAddress,
+                    latitude = latitude,
+                    longitude = longitude
+                )
+            }.onSuccess { updatedPlaceBookmark ->
+                val updatedSummary = updatedPlaceBookmark.toSummary(bookmarkPlaceId)
+                _uiState.update { state ->
+                    val nextPlaces = state.bookmarkPlaces.map { placeBookmark ->
+                        if (placeBookmark.bookmarkPlaceId == bookmarkPlaceId) {
+                            updatedSummary
+                        } else {
+                            placeBookmark
+                        }
+                    }
+                    state.copy(
+                        placeCount = nextPlaces.size,
+                        bookmarkPlaces = nextPlaces,
+                        hasLoaded = true,
+                        isSubmitting = false,
+                        errorMessage = null,
+                        successMessage = "즐겨찾는 장소를 수정했어요.",
+                        feedbackEventId = state.feedbackEventId + 1
+                    )
+                }
+                _placeBookmarkChanged.emit(bookmarkPlaceId)
+            }.onFailure { throwable ->
+                _uiState.update {
+                    it.copy(
+                        isSubmitting = false,
+                        errorMessage = ApiFailureMessage.fromThrowable(throwable),
+                        successMessage = null,
+                        feedbackEventId = it.feedbackEventId + 1
+                    )
+                }
+            }
+        }
+    }
+
+    fun deletePlaceBookmark(bookmarkPlaceId: Long) {
+        if (_uiState.value.isSubmitting) return
+
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(
+                    isSubmitting = true,
+                    errorMessage = null,
+                    successMessage = null
+                )
+            }
+
+            runCatching {
+                deletePlaceBookmarkUseCase(bookmarkPlaceId)
+            }.onSuccess {
+                _uiState.update { state ->
+                    val nextPlaces = state.bookmarkPlaces
+                        .filterNot { it.bookmarkPlaceId == bookmarkPlaceId }
+                    state.copy(
+                        placeCount = nextPlaces.size,
+                        bookmarkPlaces = nextPlaces,
+                        hasLoaded = true,
+                        isSubmitting = false,
+                        errorMessage = null,
+                        successMessage = "즐겨찾는 장소를 삭제했어요.",
+                        feedbackEventId = state.feedbackEventId + 1
+                    )
+                }
+                _placeBookmarkChanged.emit(bookmarkPlaceId)
             }.onFailure { throwable ->
                 _uiState.update {
                     it.copy(
@@ -161,6 +284,19 @@ class PlaceBookmarkViewModel(
     }
 }
 
+private fun PlaceBookmark.toSummary(
+    bookmarkPlaceId: Long
+): PlaceBookmarkSummary {
+    return PlaceBookmarkSummary(
+        bookmarkPlaceId = bookmarkPlaceId,
+        type = type,
+        placeName = placeName,
+        roadAddress = roadAddress,
+        latitude = latitude,
+        longitude = longitude
+    )
+}
+
 private fun RegisteredPlaceBookmark.toSummary(): PlaceBookmarkSummary {
     return PlaceBookmarkSummary(
         bookmarkPlaceId = bookmarkPlaceId,
@@ -180,7 +316,9 @@ class PlaceBookmarkViewModelFactory(
             @Suppress("UNCHECKED_CAST")
             return PlaceBookmarkViewModel(
                 getPlaceBookmarksUseCase = appContainer.getPlaceBookmarksUseCase,
-                createPlaceBookmarkUseCase = appContainer.createPlaceBookmarkUseCase
+                createPlaceBookmarkUseCase = appContainer.createPlaceBookmarkUseCase,
+                updatePlaceBookmarkUseCase = appContainer.updatePlaceBookmarkUseCase,
+                deletePlaceBookmarkUseCase = appContainer.deletePlaceBookmarkUseCase
             ) as T
         }
 
