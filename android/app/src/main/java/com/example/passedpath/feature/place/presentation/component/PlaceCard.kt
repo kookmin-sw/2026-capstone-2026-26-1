@@ -1,5 +1,8 @@
 package com.example.passedpath.feature.place.presentation.component
 
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -23,10 +26,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
@@ -67,16 +72,29 @@ fun PlaceCard(
     isMenuVisible: Boolean = false,
     menuItems: List<MenuActionItem> = emptyList(),
     isCompact: Boolean = false,
-    highlightProgress: Float = 0f
+    highlightProgress: Float = 0f,
+    isDragging: Boolean = false
 ) {
     val cardShape = RoundedCornerShape(if (isCompact) 18.dp else 24.dp)
     val coercedHighlightProgress = highlightProgress.coerceIn(0f, 1f)
+    val dragProgress by animateFloatAsState(
+        targetValue = if (isDragging) 1f else 0f,
+        animationSpec = tween(durationMillis = 120),
+        label = "placeCardDragProgress"
+    )
+    val dragElevation by animateDpAsState(
+        targetValue = if (isDragging) 10.dp else 0.dp,
+        animationSpec = tween(durationMillis = 120),
+        label = "placeCardDragElevation"
+    )
+    val visualProgress = maxOf(coercedHighlightProgress, dragProgress * 0.85f)
     val borderColor = when {
+        dragProgress > 0f -> Green500.copy(alpha = 0.42f * dragProgress)
         coercedHighlightProgress > 0f -> Green300.copy(alpha = 0.45f * coercedHighlightProgress)
         isSelected -> Green500.copy(alpha = 0.28f)
         else -> Color.Transparent
     }
-    val backgroundColor = lerp(Gray50, Green50, coercedHighlightProgress)
+    val backgroundColor = lerp(Gray50, Green50, visualProgress)
     val density = LocalDensity.current
     val menuOffset = with(density) {
         IntOffset(
@@ -89,17 +107,26 @@ fun PlaceCard(
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
+                .graphicsLayer {
+                    scaleX = 1f + (0.02f * dragProgress)
+                    scaleY = 1f + (0.02f * dragProgress)
+                }
                 .clickable(enabled = onClick != null) {
                     onClick?.invoke()
                 }
                 .border(
-                    width = if (isSelected || coercedHighlightProgress > 0f) 1.dp else 0.dp,
+                    width = if (isSelected || coercedHighlightProgress > 0f || dragProgress > 0f) {
+                        1.dp
+                    } else {
+                        0.dp
+                    },
                     color = borderColor,
                     shape = cardShape
                 ),
             shape = cardShape,
             color = backgroundColor,
-            tonalElevation = 0.dp
+            tonalElevation = 0.dp,
+            shadowElevation = dragElevation
         ) {
             PlaceCardContent(
                 name = name,

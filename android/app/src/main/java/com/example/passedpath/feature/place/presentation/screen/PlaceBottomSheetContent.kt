@@ -4,6 +4,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
@@ -62,6 +63,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import com.example.passedpath.R
 import com.example.passedpath.feature.place.domain.model.BookmarkPlaceType
 import com.example.passedpath.feature.place.domain.model.PlaceSourceType
@@ -111,8 +113,20 @@ fun PlaceBottomSheetContent(
     var reorderedPlaces by remember { mutableStateOf(sortedPlaces) }
     val currentReorderedPlaces by rememberUpdatedState(reorderedPlaces)
     var draggedPlaceId by remember { mutableStateOf<Long?>(null) }
+    var settlingPlaceId by remember { mutableStateOf<Long?>(null) }
+    var dragOffsetY by remember { mutableStateOf(0f) }
     var openedMenuPlaceId by remember { mutableStateOf<Long?>(null) }
     var wasReorderSubmitting by remember { mutableStateOf(false) }
+    val activeDragPlaceId = draggedPlaceId ?: settlingPlaceId
+    val visualDragOffsetY by animateFloatAsState(
+        targetValue = dragOffsetY,
+        animationSpec = if (draggedPlaceId != null) {
+            tween(durationMillis = 0)
+        } else {
+            tween(durationMillis = ReorderSettleDurationMillis)
+        },
+        label = "placeReorderDragOffset"
+    )
     val canReorder = sortedPlaces.size > 1 &&
         !isReorderSubmitting &&
         !placeListUiState.isLoading &&
@@ -131,6 +145,12 @@ fun PlaceBottomSheetContent(
         openedMenuPlaceId = null
     }
 
+    fun settleDraggedPlace(placeId: Long?) {
+        settlingPlaceId = placeId
+        draggedPlaceId = null
+        dragOffsetY = 0f
+    }
+
     LaunchedEffect(isContentScrolled) {
         onScrollStateChanged(isContentScrolled)
     }
@@ -142,7 +162,7 @@ fun PlaceBottomSheetContent(
     }
 
     LaunchedEffect(sortedPlaces) {
-        if (draggedPlaceId == null) {
+        if (draggedPlaceId == null && settlingPlaceId == null) {
             reorderedPlaces = sortedPlaces
         }
         if (openedMenuPlaceId != null && sortedPlaces.none { it.placeId == openedMenuPlaceId }) {
@@ -158,8 +178,16 @@ fun PlaceBottomSheetContent(
         if (wasReorderSubmitting && !isReorderSubmitting && placeListUiState.errorMessage != null) {
             reorderedPlaces = sortedPlaces
             draggedPlaceId = null
+            settlingPlaceId = null
+            dragOffsetY = 0f
         }
         wasReorderSubmitting = isReorderSubmitting
+    }
+
+    LaunchedEffect(settlingPlaceId) {
+        if (settlingPlaceId == null) return@LaunchedEffect
+        delay(ReorderSettleDurationMillis.toLong())
+        settlingPlaceId = null
     }
 
     LaunchedEffect(selectedPlaceId, reorderedPlaces) {
@@ -184,22 +212,32 @@ fun PlaceBottomSheetContent(
                 placesProvider = { currentReorderedPlaces },
                 listState = listState,
                 onDragStartPlace = { placeId ->
+                    settlingPlaceId = null
                     draggedPlaceId = placeId
+                    dragOffsetY = 0f
                     closeOpenedMenu()
                 },
-                onMovePlace = { fromIndex, toIndex ->
+                onDragPlace = { dragDeltaY ->
+                    dragOffsetY += dragDeltaY
+                },
+                onMovePlace = { fromIndex, toIndex, slotOffsetDeltaPx ->
+                    dragOffsetY -= slotOffsetDeltaPx
                     reorderedPlaces = reorderedPlaces.moved(fromIndex, toIndex)
+                },
+                onAutoScroll = { consumedScrollDelta ->
+                    dragOffsetY += consumedScrollDelta
                 },
                 onDragFinished = {
                     val nextPlaceIds = reorderedPlaces.map(VisitedPlace::placeId)
                     if (nextPlaceIds != sortedPlaces.map(VisitedPlace::placeId)) {
                         onReorderPlaces(nextPlaceIds)
                     }
-                    draggedPlaceId = null
+                    settleDraggedPlace(draggedPlaceId)
                 },
                 onDragCancelled = {
+                    val cancelledPlaceId = draggedPlaceId
                     reorderedPlaces = sortedPlaces
-                    draggedPlaceId = null
+                    settleDraggedPlace(cancelledPlaceId)
                 }
             )
             .graphicsLayer {
@@ -261,34 +299,49 @@ fun PlaceBottomSheetContent(
                     items = reorderedPlaces,
                     key = { _, place -> place.placeId }
                 ) { index, place ->
-                    PlaceTimelineItem(
-                        place = place,
-                        shouldAnimate = place.placeId == animatedPlaceId,
-                        isFirst = index == 0,
-                        isLast = index == reorderedPlaces.lastIndex,
-                        displayOrderIndex = index + 1,
-                        isMenuVisible = openedMenuPlaceId == place.placeId,
-                        onMoreClick = {
-                            openedMenuPlaceId = if (openedMenuPlaceId == place.placeId) {
-                                null
-                            } else {
-                                place.placeId
+                    val isActiveDragItem = place.placeId == activeDragPlaceId
+                    Box(
+                        modifier = Modifier
+                            .animateItem(
+                                fadeInSpec = null,
+                                placementSpec = tween(durationMillis = 180),
+                                fadeOutSpec = null
+                            )
+                            .zIndex(if (isActiveDragItem) 1f else 0f)
+                            .graphicsLayer {
+                                translationY = if (isActiveDragItem) visualDragOffsetY else 0f
                             }
-                        },
-                        onDismissMenu = ::closeOpenedMenu,
-                        onEditPlaceClick = {
-                            closeOpenedMenu()
-                            onEditPlaceClick(place.placeId)
-                        },
-                        onPlaceClick = {
-                            closeOpenedMenu()
-                            onPlaceClick(place.placeId)
-                        },
-                        onDeletePlaceClick = {
-                            closeOpenedMenu()
-                            onDeletePlaceRequested(place.placeId)
-                        }
-                    )
+                    ) {
+                        PlaceTimelineItem(
+                            place = place,
+                            shouldAnimate = place.placeId == animatedPlaceId,
+                            isDragging = isActiveDragItem,
+                            isFirst = index == 0,
+                            isLast = index == reorderedPlaces.lastIndex,
+                            displayOrderIndex = index + 1,
+                            isMenuVisible = openedMenuPlaceId == place.placeId,
+                            onMoreClick = {
+                                openedMenuPlaceId = if (openedMenuPlaceId == place.placeId) {
+                                    null
+                                } else {
+                                    place.placeId
+                                }
+                            },
+                            onDismissMenu = ::closeOpenedMenu,
+                            onEditPlaceClick = {
+                                closeOpenedMenu()
+                                onEditPlaceClick(place.placeId)
+                            },
+                            onPlaceClick = {
+                                closeOpenedMenu()
+                                onPlaceClick(place.placeId)
+                            },
+                            onDeletePlaceClick = {
+                                closeOpenedMenu()
+                                onDeletePlaceRequested(place.placeId)
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -587,6 +640,7 @@ private fun PlaceGuideBanner(onClose: () -> Unit) {
 private fun PlaceTimelineItem(
     place: VisitedPlace,
     shouldAnimate: Boolean,
+    isDragging: Boolean,
     isFirst: Boolean,
     isLast: Boolean,
     displayOrderIndex: Int,
@@ -614,19 +668,23 @@ private fun PlaceTimelineItem(
         highlightProgress.animateTo(0f, animationSpec = tween(durationMillis = 850))
     }
 
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Row(
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(IntrinsicSize.Min),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.Top
+    ) {
+        TimelineDecoration(
+            orderIndex = displayOrderIndex,
+            isFirst = isFirst,
+            isLast = isLast
+        )
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(IntrinsicSize.Min),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.Top
+                .weight(1f)
+                .padding(bottom = bottomSpacing)
         ) {
-            TimelineDecoration(
-                orderIndex = displayOrderIndex,
-                isFirst = isFirst,
-                isLast = isLast
-            )
             PlaceCard(
                 name = place.placeName.ifBlank {
                     stringResource(R.string.route_place_fallback_title, displayOrderIndex)
@@ -658,13 +716,10 @@ private fun PlaceTimelineItem(
                     )
                 ),
                 highlightProgress = highlightProgress.value,
-                modifier = Modifier.weight(1f),
-                isCompact = true
+                modifier = Modifier.fillMaxWidth(),
+                isCompact = true,
+                isDragging = isDragging
             )
-        }
-
-        if (bottomSpacing > 0.dp) {
-            Spacer(modifier = Modifier.height(bottomSpacing))
         }
     }
 }
@@ -674,7 +729,9 @@ private fun Modifier.placeReorderGesture(
     placesProvider: () -> List<VisitedPlace>,
     listState: LazyListState,
     onDragStartPlace: (Long) -> Unit,
-    onMovePlace: (fromIndex: Int, toIndex: Int) -> Unit,
+    onDragPlace: (dragDeltaY: Float) -> Unit,
+    onMovePlace: (fromIndex: Int, toIndex: Int, slotOffsetDeltaPx: Float) -> Unit,
+    onAutoScroll: (consumedScrollDelta: Float) -> Unit,
     onDragFinished: () -> Unit,
     onDragCancelled: () -> Unit
 ): Modifier {
@@ -691,19 +748,28 @@ private fun Modifier.placeReorderGesture(
                     draggedPlaceId = placeId
                     placeId?.let(onDragStartPlace)
                 },
-                onDrag = { change, _ ->
+                onDrag = { change, dragAmount ->
                     val placeId = draggedPlaceId ?: return@detectDragGesturesAfterLongPress
                     change.consume()
+                    onDragPlace(dragAmount.y)
                     val places = placesProvider()
                     val fromIndex = places.indexOfFirst { it.placeId == placeId }
                     val toIndex = listState.placeIndexAtOffset(change.position.y, places)
                     if (fromIndex >= 0 && toIndex != null && fromIndex != toIndex) {
-                        onMovePlace(fromIndex, toIndex)
+                        val slotOffsetDeltaPx = listState.placeSlotOffsetDelta(
+                            places = places,
+                            fromIndex = fromIndex,
+                            toIndex = toIndex
+                        )
+                        onMovePlace(fromIndex, toIndex, slotOffsetDeltaPx)
                     }
                     val scrollDelta = listState.edgeScrollDelta(change.position.y)
                     if (scrollDelta != 0f) {
                         launch {
-                            listState.scrollBy(scrollDelta)
+                            val consumedScrollDelta = listState.scrollBy(scrollDelta)
+                            if (consumedScrollDelta != 0f) {
+                                onAutoScroll(consumedScrollDelta)
+                            }
                         }
                     }
                 },
@@ -740,6 +806,24 @@ private fun LazyListState.placeIndexAtOffset(offsetY: Float, places: List<Visite
     return places.indexOfFirst { it.placeId == placeId }.takeIf { it >= 0 }
 }
 
+private fun LazyListState.placeSlotOffsetDelta(
+    places: List<VisitedPlace>,
+    fromIndex: Int,
+    toIndex: Int
+): Float {
+    val fromPlaceId = places.getOrNull(fromIndex)?.placeId ?: return 0f
+    val toPlaceId = places.getOrNull(toIndex)?.placeId ?: return 0f
+    val fromOffset = placeItemOffset(fromPlaceId) ?: return 0f
+    val toOffset = placeItemOffset(toPlaceId) ?: return 0f
+    return (toOffset - fromOffset).toFloat()
+}
+
+private fun LazyListState.placeItemOffset(placeId: Long): Int? {
+    return layoutInfo.visibleItemsInfo
+        .firstOrNull { item -> item.key == placeId }
+        ?.offset
+}
+
 private fun LazyListState.edgeScrollDelta(offsetY: Float): Float {
     val viewportStart = layoutInfo.viewportStartOffset.toFloat()
     val viewportEnd = layoutInfo.viewportEndOffset.toFloat()
@@ -762,6 +846,7 @@ private fun List<VisitedPlace>.moved(fromIndex: Int, toIndex: Int): List<Visited
 
 private const val ReorderAutoScrollEdgeSizePx = 96f
 private const val ReorderAutoScrollStepPx = 28f
+private const val ReorderSettleDurationMillis = 140
 private val PlaceTimelineCardHeight = 78.dp
 private val PlaceTimelineItemSpacing = 16.dp
 private val PlaceTimelinePointCenterY = 34.dp
