@@ -27,6 +27,17 @@ Android 앱(API 24+)과 이 Spring Boot 백엔드로 구성되며 Kakao/Naver/Go
 - Checkstyle/Spotless 등 빌드 강제 플러그인은 없음— 코드 스타일은 `config/codestyle/GoogleStyle_java`를 IntelliJ에 수동
   import해서 적용합니다.
 
+## RDS 접속 (데이터 분석용)
+
+운영 RDS는 퍼블릭 액세스가 차단되어 있습니다. Claude Code가 데이터 조회가 필요하면 SSH 키/DB
+고정 비밀번호가 아니라 **SSM Session Manager 포트 포워딩 + RDS IAM 데이터베이스 인증**으로
+접속합니다. 상세 절차와 알려진 함정은 `docs/runbook/rds-access.md` 참고. 설계 배경은
+`docs/tech/claude-code-access-rds.md` 참고.
+
+알려진 함정: SSM 문서명은 `AWS-StartPortForwardingSessionToRemoteHost`(비슷한 이름과 혼동
+주의) / 로컬에 기존 MySQL 서비스가 3306을 점유할 수 있으니 포트 충돌 여부 확인 후 필요시
+다른 로컬 포트 사용 / mysql 클라이언트로 IAM 토큰 인증 시 `--enable-cleartext-plugin` 필수.
+
 ## 아키텍처
 
 `backend.capstone` 하위 도메인 기반 패키징입니다.
