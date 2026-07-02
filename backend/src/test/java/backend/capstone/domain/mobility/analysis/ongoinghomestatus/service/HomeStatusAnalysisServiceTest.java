@@ -91,7 +91,6 @@ class HomeStatusAnalysisServiceTest {
         assertThat(savedDayRoute.getEnterHomeTime()).isNull();
         assertThat(savedDayRoute.getHomeAnalysisLastPointAt()).isEqualTo(firstPointAt);
         assertThat(ongoingHomeStatus.getCurrentZoneStatus()).isEqualTo(HomeZoneStatus.IN_HOME);
-        assertThat(ongoingHomeStatus.getCandidateZoneStatus()).isNull();
     }
 
     @Test
@@ -116,17 +115,15 @@ class HomeStatusAnalysisServiceTest {
     }
 
     @Test
-    void 집_안에서_시작한_후_집_밖_상태가_3분_이상_유지되면_OUTING으로_확정된다() {
+    void 집_밖_상태가_관측되면_다음_포인트_없이_즉시_OUTING으로_확정된다() {
         User user = saveUser();
         DayRoute dayRoute = saveDayRoute(user, LocalDate.of(2026, 5, 1));
         saveHomeBookmark(user);
 
         Instant startAt = Instant.parse("2026-05-01T00:00:00Z");
-        Instant candidateStartAt = Instant.parse("2026-05-01T00:03:00Z");
-        Instant transitionObservedAt = Instant.parse("2026-05-01T00:06:00Z");
+        Instant transitionObservedAt = Instant.parse("2026-05-01T00:03:00Z");
 
         insertGpsPoint(dayRoute, INSIDE_HOME_LATITUDE, INSIDE_HOME_LONGITUDE, startAt);
-        insertGpsPoint(dayRoute, OUTSIDE_HOME_LATITUDE, OUTSIDE_HOME_LONGITUDE, candidateStartAt);
         insertGpsPoint(dayRoute, OUTSIDE_HOME_LATITUDE, OUTSIDE_HOME_LONGITUDE,
             transitionObservedAt);
 
@@ -138,24 +135,24 @@ class HomeStatusAnalysisServiceTest {
             .orElseThrow();
 
         assertThat(savedDayRoute.getDayRouteHomeStatus()).isEqualTo(DayRouteHomeStatus.OUTING);
-        assertThat(savedDayRoute.getOutingTime()).isEqualTo(candidateStartAt);
+        assertThat(savedDayRoute.getOutingTime()).isEqualTo(transitionObservedAt);
         assertThat(savedDayRoute.getHomeAnalysisLastPointAt()).isEqualTo(transitionObservedAt);
         assertThat(ongoingHomeStatus.getCurrentZoneStatus()).isEqualTo(HomeZoneStatus.OUT_HOME);
-        assertThat(ongoingHomeStatus.getCandidateZoneStatus()).isNull();
     }
 
     @Test
-    void 집_밖_candidate가_생겼다가_다시_집_안이면_외출로_확정되지_않는다() {
+    void 집_밖으로_나갔다가_바로_돌아오면_외출과_귀가가_각각_즉시_확정된다() {
         User user = saveUser();
         DayRoute dayRoute = saveDayRoute(user, LocalDate.of(2026, 5, 1));
         saveHomeBookmark(user);
 
+        Instant outingAt = Instant.parse("2026-05-01T00:03:00Z");
+        Instant returnedAt = Instant.parse("2026-05-01T00:04:00Z");
+
         insertGpsPoint(dayRoute, INSIDE_HOME_LATITUDE, INSIDE_HOME_LONGITUDE,
             Instant.parse("2026-05-01T00:00:00Z"));
-        insertGpsPoint(dayRoute, OUTSIDE_HOME_LATITUDE, OUTSIDE_HOME_LONGITUDE,
-            Instant.parse("2026-05-01T00:03:00Z"));
-        insertGpsPoint(dayRoute, INSIDE_HOME_LATITUDE, INSIDE_HOME_LONGITUDE,
-            Instant.parse("2026-05-01T00:04:00Z"));
+        insertGpsPoint(dayRoute, OUTSIDE_HOME_LATITUDE, OUTSIDE_HOME_LONGITUDE, outingAt);
+        insertGpsPoint(dayRoute, INSIDE_HOME_LATITUDE, INSIDE_HOME_LONGITUDE, returnedAt);
 
         homeStatusAnalysisService.analyzeHomeStatus(dayRoute.getId());
 
@@ -164,11 +161,11 @@ class HomeStatusAnalysisServiceTest {
                 savedDayRoute)
             .orElseThrow();
 
-        assertThat(savedDayRoute.getDayRouteHomeStatus()).isEqualTo(DayRouteHomeStatus.AT_HOME);
-        assertThat(savedDayRoute.getOutingTime()).isNull();
+        assertThat(savedDayRoute.getDayRouteHomeStatus()).isEqualTo(DayRouteHomeStatus.RETURNED_HOME);
+        assertThat(savedDayRoute.getOutingTime()).isEqualTo(outingAt);
+        assertThat(savedDayRoute.getEnterHomeTime()).isEqualTo(returnedAt);
+        assertThat(savedDayRoute.getTotalOutingCount()).isEqualTo(1);
         assertThat(ongoingHomeStatus.getCurrentZoneStatus()).isEqualTo(HomeZoneStatus.IN_HOME);
-        assertThat(ongoingHomeStatus.getCandidateZoneStatus()).isNull();
-        assertThat(ongoingHomeStatus.getCandidateStartedAt()).isNull();
     }
 
     private User saveUser() {
