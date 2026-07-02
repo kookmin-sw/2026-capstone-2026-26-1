@@ -44,11 +44,6 @@ public class OngoingHomeStatus extends BaseTimeEntity {
     @Column(nullable = false)
     private HomeZoneStatus currentZoneStatus;
 
-    @Enumerated(EnumType.STRING)
-    private HomeZoneStatus candidateZoneStatus;
-
-    private Instant candidateStartedAt;
-
     private Instant lastTransitionAt;
 
     public static OngoingHomeStatus initialize(DayRoute dayRoute, GpsPoint point,
@@ -61,19 +56,8 @@ public class OngoingHomeStatus extends BaseTimeEntity {
         return status;
     }
 
-    public void startCandidate(HomeZoneStatus candidateZoneStatus, Instant candidateStartedAt) {
-        this.candidateZoneStatus = candidateZoneStatus;
-        this.candidateStartedAt = candidateStartedAt;
-    }
-
-    public void clearCandidate() {
-        this.candidateZoneStatus = null;
-        this.candidateStartedAt = null;
-    }
-
     public void changeCurrentZoneStatus(HomeZoneStatus currentZoneStatus, Instant transitionedAt) {
         this.currentZoneStatus = currentZoneStatus;
         this.lastTransitionAt = transitionedAt;
-        clearCandidate();
     }
 }
