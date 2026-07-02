@@ -6,7 +6,10 @@ SSH 키나 DB 고정 비밀번호를 쓰지 않고, **AWS SSM Session Manager �
 참고.
 
 이 문서는 git에 커밋되어 공개될 수 있으므로, 실제 계정 ID/인스턴스 ID/엔드포인트 등 구체적인
-값은 적지 않는다. 접속 시점에 사용자에게 확인하거나, 로컬에 이미 구성된 값을 사용한다.
+값은 적지 않는다. 아래 명령어의 `<EC2-인스턴스ID>`, `<RDS엔드포인트>`, `<리전>`, `<스키마명>`,
+`<로컬포트>` 자리에 들어갈 실제 값은 **`rds-access.local.md`(gitignore 처리됨, 이 문서와 같은
+디렉터리)** 에 있다. 그 파일이 없다면 사용자에게 물어보거나 이 절차를 처음 만들 때와 같은
+방식(AWS 콘솔 확인)으로 알아낸 뒤 새로 만든다.
 
 ## 1. 사전 설정 체크리스트 (최초 1회, AWS 콘솔/관리자 권한 필요)
 
@@ -89,6 +92,8 @@ docker run --rm mysql:8 mysql -h host.docker.internal -P <로컬포트> \
 ## 4. 참고
 
 - 설계 배경(왜 SSH+고정 비밀번호 대신 이 방식을 선택했는가): `docs/tech/claude-code-access-rds.md`
+- 실제 EC2 인스턴스 ID/RDS 엔드포인트/리전/스키마명: `rds-access.local.md` (같은 디렉터리,
+  git에 커밋되지 않음)
 - 로컬 IAM 사용자의 `ssm:StartSession`/`rds-db:connect` 권한이 `Resource: "*"`처럼 넓게
   열려 있다면, 특정 EC2 인스턴스·SSM 문서·DB 유저 ARN으로 스코프를 좁히는 것을 다음 개선
   과제로 남겨둔다.

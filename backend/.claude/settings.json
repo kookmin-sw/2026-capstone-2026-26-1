@@ -2,7 +2,10 @@
   "plansDirectory": "./.claude/plans/",
   "outputStyle": "Explanatory",
   "permissions": {
-    "defaultMode": "plan"
+    "defaultMode": "plan",
+    "additionalDirectories": [
+      "../"
+    ]
   },
   "deny": [
     "Read(./.env.*)"
