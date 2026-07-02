@@ -61,6 +61,10 @@ backend/target/
 backend/node_modules/
 backend/AGENTS.md
 backend/.claude/plans
+backend/.claude/rules/*.local.md
+backend/.gradle
+backend/build
+backend/out
 
 # Keep placeholder
 !backend/.gitkeep
