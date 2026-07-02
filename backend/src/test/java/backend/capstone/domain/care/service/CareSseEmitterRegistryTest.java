@@ -1,14 +1,17 @@
 package backend.capstone.domain.care.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 import backend.capstone.domain.care.caredependent.sse.registry.CareSseEmitterRegistry;
+import backend.capstone.domain.care.caredependent.sse.service.DependentWatchService;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 class CareSseEmitterRegistryTest {
 
-    private final CareSseEmitterRegistry registry = new CareSseEmitterRegistry();
+    private final DependentWatchService dependentWatchService = mock(DependentWatchService.class);
+    private final CareSseEmitterRegistry registry = new CareSseEmitterRegistry(dependentWatchService);
 
     @Test
     void 보호자별로_sse_emitter를_등록한다() {
