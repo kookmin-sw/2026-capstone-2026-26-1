@@ -3,18 +3,11 @@ package backend.capstone.domain.mobility.analysis.ongoinghomestatus.service;
 import backend.capstone.domain.mobility.analysis.ongoinghomestatus.entity.HomeZoneStatus;
 import backend.capstone.domain.mobility.analysis.ongoinghomestatus.entity.OngoingHomeStatus;
 import backend.capstone.domain.mobility.dayroute.entity.DayRoute;
-import java.time.Duration;
 import java.time.Instant;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 @Component
-@RequiredArgsConstructor
 public class HomeStatusTransitionHandler {
-
-    private static final int TRANSITION_MINUTES = 3;
-
-    private final OutingDurationAccumulator outingDurationAccumulator;
 
     public void applyInitialDayRouteStatus(DayRoute dayRoute, HomeZoneStatus zoneStatus) {
         if (zoneStatus == HomeZoneStatus.IN_HOME) {
@@ -25,32 +18,14 @@ public class HomeStatusTransitionHandler {
         dayRoute.markOutingWithoutTime();
     }
 
-    public long handleTransition(DayRoute dayRoute, OngoingHomeStatus ongoingHomeStatus,
+    public void handleTransition(DayRoute dayRoute, OngoingHomeStatus ongoingHomeStatus,
         HomeZoneStatus observedZoneStatus, Instant observedAt) {
         if (observedZoneStatus == ongoingHomeStatus.getCurrentZoneStatus()) {
-            ongoingHomeStatus.clearCandidate();
-            return 0;
+            return;
         }
 
-        if ((ongoingHomeStatus.getCandidateZoneStatus() == null)
-            || (ongoingHomeStatus.getCandidateZoneStatus() != observedZoneStatus)) {
-            ongoingHomeStatus.startCandidate(observedZoneStatus, observedAt);
-            return 0;
-        }
-
-        long candidateDurationMinutes = Duration.between(ongoingHomeStatus.getCandidateStartedAt(),
-            observedAt).toMinutes();
-
-        if (candidateDurationMinutes < TRANSITION_MINUTES) {
-            return 0;
-        }
-
-        Instant transitionTime = ongoingHomeStatus.getCandidateStartedAt();
-        ongoingHomeStatus.changeCurrentZoneStatus(observedZoneStatus, transitionTime);
-        applyTransitionedDayRouteStatus(dayRoute, observedZoneStatus, transitionTime);
-
-        return outingDurationAccumulator.calculateConfirmedOutingDurationSeconds(observedZoneStatus,
-            transitionTime, observedAt);
+        ongoingHomeStatus.changeCurrentZoneStatus(observedZoneStatus, observedAt);
+        applyTransitionedDayRouteStatus(dayRoute, observedZoneStatus, observedAt);
     }
 
     private void applyTransitionedDayRouteStatus(DayRoute dayRoute, HomeZoneStatus zoneStatus,

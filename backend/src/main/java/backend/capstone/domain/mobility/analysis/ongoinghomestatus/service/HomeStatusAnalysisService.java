@@ -94,13 +94,13 @@ public class HomeStatusAnalysisService {
         HomeZoneStatus observedZoneStatus = homeZoneDecider.determineObservedZone(point,
             homeBookmark, ongoingHomeStatus.getCurrentZoneStatus());
 
-        long additionalOutingSeconds = outingDurationAccumulator.calculateSegmentOutingDurationSeconds(
-            ongoingHomeStatus, observedZoneStatus, previousPointAt, point.getRecordedAt());
+        long outingSeconds = outingDurationAccumulator.calculateOutingDurationSeconds(
+            ongoingHomeStatus.getCurrentZoneStatus(), previousPointAt, point.getRecordedAt());
 
-        additionalOutingSeconds += homeStatusTransitionHandler.handleTransition(dayRoute,
-            ongoingHomeStatus, observedZoneStatus, point.getRecordedAt());
+        homeStatusTransitionHandler.handleTransition(dayRoute, ongoingHomeStatus,
+            observedZoneStatus, point.getRecordedAt());
 
-        return additionalOutingSeconds;
+        return outingSeconds;
     }
 
 }
