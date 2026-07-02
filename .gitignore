@@ -61,9 +61,10 @@ backend/target/
 backend/node_modules/
 backend/AGENTS.md
 backend/.claude/plans
-
-# 로컬 전용 인프라 접속 메타데이터 (실제 EC2/RDS 식별자 등, 저장소에 커밋하지 않음)
-backend/docs/runbook/*.local.md
+backend/.claude/rules/*.local.md
+backend/.gradle
+backend/build
+backend/out
 
 # Keep placeholder
 !backend/.gitkeep

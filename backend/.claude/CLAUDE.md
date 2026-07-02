@@ -31,12 +31,20 @@ Android 앱(API 24+)과 이 Spring Boot 백엔드로 구성되며 Kakao/Naver/Go
 
 운영 RDS는 퍼블릭 액세스가 차단되어 있습니다. Claude Code가 데이터 조회가 필요하면 SSH 키/DB
 고정 비밀번호가 아니라 **SSM Session Manager 포트 포워딩 + RDS IAM 데이터베이스 인증**으로
-접속합니다. 상세 절차와 알려진 함정은 `docs/runbook/rds-access.md` 참고. 설계 배경은
-`docs/tech/claude-code-access-rds.md` 참고.
+접속합니다. 상세 절차와 알려진 함정은 `.claude/rules/rds-access.md` 참고.
 
 알려진 함정: SSM 문서명은 `AWS-StartPortForwardingSessionToRemoteHost`(비슷한 이름과 혼동
 주의) / 로컬에 기존 MySQL 서비스가 3306을 점유할 수 있으니 포트 충돌 여부 확인 후 필요시
 다른 로컬 포트 사용 / mysql 클라이언트로 IAM 토큰 인증 시 `--enable-cleartext-plugin` 필수.
+
+## Git & GitHub Workflow
+
+커밋 타입은 다음을 사용합니다: feat, fix, docs, style, design, test, refactor, build,
+ci, perf, chore, rename, remove.
+
+- 커밋 메시지 형식과 브랜치 명명 규칙: `.claude/rules/git-commit.md` 참고.
+- 이슈 작성 구조: `.claude/rules/github-issue.md` 참고.
+- PR 작성 구조: `.claude/rules/github-pr.md` 참고.
 
 ## 아키텍처
 
