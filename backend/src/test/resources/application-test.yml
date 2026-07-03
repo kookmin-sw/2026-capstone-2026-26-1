@@ -10,11 +10,12 @@ spring:
 
   data:
     redis:
-      host: ${REDIS_HOST}
-      port: ${REDIS_PORT}
-      
+      host: localhost
+      port: 6379
+
+# 테스트 전용 더미 값 (운영 비밀값과 무관, HS512 최소 요구 길이인 64바이트 이상 충족)
 jwt:
-  secret: "${JWT_SECRET}"
+  secret: "iXINkBvTupMXwK0hGGFbXR8HUbQdsoORKSycxZUiUUF0HYcqXbTdTsNFc39r95j"
   access-exp-seconds: 86400 # 1일
   refresh-exp-seconds: 2592000 # 30일
 
@@ -28,4 +29,9 @@ server:
 kakao:
   local:
     base-url: https://dapi.kakao.com
-    rest-api-key: ${KAKAO_REST_API_KEY}
+    rest-api-key: test-dummy-key
+
+# FirebaseConfig가 FileInputStream으로 직접 여는 경로라 클래스패스가 아닌 실제 파일 경로가 필요함.
+# gradle test의 작업 디렉터리는 프로젝트 루트이므로 루트의 더미 서비스 계정 JSON을 가리킨다.
+firebase:
+  credentials-path: firebase-test-dummy.json

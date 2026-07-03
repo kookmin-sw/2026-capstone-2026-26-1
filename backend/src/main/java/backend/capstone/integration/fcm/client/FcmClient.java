@@ -3,14 +3,13 @@ package backend.capstone.integration.fcm.client;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingException;
 import com.google.firebase.messaging.Message;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class FcmClient {
 
     private static final String DATA_KEY_TYPE = "type";
@@ -18,6 +17,10 @@ public class FcmClient {
     private static final String DATA_TYPE_TRACKING_INTERVAL_CHANGE = "TRACKING_INTERVAL_CHANGE";
 
     private final FirebaseMessaging firebaseMessaging;
+
+    public FcmClient(@Lazy FirebaseMessaging firebaseMessaging) {
+        this.firebaseMessaging = firebaseMessaging;
+    }
 
     public void sendTrackingIntervalChange(String fcmToken, int intervalSeconds) {
         if (!StringUtils.hasText(fcmToken)) {

@@ -55,7 +55,6 @@ android/**/*.dex
 
 backend/.env
 backend/.env.*
-backend/firebase-key*.json
 backend/build/
 backend/out/
 backend/target/
@@ -66,6 +65,7 @@ backend/.claude/rules/*.local.md
 backend/.gradle
 backend/build
 backend/out
+backend/gilbut-firebase-adminsdk.json
 
 # Keep placeholder
 !backend/.gitkeep

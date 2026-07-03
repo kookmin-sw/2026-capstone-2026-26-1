@@ -32,7 +32,7 @@ class DayRouteAnalysisEventListenerTest {
     private DayRouteAnalysisEventListener dayRouteAnalysisEventListener;
 
     @Test
-    void 락안에서_스테이분석후_홈분석을_순서대로_실행한다() {
+    void 락안에서_홈분석후_스테이분석을_순서대로_실행한다() {
         Long dayRouteId = 3L;
         GpsPointsUploadedEvent event = new GpsPointsUploadedEvent(dayRouteId);
 
@@ -48,8 +48,8 @@ class DayRouteAnalysisEventListenerTest {
         verify(dayRouteAnalysisLockService).withLock(eq(dayRouteId),
             org.mockito.ArgumentMatchers.any(Runnable.class));
 
-        InOrder inOrder = inOrder(stayAnalysisService, homeStatusAnalysisService);
-        inOrder.verify(stayAnalysisService).analyzeStay(dayRouteId);
+        InOrder inOrder = inOrder(homeStatusAnalysisService, stayAnalysisService);
         inOrder.verify(homeStatusAnalysisService).analyzeHomeStatus(dayRouteId);
+        inOrder.verify(stayAnalysisService).analyzeStay(dayRouteId);
     }
 }
