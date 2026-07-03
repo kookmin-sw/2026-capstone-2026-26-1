@@ -55,6 +55,7 @@ android/**/*.dex
 
 backend/.env
 backend/.env.*
+backend/firebase-key*.json
 backend/build/
 backend/out/
 backend/target/

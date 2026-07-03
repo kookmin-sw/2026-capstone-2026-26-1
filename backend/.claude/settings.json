@@ -8,6 +8,6 @@
     ]
   },
   "deny": [
-    "Read(.env.*)"
+    "Read(/.env.*)"
   ]
 }

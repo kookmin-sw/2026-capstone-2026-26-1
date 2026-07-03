@@ -26,12 +26,13 @@
 <br>
 
 ## 주요 기능
+
 ### 1️⃣ 이동 경로 기록 및 조회
 
 - 백그라운드 위치 수집
 - 날짜별 이동경로 조회
 - 위치수집 on/off
-<img src="docs/images/이동경로 기록 및 조회.png" alt="나의길 화면이미지">
+  <img src="docs/images/이동경로 기록 및 조회.png" alt="나의길 화면이미지">
 
 ### 2️⃣ 기억 보조를 위한 개인 기록 도구
 
@@ -39,26 +40,26 @@
 - 학교, 회사 등 즐겨찾는 장소 등록
 - 방문장소 직접 추가
 - 날짜별 즐겨찾기
-<img src="docs/images/개인 기록 도구.png" alt="함께가는길 화면이미지">
+  <img src="docs/images/개인 기록 도구.png" alt="함께가는길 화면이미지">
 
 ### 3️⃣ 위치 데이터 분석
 
-- 위치  데이터를 분석하여 사용자에게 의미있는 정보로 변환
+- 위치 데이터를 분석하여 사용자에게 의미있는 정보로 변환
 - 분석 기반 15분 이상 체류한 장소 상호명 및 체류 시간 저장
 - 분석 기반 외출/귀가 시각 저장
-<img src="docs/images/위치 데이터 분석.png" alt="장소저장 화면이미지">
+  <img src="docs/images/위치 데이터 분석.png" alt="장소저장 화면이미지">
 
 ### 4️⃣ 보호자 안심 확인
 
 - 보호 대상자의 실시간 위치 확인
 - 보호 대상자의 날짜별 이동 경로, 외출/귀가 시각, 체류 장소, 방문한 지역 등 확인
-<img src="docs/images/보호자 안심 기능.png" alt="하루요약 화면이미지">
+  <img src="docs/images/보호자 안심 기능.png" alt="하루요약 화면이미지">
 
 ### 5️⃣ 요약 통계
 
 - 기간별(1주/1개월/6개월/1년) 생활패턴 지표 변화량 파악
 - 기간별 가장 많이 방문한 장소 및 지역 top 5 확인
-<img src="docs/images/요약통계.png" alt="요약통계 화면이미지">
+  <img src="docs/images/요약통계.png" alt="요약통계 화면이미지">
 
 <br>
 
@@ -86,10 +87,10 @@
 cd backend
 ```
 
-`backend/.env.local` 파일을 생성하고 아래 항목을 채워 넣습니다. (실제 값은 팀 내부에서 별도로 공유받으세요)
+`backend/.env.local` 파일을 생성하고 아래 항목을 채워 넣습니다.
 
 ```
-DB_URL=jdbc:mysql://<DB_HOST>:3306/capstone
+DB_URL=
 DB_USERNAME=
 DB_PASSWORD=
 JWT_SECRET=
@@ -98,7 +99,7 @@ REDIS_PORT=6379
 KAKAO_REST_API_KEY=
 NAVER_CLIENT_ID=
 NAVER_CLIENT_SECRET=
-DDL_AUTO=update
+DDL_AUTO=
 ```
 
 Docker 이미지를 빌드하고 컨테이너를 실행합니다.
