@@ -23,7 +23,7 @@ Android 앱(API 24+)과 이 Spring Boot 백엔드로 구성되며 Kakao/Naver/Go
 - 빌드: `./gradlew build`
 - 전체 테스트: `./gradlew test`
 - 단일 테스트: `./gradlew test --tests "backend.capstone.<패키지>.<클래스명>"`
-- 로컬 실행 전 Docker로 MySQL(3306)·Redis(6379) 기동 필요
+- 로컬 `bootRun`이 환경변수 누락으로 실패하면 `.claude/scripts/sync-env-to-settings.ps1`을 실행해 `.env.local` 값을 `.claude/settings.local.json`의 `env` 필드로 동기화한다(`.env.local`이 바뀐 뒤에도 동일하게 재실행).
 - Checkstyle/Spotless 등 빌드 강제 플러그인은 없음— 코드 스타일은 `config/codestyle/GoogleStyle_java`를 IntelliJ에 수동
   import해서 적용합니다.
 
@@ -105,6 +105,8 @@ public void example(TypeA a, TypeB b, TypeC c) {
 - 명시적인 요청 없는 대규모 구조적 변경
 - 기존 어노테이션을 절대 삭제하지 않습니다.
 - 명령이 없으면 테스트 코드를 건드리지 않습니다.
+- 사용자의 명시적인 지시 없이 git 커밋이나 push를 수행하지 않습니다. 코드/테스트 변경을
+  완료한 뒤에도 커밋 여부는 반드시 사용자에게 먼저 확인받습니다.
 
 ## 포트폴리오 관점 제안
 

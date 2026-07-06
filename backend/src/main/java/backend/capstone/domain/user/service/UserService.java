@@ -29,4 +29,10 @@ public class UserService {
             .orElseThrow(() -> new BusinessException(UserErrorCode.NOT_FOUND_USER));
     }
 
+    @Transactional
+    public void updateFcmToken(Long userId, String fcmToken) {
+        User user = findById(userId);
+        user.updateFcmToken(fcmToken);
+    }
+
 }

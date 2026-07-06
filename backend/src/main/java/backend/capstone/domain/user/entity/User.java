@@ -40,6 +40,8 @@ public class User extends BaseTimeEntity {
 
     private LocalTime dayEndTime;
 
+    private String fcmToken;
+
     @Builder
     public User(ProviderType provider, String providerId, String nickname, String profileImageUrl) {
         this.provider = provider;
@@ -58,5 +60,9 @@ public class User extends BaseTimeEntity {
         if (!Objects.equals(this.profileImageUrl, profileImageUrl)) {
             this.profileImageUrl = profileImageUrl;
         }
+    }
+
+    public void updateFcmToken(String fcmToken) {
+        this.fcmToken = fcmToken;
     }
 }

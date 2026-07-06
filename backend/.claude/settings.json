@@ -5,9 +5,9 @@
     "defaultMode": "plan",
     "additionalDirectories": [
       "../"
+    ],
+    "deny": [
+      "Read(./.env.local)"
     ]
-  },
-  "deny": [
-    "Read(./.env.*)"
-  ]
+  }
 }

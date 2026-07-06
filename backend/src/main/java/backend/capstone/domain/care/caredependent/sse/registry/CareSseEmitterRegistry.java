@@ -2,23 +2,28 @@ package backend.capstone.domain.care.caredependent.sse.registry;
 
 import backend.capstone.domain.care.caredependent.sse.dto.CareSseEventType;
 import backend.capstone.domain.care.caredependent.sse.dto.CareSseMessagePayload;
+import backend.capstone.domain.care.caredependent.sse.service.DependentWatchService;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class CareSseEmitterRegistry {
 
     private static final long SSE_TIMEOUT_MILLIS = 60L * 60L * 1000L; //1시간
 
     private final Map<Long, Map<String, SseEmitter>> emittersByGuardianUserId =
         new ConcurrentHashMap<>();
+
+    private final DependentWatchService dependentWatchService;
 
     public SseEmitter register(Long guardianUserId) {
         SseEmitter emitter = new SseEmitter(SSE_TIMEOUT_MILLIS);
@@ -31,6 +36,7 @@ public class CareSseEmitterRegistry {
         emitter.onTimeout(() -> remove(guardianUserId, emitterId));
         emitter.onError(ignored -> remove(guardianUserId, emitterId));
 
+        dependentWatchService.startWatching(guardianUserId);
         sendConnectedEvent(guardianUserId, emitterId, emitter);
         return emitter;
     }
@@ -72,6 +78,7 @@ public class CareSseEmitterRegistry {
         emitters.remove(emitterId);
         if (emitters.isEmpty()) {
             emittersByGuardianUserId.remove(guardianUserId);
+            dependentWatchService.stopWatching(guardianUserId);
         }
     }
 

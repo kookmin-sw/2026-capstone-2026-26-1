@@ -36,6 +36,9 @@ kakao:
     base-url: https://dapi.kakao.com
     rest-api-key: ${KAKAO_REST_API_KEY}
 
+firebase:
+  credentials-path: ${FIREBASE_CREDENTIALS_PATH}
+
 seed:
   region:
     enabled: true #region initializer 실행 여부
