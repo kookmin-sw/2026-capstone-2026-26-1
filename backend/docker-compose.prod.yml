@@ -10,7 +10,7 @@ services:
     env_file:
       - .env
     # FIREBASE_CREDENTIALS_PATH(./gilbut-firebase-adminsdk.json)가 컨테이너 워킹 디렉터리(/app) 기준으로
-    # 해석되므로, 같은 이름으로 읽기 전용 마운트한다.
+    # 해석되므로, 같은 이름으로 읽기 전용 마운트한다. 파일 자체는 CI가 아니라 운영자가 EC2에 직접 배치한다.
     volumes:
       - ./gilbut-firebase-adminsdk.json:/app/gilbut-firebase-adminsdk.json:ro
     # t2.micro(955M) OOM 대응: 컨테이너 메모리 천장. 실사용은 ~414MB, 부하 시 ~500-650MB 추정.
