@@ -63,6 +63,7 @@ jobs:
           REDIS_PORT=${{ secrets.REDIS_PORT }}
           KAKAO_REST_API_KEY=${{ secrets.KAKAO_REST_API_KEY }}
           DDL_AUTO=${{ secrets.DDL_AUTO }}
+          FIREBASE_CREDENTIALS_PATH=${{ secrets.FIREBASE_CREDENTIALS_PATH }}
           EOF
 
       # EC2로 .env 업로드
@@ -76,6 +77,18 @@ jobs:
           target: "/home/${{ secrets.EC2_USER }}/app"
           overwrite: true
 
+      # EC2로 docker-compose.prod.yml 업로드 (레포가 배포 파일의 단일 출처가 되도록)
+      - name: Upload docker-compose.prod.yml to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "backend/docker-compose.prod.yml"
+          target: "/home/${{ secrets.EC2_USER }}/app"
+          strip_components: 1
+          overwrite: true
+
       # EC2에서 최신 이미지 pull + 재기동
       - name: Deploy on EC2
         uses: appleboy/ssh-action@v1.0.3
@@ -83,6 +96,7 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
+          envs: ECR_REPO_URI
           script: |
             set -e
             cd /home/${{ secrets.EC2_USER }}/app
@@ -91,6 +105,9 @@ jobs:
             aws ecr get-login-password --region ap-northeast-2 \
               | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}
 
-            docker pull ${{ secrets.ECR_REPO_URI }}:latest
-            docker compose up -d --pull always --force-recreate
+            export APP_IMAGE="${ECR_REPO_URI}:latest"
+            docker pull "$APP_IMAGE"
+            docker compose -f docker-compose.prod.yml up -d --pull always --force-recreate
             docker image prune -f
+        env:
+          ECR_REPO_URI: ${{ secrets.ECR_REPO_URI }}
