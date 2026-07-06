@@ -76,37 +76,22 @@
 
 ### 사전 요구사항
 
-- Docker
 - MySQL (기본 포트 `3306`, `capstone` 데이터베이스)
 - Redis (기본 포트 `6379`)
 - Android Studio + Android SDK (API 36), 에뮬레이터 또는 실기기 (API 24 이상)
 
-### 1. 백엔드 실행 (Docker)
+### 1. 백엔드 실행
 
 ```bash
 cd backend
 ```
 
-`backend/.env.local` 파일을 생성하고 아래 항목을 채워 넣습니다.
+`backend/.env.example`을 참고해 `backend/.env.local` 파일을 생성하고 값을 채워 넣습니다.
 
-```
-DB_URL=
-DB_USERNAME=
-DB_PASSWORD=
-JWT_SECRET=
-REDIS_HOST=
-REDIS_PORT=6379
-KAKAO_REST_API_KEY=
-NAVER_CLIENT_ID=
-NAVER_CLIENT_SECRET=
-DDL_AUTO=
-```
-
-Docker 이미지를 빌드하고 컨테이너를 실행합니다.
+애플리케이션을 실행합니다.
 
 ```bash
-docker build -t capstone-backend .
-docker run -d --name capstone -p 8080:8080 --env-file .env.local capstone-backend
+./gradlew bootRun
 ```
 
 실행 후 아래 주소에서 API 문서를 확인할 수 있습니다.
