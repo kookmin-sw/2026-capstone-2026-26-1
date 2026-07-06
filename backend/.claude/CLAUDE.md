@@ -23,7 +23,7 @@ Android 앱(API 24+)과 이 Spring Boot 백엔드로 구성되며 Kakao/Naver/Go
 - 빌드: `./gradlew build`
 - 전체 테스트: `./gradlew test`
 - 단일 테스트: `./gradlew test --tests "backend.capstone.<패키지>.<클래스명>"`
-- 로컬 실행 전 Docker로 MySQL(3306)·Redis(6379) 기동 필요
+- 로컬 `bootRun`이 환경변수 누락으로 실패하면 `.claude/scripts/sync-env-to-settings.ps1`을 실행해 `.env.local` 값을 `.claude/settings.local.json`의 `env` 필드로 동기화한다(`.env.local`이 바뀐 뒤에도 동일하게 재실행).
 - Checkstyle/Spotless 등 빌드 강제 플러그인은 없음— 코드 스타일은 `config/codestyle/GoogleStyle_java`를 IntelliJ에 수동
   import해서 적용합니다.
 

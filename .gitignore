@@ -61,6 +61,7 @@ backend/node_modules/
 backend/AGENTS.md
 backend/.claude/plans
 backend/.claude/rules/*.local.md
+backend/.claude/settings.local.json
 backend/.gradle
 backend/build
 backend/out
