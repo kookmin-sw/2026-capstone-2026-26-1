@@ -19,10 +19,5 @@ internal fun RouteActionRow(
                 onClick = { onRouteAction(RouteUiAction.ToggleTracking) }
             )
         }
-        if (actionUiState.showPlayback) {
-            RoutePlaybackButton(
-                onClick = { onRouteAction(RouteUiAction.EnterPastPlayback) }
-            )
-        }
     }
 }

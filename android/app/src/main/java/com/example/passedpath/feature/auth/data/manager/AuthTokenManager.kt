@@ -1,7 +1,7 @@
 package com.example.passedpath.feature.auth.data.manager
 
 import android.util.Log
-import com.example.passedpath.data.datastore.AuthSessionStorage
+import com.example.passedpath.data.datastore.AuthTokenStore
 import com.example.passedpath.feature.auth.data.remote.api.AuthApi
 import com.example.passedpath.feature.auth.presentation.state.AuthEvent
 import com.example.passedpath.feature.auth.presentation.state.LogoutEvent
@@ -9,17 +9,42 @@ import retrofit2.HttpException
 
 class AuthTokenManager(
     private val authApi: AuthApi,
-    private val sessionStorage: AuthSessionStorage
+    private val tokenStore: AuthTokenStore
 ) {
 
     private val logTag = "AuthFlow"
     private val sessionExpiredMessage = "로그인이 만료되어 자동으로 로그아웃되었어요"
 
     suspend fun refreshAccessToken(): Boolean {
-        val refreshToken = sessionStorage.getRefreshToken()
+        return refreshAccessTokenOrNull() != null
+    }
+
+    suspend fun recoverAccessTokenAfterUnauthorized(requestAccessToken: String): String? {
+        val latestAccessToken = tokenStore.getCachedAccessToken()
+            ?.takeUnless(String::isBlank)
+            ?: tokenStore.getAccessToken()
+                ?.takeUnless(String::isBlank)
+
+        if (latestAccessToken != null && latestAccessToken != requestAccessToken) {
+            Log.d(
+                logTag,
+                "token already updated by another request latestToken=${latestAccessToken.toTokenPreview()}"
+            )
+            return latestAccessToken
+        }
+
+        return refreshAccessTokenOrNull()
+    }
+
+    private suspend fun refreshAccessTokenOrNull(): String? {
+        val refreshToken = tokenStore.getCachedRefreshToken()
+            ?.takeUnless(String::isBlank)
+            ?: tokenStore.getRefreshToken()
+                ?.takeUnless(String::isBlank)
             ?: run {
                 Log.e(logTag, "refresh aborted because no refresh token is stored")
-                return handleExpiredSession("missing_refresh_token")
+                handleExpiredSession("missing_refresh_token")
+                return null
             }
 
         Log.d(
@@ -30,7 +55,7 @@ class AuthTokenManager(
         return try {
             val response = authApi.refreshToken(refreshToken)
 
-            sessionStorage.saveTokens(
+            tokenStore.saveTokens(
                 accessToken = response.accessToken,
                 refreshToken = response.refreshToken
             )
@@ -39,7 +64,7 @@ class AuthTokenManager(
                 logTag,
                 "refresh success newAccessToken=${response.accessToken.toTokenPreview()} newRefreshToken=${response.refreshToken.toTokenPreview()}"
             )
-            true
+            response.accessToken
 
         } catch (e: HttpException) {
             val errorBody = e.response()?.errorBody()?.string()
@@ -49,6 +74,7 @@ class AuthTokenManager(
                 e
             )
             handleExpiredSession("refresh_http_${e.code()}")
+            null
         } catch (e: Exception) {
             Log.e(
                 logTag,
@@ -56,11 +82,12 @@ class AuthTokenManager(
                 e
             )
             handleExpiredSession("refresh_exception_${e::class.java.simpleName}")
+            null
         }
     }
 
     suspend fun logout() {
-        sessionStorage.clear()
+        tokenStore.clear()
     }
 
     suspend fun logoutDueToExpiredSession(): Boolean {
@@ -69,7 +96,7 @@ class AuthTokenManager(
 
     private suspend fun handleExpiredSession(reason: String): Boolean {
         Log.e(logTag, "clearing session and emitting logout event reason=$reason")
-        sessionStorage.clear()
+        tokenStore.clear()
         AuthEvent.logoutEvent.emit(
             LogoutEvent(message = sessionExpiredMessage)
         )

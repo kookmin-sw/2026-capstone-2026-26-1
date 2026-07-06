@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -19,13 +21,29 @@ import androidx.compose.ui.unit.dp
 import com.example.passedpath.R
 import com.example.passedpath.ui.state.CoordinateUiState
 import com.google.maps.android.compose.MarkerComposable
+import com.google.maps.android.compose.rememberMarkerState
 
 private val CurrentLocationGlowBase = Color(0xFF006B5F)
 
 @Composable
 internal fun CurrentLocationMapMarker(currentLocation: CoordinateUiState) {
+    val position = remember(
+        currentLocation.latitude,
+        currentLocation.longitude
+    ) {
+        currentLocation.toLatLng()
+    }
+    val markerState = rememberMarkerState(
+        key = "current-location",
+        position = position
+    )
+
+    LaunchedEffect(position) {
+        markerState.position = position
+    }
+
     MarkerComposable(
-        state = com.google.maps.android.compose.MarkerState(position = currentLocation.toLatLng()),
+        state = markerState,
         title = stringResource(R.string.main_map_marker_title),
         anchor = Offset(0.5f, 0.58f),
         zIndex = 10f

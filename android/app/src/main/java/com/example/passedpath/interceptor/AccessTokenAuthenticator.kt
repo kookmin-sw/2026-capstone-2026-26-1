@@ -1,7 +1,6 @@
 package com.example.passedpath.interceptor
 
 import android.util.Log
-import com.example.passedpath.data.datastore.AuthSessionStorage
 import com.example.passedpath.feature.auth.data.manager.AuthTokenManager
 import kotlinx.coroutines.runBlocking
 import okhttp3.Authenticator
@@ -10,7 +9,6 @@ import okhttp3.Response
 import okhttp3.Route
 
 class AccessTokenAuthenticator(
-    private val sessionStorage: AuthSessionStorage,
     private val tokenManager: AuthTokenManager
 ) : Authenticator {
 
@@ -46,29 +44,11 @@ class AccessTokenAuthenticator(
         }
 
         synchronized(this) {
-            val latestAccessToken = runBlocking { sessionStorage.getAccessToken() }
-            if (!latestAccessToken.isNullOrBlank() && latestAccessToken != requestAccessToken) {
-                Log.d(
-                    logTag,
-                    "token already updated by another request path=$path latestToken=${latestAccessToken.toTokenPreview()}"
-                )
-                return response.request.newBuilder()
-                    .header("Authorization", "Bearer $latestAccessToken")
-                    .build()
+            val refreshedAccessToken = runBlocking {
+                tokenManager.recoverAccessTokenAfterUnauthorized(requestAccessToken)
             }
-
-            Log.d(logTag, "attempting refresh for path=$path")
-            val refreshSucceeded = runBlocking {
-                tokenManager.refreshAccessToken()
-            }
-            if (!refreshSucceeded) {
-                Log.e(logTag, "refresh failed for path=$path")
-                return null
-            }
-
-            val refreshedAccessToken = runBlocking { sessionStorage.getAccessToken() }
                 ?: run {
-                    Log.e(logTag, "refresh reported success but no access token was stored path=$path")
+                    Log.e(logTag, "refresh failed for path=$path")
                     return null
                 }
 

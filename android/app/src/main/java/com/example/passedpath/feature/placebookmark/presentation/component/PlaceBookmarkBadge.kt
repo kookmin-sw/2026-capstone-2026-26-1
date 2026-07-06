@@ -19,10 +19,10 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.passedpath.R
 import com.example.passedpath.feature.place.domain.model.BookmarkPlaceType
-import com.example.passedpath.ui.theme.BookmarkCompanyColor
-import com.example.passedpath.ui.theme.BookmarkHomeColor
-import com.example.passedpath.ui.theme.BookmarkOtherColor
-import com.example.passedpath.ui.theme.BookmarkSchoolColor
+import com.example.passedpath.ui.theme.PlaceBookmarkCompanyColor
+import com.example.passedpath.ui.theme.PlaceBookmarkHomeColor
+import com.example.passedpath.ui.theme.PlaceBookmarkOtherColor
+import com.example.passedpath.ui.theme.PlaceBookmarkSchoolColor
 import com.example.passedpath.ui.theme.PassedPathTheme
 import com.example.passedpath.ui.theme.White
 
@@ -52,10 +52,10 @@ fun PlaceBookmarkBadge(
 
 private val BookmarkPlaceType.badgeColor: Color
     get() = when (this) {
-        BookmarkPlaceType.HOME -> BookmarkHomeColor
-        BookmarkPlaceType.COMPANY -> BookmarkCompanyColor
-        BookmarkPlaceType.SCHOOL -> BookmarkSchoolColor
-        BookmarkPlaceType.ETC -> BookmarkOtherColor
+        BookmarkPlaceType.HOME -> PlaceBookmarkHomeColor
+        BookmarkPlaceType.COMPANY -> PlaceBookmarkCompanyColor
+        BookmarkPlaceType.SCHOOL -> PlaceBookmarkSchoolColor
+        BookmarkPlaceType.ETC -> PlaceBookmarkOtherColor
     }
 
 @get:DrawableRes
@@ -64,7 +64,7 @@ private val BookmarkPlaceType.badgeIconResId: Int
         BookmarkPlaceType.HOME -> R.drawable.ic_bookmark_home
         BookmarkPlaceType.COMPANY -> R.drawable.ic_bookmark_company
         BookmarkPlaceType.SCHOOL -> R.drawable.ic_bookmark_school
-        BookmarkPlaceType.ETC -> R.drawable.ic_bookmark_other
+        BookmarkPlaceType.ETC -> R.drawable.ic_bookmark_pin_outline
     }
 
 @Preview(showBackground = true, name = "Place Bookmark Badge")

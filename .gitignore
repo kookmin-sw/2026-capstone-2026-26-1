@@ -53,19 +53,22 @@ android/**/*.dex
 # Adjust later to actual backend stack
 # =========================
 
-backend/.env
-backend/.env.*
+backend/.env.local
 backend/build/
 backend/out/
 backend/target/
 backend/node_modules/
-
+backend/AGENTS.md
+backend/.claude/plans
+backend/.claude/rules/*.local.md
+backend/.claude/settings.local.json
+backend/.gradle
+backend/build
+backend/out
+backend/gilbut-firebase-adminsdk.json
+# test data
+/backend/src/test/resources/test-data
 # Keep placeholder
 !backend/.gitkeep
 
-# env files
-.env
-.env.*
-
-# test data
-/backend/src/test/resources/test-data
+/reference

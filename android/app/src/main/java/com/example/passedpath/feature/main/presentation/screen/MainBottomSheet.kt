@@ -4,25 +4,9 @@ import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -31,34 +15,23 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.passedpath.R
 import com.example.passedpath.feature.daynote.presentation.screen.DayNoteBottomSheetContent
 import com.example.passedpath.feature.daynote.presentation.state.DayNoteUiState
 import com.example.passedpath.feature.place.presentation.screen.PlaceBottomSheetContent
 import com.example.passedpath.feature.place.presentation.state.PlaceUiState
 import com.example.passedpath.feature.summary.presentation.screen.DaySummaryBottomSheetContent
+import com.example.passedpath.feature.summary.presentation.state.SummaryDetailMetric
 import com.example.passedpath.feature.summary.presentation.state.DaySummaryUiState
-import com.example.passedpath.ui.theme.Gray100
-import com.example.passedpath.ui.theme.Gray200
-import com.example.passedpath.ui.theme.Gray400
-import com.example.passedpath.ui.theme.Gray500
-import com.example.passedpath.ui.theme.Gray700
-import com.example.passedpath.ui.theme.Gray900
-import com.example.passedpath.ui.theme.Green50
-import com.example.passedpath.ui.theme.Green100
-import com.example.passedpath.ui.theme.Green500
+import com.example.passedpath.ui.component.bottomsheet.BaseBottomSheetContainer
+import com.example.passedpath.ui.component.bottomsheet.BaseBottomSheetTabItem
+import com.example.passedpath.ui.component.bottomsheet.BaseBottomSheetTabRow
 import com.example.passedpath.ui.theme.PassedPathTheme
 
 @Composable
@@ -74,6 +47,7 @@ internal fun MainBottomSheet(
     onDayNoteSaveClick: () -> Unit,
     onDaySummaryLoadRequest: (String) -> Unit,
     onDaySummaryRetryClick: () -> Unit,
+    onDaySummaryMetricClick: (SummaryDetailMetric) -> Unit = {},
     selectedTab: MainBottomSheetTab,
     onTabSelected: (MainBottomSheetTab) -> Unit,
     onPlaceRetryClick: () -> Unit,
@@ -87,85 +61,68 @@ internal fun MainBottomSheet(
 ) {
     val focusManager = LocalFocusManager.current
     var isContentScrolled by remember(selectedTab) { mutableStateOf(false) }
+    val tabItems = remember {
+        MainBottomSheetTab.entries.map(MainBottomSheetTab::toBaseTabItem)
+    }
 
     LaunchedEffect(selectedTab) {
         isContentScrolled = false
     }
 
-    Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .fillMaxHeight(),
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-        color = Color.White,
-        tonalElevation = 0.dp,
-        shadowElevation = 14.dp
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = 10.dp)
-        ) {
-            BottomSheetHandle(
-                modifier = Modifier.align(Alignment.CenterHorizontally)
-            )
-            Spacer(modifier = Modifier.height(10.dp))
-            BottomSheetTabRow(
-                selectedTab = selectedTab,
+    BaseBottomSheetContainer(
+        modifier = modifier,
+        contentModifier = Modifier.clearFocusOnBackgroundTap {
+            focusManager.clearFocus(force = true)
+        },
+        isContentScrolled = isContentScrolled,
+        tabRow = {
+            BaseBottomSheetTabRow(
+                items = tabItems,
+                selectedKey = selectedTab,
                 onTabSelected = onTabSelected
             )
-            Spacer(modifier = Modifier.height(12.dp))
-            BottomSheetContentDivider(visible = isContentScrolled)
-            Box(
+        }
+    ) {
+        when (selectedTab) {
+            MainBottomSheetTab.PLACE -> PlaceBottomSheetContent(
+                selectedDateKey = selectedDateKey,
+                placeListUiState = placeUiState.placeList,
+                selectedPlaceId = selectedPlaceId,
+                onSelectedPlaceHandled = onSelectedPlaceHandled,
+                onRetryClick = onPlaceRetryClick,
+                onAddPlaceClick = onAddPlaceClick,
+                onReorderPlaces = onReorderPlaces,
+                onCloseReorderGuideBanner = onCloseReorderGuideBanner,
+                onEditPlaceClick = onEditPlaceClick,
+                onPlaceClick = onPlaceClick,
+                onDeletePlaceRequested = onDeletePlaceRequested,
+                onScrollStateChanged = { isContentScrolled = it },
+                isReorderSubmitting = placeUiState.isSubmitting,
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .clipToBounds()
-                    .clearFocusOnBackgroundTap {
-                        focusManager.clearFocus(force = true)
-                    }
-            ) {
-                when (selectedTab) {
-                    MainBottomSheetTab.PLACE -> PlaceBottomSheetContent(
-                        selectedDateKey = selectedDateKey,
-                        placeListUiState = placeUiState.placeList,
-                        selectedPlaceId = selectedPlaceId,
-                        onSelectedPlaceHandled = onSelectedPlaceHandled,
-                        onRetryClick = onPlaceRetryClick,
-                        onAddPlaceClick = onAddPlaceClick,
-                        onReorderPlaces = onReorderPlaces,
-                        onCloseReorderGuideBanner = onCloseReorderGuideBanner,
-                        onEditPlaceClick = onEditPlaceClick,
-                        onPlaceClick = onPlaceClick,
-                        onDeletePlaceRequested = onDeletePlaceRequested,
-                        onScrollStateChanged = { isContentScrolled = it },
-                        isReorderSubmitting = placeUiState.isSubmitting,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 20.dp)
-                    )
-                    MainBottomSheetTab.DAYNOTE -> DayNoteBottomSheetContent(
-                        uiState = dayNoteUiState,
-                        onTitleChanged = onDayNoteTitleChanged,
-                        onMemoChanged = onDayNoteMemoChanged,
-                        onSaveClick = onDayNoteSaveClick,
-                        onScrollStateChanged = { isContentScrolled = it },
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 20.dp)
-                    )
-                    MainBottomSheetTab.SUMMARY -> DaySummaryBottomSheetContent(
-                        selectedDateKey = selectedDateKey,
-                        uiState = daySummaryUiState,
-                        onLoadSummary = onDaySummaryLoadRequest,
-                        onRetryClick = onDaySummaryRetryClick,
-                        onScrollStateChanged = { isContentScrolled = it },
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 20.dp)
-                    )
-                }
-            }
+                    .fillMaxSize()
+                    .padding(horizontal = 20.dp)
+            )
+            MainBottomSheetTab.DAYNOTE -> DayNoteBottomSheetContent(
+                uiState = dayNoteUiState,
+                onTitleChanged = onDayNoteTitleChanged,
+                onMemoChanged = onDayNoteMemoChanged,
+                onSaveClick = onDayNoteSaveClick,
+                onScrollStateChanged = { isContentScrolled = it },
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 20.dp)
+            )
+            MainBottomSheetTab.SUMMARY -> DaySummaryBottomSheetContent(
+                selectedDateKey = selectedDateKey,
+                uiState = daySummaryUiState,
+                onLoadSummary = onDaySummaryLoadRequest,
+                onRetryClick = onDaySummaryRetryClick,
+                onScrollStateChanged = { isContentScrolled = it },
+                onMetricClick = onDaySummaryMetricClick,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 20.dp)
+            )
         }
     }
 }
@@ -187,81 +144,6 @@ private fun Modifier.clearFocusOnBackgroundTap(
     }
 }
 
-@Composable
-private fun BottomSheetHandle(
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier
-            .size(width = 36.dp, height = 3.dp)
-            .clip(CircleShape)
-            .background(Gray200)
-    )
-}
-
-@Composable
-private fun BottomSheetTabRow(
-    selectedTab: MainBottomSheetTab,
-    onTabSelected: (MainBottomSheetTab) -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .padding(horizontal = 16.dp)
-            .fillMaxWidth()
-            .height(58.dp)
-            .clip(RoundedCornerShape(20.dp))
-            .background(Gray100)
-            .padding(6.dp),
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        MainBottomSheetTab.entries.forEach { tab ->
-            val selected = tab == selectedTab
-            Surface(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-                    .clip(RoundedCornerShape(18.dp))
-                    .clickable { onTabSelected(tab) },
-                shape = RoundedCornerShape(18.dp),
-                color = if (selected) Color.White else Color.Transparent,
-                shadowElevation = if (selected) 5.dp else 0.dp
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxSize(),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        painter = painterResource(id = tab.iconResId()),
-                        contentDescription = null,
-                        tint = if (selected) Green500 else Gray400,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = stringResource(tab.titleResId()),
-                        color = if (selected) Gray900 else Gray400,
-                        fontWeight = if (selected) FontWeight.Bold else FontWeight.SemiBold,
-                        fontSize = 16.sp,
-                        style = androidx.compose.material3.MaterialTheme.typography.bodyMedium
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun BottomSheetContentDivider(visible: Boolean) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(1.dp)
-            .background(if (visible) Gray200 else Color.Transparent)
-    )
-}
-
 internal enum class MainBottomSheetTab {
     PLACE,
     DAYNOTE,
@@ -280,14 +162,16 @@ private fun MainBottomSheetTab.iconResId(): Int {
     return when (this) {
         MainBottomSheetTab.PLACE -> R.drawable.ic_bottom_sheet_place
         MainBottomSheetTab.DAYNOTE -> R.drawable.ic_bottom_sheet_memo
-        MainBottomSheetTab.SUMMARY -> R.drawable.ic_summary_day
+        MainBottomSheetTab.SUMMARY -> R.drawable.ic_day_summary
     }
 }
 
-internal enum class MainBottomSheetValue {
-    HIDDEN,
-    MIDDLE,
-    EXPANDED
+private fun MainBottomSheetTab.toBaseTabItem(): BaseBottomSheetTabItem<MainBottomSheetTab> {
+    return BaseBottomSheetTabItem(
+        key = this,
+        titleResId = titleResId(),
+        iconResId = iconResId()
+    )
 }
 
 @Preview(showBackground = true, heightDp = 720, name = "Main Bottom Sheet")
@@ -311,6 +195,7 @@ private fun MainBottomSheetPreview() {
                 onDayNoteSaveClick = {},
                 onDaySummaryLoadRequest = {},
                 onDaySummaryRetryClick = {},
+                onDaySummaryMetricClick = {},
                 selectedTab = MainBottomSheetTab.PLACE,
                 onTabSelected = {},
                 onPlaceRetryClick = {},

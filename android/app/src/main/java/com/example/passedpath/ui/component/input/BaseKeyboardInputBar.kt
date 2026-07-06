@@ -14,9 +14,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -26,11 +23,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.passedpath.R
 import com.example.passedpath.ui.theme.Gray100
 import com.example.passedpath.ui.theme.Gray400
 import com.example.passedpath.ui.theme.Gray500
@@ -75,7 +74,7 @@ fun BaseKeyboardInputBar(
                     modifier = Modifier.size(28.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Rounded.Close,
+                        painter = painterResource(id = R.drawable.ic_close),
                         contentDescription = null,
                         tint = Gray700,
                         modifier = Modifier.size(18.dp)
@@ -126,7 +125,7 @@ fun BaseKeyboardInputBar(
                         .background(if (enabled) Gray900 else Gray100)
                 ) {
                     Icon(
-                        imageVector = Icons.Rounded.Check,
+                        painter = painterResource(id = R.drawable.ic_check),
                         contentDescription = null,
                         tint = if (enabled) White else Gray500,
                         modifier = Modifier.size(19.dp)

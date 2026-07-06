@@ -10,8 +10,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -31,6 +29,7 @@ import com.example.passedpath.R
 import com.example.passedpath.ui.component.button.BaseButton
 import com.example.passedpath.ui.component.input.BaseInputButton
 import com.example.passedpath.ui.component.input.BaseInputField
+import com.example.passedpath.ui.component.place.PlaceNameMarker
 import com.example.passedpath.ui.theme.Gray400
 import com.example.passedpath.ui.theme.Gray900
 import com.example.passedpath.ui.theme.Green500
@@ -68,8 +67,16 @@ fun PlaceEditNameBottomSheet(
             modifier = Modifier
                 .navigationBarsPadding()
                 .clickable(onClick = onClearInputFocus)
-                .padding(start = 20.dp, top = 26.dp, end = 20.dp, bottom = 40.dp)
+                .padding(start = 20.dp, top = 34.dp, end = 20.dp, bottom = 40.dp)
         ) {
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                PlaceNameMarker(placeName = originalPlaceName)
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+
             Box(modifier = Modifier.fillMaxWidth()) {
                 Text(
                     text = stringResource(R.string.place_edit_title),
@@ -86,7 +93,7 @@ fun PlaceEditNameBottomSheet(
                         .size(34.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Rounded.Close,
+                        painter = painterResource(id = R.drawable.ic_close),
                         contentDescription = null,
                         tint = Gray400,
                         modifier = Modifier.size(22.dp)

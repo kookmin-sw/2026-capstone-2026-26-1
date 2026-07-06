@@ -6,17 +6,17 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Group
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -29,7 +29,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -45,34 +45,28 @@ import com.example.passedpath.ui.theme.Green500
 private data class BottomNavItem(
     val route: String,
     @StringRes val labelResId: Int,
-    val icon: ImageVector? = null,
-    val iconResId: Int? = null
+    val iconResId: Int
 )
 
 private val bottomNavItems = listOf(
     BottomNavItem(
         route = NavRoute.FRIENDS,
         labelResId = R.string.bottom_nav_friends,
-        icon = Icons.Filled.Group
+        iconResId = R.drawable.ic_group
     ),
     BottomNavItem(
         route = NavRoute.MAIN,
         labelResId = R.string.bottom_nav_main,
         iconResId = R.drawable.ic_bottom_nav_route
-    ),
-    BottomNavItem(
-        route = NavRoute.MYPAGE,
-        labelResId = R.string.bottom_nav_profile,
-        icon = Icons.Filled.Person
     )
 )
 
 private object BottomBarTokens {
-    val containerHeight = 84.dp
+    val containerHeight = 64.dp
     val containerColor = Color.White
     val shadowColor = Color.Black.copy(alpha = 0.08f)
     val shadowHeight = 10.dp
-    const val itemWidthRatio = 0.267f
+    const val itemWidthRatio = 0.32f
     val iconSize = 24.dp
     val labelTextSize = 12.sp
     val selectedColor = Green500
@@ -119,25 +113,12 @@ private fun BottomBarItem(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        when {
-            item.icon != null -> {
-                Icon(
-                    imageVector = item.icon,
-                    contentDescription = contentDescription,
-                    tint = if (selected) BottomBarTokens.selectedColor else BottomBarTokens.unselectedColor,
-                    modifier = Modifier.height(BottomBarTokens.iconSize)
-                )
-            }
-
-            item.iconResId != null -> {
-                Icon(
-                    painter = painterResource(item.iconResId),
-                    contentDescription = contentDescription,
-                    tint = if (selected) BottomBarTokens.selectedColor else BottomBarTokens.unselectedColor,
-                    modifier = Modifier.height(BottomBarTokens.iconSize)
-                )
-            }
-        }
+        Icon(
+            painter = painterResource(item.iconResId),
+            contentDescription = contentDescription,
+            tint = if (selected) BottomBarTokens.selectedColor else BottomBarTokens.unselectedColor,
+            modifier = Modifier.height(BottomBarTokens.iconSize)
+        )
 
         Text(
             text = stringResource(item.labelResId),
@@ -155,9 +136,14 @@ fun BottomBarScaffold(
     onBottomBarReselected: (String) -> Unit = {},
     content: @Composable (Modifier) -> Unit
 ) {
+    val density = LocalDensity.current
+    val navigationBarBottomInset = with(density) {
+        WindowInsets.navigationBars.getBottom(density).toDp()
+    }
+    val bottomBarHeight = BottomBarTokens.containerHeight + navigationBarBottomInset
     val contentModifier = Modifier
         .fillMaxSize()
-        .padding(bottom = BottomBarTokens.containerHeight)
+        .padding(bottom = bottomBarHeight)
 
     Box(modifier = Modifier.fillMaxSize()) {
         content(contentModifier)
@@ -165,46 +151,59 @@ fun BottomBarScaffold(
         NavigationBar(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .height(BottomBarTokens.containerHeight)
+                .height(bottomBarHeight)
                 .topShadow(),
-            containerColor = BottomBarTokens.containerColor
+            containerColor = BottomBarTokens.containerColor,
+            windowInsets = WindowInsets(0.dp)
         ) {
-            BoxWithConstraints(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .fillMaxHeight()
             ) {
-                val itemWidth = maxWidth * BottomBarTokens.itemWidthRatio
-
-                Row(
+                BoxWithConstraints(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .fillMaxHeight(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
+                        .height(BottomBarTokens.containerHeight)
                 ) {
-                    bottomNavItems.forEach { item ->
-                        val selected = item.route == selectedRoute
+                    val itemWidth = maxWidth * BottomBarTokens.itemWidthRatio
 
-                        BottomBarItem(
-                            item = item,
-                            selected = selected,
-                            width = itemWidth,
-                            onClick = {
-                                if (selected) {
-                                    onBottomBarReselected(item.route)
-                                } else {
-                                    navController.navigate(item.route) {
-                                        popUpTo(navController.graph.findStartDestination().id) {
-                                            saveState = true
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .fillMaxHeight(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        bottomNavItems.forEach { item ->
+                            val selected = item.route == selectedRoute
+
+                            BottomBarItem(
+                                item = item,
+                                selected = selected,
+                                width = itemWidth,
+                                onClick = {
+                                    if (selected) {
+                                        onBottomBarReselected(item.route)
+                                    } else {
+                                        navController.navigate(item.route) {
+                                            popUpTo(navController.graph.findStartDestination().id) {
+                                                saveState = true
+                                            }
+                                            launchSingleTop = true
+                                            restoreState = true
                                         }
-                                        launchSingleTop = true
-                                        restoreState = true
                                     }
                                 }
-                            }
-                        )
+                            )
+                        }
                     }
                 }
+
+                Spacer(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(navigationBarBottomInset)
+                )
             }
         }
     }

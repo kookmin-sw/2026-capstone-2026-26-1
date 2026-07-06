@@ -11,24 +11,18 @@ data class PlaceMarkerUiState(
     val orderIndex: Int
 )
 
-data class RoutePolylineSegmentUiState(
-    val start: CoordinateUiState,
-    val end: CoordinateUiState
-)
-
 data class SelectedDayRouteUiState(
     val dateKey: String,
     val title: String = "",
     val memo: String = "",
     val isBookmarked: Boolean = false,
-    val polylinePoints: List<CoordinateUiState> = emptyList(),
-    val routeSegments: List<RoutePolylineSegmentUiState> = emptyList(),
+    val mapPolylinePoints: List<CoordinateUiState> = emptyList(),
     val totalDistanceKm: Double = 0.0,
     val pathPointCount: Int = 0,
     val markerPlaces: List<PlaceMarkerUiState> = emptyList()
 ) {
     val hasLocationData: Boolean
-        get() = polylinePoints.isNotEmpty()
+        get() = mapPolylinePoints.isNotEmpty()
 
     // Route owns the initial marker seed. Place-sheet-specific read state will split later.
     val places: List<PlaceMarkerUiState>
@@ -58,8 +52,7 @@ sealed interface MainRouteModeUiState {
         override val isRouteLoading: Boolean = false,
         override val isRouteEmpty: Boolean = false,
         override val routeEmptyMessage: String? = null,
-        override val routeErrorMessage: String? = null,
-        val isPlaybackEntryVisible: Boolean = true
+        override val routeErrorMessage: String? = null
     ) : MainRouteModeUiState
 }
 
@@ -67,5 +60,4 @@ sealed interface RouteUiAction {
     data object RefreshTodayRoute : RouteUiAction
     data object ToggleTracking : RouteUiAction
     data object RetryPastRoute : RouteUiAction
-    data object EnterPastPlayback : RouteUiAction
 }

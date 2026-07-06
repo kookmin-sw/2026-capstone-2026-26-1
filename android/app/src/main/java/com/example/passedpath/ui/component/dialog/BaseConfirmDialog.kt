@@ -1,7 +1,6 @@
 package com.example.passedpath.ui.component.dialog
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,10 +14,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -26,11 +23,10 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.passedpath.ui.component.button.BaseButton
 import com.example.passedpath.ui.component.button.BaseButtonVariant
+import com.example.passedpath.ui.component.place.PlaceNameMarker
 import com.example.passedpath.ui.theme.Gray300
 import com.example.passedpath.ui.theme.Gray400
 import com.example.passedpath.ui.theme.Gray900
-import com.example.passedpath.ui.theme.Green50
-import com.example.passedpath.ui.theme.Green500
 import com.example.passedpath.ui.theme.PassedPathTheme
 import com.example.passedpath.ui.theme.White
 
@@ -133,30 +129,10 @@ private fun BaseConfirmDialogWithTopContentPreview() {
             dismissText = "취소",
             confirmText = "삭제",
             topContent = {
-                ConfirmDialogPlaceNamePill(placeName = "국민대학교 복지관")
+                PlaceNameMarker(placeName = "국민대학교 복지관")
             },
             onDismiss = {},
             onConfirm = {}
-        )
-    }
-}
-
-@Composable
-private fun ConfirmDialogPlaceNamePill(placeName: String) {
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(50))
-            .background(Green50)
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = placeName,
-            color = Green500,
-            style = MaterialTheme.typography.bodyLarge,
-            fontWeight = FontWeight.Bold,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
         )
     }
 }

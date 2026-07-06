@@ -9,7 +9,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.passedpath.ui.theme.Gray100
 import com.example.passedpath.ui.theme.Green100
@@ -18,6 +20,9 @@ import com.example.passedpath.ui.theme.Green50
 @Composable
 fun BaseBottomBanner(
     modifier: Modifier = Modifier,
+    cornerRadius: Dp = 22.dp,
+    borderColor: Color? = Gray100,
+    shadowElevation: Dp = 0.dp,
     content: @Composable () -> Unit
 ) {
     Box(
@@ -26,11 +31,11 @@ fun BaseBottomBanner(
     ) {
         Surface(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(22.dp),
+            shape = RoundedCornerShape(cornerRadius),
             color = Green50,
             tonalElevation = 0.dp,
-            shadowElevation = 10.dp,
-            border = BorderStroke(1.dp, Gray100)
+            shadowElevation = shadowElevation,
+            border = borderColor?.let { BorderStroke(1.dp, it) }
         ) {
             Box(
                 modifier = Modifier.padding(horizontal = 18.dp, vertical = 4.dp)

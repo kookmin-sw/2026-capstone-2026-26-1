@@ -42,6 +42,11 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.pow
+import kotlin.math.sin
+import kotlin.math.sqrt
 
 class MainViewModel(
     private val locationAccessStateResolver: LocationAccessStateResolver,
@@ -51,11 +56,13 @@ class MainViewModel(
     private val observeRecentTrackingEvents: ObserveRecentTrackingEventsUseCase,
     private val trackingServiceStateReader: LocationTrackingServiceStateReader,
     private val startTracking: () -> Unit,
-    private val stopTracking: () -> Unit
+    private val stopTracking: () -> Unit,
+    private val currentTimeMillis: () -> Long = { System.currentTimeMillis() }
 ) : ViewModel() {
 
     private val initialDateKey = initialDateKeyProvider()
     private var routeLoadJob: Job? = null
+    private var lastDisplayedLocationUpdatedAtMillis: Long? = null
 
     private val _uiState = MutableStateFlow(
         MainUiState(
@@ -70,6 +77,9 @@ class MainViewModel(
         )
     )
     val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
+
+    private val _currentLocationState = MutableStateFlow<CoordinateUiState?>(null)
+    val currentLocationState: StateFlow<CoordinateUiState?> = _currentLocationState.asStateFlow()
 
     init {
         refreshPermissionState()
@@ -91,11 +101,14 @@ class MainViewModel(
             "refreshPermissionState result=$permissionState"
         )
 
+        if (permissionState == LocationPermissionUiState.DENIED) {
+            clearCurrentLocation()
+        }
+
         _uiState.update { currentState ->
             val nextState = if (permissionState == LocationPermissionUiState.DENIED) {
                 currentState.copy(
                     permissionState = permissionState,
-                    currentLocation = null,
                     pendingCameraIntent = null
                 )
             } else {
@@ -119,18 +132,29 @@ class MainViewModel(
     }
 
     fun updateCurrentLocation(location: CoordinateUiState) {
-        _uiState.update { currentState ->
-            currentState.copy(
-                currentLocation = location,
-                pendingCameraIntent = when {
-                    shouldRequestCurrentLocationCamera(
-                        currentRouteHasLocationData = currentState.selectedRoute.hasLocationData,
-                        previousLocation = currentState.currentLocation
-                    ) -> MainCameraIntent.CenterCurrentLocation
+        if (_uiState.value.permissionState == LocationPermissionUiState.DENIED) {
+            clearCurrentLocation()
+            return
+        }
 
-                    else -> currentState.pendingCameraIntent
-                }
+        val nowMillis = currentTimeMillis()
+        val previousLocation = _currentLocationState.value
+        if (!shouldDisplayCurrentLocationUpdate(previousLocation, nowMillis, location)) {
+            return
+        }
+
+        _currentLocationState.value = location
+        lastDisplayedLocationUpdatedAtMillis = nowMillis
+
+        if (
+            shouldRequestCurrentLocationCamera(
+                currentRouteHasLocationData = _uiState.value.selectedRoute.hasLocationData,
+                previousLocation = previousLocation
             )
+        ) {
+            _uiState.update { currentState ->
+                currentState.copy(pendingCameraIntent = MainCameraIntent.CenterCurrentLocation)
+            }
         }
     }
 
@@ -276,7 +300,6 @@ class MainViewModel(
         when (request) {
             is MainRouteActionRequest.ReloadRoute -> reloadRoute(request)
             MainRouteActionRequest.ToggleTracking -> toggleTracking()
-            MainRouteActionRequest.OpenPastPlayback -> Unit
         }
     }
 
@@ -322,7 +345,7 @@ class MainViewModel(
             val nextCameraIntent = resolveCameraIntentAfterRouteState(
                 currentDateKey = currentState.selectedDateKey,
                 currentRouteHasLocationData = currentState.selectedRoute.hasLocationData,
-                currentLocation = currentState.currentLocation,
+                currentLocation = _currentLocationState.value,
                 routeState = routeState
             )
             currentState.copy(
@@ -396,6 +419,42 @@ class MainViewModel(
     private fun userTrackingEnabled(): Boolean {
         return trackingServiceStateReader.isTrackingEnabledByUser()
     }
+
+    private fun clearCurrentLocation() {
+        _currentLocationState.value = null
+        lastDisplayedLocationUpdatedAtMillis = null
+    }
+
+    private fun shouldDisplayCurrentLocationUpdate(
+        previousLocation: CoordinateUiState?,
+        nowMillis: Long,
+        nextLocation: CoordinateUiState
+    ): Boolean {
+        val lastUpdatedAtMillis = lastDisplayedLocationUpdatedAtMillis
+        if (previousLocation == null || lastUpdatedAtMillis == null) return true
+
+        val elapsedMillis = nowMillis - lastUpdatedAtMillis
+        if (elapsedMillis < CurrentLocationUiMinUpdateIntervalMillis) return false
+
+        return distanceBetweenMeters(previousLocation, nextLocation) >= CurrentLocationUiMinDistanceMeters
+    }
+}
+
+private fun distanceBetweenMeters(
+    start: CoordinateUiState,
+    end: CoordinateUiState
+): Double {
+    val startLatitudeRadians = Math.toRadians(start.latitude)
+    val endLatitudeRadians = Math.toRadians(end.latitude)
+    val deltaLatitudeRadians = Math.toRadians(end.latitude - start.latitude)
+    val deltaLongitudeRadians = Math.toRadians(end.longitude - start.longitude)
+
+    val haversine =
+        sin(deltaLatitudeRadians / 2).pow(2) +
+            cos(startLatitudeRadians) * cos(endLatitudeRadians) *
+            sin(deltaLongitudeRadians / 2).pow(2)
+    val angularDistance = 2 * atan2(sqrt(haversine), sqrt(1 - haversine))
+    return EarthRadiusMeters * angularDistance
 }
 
 private fun MainRouteModeUiState.withTrackingState(isTracking: Boolean): MainRouteModeUiState {
@@ -408,6 +467,10 @@ private fun MainRouteModeUiState.withTrackingState(isTracking: Boolean): MainRou
 private fun todayDateKey(): String {
     return SimpleDateFormat("yyyy-MM-dd", Locale.KOREA).format(Date())
 }
+
+private const val CurrentLocationUiMinDistanceMeters = 10.0
+private const val CurrentLocationUiMinUpdateIntervalMillis = 5_000L
+private const val EarthRadiusMeters = 6_371_000.0
 
 class MainViewModelFactory(
     private val appContainer: AppContainer

@@ -1,13 +1,13 @@
 ﻿package com.example.passedpath.feature.route.presentation.mapper
 
-import com.example.passedpath.feature.locationtracking.domain.model.DailyPath
 import com.example.passedpath.feature.locationtracking.domain.model.DayRouteDetail
 import com.example.passedpath.feature.locationtracking.domain.model.DayRoutePlace
+import com.example.passedpath.feature.locationtracking.domain.model.LocalDayRouteSnapshot
 import com.example.passedpath.feature.locationtracking.domain.model.RoutePoint
 import com.example.passedpath.feature.locationtracking.domain.model.TrackedLocation
+import com.example.passedpath.feature.locationtracking.domain.policy.MapPolylineSimplificationPolicy
 import com.example.passedpath.feature.route.presentation.state.MainRouteModeUiState
 import com.example.passedpath.feature.route.presentation.state.PlaceMarkerUiState
-import com.example.passedpath.feature.route.presentation.state.RoutePolylineSegmentUiState
 import com.example.passedpath.feature.route.presentation.state.SelectedDayRouteUiState
 import com.example.passedpath.ui.state.CoordinateUiState
 
@@ -90,15 +90,13 @@ internal fun createPastRouteMode(
     )
 }
 
-internal fun DailyPath.toSelectedDayRouteUiState(): SelectedDayRouteUiState {
-    val polylinePoints = points.map(TrackedLocation::toCoordinateUiState)
+internal fun LocalDayRouteSnapshot.toSelectedDayRouteUiState(): SelectedDayRouteUiState {
     return SelectedDayRouteUiState(
         dateKey = dateKey,
         title = "",
         memo = "",
         isBookmarked = false,
-        polylinePoints = polylinePoints,
-        routeSegments = polylinePoints.toRoutePolylineSegments(),
+        mapPolylinePoints = points.toTrackedMapPolylinePoints(),
         totalDistanceKm = totalDistanceMeters / 1000.0,
         pathPointCount = pathPointCount,
         markerPlaces = emptyList()
@@ -107,34 +105,30 @@ internal fun DailyPath.toSelectedDayRouteUiState(): SelectedDayRouteUiState {
 
 internal fun createTodaySelectedDayRouteUiState(
     dateKey: String,
-    dailyPath: DailyPath?,
+    routeSnapshot: LocalDayRouteSnapshot?,
     remoteRouteDetail: DayRouteDetail?
 ): SelectedDayRouteUiState {
     val remoteRouteUiState = remoteRouteDetail?.toSelectedDayRouteUiState()
-    val polylinePoints = dailyPath?.points?.map(TrackedLocation::toCoordinateUiState).orEmpty()
 
     return SelectedDayRouteUiState(
         dateKey = dateKey,
         title = remoteRouteUiState?.title.orEmpty(),
         memo = remoteRouteUiState?.memo.orEmpty(),
         isBookmarked = remoteRouteUiState?.isBookmarked ?: false,
-        polylinePoints = polylinePoints,
-        routeSegments = polylinePoints.toRoutePolylineSegments(),
-        totalDistanceKm = (dailyPath?.totalDistanceMeters ?: 0.0) / 1000.0,
-        pathPointCount = dailyPath?.pathPointCount ?: 0,
+        mapPolylinePoints = routeSnapshot?.points?.toTrackedMapPolylinePoints().orEmpty(),
+        totalDistanceKm = (routeSnapshot?.totalDistanceMeters ?: 0.0) / 1000.0,
+        pathPointCount = routeSnapshot?.pathPointCount ?: 0,
         markerPlaces = remoteRouteUiState?.markerPlaces.orEmpty()
     )
 }
 
 internal fun DayRouteDetail.toSelectedDayRouteUiState(): SelectedDayRouteUiState {
-    val polylinePoints = polylinePoints.map(RoutePoint::toCoordinateUiState)
     return SelectedDayRouteUiState(
         dateKey = dateKey,
         title = title,
         memo = memo,
         isBookmarked = isBookmarked,
-        polylinePoints = polylinePoints,
-        routeSegments = polylinePoints.toRoutePolylineSegments(),
+        mapPolylinePoints = polylinePoints.toRouteMapPolylinePoints(),
         totalDistanceKm = totalDistanceKm,
         pathPointCount = pathPointCount,
         markerPlaces = places.map(DayRoutePlace::toPlaceMarkerUiState)
@@ -176,15 +170,22 @@ private fun MainRouteModeUiState.updateRouteSnapshot(
     }
 }
 
-private fun List<CoordinateUiState>.toRoutePolylineSegments(): List<RoutePolylineSegmentUiState> {
-    if (size < 2) return emptyList()
+private fun List<TrackedLocation>.toTrackedMapPolylinePoints(): List<CoordinateUiState> {
+    val indexes = MapPolylineSimplificationPolicy.simplifyIndexes(
+        size = size,
+        latitudeAt = { index -> this[index].latitude },
+        longitudeAt = { index -> this[index].longitude }
+    )
+    return indexes.map { index -> this[index].toCoordinateUiState() }
+}
 
-    return zipWithNext { start, end ->
-        RoutePolylineSegmentUiState(
-            start = start,
-            end = end
-        )
-    }
+private fun List<RoutePoint>.toRouteMapPolylinePoints(): List<CoordinateUiState> {
+    val indexes = MapPolylineSimplificationPolicy.simplifyIndexes(
+        size = size,
+        latitudeAt = { index -> this[index].latitude },
+        longitudeAt = { index -> this[index].longitude }
+    )
+    return indexes.map { index -> this[index].toCoordinateUiState() }
 }
 
 private fun TrackedLocation.toCoordinateUiState(): CoordinateUiState {

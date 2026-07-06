@@ -15,8 +15,7 @@ fun MainRouteSection(
             onRouteAction = onRouteAction
         )
         is MainRouteModeUiState.Past -> PastRouteSection(
-            routeMode = routeMode,
-            onRouteAction = onRouteAction
+            routeMode = routeMode
         )
     }
 }

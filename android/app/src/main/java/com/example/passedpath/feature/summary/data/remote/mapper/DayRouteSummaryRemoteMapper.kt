@@ -4,15 +4,17 @@ import com.example.passedpath.feature.summary.data.remote.dto.DayRouteSummaryRes
 import com.example.passedpath.feature.summary.domain.model.DayRouteSummary
 
 internal fun DayRouteSummaryResponseDto.toDayRouteSummary(dateKey: String): DayRouteSummary {
-    val seconds = totalOutingSeconds ?: 0L
     return DayRouteSummary(
         dateKey = dateKey,
         outingTime = outingTime.normalizedOrNull(),
         enterHomeTime = enterHomeTime.normalizedOrNull(),
-        totalOutingCount = totalOutingCount ?: 0,
-        totalOutingSeconds = seconds,
+        totalOutingCount = totalOutingCount,
+        totalOutingSeconds = totalOutingSeconds,
         totalOutingDurationText = totalOutingDurationText.normalizedOrNull()
-            ?: seconds.toDurationText()
+            ?: totalOutingSeconds?.toDurationText(),
+        visitedDongNames = visitedDongName.orEmpty()
+            .map(String::trim)
+            .filter(String::isNotEmpty)
     )
 }
 

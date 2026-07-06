@@ -20,21 +20,18 @@ class RouteActionUiStateFactoryTest {
         val result = buildRouteActionUiState(routeMode)
 
         assertTrue(result.showTrackingToggle)
-        assertFalse(result.showPlayback)
         assertTrue(result.isTrackingEnabled)
     }
 
     @Test
-    fun `past route exposes playback action only`() {
+    fun `past route exposes no floating route actions`() {
         val routeMode = MainRouteModeUiState.Past(
-            route = SelectedDayRouteUiState(dateKey = "2026-04-18"),
-            isPlaybackEntryVisible = true
+            route = SelectedDayRouteUiState(dateKey = "2026-04-18")
         )
 
         val result = buildRouteActionUiState(routeMode)
 
         assertFalse(result.showTrackingToggle)
-        assertTrue(result.showPlayback)
         assertFalse(result.isTrackingEnabled)
     }
 }

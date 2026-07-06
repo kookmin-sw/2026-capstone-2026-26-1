@@ -1,14 +1,13 @@
 package com.example.passedpath.interceptor
 
 import android.util.Log
-import com.example.passedpath.data.datastore.AuthSessionStorage
+import com.example.passedpath.data.datastore.AuthTokenStore
 import com.google.gson.JsonParser
-import kotlinx.coroutines.runBlocking
 import okhttp3.Interceptor
 import okhttp3.Response
 
 class AuthInterceptor(
-    private val sessionStorage: AuthSessionStorage,
+    private val tokenStore: AuthTokenStore,
     private val attachAuthorizationToRefreshRequest: Boolean = false
 ) : Interceptor {
 
@@ -29,9 +28,7 @@ class AuthInterceptor(
             return chain.proceed(originalRequest)
         }
 
-        val accessToken = runBlocking {
-            sessionStorage.getAccessToken()
-        }
+        val accessToken = tokenStore.getCachedAccessToken()
 
         android.util.Log.d(
             logTag,

@@ -1,77 +1,121 @@
-[![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/Lvs6kcL8)
-# Welcome to GitHub
+<div align="center">
 
-캡스톤 팀 생성을 축하합니다.
+<h1>
+  <img src="docs/images/길벗 로고.png" alt="길벗 로고" width="36" align="absmiddle">
+  길벗 - 위치 기반 기억 보조 • 보호자 안심 확인 서비스 
+</h1>
 
-## 팀소개 및 페이지를 꾸며주세요.
+</div>
 
-- 프로젝트 소개
-  - 프로젝트 설치방법 및 데모, 사용방법, 프리뷰등을 readme.md에 작성.
-  - Api나 사용방법등 내용이 많을경우 wiki에 꾸미고 링크 추가.
+<div align="center">
 
-- 팀페이지 꾸미기
-  - 프로젝트 소개 및 팀원 소개
-  - index.md 예시보고 수정.
+### 당신의 하루를 대신 기억합니다
 
-- GitHub Pages 리파지토리 Settings > Options > GitHub Pages 
-  - Source를 marster branch
-  - Theme Chooser에서 태마선택
-  - 수정후 팀페이지 확인하여 점검.
+위치 데이터를 수집해 사용자의 하루 경로를 기록 · 가공하여 개인 사용자에겐 **기억 보조**를, 보호자에겐 **안심 확인**을 제공합니다.
 
-**팀페이지 주소** -> https://kookmin-sw.github.io/ '{{자신의 리파지토리 아이디}}'
+<img src="docs/images/메인컨셉.png" alt="길벗 메인컨셉">
 
-**예시)** 2023년 0조  https://kookmin-sw.github.io/capstone-2023-00/
+<br>
 
+위치 데이터를 분석하여 15분 이상 **체류한 장소**의 상호명과 **외출 • 귀가 시각**을 자동 저장합니다.
+<br>
+이를 통해 사용자는 자신의 생활 패턴을 쉽게 확인할 수 있으며, 보호자는 일상 흐름을 안심하고 살펴볼 수 있습니다.
 
-## 내용에 아래와 같은 내용들을 추가하세요.
+</div>
 
-### 1. 프로잭트 소개
+<br>
 
-프로젝트
+## 주요 기능
 
-### 2. 소개 영상
+### 1️⃣ 이동 경로 기록 및 조회
 
-프로젝트 소개하는 영상을 추가하세요
+- 백그라운드 위치 수집
+- 날짜별 이동경로 조회
+- 위치수집 on/off
+  <img src="docs/images/이동경로 기록 및 조회.png" alt="나의길 화면이미지">
 
-### 3. 팀 소개
+### 2️⃣ 기억 보조를 위한 개인 기록 도구
 
-팀을 소개하세요.
+- 하루 단위 메모 작성
+- 학교, 회사 등 즐겨찾는 장소 등록
+- 방문장소 직접 추가
+- 날짜별 즐겨찾기
+  <img src="docs/images/개인 기록 도구.png" alt="함께가는길 화면이미지">
 
-팀원정보 및 담당이나 사진 및 SNS를 이용하여 소개하세요.
+### 3️⃣ 위치 데이터 분석
 
-### 4. 사용법
+- 위치 데이터를 분석하여 사용자에게 의미있는 정보로 변환
+- 분석 기반 15분 이상 체류한 장소 상호명 및 체류 시간 저장
+- 분석 기반 외출/귀가 시각 저장
+  <img src="docs/images/위치 데이터 분석.png" alt="장소저장 화면이미지">
 
-소스코드제출시 설치법이나 사용법을 작성하세요.
+### 4️⃣ 보호자 안심 확인
 
-### 5. 기타
+- 보호 대상자의 실시간 위치 확인
+- 보호 대상자의 날짜별 이동 경로, 외출/귀가 시각, 체류 장소, 방문한 지역 등 확인
+  <img src="docs/images/보호자 안심 기능.png" alt="하루요약 화면이미지">
 
-추가적인 내용은 자유롭게 작성하세요.
+### 5️⃣ 요약 통계
 
+- 기간별(1주/1개월/6개월/1년) 생활패턴 지표 변화량 파악
+- 기간별 가장 많이 방문한 장소 및 지역 top 5 확인
+  <img src="docs/images/요약통계.png" alt="요약통계 화면이미지">
 
-## Markdown을 사용하여 내용꾸미기
+<br>
 
-Markdown은 작문을 스타일링하기위한 가볍고 사용하기 쉬운 구문입니다. 여기에는 다음을위한 규칙이 포함됩니다.
+## 시스템 아키텍처
 
-```markdown
-Syntax highlighted code block
+<div align="center">
 
-# Header 1
-## Header 2
-### Header 3
+![img.png](docs/images/img_6.png)
+</div>
 
-- Bulleted
-- List
+<br>
 
-1. Numbered
-2. List
+## 실행 방법
 
-**Bold** and _Italic_ and `Code` text
+### 사전 요구사항
 
-[Link](url) and ![Image](src)
+- MySQL (기본 포트 `3306`, `capstone` 데이터베이스)
+- Redis (기본 포트 `6379`)
+- Android Studio + Android SDK (API 36), 에뮬레이터 또는 실기기 (API 24 이상)
+
+### 1. 백엔드 실행
+
+```bash
+cd backend
 ```
 
-자세한 내용은 [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
+`backend/.env.example`을 참고해 `backend/.env.local` 파일을 생성하고 값을 채워 넣습니다.
 
-### Support or Contact
+애플리케이션을 실행합니다.
 
-readme 파일 생성에 추가적인 도움이 필요하면 [도움말](https://help.github.com/articles/about-readmes/) 이나 [contact support](https://github.com/contact) 을 이용하세요.
+```bash
+./gradlew bootRun
+```
+
+실행 후 아래 주소에서 API 문서를 확인할 수 있습니다.
+
+- Swagger UI: http://localhost:8080/swagger-ui.html
+
+### 2. Android 앱 실행
+
+`android` 디렉토리의 `local.properties.example`을 참고하여 `android/local.properties` 파일을 생성합니다.
+
+```properties
+sdk.dir=<Android SDK 경로>
+kakao.nativeAppKey=<Kakao Native App Key>
+app.baseUrl=<백엔드 서버 주소, 예: http://<PC-IP>:8080/>
+google.mapsApiKey=<Google Maps API Key>
+```
+
+> 실기기 또는 에뮬레이터에서 로컬 백엔드와 통신하려면 `app.baseUrl`을 `localhost`가 아닌 PC의 IP 주소로 설정해야 합니다.
+
+Android Studio로 `android` 디렉토리를 열어 실행하거나, CLI로 아래 명령을 사용합니다.
+
+```bash
+cd android
+./gradlew installDebug
+```
+
+<br>

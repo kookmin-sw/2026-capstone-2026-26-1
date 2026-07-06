@@ -1,0 +1,1655 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta content="길벗 - 위치 기반 기억 보조 및 보호자 안심 확인 서비스" name="description">
+    <title>길벗</title>
+    <style>
+        :root {
+            --teal: #0f6970;
+            --teal-soft: #1f9ba4;
+            --sky-pale: #e9fbfb;
+            --mint: #c9f3f1;
+            --ink: #173247;
+            --white: #ffffff;
+            --shadow: 0 18px 50px rgba(15, 105, 112, 0.14);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            color: var(--ink);
+            font-family: "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #e4f7f6;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .site-header {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            padding: 16px 0;
+            background: rgba(255, 255, 255, 0.58);
+            backdrop-filter: blur(18px);
+            border-bottom: 1px solid rgba(15, 105, 112, 0.08);
+            transform: translateY(0);
+            transition: transform 0.32s ease, opacity 0.32s ease;
+            will-change: transform;
+        }
+
+        .site-header.is-hidden {
+            opacity: 0;
+            transform: translateY(-100%);
+        }
+
+        .nav {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: min(1120px, calc(100% - 40px));
+            margin: 0 auto;
+        }
+
+        .brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--teal);
+            font-weight: 900;
+            letter-spacing: 0;
+        }
+
+        .brand-mark {
+            width: 38px;
+            height: 38px;
+            object-fit: contain;
+            filter: drop-shadow(0 10px 18px rgba(15, 105, 112, 0.18));
+        }
+
+        .nav-links {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 22px;
+            color: #466172;
+            font-size: 0.94rem;
+            font-weight: 750;
+        }
+
+        main {
+            background: radial-gradient(circle at 14% 22%, rgba(255, 255, 255, 0.88), transparent 28rem),
+            radial-gradient(circle at 86% 34%, rgba(255, 255, 255, 0.62), transparent 26rem),
+            radial-gradient(circle at 20% 72%, rgba(183, 232, 234, 0.34), transparent 32rem),
+            linear-gradient(180deg, #ffffff 0%, #f7ffff 12%, #eafafa 34%, #d8f3f2 68%, #c9eceb 100%);
+        }
+
+        .hero {
+            position: relative;
+            min-height: auto;
+            padding: 40px 0 104px;
+            background: radial-gradient(circle at 18% 30%, rgba(255, 255, 255, 0.18), transparent 18rem),
+            radial-gradient(circle at 86% 22%, rgba(255, 255, 255, 0.16), transparent 15rem),
+            linear-gradient(120deg, #b7e8ea 0%, #cef3f2 48%, #b6e8ea 100%);
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: "";
+            position: absolute;
+            left: -7%;
+            right: -7%;
+            bottom: -78px;
+            height: 154px;
+            border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.82) 0%, rgba(255, 255, 255, 0.5) 48%, rgba(255, 255, 255, 0) 100%);
+            filter: blur(16px);
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .hero::after {
+            content: "";
+            position: absolute;
+            left: -5%;
+            right: -5%;
+            bottom: -64px;
+            height: 128px;
+            border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+            background: #ffffff;
+            z-index: 1;
+        }
+
+        .hero-frame {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            margin: 0 auto;
+            padding: 0;
+            border: 0;
+            border-radius: 0;
+            background: transparent;
+            box-shadow: none;
+            overflow: hidden;
+        }
+
+        .main-image {
+            display: block;
+            width: auto;
+            max-width: min(100%, 880px);
+            height: auto;
+            max-height: 34vh;
+            margin: 0 auto;
+            object-fit: contain;
+            object-position: center center;
+            border-radius: 0;
+        }
+
+        .hero-mascot {
+            position: absolute;
+            z-index: 4;
+            right: clamp(110px, 16vw, 260px);
+            bottom: 15px;
+            width: clamp(120px, 12vw, 210px);
+            height: auto;
+            object-fit: contain;
+            pointer-events: none;
+        }
+
+        .concept {
+            position: relative;
+            padding: 72px 0 104px;
+            background: transparent;
+            overflow: hidden;
+        }
+
+        .concept::before {
+            content: "";
+            position: absolute;
+            left: 50%;
+            bottom: 15%;
+            width: clamp(240px, 20vw, 500px);
+            aspect-ratio: 2.3;
+            transform: translateX(-50%);
+            border-radius: 999px;
+            background: radial-gradient(circle at 40% 50%, rgba(172, 232, 234, 0.46), transparent 48%),
+            radial-gradient(circle at 66% 52%, rgba(116, 204, 209, 0.34), transparent 58%);
+            filter: blur(22px);
+            opacity: 0.78;
+            pointer-events: none;
+        }
+
+        .concept-image {
+            position: relative;
+            z-index: 1;
+            display: block;
+            width: min(100% - 40px, 680px);
+            height: auto;
+            max-height: 38vh;
+            margin: 0 auto;
+            object-fit: contain;
+        }
+
+        .features {
+            padding: 128px 0 164px;
+            background: radial-gradient(circle at 12% 18%, rgba(255, 255, 255, 0.86), transparent 26rem),
+            radial-gradient(circle at 88% 42%, rgba(130, 215, 219, 0.22), transparent 30rem),
+            radial-gradient(circle at 18% 82%, rgba(255, 255, 255, 0.7), transparent 26rem),
+            linear-gradient(180deg, #ffffff 0%, #f5ffff 16%, #d7f2f1 50%, #f4ffff 84%, #ffffff 100%);
+            color: var(--ink);
+        }
+
+        .features-head {
+            width: min(980px, calc(100% - 40px));
+            margin: 0 auto 42px;
+            text-align: left;
+        }
+
+        .features-label {
+            margin: 0 0 32px;
+        }
+
+        .section-tag {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: fit-content;
+            min-height: 42px;
+            padding: 0 18px;
+            border-radius: 999px;
+            color: #ffffff;
+            background: linear-gradient(135deg, var(--teal), var(--teal-soft));
+            box-shadow: 0 14px 30px rgba(15, 105, 112, 0.18);
+            font-size: clamp(0.98rem, 1.35vw, 1.16rem);
+            font-weight: 900;
+            line-height: 1;
+            white-space: nowrap;
+        }
+
+        .features-subtitle {
+            max-width: 560px;
+            margin: 14px 0 0;
+            color: #4b6070;
+            font-size: 1.08rem;
+            font-weight: 700;
+            line-height: 1.7;
+        }
+
+        .feature-list {
+            display: grid;
+            grid-template-columns: 0.92fr 1.08fr 0.92fr;
+            align-items: start;
+            gap: 28px;
+            margin: 0 auto;
+        }
+
+        .feature-group {
+            width: min(1180px, calc(100% - 40px));
+            margin: 0 auto;
+        }
+
+        .feature-group + .feature-group {
+            margin-top: 76px;
+            padding-top: 70px;
+            border-top: 1px solid rgba(15, 105, 112, 0.12);
+        }
+
+        .feature-list.companion-list {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            align-items: start;
+            width: min(860px, 100%);
+            margin: 0 auto;
+        }
+
+        .feature-panel {
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-self: start;
+            padding: clamp(18px, 2.4vw, 28px);
+            border-radius: 32px;
+            background: radial-gradient(circle at 50% 12%, rgba(191, 236, 238, 0.36), transparent 18rem),
+            linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(245, 255, 255, 0.88));
+            border: 1px solid rgba(15, 105, 112, 0.1);
+            box-shadow: 0 22px 60px rgba(15, 105, 112, 0.12);
+            animation: floatFeature 6s ease-in-out infinite;
+        }
+
+        .feature-panel:nth-child(2) {
+            background: radial-gradient(circle at 50% 10%, rgba(15, 105, 112, 0.08), transparent 18rem),
+            linear-gradient(180deg, #ffffff, #ecfbfb);
+            animation-delay: -1.6s;
+        }
+
+        .feature-panel:nth-child(3) {
+            animation-delay: -3.2s;
+        }
+
+        .feature-image {
+            display: block;
+            width: auto;
+            max-width: 100%;
+            max-height: clamp(260px, 34vw, 380px);
+            height: auto;
+            margin: 0 auto;
+            object-fit: contain;
+            filter: drop-shadow(0 20px 32px rgba(20, 45, 65, 0.12));
+        }
+
+        .feature-caption {
+            margin: 16px 0 0;
+            text-align: center;
+        }
+
+        .feature-caption h2,
+        .feature-caption h3 {
+            margin: 0;
+            color: var(--teal);
+            font-size: clamp(1.28rem, 2vw, 1.86rem);
+            line-height: 1.24;
+        }
+
+        .feature-caption p {
+            margin: 10px auto 0;
+            max-width: 280px;
+            color: #546879;
+            font-size: 0.98rem;
+            font-weight: 700;
+            line-height: 1.62;
+        }
+
+        .feature-story {
+            width: min(980px, calc(100% - 40px));
+            margin: 0 auto;
+            padding: 0;
+        }
+
+        .story-flow {
+            position: relative;
+            display: grid;
+            align-items: center;
+            width: 100%;
+            margin: 0 auto;
+            gap: 72px;
+        }
+
+        .story-block {
+            position: relative;
+            width: 100%;
+            margin: 0 auto;
+            min-height: 540px;
+            display: grid;
+            grid-template-columns: 0.88fr 1.12fr;
+            align-items: center;
+            gap: clamp(24px, 5vw, 72px);
+            animation: featureRise 0.9s ease both;
+        }
+
+        .story-block:nth-child(2) {
+            animation-delay: 0.12s;
+        }
+
+        .story-block:nth-child(3) {
+            animation-delay: 0.24s;
+        }
+
+        .story-block.record-story {
+            grid-template-columns: 0.9fr 1.1fr;
+            gap: clamp(12px, 2vw, 28px);
+            padding-inline: clamp(28px, 5vw, 70px);
+        }
+
+        .story-block.record-story .story-visual {
+            width: min(100%, 470px);
+            margin: 0 auto;
+        }
+
+        .story-block.record-story .story-phone {
+            max-height: clamp(320px, 38vw, 500px);
+            transform: translateX(-34px);
+        }
+
+        .story-block.reverse {
+            width: min(100%, 980px);
+            grid-template-columns: minmax(300px, 0.82fr) minmax(430px, 1.18fr);
+            gap: clamp(18px, 2.8vw, 40px);
+            padding-inline: clamp(28px, 5vw, 70px);
+        }
+
+        .story-block.reverse .story-copy {
+            max-width: 360px;
+        }
+
+        .story-block.stack {
+            min-height: 650px;
+            grid-template-columns: 0.92fr 1.08fr;
+            align-items: start;
+            gap: clamp(4px, 1.2vw, 18px);
+            padding-inline: clamp(28px, 5vw, 70px);
+            margin-top: clamp(36px, 5vw, 88px);
+        }
+
+        .story-block.summary-story,
+        .story-block.time-story,
+        .story-block.neighborhood-story {
+            grid-template-columns: 0.82fr 1.18fr;
+            min-height: 560px;
+        }
+
+        .story-block.time-story,
+        .story-block.neighborhood-story {
+            margin-top: clamp(36px, 5vw, 84px);
+        }
+
+        .story-block.summary-story .story-visual,
+        .story-block.neighborhood-story .story-visual {
+            width: min(100%, 620px);
+        }
+
+        .story-block.time-story {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .story-block.time-story .story-visual {
+            width: min(100%, 430px);
+        }
+
+        .story-copy {
+            position: relative;
+            z-index: 1;
+            justify-self: start;
+            max-width: 360px;
+        }
+
+        .story-block.record-story .story-copy::before,
+        .story-block.reverse .story-copy::before,
+        .story-block.stack .story-note::before,
+        .story-block.summary-story .story-copy::before,
+        .story-block.time-story .story-note::before,
+        .story-block.neighborhood-story .story-copy::before {
+            content: "";
+            position: absolute;
+            z-index: -1;
+            transform: translate(-50%, -50%);
+            border-radius: 999px;
+            background: radial-gradient(circle at 34% 42%, rgba(255, 255, 255, 0.8), transparent 35%),
+            radial-gradient(circle at 58% 54%, rgba(151, 224, 227, 0.42), transparent 64%);
+            filter: blur(24px);
+            opacity: 0.78;
+            pointer-events: none;
+        }
+
+        .story-block.record-story .story-copy::before {
+            left: 15%;
+            top: 52%;
+            width: clamp(300px, 70vw, 580px);
+            aspect-ratio: 1.95;
+            opacity: 0.86;
+        }
+
+        .story-block.reverse .story-copy::before {
+            left: 15%;
+            top: 52%;
+            width: clamp(300px, 70vw, 580px);
+            aspect-ratio: 1.9;
+        }
+
+        .story-block.stack .story-note::before {
+            left: 10%;
+            top: 52%;
+            width: clamp(300px, 70vw, 580px);
+            aspect-ratio: 1.9;
+        }
+
+        .story-block.summary-story .story-copy::before {
+            left: 15%;
+            top: 15%;
+            width: clamp(300px, 70vw, 580px);
+            aspect-ratio: 1.9;
+        }
+
+        .story-block.time-story .story-note::before {
+            left: 5%;
+            top: 15%;
+            width: clamp(300px, 70vw, 580px);
+            aspect-ratio: 1.9;
+        }
+
+        .story-block.neighborhood-story .story-copy::before {
+            left: 8%;
+            top: 15%;
+            width: clamp(300px, 70vw, 600px);
+            aspect-ratio: 1.7;
+        }
+
+        .story-icon {
+            display: grid;
+            place-items: center;
+            width: 62px;
+            height: 62px;
+            margin-bottom: 26px;
+            border-radius: 50%;
+            background: #76dbe1;
+            font-size: 1.85rem;
+            box-shadow: 0 18px 36px rgba(38, 173, 184, 0.24);
+        }
+
+        .story-step {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 28px;
+            padding: 0 10px;
+            border-radius: 999px;
+            color: var(--teal);
+            background: rgba(191, 236, 238, 0.62);
+            font-size: 0.72rem;
+            font-weight: 900;
+        }
+
+        .story-copy h4,
+        .story-note h4 {
+            margin: 16px 0 10px;
+            color: var(--teal);
+            font-size: clamp(1.5rem, 3vw, 3.3rem);
+            line-height: 1.12;
+        }
+
+        .story-block.record-story .story-copy h4 {
+            font-size: clamp(1.18rem, 2.1vw, 2.35rem);
+        }
+
+        .story-block.reverse .story-copy h4 {
+            font-size: clamp(1.16rem, 2vw, 2.25rem);
+        }
+
+        .story-block.record-story .story-copy p,
+        .story-block.reverse .story-copy p {
+            font-size: clamp(0.78rem, 1vw, 0.96rem);
+            line-height: 1.58;
+        }
+
+        .story-block.stack .story-note h4 {
+            font-size: clamp(1.16rem, 2vw, 2.25rem);
+        }
+
+        .story-block.summary-story .story-copy h4,
+        .story-block.time-story .story-note h4,
+        .story-block.neighborhood-story .story-copy h4 {
+            font-size: clamp(1.16rem, 2vw, 2.25rem);
+        }
+
+        .story-copy p,
+        .story-note p {
+            margin: 0;
+            color: #4f6575;
+            font-size: clamp(0.88rem, 1.18vw, 1.08rem);
+            font-weight: 750;
+            line-height: 1.62;
+        }
+
+        .story-visual {
+            position: relative;
+            z-index: 1;
+            min-height: 500px;
+            width: min(100%, 560px);
+            justify-self: center;
+        }
+
+        .story-phone {
+            display: block;
+            width: auto;
+            max-width: 100%;
+            max-height: clamp(360px, 46vw, 590px);
+            margin: 0 auto;
+            object-fit: contain;
+            filter: drop-shadow(0 24px 34px rgba(15, 105, 112, 0.16));
+            animation: floatFeature 6s ease-in-out infinite;
+        }
+
+        .story-phone.small-phone {
+            max-height: clamp(330px, 36vw, 500px);
+        }
+
+        .story-phone.route-phone {
+            position: absolute;
+            right: 10px;
+            top: 94px;
+            max-height: clamp(300px, 31vw, 480px);
+        }
+
+        .story-phone.calendar-phone {
+            position: absolute;
+            left: 6px;
+            top: 136px;
+            max-height: clamp(290px, 30vw, 460px);
+        }
+
+        .story-phone.place-phone {
+            margin-left: 0;
+            max-height: clamp(320px, 35vw, 500px);
+        }
+
+        .story-phone.summary-phone {
+            max-height: clamp(330px, 38vw, 520px);
+        }
+
+        .story-phone.daily-summary-phone {
+            transform: translateY(-28px);
+        }
+
+        .story-phone.weekly-phone {
+            max-height: clamp(320px, 36vw, 500px);
+        }
+
+        .story-phone.time-phone {
+            max-height: clamp(330px, 38vw, 520px);
+        }
+
+        .story-phone.region-phone {
+            max-height: clamp(340px, 40vw, 540px);
+        }
+
+        .story-duo {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            align-items: end;
+            gap: clamp(18px, 3vw, 36px);
+        }
+
+        .story-duo-item {
+            position: relative;
+            display: grid;
+            justify-items: center;
+            gap: 14px;
+        }
+
+        .story-duo-item.daily-summary-item {
+            gap: 44px;
+        }
+
+        .story-duo-label {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 34px;
+            padding: 0 18px;
+            border-radius: 999px;
+            color: var(--teal);
+            background: rgba(217, 247, 248, 0.95);
+            border: 1px solid rgba(25, 170, 180, 0.22);
+            box-shadow: 0 12px 26px rgba(15, 105, 112, 0.12);
+            font-size: 0.88rem;
+            font-weight: 900;
+            white-space: nowrap;
+        }
+
+        .insight-stack {
+            display: grid;
+            gap: 18px;
+            margin-top: 24px;
+        }
+
+        .insight-card {
+            padding: 18px 22px;
+            border-radius: 24px;
+            background: rgba(241, 255, 255, 0.88);
+            border: 1px solid rgba(25, 170, 180, 0.16);
+            box-shadow: 0 14px 34px rgba(15, 105, 112, 0.1);
+            color: #40566b;
+            font-size: clamp(0.88rem, 1vw, 1rem);
+            font-weight: 800;
+            line-height: 1.62;
+        }
+
+        .insight-card.care {
+            background: rgba(255, 244, 239, 0.94);
+            border-color: rgba(238, 124, 83, 0.18);
+        }
+
+        .insight-label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--teal);
+            font-size: 0.9rem;
+            font-weight: 950;
+        }
+
+        .insight-card.care .insight-label {
+            color: #e77745;
+        }
+
+        .mini-summary-card {
+            width: min(100%, 270px);
+            padding: 16px 18px;
+            border-radius: 24px;
+            background: rgba(245, 255, 255, 0.94);
+            border: 1px solid rgba(25, 170, 180, 0.18);
+            box-shadow: 0 16px 36px rgba(15, 105, 112, 0.12);
+            color: var(--teal);
+            font-size: 0.92rem;
+            font-weight: 900;
+            line-height: 1.5;
+        }
+
+        .callout {
+            position: absolute;
+            z-index: 3;
+            max-width: 300px;
+            padding: 13px 18px;
+            border-radius: 999px;
+            color: #40566b;
+            background: linear-gradient(180deg, rgba(234, 253, 254, 0.96), rgba(208, 244, 246, 0.94));
+            border: 1px solid rgba(25, 170, 180, 0.24);
+            box-shadow: 0 16px 32px rgba(15, 105, 112, 0.12),
+            inset 0 1px 0 rgba(255, 255, 255, 0.7);
+            font-size: clamp(0.8rem, 0.98vw, 0.98rem);
+            font-weight: 900;
+            line-height: 1.35;
+        }
+
+        .callout.list {
+            right: -20px;
+            bottom: 16px;
+            max-width: 370px;
+            border-radius: 44px;
+            color: var(--teal);
+            font-size: clamp(0.78rem, 1vw, 1rem);
+        }
+
+        .callout-title {
+            display: block;
+            font-weight: 900;
+        }
+
+        .callout-body {
+            display: block;
+            margin-top: 4px;
+            font-weight: 600;
+        }
+
+        .callout.toggle {
+            right: -84px;
+            top: 82px;
+        }
+
+        .story-block.record-story .callout.toggle {
+            right: -12px;
+        }
+
+        .story-block.record-story .callout.list {
+            right: -6px;
+        }
+
+        .callout.date {
+            left: 14px;
+            top: 56px;
+        }
+
+        .callout.route {
+            right: 54px;
+            top: 24px;
+        }
+
+        .callout.place {
+            left: 44px;
+            top: -82px;
+        }
+
+        .story-note {
+            align-self: end;
+            padding-bottom: 78px;
+        }
+
+        .story-block.stack .story-note {
+            align-self: start;
+            padding-top: 200px;
+            padding-bottom: 0;
+        }
+
+        .story-note,
+        .story-block.stack .story-visual {
+            position: relative;
+            z-index: 1;
+        }
+
+        .demo {
+            padding: 100px 0 120px;
+            background: transparent;
+        }
+
+        .demo-inner {
+            width: min(1080px, calc(100% - 40px));
+            margin: 0 auto;
+        }
+
+        .demo-title {
+            margin: 0 0 32px;
+        }
+
+        .video-frame {
+            width: min(360px, 100%);
+            margin: 0 auto;
+            overflow: hidden;
+            border-radius: 32px;
+            background: #102133;
+            box-shadow: 0 24px 64px rgba(15, 105, 112, 0.18);
+            aspect-ratio: 9 / 16;
+        }
+
+        .video-frame iframe {
+            display: block;
+            width: 100%;
+            height: 100%;
+            border: 0;
+        }
+
+        .architecture {
+            padding: 100px 0 128px;
+            background: transparent;
+        }
+
+        .architecture-inner {
+            width: min(1120px, calc(100% - 40px));
+            margin: 0 auto;
+        }
+
+        .architecture-title {
+            margin: 0 0 32px;
+        }
+
+        .architecture-card {
+            padding: clamp(18px, 3vw, 32px);
+            border-radius: 32px;
+            border: 1px solid rgba(15, 105, 112, 0.1);
+            background: radial-gradient(circle at 18% 18%, rgba(191, 236, 238, 0.32), transparent 22rem),
+            linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(245, 255, 255, 0.9));
+            box-shadow: 0 22px 60px rgba(15, 105, 112, 0.12);
+        }
+
+        .architecture-image {
+            display: block;
+            width: min(100%, 860px);
+            height: auto;
+            margin: 0 auto;
+            object-fit: contain;
+        }
+
+        .stack {
+            padding: 96px 0 132px;
+            background: transparent;
+        }
+
+        .stack-inner {
+            width: min(1120px, calc(100% - 40px));
+            margin: 0 auto;
+        }
+
+        .stack-title {
+            margin: 0 0 34px;
+        }
+
+        .stack-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 26px;
+        }
+
+        .stack-group {
+            padding: clamp(22px, 3vw, 34px);
+            border-radius: 32px;
+            border: 1px solid rgba(15, 105, 112, 0.1);
+            background: radial-gradient(circle at 18% 18%, rgba(191, 236, 238, 0.32), transparent 18rem),
+            linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(246, 255, 255, 0.9));
+            box-shadow: 0 22px 60px rgba(15, 105, 112, 0.1);
+        }
+
+        .stack-group h5 {
+            margin: 0 0 22px;
+            color: var(--teal);
+            font-size: clamp(1.35rem, 2.2vw, 2rem);
+            line-height: 1.2;
+        }
+
+        .stack-items {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+        }
+
+        .stack-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-height: 74px;
+            padding: 14px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.78);
+            border: 1px solid rgba(15, 105, 112, 0.08);
+        }
+
+        .stack-logo {
+            display: grid;
+            place-items: center;
+            flex: 0 0 48px;
+            width: 48px;
+            height: 48px;
+            border-radius: 16px;
+            background: #ffffff;
+            box-shadow: inset 0 0 0 1px rgba(15, 105, 112, 0.08);
+        }
+
+        .stack-logo img {
+            display: block;
+            max-width: 32px;
+            max-height: 32px;
+        }
+
+        .stack-mark {
+            display: grid;
+            place-items: center;
+            flex: 0 0 42px;
+            width: 42px;
+            height: 42px;
+            border-radius: 14px;
+            color: #ffffff;
+            background: linear-gradient(135deg, var(--teal), var(--teal-soft));
+            font-size: 0.9rem;
+            font-weight: 900;
+        }
+
+        .stack-name {
+            color: #20384d;
+            font-weight: 900;
+            line-height: 1.25;
+        }
+
+        .final-cta {
+            position: relative;
+            overflow: hidden;
+            display: grid;
+            place-items: center;
+            min-height: 35vh;
+            padding: clamp(34px, 4.5vw, 58px) 20px;
+            background: radial-gradient(circle at 28% 24%, rgba(255, 255, 255, 0.14), transparent 24rem),
+            radial-gradient(circle at 72% 72%, rgba(15, 105, 112, 0.16), transparent 26rem),
+            linear-gradient(135deg, #56bcc0 0%, #45aeb3 54%, #3da6ab 100%);
+            text-align: center;
+        }
+
+        .final-cta::before,
+        .final-cta::after {
+            content: "";
+            position: absolute;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.12);
+            filter: blur(2px);
+            pointer-events: none;
+        }
+
+        .final-cta::before {
+            width: 220px;
+            height: 220px;
+            left: 8%;
+            top: 18%;
+        }
+
+        .final-cta::after {
+            width: 320px;
+            height: 320px;
+            right: 9%;
+            bottom: -110px;
+        }
+
+        .final-cta-inner {
+            position: relative;
+            z-index: 1;
+            width: min(980px, 100%);
+            margin: 0 auto;
+        }
+
+        .final-cta-title {
+            margin: clamp(42px, 4vw, 64px) auto clamp(20px, 3vw, 34px);
+            color: #ffffff;
+            font-size: clamp(0.96rem, 1.9vw, 1.8rem);
+            font-weight: 650;
+            line-height: 1.2;
+            letter-spacing: 0;
+        }
+
+        .final-cta-title .highlight {
+            color: #ffd78f;
+        }
+
+        .final-cta-logo {
+            display: block;
+            width: clamp(96px, 10vw, 160px);
+            height: auto;
+            margin: 0 auto;
+            filter: drop-shadow(0 28px 44px rgba(15, 105, 112, 0.24));
+        }
+
+        @keyframes floatFeature {
+            0%, 100% {
+                translate: 0 0;
+            }
+            50% {
+                translate: 0 -8px;
+            }
+        }
+
+        @keyframes featureRise {
+            from {
+                opacity: 0;
+                transform: translateY(24px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 1280px) {
+            .features-head {
+                width: min(100% - 32px, 900px);
+                margin: 0 auto 34px;
+                text-align: left;
+            }
+
+            .feature-story {
+                width: min(100% - 32px, 900px);
+            }
+
+            .story-flow {
+                gap: 68px;
+            }
+
+            .story-block,
+            .story-block.reverse,
+            .story-block.stack,
+            .story-block.summary-story,
+            .story-block.time-story,
+            .story-block.neighborhood-story {
+                width: 100%;
+                grid-template-columns: 1fr;
+                min-height: auto;
+                gap: 26px;
+            }
+
+            .story-block.record-story,
+            .story-block.reverse,
+            .story-block.stack {
+                padding-inline: clamp(18px, 5vw, 36px);
+            }
+
+            .story-copy,
+            .story-block.reverse .story-copy,
+            .story-note {
+                max-width: 100%;
+                justify-self: center;
+                text-align: center;
+            }
+
+            .story-visual,
+            .story-block.record-story .story-visual {
+                width: min(100%, 560px);
+                min-height: auto;
+            }
+
+            .story-block.record-story .story-phone {
+                transform: translateX(-10px);
+            }
+
+            .story-phone {
+                max-height: 340px;
+            }
+
+            .story-phone.route-phone,
+            .story-phone.calendar-phone {
+                position: static;
+            }
+
+            .story-phone.place-phone {
+                margin: 0 auto;
+            }
+
+            .story-duo {
+                grid-template-columns: 1fr;
+            }
+
+            .insight-stack {
+                margin-top: 0;
+            }
+
+            .callout {
+                position: static;
+                width: fit-content;
+                max-width: 100%;
+                margin: 14px auto 0;
+            }
+
+            .story-arrow.big-arrow {
+                position: static;
+                transform: none;
+                margin: 8px auto;
+                font-size: 3rem;
+            }
+        }
+
+        @media (max-width: 720px) {
+            .site-header {
+                padding: 12px 0;
+            }
+
+            .nav {
+                width: min(100% - 28px, 1120px);
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .hero {
+                min-height: auto;
+                padding: 28px 0 54px;
+            }
+
+            .hero-frame {
+                width: 100%;
+                border-radius: 24px;
+            }
+
+            .main-image {
+                max-width: 100%;
+                max-height: 48vh;
+            }
+
+            .concept {
+                padding: 58px 0 68px;
+            }
+
+            .concept-image {
+                width: min(100% - 28px, 520px);
+                max-height: 34vh;
+            }
+
+            .features {
+                padding: 84px 0 104px;
+            }
+
+            .features-head,
+            .feature-group,
+            .feature-list {
+                width: min(100% - 28px, 1180px);
+            }
+
+            .feature-group + .feature-group {
+                margin-top: 42px;
+                padding-top: 42px;
+            }
+
+            .feature-list {
+                grid-template-columns: 1fr;
+                gap: 22px;
+            }
+
+            .feature-list.companion-list {
+                grid-template-columns: 1fr;
+                width: 100%;
+            }
+
+            .feature-panel {
+                border-radius: 24px;
+                padding: clamp(16px, 5vw, 22px);
+                animation: none;
+            }
+
+            .feature-image {
+                max-height: clamp(220px, 74vw, 310px);
+            }
+
+            .feature-story {
+                width: min(100% - 28px, 1180px);
+                padding: 18px;
+                border-radius: 26px;
+            }
+
+            .story-flow {
+                gap: 72px;
+            }
+
+            .story-block,
+            .story-block.reverse,
+            .story-block.stack,
+            .story-block.summary-story,
+            .story-block.time-story,
+            .story-block.neighborhood-story {
+                width: 100%;
+                grid-template-columns: 1fr;
+                min-height: auto;
+                gap: 28px;
+            }
+
+            .story-block.record-story,
+            .story-block.reverse,
+            .story-block.stack {
+                padding-inline: 12px;
+            }
+
+            .story-block.record-story .story-phone {
+                transform: translateX(-10px);
+            }
+
+            .story-icon {
+                width: 58px;
+                height: 58px;
+                margin-bottom: 18px;
+                font-size: 1.7rem;
+            }
+
+            .story-copy h4,
+            .story-note h4 {
+                font-size: clamp(1.78rem, 9.4vw, 2.72rem);
+            }
+
+            .story-block.reverse .story-copy h4 {
+                font-size: clamp(1.58rem, 8.4vw, 2.34rem);
+            }
+
+            .story-copy p,
+            .story-note p {
+                font-size: 0.98rem;
+            }
+
+            .story-phone {
+                max-height: 360px;
+                animation: none;
+            }
+
+            .story-visual {
+                min-height: auto;
+                width: 100%;
+            }
+
+            .story-phone.route-phone,
+            .story-phone.calendar-phone {
+                position: static;
+            }
+
+            .story-phone.place-phone {
+                margin: 0 auto;
+            }
+
+            .callout {
+                position: static;
+                width: fit-content;
+                max-width: 100%;
+                margin: 14px auto 0;
+                padding: 13px 18px;
+                font-size: 0.95rem;
+            }
+
+            .callout.list {
+                border-radius: 24px;
+            }
+
+            .story-arrow.big-arrow {
+                position: static;
+                transform: none;
+                margin: 6px auto;
+                font-size: 3.4rem;
+            }
+
+            .story-note {
+                padding-bottom: 0;
+            }
+
+            .demo {
+                padding: 72px 0 88px;
+            }
+
+            .demo-inner {
+                width: min(100% - 28px, 1080px);
+            }
+
+            .video-frame {
+                width: min(100%, 320px);
+                border-radius: 24px;
+            }
+
+            .section-tag {
+                min-height: 38px;
+                padding: 0 15px;
+            }
+
+            .architecture {
+                padding: 72px 0 88px;
+            }
+
+            .architecture-inner {
+                width: min(100% - 28px, 1120px);
+            }
+
+            .architecture-card {
+                border-radius: 24px;
+                padding: 16px;
+            }
+
+            .stack {
+                padding: 72px 0 92px;
+            }
+
+            .stack-inner {
+                width: min(100% - 28px, 1120px);
+            }
+
+            .stack-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .stack-group {
+                border-radius: 24px;
+                padding: 20px;
+            }
+
+            .stack-items {
+                grid-template-columns: 1fr;
+            }
+
+            .final-cta {
+                min-height: 35vh;
+                padding: 34px 18px;
+            }
+
+            .final-cta-title {
+                font-size: clamp(0.92rem, 4.6vw, 1.38rem);
+            }
+
+        }
+    </style>
+</head>
+<body>
+<header class="site-header">
+    <nav aria-label="상단 메뉴" class="nav">
+        <a aria-label="길벗 홈" class="brand" href="./">
+            <img alt="" aria-hidden="true" class="brand-mark" src="assets/images/logo/길벗 로고.png">
+        </a>
+        <div aria-label="상단 섹션 이동" class="nav-links">
+            <a href="#service">서비스 소개</a>
+            <a href="#features">주요 기능</a>
+            <a href="#architecture">기술</a>
+        </div>
+    </nav>
+</header>
+
+<main>
+    <section aria-label="길벗 메인 이미지" class="hero">
+        <div class="hero-frame">
+            <img alt="길벗 위치 기반 기억 보조 및 보호자 안심 확인 서비스" class="main-image"
+                 src="assets/images/hero/길벗 상단 이미지.png">
+        </div>
+        <img alt="" aria-hidden="true" class="hero-mascot" src="assets/images/logo/지도보는 패패.png">
+    </section>
+    <section aria-label="기억 보조와 보호자 안심 서비스 흐름" class="concept">
+        <img alt="개인 사용자에게는 기억 보조를, 보호자에게는 안심 확인을 제공하는 위치 데이터 서비스 흐름" class="concept-image"
+             src="assets/images/features/기안2.png">
+    </section>
+    <section aria-labelledby="features-title" class="features" id="features">
+        <div class="features-head">
+            <h4 class="features-label section-tag" id="features-title">주요 기능</h4>
+        </div>
+        <div class="feature-story">
+            <div class="story-flow">
+                <article class="story-block record-story">
+                    <div class="story-copy">
+                        <span class="story-step">01 · 실시간 기록</span>
+                        <h4>이동 경로 기록</h4>
+                        <p>하루 동안의 위치 좌표가 지도 위 경로로 이어지고, 방문 장소와 하루 요약의 시작점이 됩니다.</p>
+                    </div>
+                    <div class="story-visual">
+                        <img alt="지도 위에 하루 이동 경로가 표시된 나의 길 메인 화면" class="story-phone"
+                             src="assets/images/features/나의길메인.png">
+                        <div class="callout toggle">위치 수집 ON/OFF 버튼</div>
+                        <div class="callout list">
+                            <span class="callout-title">하루 기록 구성 요소</span>
+                            <span class="callout-body">1. 방문 장소 리스트<br>2. 하루 메모<br>3. 위치 데이터 기반 하루 요약</span>
+                        </div>
+                    </div>
+                </article>
+
+                <article class="story-block reverse">
+                    <div class="story-copy">
+                        <span class="story-step">02 · 다시 보기</span>
+                        <h4>날짜별 <br>이동 경로 조회</h4>
+                        <p>과거의 하루를 다시 떠올리는 회고 기능으로, 날짜를 고르면 해당 날의 이동 경로를 불러옵니다.</p>
+                    </div>
+                    <div class="story-visual">
+                        <div class="callout date">날짜 선택</div>
+                        <img alt="날짜별 이동 경로를 조회하는 캘린더 화면" class="story-phone calendar-phone"
+                             src="assets/images/features/날짜별조회.png">
+                        <div class="callout route">과거 날짜 조회</div>
+                        <img alt="과거 날짜의 이동 경로가 지도에 표시된 화면" class="story-phone route-phone"
+                             src="assets/images/features/과거 날짜 조회.png">
+                    </div>
+                </article>
+
+                <article class="story-block stack">
+                    <div class="story-visual">
+                        <div class="callout place">장소 리스트</div>
+                        <img alt="체류 장소가 자동 저장된 방문 장소 목록 화면" class="story-phone place-phone"
+                             src="assets/images/features/체류 장소 자동 저장.png">
+                    </div>
+                    <div class="story-note">
+                        <span class="story-step">03 · 자동 정리</span>
+                        <h4>체류 장소 자동 저장</h4>
+                        <p>사용자가 오래 머문 장소와 시간을 자동으로 저장해, 하루를 되짚는 기억의 단서로 남깁니다.</p>
+                    </div>
+                </article>
+
+                <article class="story-block summary-story">
+                    <div class="story-copy">
+                        <span class="story-step">04 · 생활 요약</span>
+                        <h4>요약 통계</h4>
+                        <p>하루와 주간 단위의 외출, 귀가, 활동 시간을 정리해 생활 패턴과 변화 흐름을 빠르게 확인합니다.</p>
+                        <div class="insight-stack">
+                            <div class="insight-card">
+                                <span class="insight-label">개인 사용자</span>
+                                하루의 시작과 끝, 규칙적인 생활 여부를 한눈에 확인합니다.
+                            </div>
+                            <div class="insight-card care">
+                                <span class="insight-label">보호자</span>
+                                평소와 다른 생활 변화가 보이면 이상 신호를 더 빨리 살필 수 있습니다.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="story-visual">
+                        <div class="story-duo">
+                            <div class="story-duo-item daily-summary-item">
+                                <span class="story-duo-label">하루 요약</span>
+                                <img alt="외출 시간과 하루 활동을 요약한 화면"
+                                     class="story-phone summary-phone daily-summary-phone"
+                                     src="assets/images/features/하루요약.png">
+                            </div>
+                            <div class="story-duo-item">
+                                <span class="story-duo-label">주간 요약</span>
+                                <img alt="주간 생활 패턴을 통계로 보여주는 화면" class="story-phone weekly-phone"
+                                     src="assets/images/features/주간요약.png">
+                            </div>
+                        </div>
+                    </div>
+                </article>
+
+                <article class="story-block time-story">
+                    <div class="story-visual">
+                        <img alt="외출 시간과 귀가 시간을 상세히 비교하는 화면" class="story-phone time-phone"
+                             src="assets/images/features/외출 시간 상세.png">
+                    </div>
+                    <div class="story-note">
+                        <span class="story-step">05 · 시간 변화</span>
+                        <h4>외출/귀가 시간</h4>
+                        <p>외출과 귀가 시간의 평균을 비교해 하루 리듬이 평소와 달라졌는지 확인합니다.</p>
+                        <div class="insight-stack">
+                            <div class="insight-card">
+                                <span class="insight-label">개인 사용자</span>
+                                생활 루틴을 되돌아보고 규칙적인 활동을 유지하는 데 도움을 줍니다.
+                            </div>
+                            <div class="insight-card care">
+                                <span class="insight-label">보호자</span>
+                                평소보다 늦은 귀가처럼 주의가 필요한 변화를 확인할 수 있습니다.
+                            </div>
+                        </div>
+                    </div>
+                </article>
+
+                <article class="story-block neighborhood-story">
+                    <div class="story-copy">
+                        <span class="story-step">06 · 방문 지역</span>
+                        <h4>방문 동네 분석</h4>
+                        <p>자주 방문한 지역과 장소를 정리해 익숙한 생활권과 낯선 이동 변화를 함께 보여줍니다.</p>
+                        <div class="insight-stack">
+                            <div class="insight-card">
+                                <span class="insight-label">개인 사용자</span>
+                                방문한 주요 지역을 한눈에 확인합니다.
+                            </div>
+                            <div class="insight-card care">
+                                <span class="insight-label">보호자</span>
+                                익숙하지 않은 지역 방문이 늘어나면 이상 상황을 인지할 수 있습니다.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="story-visual">
+                        <div class="story-duo">
+                            <div class="story-duo-item">
+                                <span class="story-duo-label">하루 요약</span>
+                                <img alt="하루 요약에 표시된 방문 동네 목록" class="story-phone summary-phone"
+                                     src="assets/images/features/방문동네 하루요약.png">
+                            </div>
+                            <div class="story-duo-item">
+                                <span class="story-duo-label">동네 상세</span>
+                                <img alt="방문한 동네와 장소를 상세 통계로 보여주는 화면"
+                                     class="story-phone region-phone"
+                                     src="assets/images/features/방문 동네 및 장소 상세.png">
+                            </div>
+                        </div>
+                    </div>
+                </article>
+            </div>
+        </div>
+    </section>
+    <section aria-labelledby="demo-title" class="demo" id="demo">
+        <div class="demo-inner">
+            <h4 class="demo-title section-tag" id="demo-title">시연 영상</h4>
+            <div class="video-frame">
+                <iframe
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowfullscreen
+                    src="https://www.youtube.com/embed/JXuCr7dzy6Y"
+                    title="길벗 서비스 시연 영상">
+                </iframe>
+            </div>
+        </div>
+    </section>
+    <section aria-labelledby="architecture-title" class="architecture" id="architecture">
+        <div class="architecture-inner">
+            <h4 class="architecture-title section-tag" id="architecture-title">시스템 아키텍처</h4>
+            <div class="architecture-card">
+                <img alt="길벗 서비스 시스템 아키텍처 구성도" class="architecture-image"
+                     src="assets/images/architecture/길벗_아키텍쳐.png">
+            </div>
+        </div>
+    </section>
+    <section aria-labelledby="stack-title" class="stack" id="stack">
+        <div class="stack-inner">
+            <h4 class="stack-title section-tag" id="stack-title">기술 스택</h4>
+            <div class="stack-grid">
+                <article class="stack-group">
+                    <h5>Android</h5>
+                    <div class="stack-items">
+                        <div class="stack-item"><span class="stack-logo"><img alt=""
+                                                                              src="https://cdn.simpleicons.org/kotlin/7F52FF"></span><span
+                            class="stack-name">Kotlin</span></div>
+                        <div class="stack-item"><span class="stack-logo"><img alt=""
+                                                                              src="https://cdn.simpleicons.org/android/3DDC84"></span><span
+                            class="stack-name">Android</span></div>
+                        <div class="stack-item"><span class="stack-logo"><img alt=""
+                                                                              src="https://cdn.simpleicons.org/jetpackcompose/4285F4"></span><span
+                            class="stack-name">Jetpack Compose</span></div>
+                        <div class="stack-item"><span class="stack-logo"><img alt=""
+                                                                              src="https://cdn.simpleicons.org/materialdesign/757575"></span><span
+                            class="stack-name">Material 3</span></div>
+                        <div class="stack-item"><span class="stack-logo"><img alt=""
+                                                                              src="https://cdn.simpleicons.org/sqlite/003B57"></span><span
+                            class="stack-name">Room</span></div>
+                        <div class="stack-item"><span class="stack-logo"><img alt=""
+                                                                              src="https://cdn.simpleicons.org/google/4285F4"></span><span
+                            class="stack-name">DataStore</span></div>
+                        <div class="stack-item"><span class="stack-logo"><img alt=""
+                                                                              src="https://cdn.simpleicons.org/square/3E4348"></span><span
+                            class="stack-name">Retrofit</span></div>
+                        <div class="stack-item"><span class="stack-logo"><img alt=""
+                                                                              src="https://cdn.simpleicons.org/square/3E4348"></span><span
+                            class="stack-name">OkHttp</span></div>
+                        <div class="stack-item"><span class="stack-logo"><img alt=""
+                                                                              src="https://cdn.simpleicons.org/googlemaps/4285F4"></span><span
+                            class="stack-name">Maps Compose</span></div>
+                        <div class="stack-item"><span class="stack-logo"><img alt=""
+                                                                              src="https://cdn.simpleicons.org/kakao/FFCD00"></span><span
+                            class="stack-name">Kakao SDK</span></div>
+                    </div>
+                </article>
+                <article class="stack-group">
+                    <h5>Backend</h5>
+                    <div class="stack-items">
+                        <div class="stack-item"><span class="stack-logo"><img alt=""
+                                                                              src="https://cdn.simpleicons.org/openjdk/000000"></span><span
+                            class="stack-name">Java 21</span></div>
+                        <div class="stack-item"><span class="stack-logo"><img alt=""
+                                                                              src="https://cdn.simpleicons.org/springboot/6DB33F"></span><span
+                            class="stack-name">Spring Boot</span></div>
+                        <div class="stack-item"><span class="stack-logo"><img alt=""
+                                                                              src="https://cdn.simpleicons.org/gradle/02303A"></span><span
+                            class="stack-name">Gradle</span></div>
+                        <div class="stack-item"><span class="stack-logo"><img alt=""
+                                                                              src="https://cdn.simpleicons.org/hibernate/59666C"></span><span
+                            class="stack-name">Spring Data JPA</span></div>
+                        <div class="stack-item"><span class="stack-logo"><img alt=""
+                                                                              src="https://cdn.simpleicons.org/springsecurity/6DB33F"></span><span
+                            class="stack-name">Spring Security</span></div>
+                        <div class="stack-item"><span class="stack-logo"><img alt=""
+                                                                              src="https://cdn.simpleicons.org/jsonwebtokens/000000"></span><span
+                            class="stack-name">JWT</span></div>
+                        <div class="stack-item"><span class="stack-logo"><img alt=""
+                                                                              src="https://cdn.simpleicons.org/mysql/4479A1"></span><span
+                            class="stack-name">MySQL</span></div>
+                        <div class="stack-item"><span class="stack-logo"><img alt=""
+                                                                              src="https://cdn.simpleicons.org/redis/DC382D"></span><span
+                            class="stack-name">Redis</span></div>
+                        <div class="stack-item"><span class="stack-logo"><img alt=""
+                                                                              src="https://cdn.simpleicons.org/docker/2496ED"></span><span
+                            class="stack-name">Docker</span></div>
+                        <div class="stack-item"><span class="stack-logo"><img alt=""
+                                                                              src="https://cdn.simpleicons.org/kakao/FFCD00"></span><span
+                            class="stack-name">Kakao Local API</span></div>
+                        <div class="stack-item"><span class="stack-logo"><img alt=""
+                                                                              src="assets/images/logo/ec2.png"></span><span
+                            class="stack-name">AWS EC2</span></div>
+                        <div class="stack-item"><span class="stack-logo"><img alt=""
+                                                                              src="assets/images/logo/ecr.png"></span><span
+                            class="stack-name">AWS ECR</span></div>
+                        <div class="stack-item"><span class="stack-logo"><img alt=""
+                                                                              src="assets/images/logo/rds.png"></span><span
+                            class="stack-name">AWS RDS</span></div>
+                        <div class="stack-item"><span class="stack-logo"><img alt=""
+                                                                              src="https://cdn.simpleicons.org/githubactions/2088FF"></span><span
+                            class="stack-name">GitHub Actions</span></div>
+                    </div>
+                </article>
+            </div>
+        </div>
+    </section>
+    <section aria-label="길벗 하단 메시지" class="final-cta">
+        <div class="final-cta-inner">
+            <h2 class="final-cta-title">
+                <span class="highlight">길벗</span>이 당신의 모든 발걸음을<br>
+                곁에서 함께합니다.
+            </h2>
+            <img alt="길벗 로고" class="final-cta-logo" src="assets/images/logo/길벗 로고 물방울.png">
+        </div>
+    </section>
+</main>
+<script>
+  const siteHeader = document.querySelector(".site-header");
+  let lastScrollY = window.scrollY;
+
+  window.addEventListener("scroll", () => {
+    const currentScrollY = window.scrollY;
+    const scrollingDown = currentScrollY > lastScrollY;
+
+    if (currentScrollY > 80 && scrollingDown) {
+      siteHeader.classList.add("is-hidden");
+    } else {
+      siteHeader.classList.remove("is-hidden");
+    }
+
+    lastScrollY = currentScrollY;
+  }, {passive: true});
+</script>
+</body>
+</html>

@@ -3,6 +3,7 @@ package com.example.passedpath.feature.route.presentation.coordinator
 import com.example.passedpath.feature.locationtracking.domain.model.DailyPath
 import com.example.passedpath.feature.locationtracking.domain.model.DayRouteDetail
 import com.example.passedpath.feature.locationtracking.domain.model.DayRoutePlace
+import com.example.passedpath.feature.locationtracking.domain.model.LocalDayRouteSnapshot
 import com.example.passedpath.feature.locationtracking.domain.model.RoutePoint
 import com.example.passedpath.feature.locationtracking.domain.model.TrackedLocation
 import com.example.passedpath.feature.locationtracking.domain.repository.DayRouteRepository
@@ -12,6 +13,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
@@ -78,10 +80,11 @@ class RouteStateCoordinatorTest {
         assertTrue(states[0].routeModeUiState is MainRouteModeUiState.Today)
         assertFalse(states[1].routeModeUiState.isRouteLoading)
         assertTrue(states[1].routeModeUiState is MainRouteModeUiState.Today)
-        assertEquals(2, states[1].routeModeUiState.route.polylinePoints.size)
+        assertEquals(2, states[1].routeModeUiState.route.mapPolylinePoints.size)
         assertEquals("Today Title", states[1].routeModeUiState.route.title)
         assertEquals(1, states[1].routeModeUiState.route.markerPlaces.size)
         assertEquals(listOf("2026-04-01"), repository.observedLocalDates)
+        assertTrue(repository.observedFullLocalDates.isEmpty())
         assertEquals(listOf("2026-04-01"), repository.requestedRemoteDates)
     }
 
@@ -206,7 +209,7 @@ class RouteStateCoordinatorTest {
         assertEquals("Today Title", finalState.route.title)
         assertEquals("Today Memo", finalState.route.memo)
         assertEquals(1, finalState.route.markerPlaces.size)
-        assertTrue(finalState.route.polylinePoints.isEmpty())
+        assertTrue(finalState.route.mapPolylinePoints.isEmpty())
     }
 
     private class FakeDayRouteRepository(
@@ -215,10 +218,18 @@ class RouteStateCoordinatorTest {
     ) : DayRouteRepository {
         val requestedRemoteDates = mutableListOf<String>()
         val observedLocalDates = mutableListOf<String>()
+        val observedFullLocalDates = mutableListOf<String>()
 
         override fun observeLocalDayRoute(dateKey: String): Flow<DailyPath?> {
-            observedLocalDates += dateKey
+            observedFullLocalDates += dateKey
             return localRouteByDate.getOrPut(dateKey) { MutableStateFlow<DailyPath?>(null) }.asStateFlow()
+        }
+
+        override fun observeLocalRouteSnapshot(dateKey: String): Flow<LocalDayRouteSnapshot?> {
+            observedLocalDates += dateKey
+            return localRouteByDate.getOrPut(dateKey) { MutableStateFlow<DailyPath?>(null) }
+                .asStateFlow()
+                .map { dailyPath -> dailyPath?.toLocalDayRouteSnapshot() }
         }
 
         override suspend fun getLocalDayRoute(dateKey: String): DailyPath? = localRouteByDate[dateKey]?.value
@@ -228,6 +239,15 @@ class RouteStateCoordinatorTest {
         override suspend fun fetchRemoteDayRoute(dateKey: String): RemoteDayRouteResult {
             requestedRemoteDates += dateKey
             return resultByDate[dateKey] ?: RemoteDayRouteResult.Empty
+        }
+
+        private fun DailyPath.toLocalDayRouteSnapshot(): LocalDayRouteSnapshot {
+            return LocalDayRouteSnapshot(
+                dateKey = dateKey,
+                points = points,
+                totalDistanceMeters = totalDistanceMeters,
+                pathPointCount = pathPointCount
+            )
         }
     }
 }

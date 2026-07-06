@@ -24,19 +24,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Popup
-import androidx.compose.ui.window.PopupProperties
 import com.example.passedpath.R
-import com.example.passedpath.feature.main.presentation.component.MainMorePopupMenu
 import com.example.passedpath.feature.route.presentation.screen.formatDistanceKm
 import com.example.passedpath.feature.route.presentation.state.SelectedDayRouteUiState
 import com.example.passedpath.ui.theme.Gray300
@@ -51,9 +46,10 @@ private val DateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy
 private val TopBarDateFormatter: DateTimeFormatter =
     DateTimeFormatter.ofPattern("yyyy.MM.dd. EEE", Locale.KOREAN)
 
+private val RouteTopBarsTopGap = 10.dp
 private val DateNavigationBarHeight = 40.dp
 private val DaySummaryBarHeight = 36.dp
-internal val RouteTopBarsHeight = DateNavigationBarHeight + DaySummaryBarHeight
+internal val RouteTopBarsHeight = RouteTopBarsTopGap + DateNavigationBarHeight + DaySummaryBarHeight
 private val SecondaryTextColor = Color(0xFF4B5563)
 private val RouteTopBarsPreviewBackground = Color(0xFFEFF3F8)
 
@@ -63,40 +59,32 @@ internal fun RouteTopBars(
     isBookmarkUpdating: Boolean,
     onDateSelected: (String) -> Unit,
     onBookmarkClick: () -> Unit,
-    isMoreMenuVisible: Boolean = false,
     onMoreClick: () -> Unit = {},
-    onMoreDismissRequest: () -> Unit = {},
-    onMorePlaceBookmarkClick: () -> Unit = {},
-    onMoreDeleteRecordClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .background(Color.Transparent)
+            .background(Color.White)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .statusBarsPadding()
+                .padding(top = RouteTopBarsTopGap)
         ) {
             DateNavigationBar(
                 route = route,
                 isBookmarkUpdating = isBookmarkUpdating,
                 onDateSelected = onDateSelected,
                 onBookmarkClick = onBookmarkClick,
-                isMoreMenuVisible = isMoreMenuVisible,
                 onMoreClick = onMoreClick,
-                onMoreDismissRequest = onMoreDismissRequest,
-                onMorePlaceBookmarkClick = onMorePlaceBookmarkClick,
-                onMoreDeleteRecordClick = onMoreDeleteRecordClick,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(DateNavigationBarHeight)
             )
             DaySummaryBar(
                 totalDistanceKm = route.totalDistanceKm,
-                pathPointCount = route.pathPointCount,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(DaySummaryBarHeight)
@@ -111,21 +99,11 @@ internal fun DateNavigationBar(
     isBookmarkUpdating: Boolean,
     onDateSelected: (String) -> Unit,
     onBookmarkClick: () -> Unit,
-    isMoreMenuVisible: Boolean,
     onMoreClick: () -> Unit,
-    onMoreDismissRequest: () -> Unit,
-    onMorePlaceBookmarkClick: () -> Unit,
-    onMoreDeleteRecordClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     val selectedDate = parseDateOrToday(route.dateKey)
-    val moreMenuOffset = with(LocalDensity.current) {
-        IntOffset(
-            x = 0,
-            y = (DateNavigationBarHeight + 8.dp).roundToPx()
-        )
-    }
 
     Surface(
         modifier = modifier,
@@ -139,33 +117,14 @@ internal fun DateNavigationBar(
                 .padding(horizontal = 16.dp)
         ) {
             Row(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.align(Alignment.Center),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 NavigationArrowButton(
                     iconResId = R.drawable.ic_arrow_left,
                     onClick = { onDateSelected(shiftDate(route.dateKey, -1)) }
                 )
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    NavigationArrowButton(
-                        iconResId = R.drawable.ic_arrow_right,
-                        onClick = { onDateSelected(shiftDate(route.dateKey, 1)) }
-                    )
-                    MoreMenuButton(onClick = onMoreClick)
-                }
-            }
-            Row(
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .padding(start = 48.dp, end = 76.dp)
-                    .fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally)
-            ) {
                 BookmarkToggleButton(
                     isBookmarked = route.isBookmarked,
                     isEnabled = !isBookmarkUpdating,
@@ -201,19 +160,16 @@ internal fun DateNavigationBar(
                         )
                     }
                 }
+                NavigationArrowButton(
+                    iconResId = R.drawable.ic_arrow_right,
+                    onClick = { onDateSelected(shiftDate(route.dateKey, 1)) }
+                )
             }
-            if (isMoreMenuVisible) {
-                Popup(
-                    alignment = Alignment.TopEnd,
-                    offset = moreMenuOffset,
-                    onDismissRequest = onMoreDismissRequest,
-                    properties = PopupProperties(focusable = true)
-                ) {
-                    MainMorePopupMenu(
-                        onPlaceBookmarkClick = onMorePlaceBookmarkClick,
-                        onDeleteRecordClick = onMoreDeleteRecordClick
-                    )
-                }
+            Row(
+                modifier = Modifier.align(Alignment.CenterEnd),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                MoreMenuButton(onClick = onMoreClick)
             }
         }
     }
@@ -284,7 +240,6 @@ private fun BookmarkToggleButton(
 @Composable
 internal fun DaySummaryBar(
     totalDistanceKm: Double,
-    pathPointCount: Int,
     modifier: Modifier = Modifier
 ) {
     Surface(
@@ -313,14 +268,6 @@ internal fun DaySummaryBar(
                         R.string.main_total_distance_value,
                         totalDistanceKm.formatDistanceKm()
                     )
-                )
-                Text(
-                    text = "|",
-                    color = Gray300,
-                    modifier = Modifier.padding(horizontal = 16.dp)
-                )
-                SummaryItem(
-                    text = stringResource(R.string.main_path_points_value, pathPointCount)
                 )
             }
         }

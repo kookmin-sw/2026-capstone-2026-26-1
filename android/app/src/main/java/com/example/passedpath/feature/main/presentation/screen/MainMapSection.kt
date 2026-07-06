@@ -2,6 +2,7 @@ package com.example.passedpath.feature.main.presentation.screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,6 +15,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -39,13 +41,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.passedpath.BuildConfig
 import com.example.passedpath.R
 import com.example.passedpath.feature.main.presentation.state.MainUiState
+import com.example.passedpath.feature.permission.presentation.mapper.createPermissionOverlayUiModel
 import com.example.passedpath.feature.permission.presentation.state.LocationPermissionUiState
 import com.example.passedpath.feature.place.domain.model.BookmarkPlaceType
 import com.example.passedpath.feature.placebookmark.domain.model.PlaceBookmarkSummary
@@ -53,7 +56,9 @@ import com.example.passedpath.feature.placebookmark.presentation.component.Place
 import com.example.passedpath.feature.route.presentation.screen.RouteMapContent
 import com.example.passedpath.feature.route.presentation.state.PlaceMarkerUiState
 import com.example.passedpath.feature.route.presentation.state.RouteUiAction
+import com.example.passedpath.ui.component.banner.RequestActionBottomBanner
 import com.example.passedpath.ui.component.button.BaseCircleButton
+import com.example.passedpath.ui.component.bottomsheet.BaseBottomSheetDefaults
 import com.example.passedpath.ui.component.floating.FloatingButtonColumn
 import com.example.passedpath.ui.component.floating.FloatingCircleIconButton
 import com.example.passedpath.ui.state.CoordinateUiState
@@ -71,8 +76,8 @@ import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.MarkerComposable
-import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
+import com.google.maps.android.compose.rememberMarkerState
 import kotlinx.coroutines.launch
 
 @Composable
@@ -81,21 +86,22 @@ internal fun MainMapSection(
     markerPlaces: List<PlaceMarkerUiState>,
     bookmarkMarkers: List<PlaceBookmarkSummary>,
     focusedPlaceId: Long?,
+    currentLocationState: State<CoordinateUiState?>,
+    isBookmarkMarkersVisible: Boolean,
+    currentLocationCameraRequestKey: Int,
     onFocusedPlaceHandled: () -> Unit,
     onCameraIntentConsumed: () -> Unit,
     onDateSelected: (String) -> Unit,
     onBookmarkClick: () -> Unit,
     onRouteAction: (RouteUiAction) -> Unit,
     onStatsClick: () -> Unit,
+    onCalendarClick: () -> Unit,
     onMoreClick: () -> Unit,
     onMorePlaceBookmarkClick: () -> Unit = {},
     onMoreDeleteRecordClick: () -> Unit = {},
     onMapClick: () -> Unit,
     onPlaceMarkerClick: (Long) -> Unit,
-    onPermissionActionClick: () -> Unit,
-    debugActions: MainDebugActions,
-    floatingBottomPadding: androidx.compose.ui.unit.Dp,
-    showCurrentLocationButton: Boolean
+    debugActions: MainDebugActions
 ) {
     val routeAccentColor = androidx.compose.material3.MaterialTheme.colorScheme.primary
     val context = LocalContext.current
@@ -110,15 +116,18 @@ internal fun MainMapSection(
         )
     }
     val fallbackPosition = LatLng(37.5662952, 126.9779451)
-    val mapCameraBottomPadding = (BottomSheetMiddleVisibleHeight + BottomSheetFloatingPadding) * 0.3f
-    val currentLocationBottomPadding =
-        floatingBottomPadding.coerceAtMost(BottomSheetMiddleVisibleHeight + BottomSheetFloatingPadding)
+    val middleSheetVisiblePadding =
+        BaseBottomSheetDefaults.middleVisibleHeight + BaseBottomSheetDefaults.floatingPadding
+    val mapCameraBottomPadding = middleSheetVisiblePadding * 0.3f
     val currentLocation = if (uiState.permissionState == LocationPermissionUiState.DENIED) {
         null
     } else {
-        uiState.currentLocation
+        currentLocationState.value
     }
-    val routePoints = uiState.selectedRoute.polylinePoints.map(CoordinateUiState::toLatLng)
+    val mapPolylinePoints = uiState.selectedRoute.mapPolylinePoints
+    val routePoints = remember(mapPolylinePoints) {
+        mapPolylinePoints.map(CoordinateUiState::toLatLng)
+    }
     val initialCameraTarget =
         routePoints.firstOrNull() ?: currentLocation?.toLatLng() ?: fallbackPosition
     val cameraPositionState = rememberCameraPositionState {
@@ -129,7 +138,6 @@ internal fun MainMapSection(
     var isDebugPanelVisible by rememberSaveable { mutableStateOf(false) }
     var isMoreMenuVisible by rememberSaveable { mutableStateOf(false) }
     var selectedBookmarkPlaceId by rememberSaveable { mutableStateOf<Long?>(null) }
-    var isBookmarkMarkersVisible by rememberSaveable { mutableStateOf(true) }
     val currentOnFocusedPlaceHandled by rememberUpdatedState(onFocusedPlaceHandled)
 
     MainMapCameraEffects(
@@ -155,6 +163,14 @@ internal fun MainMapSection(
             )
         }
         currentOnFocusedPlaceHandled()
+    }
+
+    LaunchedEffect(currentLocationCameraRequestKey) {
+        if (currentLocationCameraRequestKey == 0) return@LaunchedEffect
+        val location = currentLocation ?: return@LaunchedEffect
+        cameraPositionState.animate(
+            CameraUpdateFactory.newLatLngZoom(location.toLatLng(), 17f)
+        )
     }
 
     LaunchedEffect(bookmarkMarkers, selectedBookmarkPlaceId) {
@@ -198,7 +214,7 @@ internal fun MainMapSection(
             }
 
             RouteMapContent(
-                routeModeUiState = uiState.routeModeUiState,
+                routePoints = routePoints,
                 markerPlaces = markerPlaces,
                 routeAccentColor = routeAccentColor,
                 onPlaceMarkerClick = { placeId ->
@@ -243,10 +259,7 @@ internal fun MainMapSection(
                 onMoreDeleteRecordClick()
             },
             onRouteAction = onRouteAction,
-            onPermissionActionClick = onPermissionActionClick,
             debugActions = debugActions,
-            floatingBottomPadding = floatingBottomPadding,
-            bottomEndControlsBottomPadding = currentLocationBottomPadding,
             isDebugPanelVisible = isDebugPanelVisible,
             onCloseDebugPanel = { isDebugPanelVisible = false },
             topStartControls = {
@@ -254,35 +267,71 @@ internal fun MainMapSection(
                     onClick = onStatsClick,
                     modifier = Modifier
                 )
-                if (BuildConfig.DEBUG) {
+                CalendarButton(
+                    onClick = onCalendarClick,
+                    modifier = Modifier
+                )
+                if (false) {
                     DebugPanelButton(
                         onClick = { isDebugPanelVisible = !isDebugPanelVisible },
                         modifier = Modifier
                     )
                 }
             },
-            floatingControls = {
-                FloatingMapButtons(
-                    isBookmarkMarkersVisible = isBookmarkMarkersVisible,
-                    onBookmarkMarkersToggleClick = {
-                        isBookmarkMarkersVisible = !isBookmarkMarkersVisible
-                    },
-                    onCurrentLocationClick = currentLocation?.takeIf {
-                        showCurrentLocationButton
-                    }?.let {
-                        {
-                            coroutineScope.launch {
-                                cameraPositionState.animate(
-                                    CameraUpdateFactory.newLatLngZoom(
-                                        it.toLatLng(),
-                                        17f
-                                    )
-                                )
-                            }
-                        }
-                    }
-                )
-            }
+        )
+    }
+}
+
+@Composable
+internal fun BoxScope.MainMapBottomOverlayContent(
+    uiState: MainUiState,
+    currentLocationState: State<CoordinateUiState?>,
+    floatingBottomPadding: Dp,
+    isBookmarkMarkersVisible: Boolean,
+    showCurrentLocationButton: Boolean,
+    onBookmarkMarkersToggleClick: () -> Unit,
+    onCurrentLocationClick: () -> Unit,
+    onPermissionActionClick: () -> Unit
+) {
+    val permissionOverlayUiModel = createPermissionOverlayUiModel(
+        permissionState = uiState.permissionState,
+        isLocationServiceEnabled = uiState.isLocationServiceEnabled
+    )
+    val middleSheetVisiblePadding =
+        BaseBottomSheetDefaults.middleVisibleHeight + BaseBottomSheetDefaults.floatingPadding
+    val bottomEndControlsBottomPadding =
+        floatingBottomPadding.coerceAtMost(middleSheetVisiblePadding)
+    val currentLocationClick = if (
+        uiState.permissionState != LocationPermissionUiState.DENIED &&
+        currentLocationState.value != null &&
+        showCurrentLocationButton
+    ) {
+        onCurrentLocationClick
+    } else {
+        null
+    }
+
+    FloatingButtonColumn(
+        modifier = Modifier
+            .align(Alignment.BottomEnd)
+            .padding(end = 16.dp, bottom = bottomEndControlsBottomPadding)
+    ) {
+        FloatingMapButtons(
+            isBookmarkMarkersVisible = isBookmarkMarkersVisible,
+            onBookmarkMarkersToggleClick = onBookmarkMarkersToggleClick,
+            onCurrentLocationClick = currentLocationClick
+        )
+    }
+
+    permissionOverlayUiModel?.let { overlayUiModel ->
+        RequestActionBottomBanner(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(horizontal = 16.dp)
+                .padding(bottom = floatingBottomPadding),
+            message = stringResource(overlayUiModel.messageResId),
+            actionText = stringResource(overlayUiModel.actionTextResId),
+            onClickAction = onPermissionActionClick
         )
     }
 }
@@ -294,8 +343,17 @@ private fun PlaceBookmarkMapMarkers(
     onBookmarkMarkerClick: (Long) -> Unit
 ) {
     bookmarkMarkers.forEach { place ->
+        val position = remember(place.bookmarkPlaceId, place.latitude, place.longitude) {
+            LatLng(place.latitude, place.longitude)
+        }
+        val markerState = rememberMarkerState(
+            key = "bookmark:${place.bookmarkPlaceId}:${place.latitude}:${place.longitude}",
+            position = position
+        )
+
         MarkerComposable(
-            state = MarkerState(position = LatLng(place.latitude, place.longitude)),
+            place.type,
+            state = markerState,
             title = place.placeName.ifBlank { place.roadAddress },
             anchor = Offset(0.5f, 0.5f),
             zIndex = PlaceBookmarkMarkerZIndex,
@@ -317,8 +375,19 @@ private fun PlaceBookmarkMapMarkers(
 
 @Composable
 private fun PlaceBookmarkCalloutMarker(placeBookmark: PlaceBookmarkSummary) {
+    val position = remember(placeBookmark.bookmarkPlaceId, placeBookmark.latitude, placeBookmark.longitude) {
+        LatLng(placeBookmark.latitude, placeBookmark.longitude)
+    }
+    val markerState = rememberMarkerState(
+        key = "bookmark-callout:${placeBookmark.bookmarkPlaceId}:${placeBookmark.latitude}:${placeBookmark.longitude}",
+        position = position
+    )
+
     MarkerComposable(
-        state = MarkerState(position = LatLng(placeBookmark.latitude, placeBookmark.longitude)),
+        placeBookmark.bookmarkPlaceId,
+        placeBookmark.placeName,
+        placeBookmark.roadAddress,
+        state = markerState,
         anchor = Offset(0.5f, 1f),
         zIndex = PlaceBookmarkCalloutZIndex,
         onClick = { true }
@@ -510,7 +579,7 @@ private fun BookmarkMarkerToggleButton(
                 id = if (isVisible) {
                     R.drawable.ic_bookmark_pin_filled
                 } else {
-                    R.drawable.ic_bookmark_other
+                    R.drawable.ic_bookmark_pin_outline
                 }
             ),
             contentDescription = stringResource(R.string.main_toggle_place_bookmark_markers),
@@ -543,6 +612,19 @@ private fun StatsButton(
         onClick = onClick,
         iconResId = R.drawable.ic_stats,
         contentDescriptionResId = R.string.main_stats,
+        modifier = modifier
+    )
+}
+
+@Composable
+private fun CalendarButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    FloatingCircleIconButton(
+        onClick = onClick,
+        iconResId = R.drawable.ic_calender,
+        contentDescriptionResId = R.string.main_calendar,
         modifier = modifier
     )
 }

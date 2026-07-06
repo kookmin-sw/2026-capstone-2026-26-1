@@ -18,6 +18,7 @@ object AppDebugLogger {
 
 object DebugLogTag {
     const val MAIN_FLOW = "MainFlow"
+    const val MAP_RENDERER = "MapRenderer"
     const val ROUTE_LOAD = "RouteLoad"
     const val TRACKING = "Tracking"
     const val TRACKING_DIAGNOSTICS = "TrackingDiag"

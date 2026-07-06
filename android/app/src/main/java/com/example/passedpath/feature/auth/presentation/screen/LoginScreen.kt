@@ -77,6 +77,7 @@ fun LoginScreen(
 
         LoginIllustration(
             modifier = Modifier.align(Alignment.BottomCenter)
+                .padding(bottom = 20.dp)
         )
 
         LoginBottomAction(
@@ -86,7 +87,7 @@ fun LoginScreen(
                 .padding(
                     start = 12.dp,
                     end = 12.dp,
-                    bottom = 34.dp
+                    bottom = 54.dp
                 )
         )
     }

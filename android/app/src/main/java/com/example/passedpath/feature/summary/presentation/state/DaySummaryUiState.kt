@@ -12,14 +12,28 @@ data class DaySummaryContentUiState(
     val outingTimeText: String,
     val enterHomeTimeText: String,
     val totalOutingDurationText: String,
-    val totalOutingCountText: String
+    val totalOutingCountText: String,
+    val visitedDongNames: List<String> = emptyList(),
+    val hasOutingTimeData: Boolean = true,
+    val hasEnterHomeTimeData: Boolean = true,
+    val hasTotalOutingDurationData: Boolean = true,
+    val hasTotalOutingCountData: Boolean = true,
+    val hasVisitedDongData: Boolean = true
 ) {
     companion object {
         val Empty = DaySummaryContentUiState(
-            outingTimeText = "-",
-            enterHomeTimeText = "-",
-            totalOutingDurationText = "0\uBD84",
-            totalOutingCountText = "0\uD68C"
+            outingTimeText = DaySummaryNoDataText,
+            enterHomeTimeText = DaySummaryNoDataText,
+            totalOutingDurationText = DaySummaryNoDataText,
+            totalOutingCountText = DaySummaryNoDataText,
+            visitedDongNames = emptyList(),
+            hasOutingTimeData = false,
+            hasEnterHomeTimeData = false,
+            hasTotalOutingDurationData = false,
+            hasTotalOutingCountData = false,
+            hasVisitedDongData = false
         )
     }
 }
+
+const val DaySummaryNoDataText = "\uB370\uC774\uD130 \uC5C6\uC74C"

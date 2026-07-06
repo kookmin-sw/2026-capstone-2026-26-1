@@ -4,7 +4,6 @@ import com.example.passedpath.feature.permission.presentation.state.LocationPerm
 import com.example.passedpath.feature.route.presentation.coordinator.RouteDebugSnapshot
 import com.example.passedpath.feature.route.presentation.state.MainRouteModeUiState
 import com.example.passedpath.feature.route.presentation.state.SelectedDayRouteUiState
-import com.example.passedpath.ui.state.CoordinateUiState
 
 data class BookmarkToggleUiState(
     val updatingDateKey: String? = null,
@@ -26,7 +25,6 @@ data class MainUiState(
     val permissionState: LocationPermissionUiState = LocationPermissionUiState.DENIED,
     val isLocationServiceEnabled: Boolean = true,
     val isTrackingActive: Boolean = false,
-    val currentLocation: CoordinateUiState? = null,
     val pendingCameraIntent: MainCameraIntent? = null,
     val showTrackingPermissionDialog: Boolean = false,
     val selectedDateKey: String = "",

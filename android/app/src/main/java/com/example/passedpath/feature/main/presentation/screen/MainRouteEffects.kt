@@ -1,6 +1,7 @@
 ﻿package com.example.passedpath.feature.main.presentation.screen
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
 import com.example.passedpath.feature.locationtracking.data.manager.LocationTrackingServiceStateReader
 import com.example.passedpath.feature.locationtracking.domain.tracker.LocationTracker
 import com.example.passedpath.feature.main.presentation.effect.MainInitialLocationEffect
@@ -14,7 +15,7 @@ import com.example.passedpath.ui.state.CoordinateUiState
 internal fun MainRouteEffects(
     permissionState: LocationPermissionUiState,
     isLocationServiceEnabled: Boolean,
-    currentLocation: CoordinateUiState?,
+    currentLocationState: State<CoordinateUiState?>,
     isTrackingActive: Boolean,
     onRefreshPermissionState: () -> Unit,
     onRefreshLocationServiceState: () -> Unit,
@@ -31,7 +32,7 @@ internal fun MainRouteEffects(
     MainInitialLocationEffect(
         permissionState = permissionState,
         isLocationServiceEnabled = isLocationServiceEnabled,
-        currentLocation = currentLocation,
+        currentLocationState = currentLocationState,
         onCurrentLocationUpdated = onCurrentLocationUpdated,
         locationTracker = locationTracker
     )

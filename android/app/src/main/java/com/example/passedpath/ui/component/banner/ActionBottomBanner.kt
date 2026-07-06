@@ -19,17 +19,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.passedpath.ui.theme.Gray100
 
 @Composable
 fun ActionBottomBanner(
     modifier: Modifier = Modifier,
     message: String,
     actionText: String,
-    onClickAction: () -> Unit
+    onClickAction: () -> Unit,
+    borderColor: Color = Gray100
 ) {
     BaseBottomBanner(
-        modifier = modifier
-
+        modifier = modifier,
+        borderColor = borderColor
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),

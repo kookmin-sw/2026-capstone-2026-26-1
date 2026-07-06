@@ -4,8 +4,14 @@ import android.content.Context
 
 class AuthSessionStorage(
     private val context: Context
-) {
-    suspend fun saveTokens(
+) : AuthTokenStore {
+    @Volatile
+    private var cachedAccessToken: String? = null
+
+    @Volatile
+    private var cachedRefreshToken: String? = null
+
+    override suspend fun saveTokens(
         accessToken: String,
         refreshToken: String
     ) {
@@ -14,14 +20,37 @@ class AuthSessionStorage(
             accessToken = accessToken,
             refreshToken = refreshToken
         )
+        cachedAccessToken = accessToken
+        cachedRefreshToken = refreshToken
     }
 
-    suspend fun getAccessToken(): String? {
-        return TokenDataStore.getAccessToken(context)
+    override suspend fun getAccessToken(): String? {
+        val accessToken = TokenDataStore.getAccessToken(context)
+        cachedAccessToken = accessToken
+        return accessToken
     }
 
-    suspend fun getRefreshToken(): String? {
-        return TokenDataStore.getRefreshToken(context)
+    override suspend fun getRefreshToken(): String? {
+        val refreshToken = TokenDataStore.getRefreshToken(context)
+        cachedRefreshToken = refreshToken
+        return refreshToken
+    }
+
+    override fun getCachedAccessToken(): String? {
+        return cachedAccessToken
+    }
+
+    override fun getCachedRefreshToken(): String? {
+        return cachedRefreshToken
+    }
+
+    override suspend fun warmTokenCacheIfNeeded() {
+        if (!cachedAccessToken.isNullOrBlank() && !cachedRefreshToken.isNullOrBlank()) {
+            return
+        }
+
+        cachedAccessToken = TokenDataStore.getAccessToken(context)
+        cachedRefreshToken = TokenDataStore.getRefreshToken(context)
     }
 
     suspend fun saveUserProfile(
@@ -41,7 +70,9 @@ class AuthSessionStorage(
         return TokenDataStore.getUserProfile(context)
     }
 
-    suspend fun clear() {
+    override suspend fun clear() {
         TokenDataStore.clear(context)
+        cachedAccessToken = null
+        cachedRefreshToken = null
     }
 }

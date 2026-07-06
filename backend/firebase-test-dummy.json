@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "gilbut-test-dummy",
+  "private_key_id": "dummy-key-id",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC3GcAuIvbE7wN3\nWcLKB80rXUnO+ZbD6JU+vk1h4BO5CpeJc/bSC1Tn4ALKTACwXe70oSkLnFTdfz0w\neyUFChIYQqrt2X6Iv1bttdUMbcwlcs5dViIb+4YK5MZqlqzJHlzPGkTPDhxY6j8n\njEXe50ji9hnn+XZXtFBqjriYSd6za3zCg3wBAa0Q6Qzc+e6Ov9ylwhgXtLGywsuK\nhOCVMDbqwZ9lheiUO9ePCaewiITsG0Dc2fPsHoQp9mogKex3/Z0dzfKii52QK8iL\nIyMdaColSS+2px0rFGajopKFVqcOtENAngzzA356KjaLkGW2irjy9mcqMMx5bp4C\njfOr59aNAgMBAAECggEASC6SoJ2QAtrm1uo/7D1fGLVSH5ItaVYLYAzNnMQlglE2\npC1fJDbrZe3dq7qCmwSs6yuNbtJWcmtyx+YEFhR+RaoikFmplGc58cQ5FQlD7Y9w\n40LNd5KUqT6/Kc30l+SsWcjVT3sUmcje1MxrzxAGn9K9K8IgcTrYaOmSxBZ7AOe2\nQQC697WNOpjzPqffPInNMwwPB3z01SSS2H8s/kVJTP64wKqkxtWZVL1OjbJ0R7Uk\noxWMnYHZQ+KO6G3wf+sXA6MB5MRiuc9ZR+/KQ2OBd1dPiua4naNRIpH08TfRL8J4\ncEQywkQTXA2mZ4GJNFk3/+abMQuL8iXBY+OYgh6UUQKBgQD76qXTTMyLMlZXJxkl\nH4OAN3RYdnCQ3tI59daqiGkTYTIR7ScId0ij3dyv9rW7kBS0qq9ujtaJbhHJUBvo\neOliYw9XigR1vy2hqy+wMKR5hu+fERHEYV4rFPKhEhloO/37qRdX/1PDjxWio5hn\nUSQgeAX4Wcp1NSK4n+zS0uaE9wKBgQC6EYtWk59sTUBAZVlqd0V1tZgK+tcrY7hd\n7R/8w3iMMJSwE8ivgaNWJqqJgwnRx70FolmcH75rei492uf/LqUGdspxAY6SfbMs\nEvM6nLl+zywJMYLDUn3YQQMuQgFptkH9XmgKEAloPTuiFXhIsTzHFFbHSDAmif81\nJ0lfkoETmwKBgQDQalU+927SSpb8C7DV8biNv1NWTMbcVDyBD07GT4z/J46RHi8I\n5gcG62rFecronk9DGWOCiFId6R51+vzb3AzaBTKQLfN6puxNsJ8HmXa5xFVCuJCG\ndDfAVNhXQe4bOmbqaf6SIv9d72bq44YXFB5bbnEiAsdpKMjNDiKUWT+2CQKBgHfu\nSwOYz089U8auDL5E9m5yh/e7yujas8FG0DFZxN+HiK8dcWM+igtDjPRpk/C1b66s\nAFpTU6du71NLP/IJHLFX7BB+0mi1wMENzdzfm+iSnG2ojgJbr2WuMeClBsgeg9ZN\n/X1O7OFVZpSIhilEpEolX/G/I9oTZH3cPrztb2k1AoGBAPtPb5qSCUtR5Fenxf6T\nWLaB1Xw7gatwsdTUksc4W7RMgTpcVuqavSE6KzgVDUsqCERZdjz7BojnGklVKI9O\ndgBcL3HeyyElw+Jvz+oDxi3OyMWM+yMflysO/ExZ4GxT4yBBCH3Jb8d1Tn604OSB\nRAnmwFCUjihfSqngrdA8vnpC\n-----END PRIVATE KEY-----\n",
+  "client_email": "dummy@gilbut-test-dummy.iam.gserviceaccount.com",
+  "client_id": "000000000000000000000",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/dummy%40gilbut-test-dummy.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

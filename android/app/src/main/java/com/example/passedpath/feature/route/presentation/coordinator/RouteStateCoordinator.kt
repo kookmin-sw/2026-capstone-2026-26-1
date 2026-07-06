@@ -59,9 +59,9 @@ class RouteStateCoordinator(
                 DebugLogTag.ROUTE_LOAD,
                 "observe local route dateKey=$dateKey"
             )
-            dayRouteRepository.observeLocalDayRoute(dateKey).collect { dailyPath ->
+            dayRouteRepository.observeLocalRouteSnapshot(dateKey).collect { routeSnapshot ->
                 val hasRemoteReadData = remoteRouteDetail != null
-                val routeState = if (dailyPath == null && !hasRemoteReadData) {
+                val routeState = if (routeSnapshot == null && !hasRemoteReadData) {
                     AppDebugLogger.debug(
                         DebugLogTag.ROUTE_LOAD,
                         "local route empty dateKey=$dateKey"
@@ -69,23 +69,23 @@ class RouteStateCoordinator(
                     RouteLoadState(
                         selectedDateKey = dateKey,
                         routeModeUiState = createTodayEmptyRouteMode(dateKey),
-                        debugSnapshot = createTodayRouteDebugSnapshot(dailyPath)
+                        debugSnapshot = createTodayRouteDebugSnapshot(routeSnapshot)
                     )
                 } else {
                     AppDebugLogger.debug(
                         DebugLogTag.ROUTE_LOAD,
-                        "today route success dateKey=$dateKey localPoints=${dailyPath?.pathPointCount ?: 0} remoteSeed=$hasRemoteReadData"
+                        "today route success dateKey=$dateKey localPoints=${routeSnapshot?.pathPointCount ?: 0} remoteSeed=$hasRemoteReadData"
                     )
                     RouteLoadState(
                         selectedDateKey = dateKey,
                         routeModeUiState = createTodayRouteMode(
                             route = createTodaySelectedDayRouteUiState(
                                 dateKey = dateKey,
-                                dailyPath = dailyPath,
+                                routeSnapshot = routeSnapshot,
                                 remoteRouteDetail = remoteRouteDetail
                             )
                         ),
-                        debugSnapshot = createTodayRouteDebugSnapshot(dailyPath)
+                        debugSnapshot = createTodayRouteDebugSnapshot(routeSnapshot)
                     )
                 }
                 emit(routeState)

@@ -20,6 +20,10 @@ val Green700 = Color(0xFF15747B)
 val Green800 = Color(0xFF105A5F)
 val Green900 = Color(0xFF0C4449)
 
+// calendar
+val CalendarSundayColor = Color(0xFFDF0000)
+val CalendarSaturdayColor = Color(0xFF0049E5)
+
 // gray
 val Gray50 = Color(0xFFF9FAFB)
 
@@ -36,15 +40,24 @@ val Gray800 = Color(0xFF1F2937)
 val Gray900 = Color(0xFF111827)
 
 // else
+val DateBookmarkColor = Color(0xFFFFD36A)
 val kakaoYello = Color(0xFFFEE500)
 val White = Color(0xFFFFFFFF)
 val Black = Color(0xFF000000)
 
 //bookmark
-val BookmarkHomeColor = Color(0xFFFF5701)
-val BookmarkCompanyColor = Color(0xFF00BC06)
-val BookmarkSchoolColor = Color(0xFF1A73E8)
-val BookmarkOtherColor = Color(0xFFF1B934)
+val PlaceBookmarkHomeColor = Color(0xFFFF5701)
+val PlaceBookmarkCompanyColor = Color(0xFF00BC06)
+val PlaceBookmarkSchoolColor = Color(0xFF1A73E8)
+val PlaceBookmarkOtherColor = Color(0xFFF1B934)
+
+// care
+val CareAvatarPink50 = Color(0xFFFFEEF5)
+val CareAvatarPink500 = Color(0xFFD84F7B)
+val CareAvatarPurple50 = Color(0xFFF1EDFF)
+val CareAvatarPurple500 = Color(0xFF6656D9)
+val CareAvatarBlue50 = Color(0xFFEFF6FF)
+val CareAvatarBlue500 = Color(0xFF2F7DE1)
 
 val Primary = Green500
 

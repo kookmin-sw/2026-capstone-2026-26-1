@@ -2,6 +2,7 @@ package com.example.passedpath
 
 import android.app.Application
 import com.example.passedpath.app.AppContainer
+import com.example.passedpath.app.GoogleMapsRendererInitializer
 import com.kakao.sdk.common.KakaoSdk
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -16,6 +17,7 @@ class GlobalApplication : Application() {
     override fun onCreate() {
         super.onCreate()
 
+        GoogleMapsRendererInitializer.initialize(this)
         appContainer = AppContainer(this)
         KakaoSdk.init(this, BuildConfig.KAKAO_NATIVE_APP_KEY)
         applicationScope.launch {

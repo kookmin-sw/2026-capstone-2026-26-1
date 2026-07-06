@@ -3,6 +3,7 @@ package com.example.passedpath.feature.summary.presentation.viewmodel
 import com.example.passedpath.feature.summary.domain.model.DayRouteSummary
 import com.example.passedpath.feature.summary.domain.repository.DayRouteSummaryRepository
 import com.example.passedpath.feature.summary.domain.usecase.GetDayRouteSummaryUseCase
+import com.example.passedpath.feature.summary.presentation.state.DaySummaryNoDataText
 import com.example.passedpath.testutil.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -35,6 +36,7 @@ class DaySummaryViewModelTest {
         assertNull(state.errorMessage)
         assertEquals("08:10", state.summary.outingTimeText)
         assertEquals("18:40", state.summary.enterHomeTimeText)
+        assertEquals(listOf("\uC815\uB989\uB3D9", "\uC131\uBD81\uB3D9"), state.summary.visitedDongNames)
     }
 
     @Test
@@ -51,11 +53,39 @@ class DaySummaryViewModelTest {
         assertEquals("2026-04-29", state.dateKey)
         assertFalse(state.isLoading)
         assertEquals(false, state.hasLoaded)
-        assertEquals("-", state.summary.outingTimeText)
-        assertEquals("-", state.summary.enterHomeTimeText)
-        assertEquals("0\uBD84", state.summary.totalOutingDurationText)
-        assertEquals("0\uD68C", state.summary.totalOutingCountText)
+        assertEquals(DaySummaryNoDataText, state.summary.outingTimeText)
+        assertEquals(DaySummaryNoDataText, state.summary.enterHomeTimeText)
+        assertEquals(DaySummaryNoDataText, state.summary.totalOutingDurationText)
+        assertEquals(DaySummaryNoDataText, state.summary.totalOutingCountText)
+        assertEquals(emptyList<String>(), state.summary.visitedDongNames)
         assertNotNull(state.errorMessage)
+    }
+
+    @Test
+    fun `loadSummary exposes no data text when summary metrics are missing`() = runTest {
+        val repository = FakeDayRouteSummaryRepository(
+            summary = DayRouteSummary(
+                dateKey = "2026-04-29",
+                outingTime = null,
+                enterHomeTime = null,
+                totalOutingCount = null,
+                totalOutingSeconds = null,
+                totalOutingDurationText = null,
+                visitedDongNames = emptyList()
+            )
+        )
+        val viewModel = createViewModel(repository)
+
+        viewModel.loadSummary("2026-04-29")
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertEquals(true, state.hasLoaded)
+        assertEquals(DaySummaryNoDataText, state.summary.outingTimeText)
+        assertEquals(DaySummaryNoDataText, state.summary.enterHomeTimeText)
+        assertEquals(DaySummaryNoDataText, state.summary.totalOutingDurationText)
+        assertEquals(DaySummaryNoDataText, state.summary.totalOutingCountText)
+        assertEquals(emptyList<String>(), state.summary.visitedDongNames)
     }
 
     @Test
@@ -95,6 +125,15 @@ class DaySummaryViewModelTest {
 }
 
 private class FakeDayRouteSummaryRepository(
+    private val summary: DayRouteSummary = DayRouteSummary(
+        dateKey = "2026-04-29",
+        outingTime = "2026-04-29T08:10:00+09:00",
+        enterHomeTime = "2026-04-29T18:40:00+09:00",
+        totalOutingCount = 2,
+        totalOutingSeconds = 36_120L,
+        totalOutingDurationText = "10\uC2DC\uAC04 2\uBD84",
+        visitedDongNames = listOf("\uC815\uB989\uB3D9", "\uC131\uBD81\uB3D9")
+    ),
     private val failure: Throwable? = null
 ) : DayRouteSummaryRepository {
     val requestedDateKeys = mutableListOf<String>()
@@ -102,13 +141,6 @@ private class FakeDayRouteSummaryRepository(
     override suspend fun getDayRouteSummary(dateKey: String): DayRouteSummary {
         requestedDateKeys += dateKey
         failure?.let { throw it }
-        return DayRouteSummary(
-            dateKey = dateKey,
-            outingTime = "2026-04-29T08:10:00+09:00",
-            enterHomeTime = "2026-04-29T18:40:00+09:00",
-            totalOutingCount = 2,
-            totalOutingSeconds = 36_120L,
-            totalOutingDurationText = "10\uC2DC\uAC04 2\uBD84"
-        )
+        return summary.copy(dateKey = dateKey)
     }
 }

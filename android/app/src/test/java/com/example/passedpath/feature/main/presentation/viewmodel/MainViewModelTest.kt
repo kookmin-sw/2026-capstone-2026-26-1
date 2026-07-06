@@ -1,12 +1,14 @@
 ﻿package com.example.passedpath.feature.main.presentation.viewmodel
 
 import com.example.passedpath.feature.bookmark.domain.model.DayRouteBookmark
+import com.example.passedpath.feature.bookmark.domain.model.DayRouteBookmarkList
 import com.example.passedpath.feature.bookmark.domain.repository.DayRouteBookmarkRepository
 import com.example.passedpath.feature.bookmark.domain.usecase.ToggleDayRouteBookmarkUseCase
 import com.example.passedpath.feature.locationtracking.data.manager.LocationTrackingServiceStateReader
 import com.example.passedpath.feature.locationtracking.domain.model.DailyPath
 import com.example.passedpath.feature.locationtracking.domain.model.DayRouteDetail
 import com.example.passedpath.feature.locationtracking.domain.model.DayRoutePlace
+import com.example.passedpath.feature.locationtracking.domain.model.LocalDayRouteSnapshot
 import com.example.passedpath.feature.locationtracking.domain.model.RoutePoint
 import com.example.passedpath.feature.locationtracking.domain.model.TrackedLocation
 import com.example.passedpath.feature.locationtracking.domain.repository.DayRouteRepository
@@ -32,6 +34,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -89,7 +92,7 @@ class MainViewModelTest {
         assertTrue(state.selectedRoute.hasLocationData)
         assertEquals("Han River", state.selectedRoute.title)
         assertEquals("Windy evening walk", state.selectedRoute.memo)
-        assertEquals(3, state.selectedRoute.polylinePoints.size)
+        assertEquals(3, state.selectedRoute.mapPolylinePoints.size)
         assertEquals(1, state.selectedRoute.places.size)
         assertEquals(listOf("2026-03-29"), repository.requestedRemoteDates)
         assertTrue(repository.observedLocalDates.isEmpty())
@@ -127,9 +130,10 @@ class MainViewModelTest {
         assertFalse(state.isRouteLoading)
         assertFalse(state.isRouteEmpty)
         assertNull(state.routeErrorMessage)
-        assertEquals(2, state.selectedRoute.polylinePoints.size)
+        assertEquals(2, state.selectedRoute.mapPolylinePoints.size)
         assertEquals(1.5, state.selectedRoute.totalDistanceKm, 0.0)
         assertEquals(listOf("2026-03-31"), repository.observedLocalDates)
+        assertTrue(repository.observedFullLocalDates.isEmpty())
         assertEquals(listOf("2026-03-31"), repository.requestedRemoteDates)
     }
 
@@ -164,7 +168,7 @@ class MainViewModelTest {
         val state = viewModel.uiState.value
         assertFalse(state.isRouteEmpty)
         assertNull(state.routeErrorMessage)
-        assertEquals(3, state.selectedRoute.polylinePoints.size)
+        assertEquals(3, state.selectedRoute.mapPolylinePoints.size)
         assertEquals(2.3, state.selectedRoute.totalDistanceKm, 0.0)
     }
 
@@ -178,14 +182,46 @@ class MainViewModelTest {
         )
         advanceUntilIdle()
 
-        viewModel.updateCurrentLocation(
-            CoordinateUiState(latitude = 37.1, longitude = 127.1)
-        )
+        val currentLocation = CoordinateUiState(latitude = 37.1, longitude = 127.1)
+        viewModel.updateCurrentLocation(currentLocation)
 
+        assertEquals(currentLocation, viewModel.currentLocationState.value)
         assertEquals(
             MainCameraIntent.CenterCurrentLocation,
             viewModel.uiState.value.pendingCameraIntent
         )
+    }
+
+    @Test
+    fun `current location ui state updates only after minimum distance and interval`() = runTest {
+        var nowMillis = 1_000L
+        val viewModel = createViewModel(
+            repository = FakeDayRouteRepository(),
+            initialDateKey = "2026-03-31",
+            todayDateKey = "2026-03-31",
+            backgroundGranted = true,
+            currentTimeMillis = { nowMillis }
+        )
+        advanceUntilIdle()
+
+        val firstLocation = CoordinateUiState(latitude = 37.0, longitude = 127.0)
+        val farLocationBeforeInterval = CoordinateUiState(latitude = 37.0002, longitude = 127.0)
+        val nearLocationAfterInterval = CoordinateUiState(latitude = 37.00001, longitude = 127.0)
+        val farLocationAfterInterval = CoordinateUiState(latitude = 37.0002, longitude = 127.0)
+
+        viewModel.updateCurrentLocation(firstLocation)
+        assertEquals(firstLocation, viewModel.currentLocationState.value)
+
+        nowMillis = 4_000L
+        viewModel.updateCurrentLocation(farLocationBeforeInterval)
+        assertEquals(firstLocation, viewModel.currentLocationState.value)
+
+        nowMillis = 7_000L
+        viewModel.updateCurrentLocation(nearLocationAfterInterval)
+        assertEquals(firstLocation, viewModel.currentLocationState.value)
+
+        viewModel.updateCurrentLocation(farLocationAfterInterval)
+        assertEquals(farLocationAfterInterval, viewModel.currentLocationState.value)
     }
 
     @Test
@@ -277,8 +313,8 @@ class MainViewModelTest {
     @Test
     fun `denied permission shows overlay and clears current location`() = runTest {
         val permissionReader = MutableLocationPermissionStatusReader(
-            foregroundGranted = false,
-            backgroundGranted = false
+            foregroundGranted = true,
+            backgroundGranted = true
         )
         val viewModel = createViewModel(
             repository = FakeDayRouteRepository(),
@@ -288,9 +324,21 @@ class MainViewModelTest {
         )
         advanceUntilIdle()
 
+        viewModel.updateCurrentLocation(CoordinateUiState(latitude = 37.1, longitude = 127.1))
+        assertNotNull(viewModel.currentLocationState.value)
+        assertEquals(MainCameraIntent.CenterCurrentLocation, viewModel.uiState.value.pendingCameraIntent)
+
+        permissionReader.foregroundGranted = false
+        permissionReader.backgroundGranted = false
+        viewModel.refreshPermissionState()
+
         assertEquals(LocationPermissionUiState.DENIED, viewModel.uiState.value.permissionState)
         assertNotNull(createPermissionOverlayUiModel(viewModel.uiState.value.permissionState, viewModel.uiState.value.isLocationServiceEnabled))
-        assertNull(viewModel.uiState.value.currentLocation)
+        assertNull(viewModel.currentLocationState.value)
+        assertNull(viewModel.uiState.value.pendingCameraIntent)
+
+        viewModel.updateCurrentLocation(CoordinateUiState(latitude = 37.2, longitude = 127.2))
+        assertNull(viewModel.currentLocationState.value)
     }
 
     @Test
@@ -667,7 +715,7 @@ class MainViewModelTest {
         assertEquals("2026-03-31", state.selectedDateKey)
         assertNull(state.routeErrorMessage)
         assertFalse(state.isRouteEmpty)
-        assertEquals(1, state.selectedRoute.polylinePoints.size)
+        assertEquals(1, state.selectedRoute.mapPolylinePoints.size)
         assertEquals(listOf("2026-03-31"), repository.observedLocalDates)
     }
 
@@ -684,7 +732,8 @@ class MainViewModelTest {
             FakeLocationPermissionStatusReader(backgroundGranted = backgroundGranted),
         locationServiceReader: LocationServiceStatusReader =
             MutableLocationServiceStatusReader(isEnabled = isLocationServiceEnabled),
-        bookmarkRepository: DayRouteBookmarkRepository = FakeDayRouteBookmarkRepository()
+        bookmarkRepository: DayRouteBookmarkRepository = FakeDayRouteBookmarkRepository(),
+        currentTimeMillis: () -> Long = { 0L }
     ): MainViewModel {
         return MainViewModel(
             locationAccessStateResolver = LocationAccessStateResolver(
@@ -700,7 +749,8 @@ class MainViewModelTest {
             observeRecentTrackingEvents = FakeObserveRecentTrackingEventsUseCase(),
             trackingServiceStateReader = FakeLocationTrackingServiceStateReader(trackingState),
             startTracking = onStartTracking,
-            stopTracking = onStopTracking
+            stopTracking = onStopTracking,
+            currentTimeMillis = currentTimeMillis
         )
     }
 
@@ -738,10 +788,18 @@ class MainViewModelTest {
     ) : DayRouteRepository {
         val requestedRemoteDates = mutableListOf<String>()
         val observedLocalDates = mutableListOf<String>()
+        val observedFullLocalDates = mutableListOf<String>()
 
         override fun observeLocalDayRoute(dateKey: String): Flow<DailyPath?> {
-            observedLocalDates += dateKey
+            observedFullLocalDates += dateKey
             return localRouteByDate.getOrPut(dateKey) { MutableStateFlow(null) }.asStateFlow()
+        }
+
+        override fun observeLocalRouteSnapshot(dateKey: String): Flow<LocalDayRouteSnapshot?> {
+            observedLocalDates += dateKey
+            return localRouteByDate.getOrPut(dateKey) { MutableStateFlow(null) }
+                .asStateFlow()
+                .map { dailyPath -> dailyPath?.toLocalDayRouteSnapshot() }
         }
 
         override suspend fun getLocalDayRoute(dateKey: String): DailyPath? {
@@ -754,6 +812,15 @@ class MainViewModelTest {
             requestedRemoteDates += dateKey
             return resultByDate[dateKey]
                 ?: RemoteDayRouteResult.Empty
+        }
+
+        private fun DailyPath.toLocalDayRouteSnapshot(): LocalDayRouteSnapshot {
+            return LocalDayRouteSnapshot(
+                dateKey = dateKey,
+                points = points,
+                totalDistanceMeters = totalDistanceMeters,
+                pathPointCount = pathPointCount
+            )
         }
     }
 
@@ -769,6 +836,19 @@ class MainViewModelTest {
         private val toggleGate: CompletableDeferred<Unit>? = null
     ) : DayRouteBookmarkRepository {
         val toggledDates = mutableListOf<String>()
+        val markedDateBatches = mutableListOf<List<String>>()
+
+        override suspend fun getBookmarkedDayRoutes(
+            cursorDate: String?,
+            size: Int
+        ): DayRouteBookmarkList {
+            return DayRouteBookmarkList(
+                dayRouteCount = 0,
+                hasNext = false,
+                nextCursorDate = null,
+                dayRoutes = emptyList()
+            )
+        }
 
         override suspend fun toggleBookmark(dateKey: String): DayRouteBookmark {
             toggleGate?.await()
@@ -777,6 +857,10 @@ class MainViewModelTest {
             val nextValue = resultByDate[dateKey] ?: true
             resultByDate[dateKey] = nextValue
             return DayRouteBookmark(isBookmarked = nextValue)
+        }
+
+        override suspend fun toggleBookmarks(dateKeys: List<String>) {
+            markedDateBatches += dateKeys
         }
     }
 

@@ -3,14 +3,19 @@ package com.example.passedpath.feature.locationtracking.data.local.mapper
 import android.location.Location
 import com.example.passedpath.feature.locationtracking.data.local.entity.DayRouteEntity
 import com.example.passedpath.feature.locationtracking.data.local.entity.GpsPointEntity
+import com.example.passedpath.feature.locationtracking.data.local.model.GpsPointRouteProjection
 import com.example.passedpath.feature.locationtracking.data.remote.dto.GpsPointRequestDto
 import com.example.passedpath.feature.locationtracking.domain.model.DailyPath
+import com.example.passedpath.feature.locationtracking.domain.model.LocalDayRouteSnapshot
 import com.example.passedpath.feature.locationtracking.domain.model.TrackedLocation
+import com.example.passedpath.feature.locationtracking.domain.policy.MapPolylineSimplificationPolicy
+import com.google.gson.Gson
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 private val DateKeyFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+private val RoutePolylineCacheGson = Gson()
 
 // TrackedLocation 도메인 모델을 Room 저장용 GpsPointEntity로 변환한다.
 fun TrackedLocation.toGpsPointEntity(dateKey: String): GpsPointEntity {
@@ -34,12 +39,58 @@ fun GpsPointEntity.toTrackedLocation(): TrackedLocation {
     )
 }
 
+fun GpsPointRouteProjection.toTrackedLocation(): TrackedLocation {
+    return TrackedLocation(
+        latitude = latitude,
+        longitude = longitude,
+        accuracyMeters = accuracyMeters,
+        recordedAtEpochMillis = recordedAtEpochMillis
+    )
+}
+
 // TrackedLocation 도메인 모델을 업로드용 GpsPointRequestDto로 변환한다.
 fun TrackedLocation.toGpsPointRequestDto(): GpsPointRequestDto {
     return GpsPointRequestDto(
         recordedAt = Instant.ofEpochMilli(recordedAtEpochMillis).toString(),
         latitude = latitude,
         longitude = longitude
+    )
+}
+
+// 날짜별 route 표시용 GPS projection과 요약 정보를 화면 관찰용 snapshot으로 변환한다.
+fun List<GpsPointRouteProjection>.toLocalDayRouteSnapshot(
+    dateKey: String,
+    existingRoute: DayRouteEntity? = null
+): LocalDayRouteSnapshot {
+    val trackedPoints = map(GpsPointRouteProjection::toTrackedLocation)
+    val mapPolylinePoints = toRouteProjectionMapPolylineCachePoints()
+
+    return LocalDayRouteSnapshot(
+        dateKey = dateKey,
+        points = mapPolylinePoints,
+        totalDistanceMeters = existingRoute?.totalDistanceMeters
+            ?: trackedPoints.calculateTotalDistanceMeters(),
+        pathPointCount = existingRoute?.pathPointCount ?: trackedPoints.size
+    )
+}
+
+fun DayRouteEntity.toLocalDayRouteSnapshotFromCache(): LocalDayRouteSnapshot? {
+    val cachePoints = decodeFreshMapPolylineCacheOrNull() ?: return null
+    return LocalDayRouteSnapshot(
+        dateKey = dateKey,
+        points = cachePoints,
+        totalDistanceMeters = totalDistanceMeters,
+        pathPointCount = pathPointCount
+    )
+}
+
+fun DayRouteEntity.withRebuiltMapPolylineCache(
+    points: List<GpsPointRouteProjection>
+): DayRouteEntity {
+    val cachePoints = points.toRouteProjectionMapPolylineCachePoints()
+    return copy(
+        mapPolylineCacheJson = cachePoints.toMapPolylineCacheJson(),
+        mapPolylineCacheSourcePointCount = points.size
     )
 }
 
@@ -66,13 +117,16 @@ fun List<GpsPointEntity>.toDayRouteEntity(
     previousRoute: DayRouteEntity? = null
 ): DayRouteEntity {
     val trackedPoints = map(GpsPointEntity::toTrackedLocation)
+    val cachePoints = toGpsEntityMapPolylineCachePoints()
 
     return DayRouteEntity(
         dateKey = dateKey,
         totalDistanceMeters = trackedPoints.calculateTotalDistanceMeters(),
         pathPointCount = trackedPoints.size,
         lastRecordedAtEpochMillis = lastOrNull()?.recordedAtEpochMillis,
-        lastSyncedAtEpochMillis = previousRoute?.lastSyncedAtEpochMillis
+        lastSyncedAtEpochMillis = previousRoute?.lastSyncedAtEpochMillis,
+        mapPolylineCacheJson = cachePoints.toMapPolylineCacheJson(),
+        mapPolylineCacheSourcePointCount = trackedPoints.size
     )
 }
 
@@ -89,14 +143,95 @@ fun DayRouteEntity?.toUpdatedDayRouteEntity(
     } else {
         distanceBetweenMeters(previousPoint, newPoint)
     }
+    val nextPathPointCount = (this?.pathPointCount ?: 0) + 1
+    val cachePoints = when {
+        this == null -> listOf(newPoint).toSimplifiedMapPolylineCachePoints()
+        else -> decodeFreshMapPolylineCacheOrNull()
+            ?.let { cachePoints -> (cachePoints + newPoint).toSimplifiedMapPolylineCachePoints() }
+    }
 
     return DayRouteEntity(
         dateKey = dateKey,
         totalDistanceMeters = (this?.totalDistanceMeters ?: 0.0) + distanceDeltaMeters,
-        pathPointCount = (this?.pathPointCount ?: 0) + 1,
+        pathPointCount = nextPathPointCount,
         lastRecordedAtEpochMillis = newPoint.recordedAtEpochMillis,
-        lastSyncedAtEpochMillis = this?.lastSyncedAtEpochMillis
+        lastSyncedAtEpochMillis = this?.lastSyncedAtEpochMillis,
+        mapPolylineCacheJson = cachePoints?.toMapPolylineCacheJson()
+            ?: this?.mapPolylineCacheJson
+            ?: "[]",
+        mapPolylineCacheSourcePointCount = if (cachePoints == null) {
+            this?.mapPolylineCacheSourcePointCount ?: 0
+        } else {
+            nextPathPointCount
+        }
     )
+}
+
+fun DayRouteEntity.decodeFreshMapPolylineCacheOrNull(): List<TrackedLocation>? {
+    if (mapPolylineCacheSourcePointCount != pathPointCount) return null
+
+    val cachePoints = mapPolylineCacheJson.decodeMapPolylineCacheOrNull() ?: return null
+    if (cachePoints.size > MapPolylineSimplificationPolicy.MAX_MAP_POLYLINE_POINTS) return null
+
+    return when {
+        pathPointCount == 0 && cachePoints.isEmpty() -> cachePoints
+        pathPointCount > 0 && cachePoints.isNotEmpty() -> cachePoints
+        else -> null
+    }
+}
+
+fun String.decodeMapPolylineCacheOrNull(): List<TrackedLocation>? {
+    return runCatching {
+        RoutePolylineCacheGson.fromJson(this, Array<MapPolylineCachePointJson>::class.java)
+            ?.map { point ->
+                TrackedLocation(
+                    latitude = point.latitude,
+                    longitude = point.longitude,
+                    accuracyMeters = point.accuracyMeters,
+                    recordedAtEpochMillis = point.recordedAtEpochMillis
+                )
+            }
+    }.getOrNull()
+}
+
+fun List<TrackedLocation>.toMapPolylineCacheJson(): String {
+    return RoutePolylineCacheGson.toJson(
+        map { point ->
+            MapPolylineCachePointJson(
+                recordedAtEpochMillis = point.recordedAtEpochMillis,
+                latitude = point.latitude,
+                longitude = point.longitude,
+                accuracyMeters = point.accuracyMeters
+            )
+        }
+    )
+}
+
+private fun List<GpsPointRouteProjection>.toRouteProjectionMapPolylineCachePoints(): List<TrackedLocation> {
+    val indexes = MapPolylineSimplificationPolicy.simplifyIndexes(
+        size = size,
+        latitudeAt = { index -> this[index].latitude },
+        longitudeAt = { index -> this[index].longitude }
+    )
+    return indexes.map { index -> this[index].toTrackedLocation() }
+}
+
+private fun List<GpsPointEntity>.toGpsEntityMapPolylineCachePoints(): List<TrackedLocation> {
+    val indexes = MapPolylineSimplificationPolicy.simplifyIndexes(
+        size = size,
+        latitudeAt = { index -> this[index].latitude },
+        longitudeAt = { index -> this[index].longitude }
+    )
+    return indexes.map { index -> this[index].toTrackedLocation() }
+}
+
+private fun List<TrackedLocation>.toSimplifiedMapPolylineCachePoints(): List<TrackedLocation> {
+    val indexes = MapPolylineSimplificationPolicy.simplifyIndexes(
+        size = size,
+        latitudeAt = { index -> this[index].latitude },
+        longitudeAt = { index -> this[index].longitude }
+    )
+    return indexes.map { index -> this[index] }
 }
 
 // epoch millis 값을 디바이스 로컬 타임존 기준 yyyy-MM-dd dateKey로 바꾼다.
@@ -144,3 +279,10 @@ fun distanceBetweenMeters(
 fun Double.metersToKilometers(): Double {
     return this / 1000.0
 }
+
+private data class MapPolylineCachePointJson(
+    val recordedAtEpochMillis: Long,
+    val latitude: Double,
+    val longitude: Double,
+    val accuracyMeters: Float?
+)

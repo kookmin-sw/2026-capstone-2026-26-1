@@ -167,7 +167,7 @@ private fun previewMenuItems(): List<MenuActionItem> {
         ),
         MenuActionItem(
             text = "기록 삭제",
-            iconResId = R.drawable.ic_trash,
+            iconResId = R.drawable.ic_delete,
             onClick = {},
         ),
     )

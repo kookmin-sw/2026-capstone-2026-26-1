@@ -1,7 +1,7 @@
 ﻿package com.example.passedpath.feature.route.presentation.coordinator
 
-import com.example.passedpath.feature.locationtracking.domain.model.DailyPath
 import com.example.passedpath.feature.locationtracking.domain.model.DayRouteDetail
+import com.example.passedpath.feature.locationtracking.domain.model.LocalDayRouteSnapshot
 
 internal fun createRouteLoadingDebugSnapshot(isTodayRoute: Boolean, dateKey: String): RouteDebugSnapshot {
     return RouteDebugSnapshot(
@@ -11,8 +11,8 @@ internal fun createRouteLoadingDebugSnapshot(isTodayRoute: Boolean, dateKey: Str
     )
 }
 
-internal fun createTodayRouteDebugSnapshot(dailyPath: DailyPath?): RouteDebugSnapshot {
-    return if (dailyPath == null) {
+internal fun createTodayRouteDebugSnapshot(routeSnapshot: LocalDayRouteSnapshot?): RouteDebugSnapshot {
+    return if (routeSnapshot == null) {
         RouteDebugSnapshot(
             source = "local",
             status = "empty",
@@ -22,7 +22,7 @@ internal fun createTodayRouteDebugSnapshot(dailyPath: DailyPath?): RouteDebugSna
         RouteDebugSnapshot(
             source = "local",
             status = "success",
-            message = "points=${dailyPath.pathPointCount} distanceKm=${dailyPath.totalDistanceMeters / 1000.0}"
+            message = "points=${routeSnapshot.pathPointCount} distanceKm=${routeSnapshot.totalDistanceMeters / 1000.0}"
         )
     }
 }

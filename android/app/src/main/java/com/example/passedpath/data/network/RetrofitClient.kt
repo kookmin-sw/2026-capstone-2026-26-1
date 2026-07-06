@@ -19,7 +19,7 @@ object RetrofitClient {
         val builder = OkHttpClient.Builder()
             .addInterceptor(
                 AuthInterceptor(
-                    sessionStorage = sessionStorage,
+                    tokenStore = sessionStorage,
                     attachAuthorizationToRefreshRequest = attachAuthorizationToRefreshRequest
                 )
             )

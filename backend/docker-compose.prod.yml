@@ -1,0 +1,27 @@
+services:
+  app:
+    # 이미지 주소는 APP_IMAGE 환경변수로 분리. 미설정 시 아래 기본값으로 폴백(하위 호환).
+    image: ${APP_IMAGE}
+    container_name: myapp
+    ports:
+      - "80:8080"
+    depends_on:
+      - redis
+    env_file:
+      - .env
+    # t2.micro(955M) OOM 대응: 컨테이너 메모리 천장. 실사용은 ~414MB, 부하 시 ~500-650MB 추정.
+    mem_limit: 700m
+    restart: always
+
+  redis:
+    image: redis:7
+    container_name: redis
+    volumes:
+      - redis-data:/data
+    # maxmemory로 Redis 사용량 고정. RefreshToken 저장소라 상한 초과 시 오래된 키부터 축출(LRU).
+    command: redis-server --appendonly yes --maxmemory 100mb --maxmemory-policy allkeys-lru
+    mem_limit: 150m
+    restart: always
+
+volumes:
+  redis-data:

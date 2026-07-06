@@ -9,8 +9,6 @@ internal fun buildRouteActionUiState(routeMode: MainRouteModeUiState): RouteActi
             isTrackingEnabled = routeMode.isTrackingEnabled
         )
 
-        is MainRouteModeUiState.Past -> RouteActionUiState(
-            showPlayback = routeMode.isPlaybackEntryVisible
-        )
+        is MainRouteModeUiState.Past -> RouteActionUiState()
     }
 }

@@ -5,6 +5,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.example.passedpath.feature.locationtracking.data.local.entity.GpsPointEntity
+import com.example.passedpath.feature.locationtracking.data.local.model.GpsPointRouteProjection
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -20,6 +21,16 @@ interface GpsPointDao {
         """
     )
     fun observePointsByDate(dateKey: String): Flow<List<GpsPointEntity>>
+
+    @Query(
+        """
+        SELECT recordedAtEpochMillis, latitude, longitude, accuracyMeters
+        FROM gps_points
+        WHERE dateKey = :dateKey
+        ORDER BY recordedAtEpochMillis ASC
+        """
+    )
+    suspend fun getRoutePointProjectionsByDate(dateKey: String): List<GpsPointRouteProjection>
 
     @Query(
         """

@@ -16,6 +16,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -31,28 +32,25 @@ import com.example.passedpath.R
 import com.example.passedpath.feature.route.presentation.state.MainRouteModeUiState
 import com.example.passedpath.feature.route.presentation.state.PlaceMarkerUiState
 import com.example.passedpath.feature.route.presentation.state.RouteUiAction
-import com.example.passedpath.ui.state.CoordinateUiState
 import com.example.passedpath.ui.theme.Green50
 import com.google.android.gms.maps.model.JointType
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.RoundCap
 import com.google.maps.android.compose.MarkerComposable
 import com.google.maps.android.compose.Polyline
+import com.google.maps.android.compose.rememberMarkerState
 
 private const val RouteStrokeWidth = 14f
 private const val RouteOutlineWidth = 20f
 
 @Composable
 fun RouteMapContent(
-    routeModeUiState: MainRouteModeUiState,
+    routePoints: List<LatLng>,
     markerPlaces: List<PlaceMarkerUiState>,
     routeAccentColor: Color,
     onPlaceMarkerClick: (Long) -> Unit = {}
 ) {
-    val selectedRoute = routeModeUiState.route
-    if (selectedRoute.polylinePoints.size >= 2) {
-        val routePoints = selectedRoute.polylinePoints.map(CoordinateUiState::toLatLng)
-
+    if (routePoints.size >= 2) {
         Polyline(
             points = routePoints,
             color = Green50,
@@ -73,10 +71,18 @@ fun RouteMapContent(
 
     if (markerPlaces.isNotEmpty()) {
         markerPlaces.forEach { place ->
+            val position = remember(place.placeId, place.latitude, place.longitude) {
+                LatLng(place.latitude, place.longitude)
+            }
+            val markerState = rememberMarkerState(
+                key = "route-place:${place.placeId}:${place.latitude}:${place.longitude}",
+                position = position
+            )
+
             MarkerComposable(
-                state = com.google.maps.android.compose.MarkerState(
-                    position = LatLng(place.latitude, place.longitude)
-                ),
+                place.orderIndex,
+                routeAccentColor,
+                state = markerState,
                 title = place.placeName.ifBlank {
                     stringResource(R.string.route_place_fallback_title, place.orderIndex)
                 },
@@ -92,7 +98,6 @@ fun RouteMapContent(
         }
     }
 }
-
 @Composable
 private fun PlaceOrderMarker(
     place: PlaceMarkerUiState,
@@ -144,7 +149,6 @@ private fun PlaceOrderMarker(
         }
     }
 }
-
 @Composable
 fun RouteStatusOverlay(
     routeModeUiState: MainRouteModeUiState,
@@ -191,8 +195,4 @@ fun RouteStatusOverlay(
             }
         }
     }
-}
-
-private fun CoordinateUiState.toLatLng(): LatLng {
-    return LatLng(latitude, longitude)
 }

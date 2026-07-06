@@ -9,7 +9,6 @@ internal sealed interface MainRouteActionRequest {
     ) : MainRouteActionRequest
 
     data object ToggleTracking : MainRouteActionRequest
-    data object OpenPastPlayback : MainRouteActionRequest
 }
 
 internal enum class RouteReloadTrigger {
@@ -45,6 +44,5 @@ internal fun resolveMainRouteActionRequest(
         )
 
         RouteUiAction.ToggleTracking -> MainRouteActionRequest.ToggleTracking
-        RouteUiAction.EnterPastPlayback -> MainRouteActionRequest.OpenPastPlayback
     }
 }

@@ -15,6 +15,7 @@ import com.example.passedpath.feature.locationtracking.domain.repository.SaveRaw
 import com.example.passedpath.feature.locationtracking.domain.tracker.LocationTrackingSession
 import com.example.passedpath.feature.locationtracking.data.manager.LocationTrackingServiceStateWriter
 import com.example.passedpath.feature.locationtracking.presentation.notification.TrackingNotificationFactory
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -23,9 +24,10 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 
 class LocationTrackingService : Service() {
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -39,6 +41,7 @@ class LocationTrackingService : Service() {
     private var preBoundaryUploadJob: Job? = null
     private var networkConnectivityUploadJob: Job? = null
     private var idleModeFallbackJob: Job? = null
+    private var stopJob: Job? = null
     private var lastLocationCallbackAtEpochMillis: Long? = null
     private var currentTrackingMode: TrackingLocationMode = TrackingModePolicy.initialMode()
 
@@ -59,6 +62,8 @@ class LocationTrackingService : Service() {
     }
 
     override fun onDestroy() {
+        stopJob?.cancel()
+        stopJob = null
         stopTracking()
         serviceScope.cancel()
         super.onDestroy()
@@ -67,6 +72,8 @@ class LocationTrackingService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     private fun startTrackingIfNeeded() {
+        stopJob?.cancel()
+        stopJob = null
         if (trackingSession != null) return
 
         Log.i(TAG, "Starting location tracking service")
@@ -119,15 +126,45 @@ class LocationTrackingService : Service() {
     }
 
     private fun stopTrackingAndSelf() {
-        flushPendingPointsOnStop()
+        if (stopJob?.isActive == true) return
+
         stopTracking()
-        stopForeground(STOP_FOREGROUND_REMOVE)
-        stopSelf()
+        stopJob = serviceScope.launch {
+            val didFlushFinish = try {
+                withTimeoutOrNull(StopFlushTimeoutMillis) {
+                    flushPendingPointsOnStop()
+                } != null
+            } catch (throwable: Throwable) {
+                if (throwable is CancellationException) throw throwable
+                Log.e(TAG, "Stop flush failed before service shutdown", throwable)
+                diagnosticsLogger.log(
+                    category = TrackingDiagnosticsLogger.CATEGORY_UPLOAD,
+                    message = "stop_flush_failure cause=${throwable::class.java.simpleName}: ${throwable.message}"
+                )
+                true
+            }
+
+            if (!didFlushFinish) {
+                Log.w(TAG, "Stop flush timed out after ${StopFlushTimeoutMillis}ms")
+                diagnosticsLogger.log(
+                    category = TrackingDiagnosticsLogger.CATEGORY_UPLOAD,
+                    message = "stop_flush_timeout timeoutMs=$StopFlushTimeoutMillis"
+                )
+            }
+
+            withContext(Dispatchers.Main.immediate) {
+                stopForeground(STOP_FOREGROUND_REMOVE)
+                stopSelf()
+            }
+        }
     }
 
     private fun stopTracking() {
+        // 현재 위치 수집 세션을 멈춘다
         trackingSession?.stop()
         trackingSession = null
+
+        // 주기 업로드 세션도 취소한다
         periodicUploadJob?.cancel()
         periodicUploadJob = null
         preBoundaryUploadJob?.cancel()
@@ -136,6 +173,8 @@ class LocationTrackingService : Service() {
         networkConnectivityUploadJob = null
         idleModeFallbackJob?.cancel()
         idleModeFallbackJob = null
+
+        // 서비스 상태를 추적중이 아님으로 바꾼다
         serviceStateWriter.update(isTracking = false)
         serviceScope.launch {
             diagnosticsLogger.log(
@@ -266,32 +305,34 @@ class LocationTrackingService : Service() {
         Log.i(TAG, "Switched tracking mode to $mode")
     }
 
-    private fun flushPendingPointsOnStop() {
-        runBlocking {
-            val currentDateKey = applicationContext.appContainer.trackingDateKeyResolver.resolveCurrentDateKey()
-            val previousDateKey = applicationContext.appContainer.trackingDateKeyResolver.resolvePreviousDateKey()
-            Log.i(
-                TAG,
-                "Flushing pending points on stop currentDateKey=$currentDateKey previousDateKey=$previousDateKey"
-            )
+    private suspend fun flushPendingPointsOnStop() {
+        val currentDateKey = applicationContext.appContainer.trackingDateKeyResolver.resolveCurrentDateKey()
+        val previousDateKey = applicationContext.appContainer.trackingDateKeyResolver.resolvePreviousDateKey()
+        Log.i(
+            TAG,
+            "Flushing pending points on stop currentDateKey=$currentDateKey previousDateKey=$previousDateKey"
+        )
 
-            val didUploadPrevious = uploadPendingPoints(previousDateKey)
-            val didUploadCurrent = uploadPendingPoints(currentDateKey)
-            Log.i(
-                TAG,
-                "Stop flush completed previous=$didUploadPrevious current=$didUploadCurrent"
-            )
-        }
+        val didUploadPrevious = uploadPendingPoints(previousDateKey)
+        val didUploadCurrent = uploadPendingPoints(currentDateKey)
+        Log.i(
+            TAG,
+            "Stop flush completed previous=$didUploadPrevious current=$didUploadCurrent"
+        )
     }
 
     private suspend fun uploadPendingPoints(dateKey: String): Boolean {
         return uploadMutex.withLock {
             try {
-                val didUpload = applicationContext.appContainer.uploadGpsPointsBatchUseCase(dateKey)
+                val appContainer = applicationContext.appContainer
+                appContainer.authSessionStorage.warmTokenCacheIfNeeded()
+                val didUpload = appContainer.uploadGpsPointsBatchUseCase(dateKey)
                 if (!didUpload) {
                     Log.d(TAG, "No pending points to upload for dateKey=$dateKey")
                 }
                 didUpload
+            } catch (throwable: CancellationException) {
+                throw throwable
             } catch (throwable: Throwable) {
                 Log.e(TAG, "Upload failed for dateKey=$dateKey", throwable)
                 diagnosticsLogger.log(
@@ -314,6 +355,7 @@ class LocationTrackingService : Service() {
 
     companion object {
         private const val TAG = "LocationTracking"
+        private const val StopFlushTimeoutMillis = 10_000L
         private const val ACTION_START =
             "com.example.passedpath.feature.locationtracking.action.START"
         private const val ACTION_STOP =

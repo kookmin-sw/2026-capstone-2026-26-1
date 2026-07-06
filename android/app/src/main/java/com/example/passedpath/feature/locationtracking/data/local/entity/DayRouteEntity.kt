@@ -1,5 +1,6 @@
 package com.example.passedpath.feature.locationtracking.data.local.entity
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
@@ -10,5 +11,9 @@ data class DayRouteEntity(
     val totalDistanceMeters: Double,
     val pathPointCount: Int,
     val lastRecordedAtEpochMillis: Long?,
-    val lastSyncedAtEpochMillis: Long?
+    val lastSyncedAtEpochMillis: Long?,
+    @ColumnInfo(defaultValue = "'[]'")
+    val mapPolylineCacheJson: String = "[]",
+    @ColumnInfo(defaultValue = "0")
+    val mapPolylineCacheSourcePointCount: Int = 0
 )
