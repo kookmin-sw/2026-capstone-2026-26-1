@@ -77,6 +77,25 @@ jobs:
           target: "/home/${{ secrets.EC2_USER }}/app"
           overwrite: true
 
+      # Firebase 서비스 계정 키 파일 생성 (runner에서 임시 생성, JSON 전체를 시크릿으로 보관)
+      - name: Create Firebase credentials file
+        shell: bash
+        run: |
+          cat > gilbut-firebase-adminsdk.json << 'EOF'
+          ${{ secrets.FIREBASE_CREDENTIALS_JSON }}
+          EOF
+
+      # EC2로 Firebase 자격 증명 파일 업로드 (docker-compose.prod.yml이 볼륨 마운트로 컨테이너에 전달)
+      - name: Upload Firebase credentials to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "gilbut-firebase-adminsdk.json"
+          target: "/home/${{ secrets.EC2_USER }}/app"
+          overwrite: true
+
       # EC2로 docker-compose.prod.yml 업로드 (레포가 배포 파일의 단일 출처가 되도록)
       - name: Upload docker-compose.prod.yml to EC2
         uses: appleboy/scp-action@v0.1.7
