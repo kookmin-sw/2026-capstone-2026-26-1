@@ -13,7 +13,7 @@ import org.springframework.util.StringUtils;
 public class FcmClient {
 
     private static final String DATA_KEY_TYPE = "type";
-    private static final String DATA_KEY_INTERVAL_SECONDS = "intervalSeconds";
+    private static final String DATA_KEY_WATCHING = "watching";
     private static final String DATA_TYPE_TRACKING_INTERVAL_CHANGE = "TRACKING_INTERVAL_CHANGE";
 
     private final FirebaseMessaging firebaseMessaging;
@@ -22,7 +22,7 @@ public class FcmClient {
         this.firebaseMessaging = firebaseMessaging;
     }
 
-    public void sendTrackingIntervalChange(String fcmToken, int intervalSeconds) {
+    public void sendWatchingStatusChanged(String fcmToken, boolean watching) {
         if (!StringUtils.hasText(fcmToken)) {
             return;
         }
@@ -30,13 +30,13 @@ public class FcmClient {
         Message message = Message.builder()
             .setToken(fcmToken)
             .putData(DATA_KEY_TYPE, DATA_TYPE_TRACKING_INTERVAL_CHANGE)
-            .putData(DATA_KEY_INTERVAL_SECONDS, String.valueOf(intervalSeconds))
+            .putData(DATA_KEY_WATCHING, String.valueOf(watching))
             .build();
 
         try {
             firebaseMessaging.send(message);
         } catch (FirebaseMessagingException e) {
-            log.warn("위치 전송 주기 변경 FCM 발송에 실패했습니다. intervalSeconds={}", intervalSeconds, e);
+            log.warn("위치 조회 상태 변경 FCM 발송에 실패했습니다. watching={}", watching, e);
         }
     }
 }

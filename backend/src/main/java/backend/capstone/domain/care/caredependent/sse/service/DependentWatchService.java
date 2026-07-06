@@ -13,9 +13,6 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class DependentWatchService {
 
-    private static final int SHORT_INTERVAL_SECONDS = 30;
-    private static final int DEFAULT_INTERVAL_SECONDS = 180;
-
     private final StringRedisTemplate redisTemplate;
     private final CareRelationshipRepository careRelationshipRepository;
     private final FcmClient fcmClient;
@@ -40,8 +37,7 @@ public class DependentWatchService {
                 .add(watchKey(dependent.getId()), String.valueOf(guardianUserId));
             if (watcherCount != null && watcherCount > 0
                 && isFirstWatcher(dependent.getId())) {
-                fcmClient.sendTrackingIntervalChange(dependent.getFcmToken(),
-                    SHORT_INTERVAL_SECONDS);
+                fcmClient.sendWatchingStatusChanged(dependent.getFcmToken(), true);
             }
         } catch (Exception e) {
             log.warn("위치 조회 watch 등록에 실패했습니다. dependentUserId={}, guardianUserId={}",
@@ -54,8 +50,7 @@ public class DependentWatchService {
             redisTemplate.opsForSet().remove(watchKey(dependent.getId()),
                 String.valueOf(guardianUserId));
             if (isNoLongerWatched(dependent.getId())) {
-                fcmClient.sendTrackingIntervalChange(dependent.getFcmToken(),
-                    DEFAULT_INTERVAL_SECONDS);
+                fcmClient.sendWatchingStatusChanged(dependent.getFcmToken(), false);
             }
         } catch (Exception e) {
             log.warn("위치 조회 watch 해제에 실패했습니다. dependentUserId={}, guardianUserId={}",

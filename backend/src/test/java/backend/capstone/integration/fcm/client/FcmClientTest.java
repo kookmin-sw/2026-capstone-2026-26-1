@@ -24,8 +24,8 @@ class FcmClientTest {
     void fcm토큰이_없으면_발송하지_않는다() throws FirebaseMessagingException {
         FcmClient fcmClient = new FcmClient(firebaseMessaging);
 
-        fcmClient.sendTrackingIntervalChange(null, 30);
-        fcmClient.sendTrackingIntervalChange("   ", 30);
+        fcmClient.sendWatchingStatusChanged(null, true);
+        fcmClient.sendWatchingStatusChanged("   ", true);
 
         then(firebaseMessaging).should(never()).send(any(Message.class));
     }
@@ -34,7 +34,7 @@ class FcmClientTest {
     void fcm토큰이_있으면_발송한다() throws FirebaseMessagingException {
         FcmClient fcmClient = new FcmClient(firebaseMessaging);
 
-        fcmClient.sendTrackingIntervalChange("fcm-token", 30);
+        fcmClient.sendWatchingStatusChanged("fcm-token", true);
 
         then(firebaseMessaging).should().send(any(Message.class));
     }
@@ -45,6 +45,6 @@ class FcmClientTest {
         given(firebaseMessaging.send(any(Message.class)))
             .willThrow(mock(FirebaseMessagingException.class));
 
-        fcmClient.sendTrackingIntervalChange("fcm-token", 30);
+        fcmClient.sendWatchingStatusChanged("fcm-token", true);
     }
 }

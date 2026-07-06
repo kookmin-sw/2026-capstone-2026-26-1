@@ -1,5 +1,6 @@
 package backend.capstone.domain.care.caredependent.sse.service;
 
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
@@ -38,7 +39,7 @@ class DependentWatchServiceTest {
     private DependentWatchService dependentWatchService;
 
     @Test
-    void 최초_watcher_등록시_주기_단축_fcm을_발송한다() {
+    void 최초_watcher_등록시_watching_true_fcm을_발송한다() {
         User dependent = createUser(10L, "fcm-token-10");
         given(careRelationshipRepository.findDependentUsersByGuardianUserId(1L))
             .willReturn(List.of(dependent));
@@ -48,7 +49,7 @@ class DependentWatchServiceTest {
 
         dependentWatchService.startWatching(1L);
 
-        then(fcmClient).should().sendTrackingIntervalChange("fcm-token-10", 30);
+        then(fcmClient).should().sendWatchingStatusChanged("fcm-token-10", true);
     }
 
     @Test
@@ -62,11 +63,11 @@ class DependentWatchServiceTest {
 
         dependentWatchService.startWatching(2L);
 
-        then(fcmClient).should(never()).sendTrackingIntervalChange(anyString(), org.mockito.ArgumentMatchers.anyInt());
+        then(fcmClient).should(never()).sendWatchingStatusChanged(anyString(), anyBoolean());
     }
 
     @Test
-    void 마지막_watcher_해제시_기본_주기로_복구하는_fcm을_발송한다() {
+    void 마지막_watcher_해제시_watching_false_fcm을_발송한다() {
         User dependent = createUser(10L, "fcm-token-10");
         given(careRelationshipRepository.findDependentUsersByGuardianUserId(1L))
             .willReturn(List.of(dependent));
@@ -75,7 +76,7 @@ class DependentWatchServiceTest {
 
         dependentWatchService.stopWatching(1L);
 
-        then(fcmClient).should().sendTrackingIntervalChange("fcm-token-10", 180);
+        then(fcmClient).should().sendWatchingStatusChanged("fcm-token-10", false);
     }
 
     @Test
@@ -88,7 +89,7 @@ class DependentWatchServiceTest {
 
         dependentWatchService.stopWatching(1L);
 
-        then(fcmClient).should(never()).sendTrackingIntervalChange(anyString(), org.mockito.ArgumentMatchers.anyInt());
+        then(fcmClient).should(never()).sendWatchingStatusChanged(anyString(), anyBoolean());
     }
 
     @Test
@@ -100,7 +101,7 @@ class DependentWatchServiceTest {
 
         dependentWatchService.startWatching(1L);
 
-        then(fcmClient).should(never()).sendTrackingIntervalChange(anyString(), org.mockito.ArgumentMatchers.anyInt());
+        then(fcmClient).should(never()).sendWatchingStatusChanged(anyString(), anyBoolean());
     }
 
     private User createUser(Long userId, String fcmToken) {
