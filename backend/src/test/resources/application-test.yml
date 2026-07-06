@@ -32,6 +32,6 @@ kakao:
     rest-api-key: test-dummy-key
 
 # FirebaseConfig가 FileInputStream으로 직접 여는 경로라 클래스패스가 아닌 실제 파일 경로가 필요함.
-# gradle test의 작업 디렉터리는 프로젝트 루트이므로 루트의 더미 서비스 계정 JSON을 가리킨다.
+# gradle test의 작업 디렉터리는 프로젝트 루트이므로, 루트 기준 상대경로로 더미 서비스 계정 JSON을 가리킨다.
 firebase:
-  credentials-path: firebase-test-dummy.json
+  credentials-path: src/test/resources/firebase-test-dummy.json

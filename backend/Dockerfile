@@ -32,4 +32,13 @@ COPY --from=builder /app/build/libs/*.jar app.jar
 # (선택) Spring Boot 기본 포트
 EXPOSE 8080
 
-ENTRYPOINT ["java","-jar","app.jar"]
+# JVM 메모리/기동 옵션 (t2.micro OOM 대응)
+# - MaxRAMPercentage=50: 컨테이너 mem_limit의 50%를 최대 힙으로 (나머지는 논힙/버퍼 여유)
+# - ExitOnOutOfMemoryError: 힙 고갈 시 매달리지 않고 즉시 종료 → 깔끔한 재기동
+# - TieredStopAtLevel=1: C2 JIT 생략으로 기동 CPU 버스트/코드캐시 절감
+ENTRYPOINT ["java", \
+  "-XX:MaxRAMPercentage=50.0", \
+  "-XX:InitialRAMPercentage=30.0", \
+  "-XX:+ExitOnOutOfMemoryError", \
+  "-XX:TieredStopAtLevel=1", \
+  "-jar", "app.jar"]
