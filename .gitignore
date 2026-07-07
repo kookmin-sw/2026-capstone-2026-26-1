@@ -66,6 +66,8 @@ backend/.gradle
 backend/build
 backend/out
 backend/gilbut-firebase-adminsdk.json
+backend/docs/resume
+backend/.claude/skills/resume-bullet
 # test data
 /backend/src/test/resources/test-data
 # Keep placeholder
