@@ -29,6 +29,9 @@ import com.example.passedpath.feature.daynote.domain.usecase.PatchDayRouteMemoUs
 import com.example.passedpath.feature.daynote.domain.usecase.PatchDayRouteTitleUseCase
 import com.example.passedpath.feature.fcm.data.remote.api.FcmTokenApi
 import com.example.passedpath.feature.fcm.data.repository.FcmTokenRepository
+import com.example.passedpath.feature.locationtracking.data.manager.InMemoryTrackingUploadModeStateHolder
+import com.example.passedpath.feature.locationtracking.data.manager.TrackingUploadModeReader
+import com.example.passedpath.feature.locationtracking.data.manager.TrackingUploadModeWriter
 import com.example.passedpath.feature.care.data.remote.datasource.OkHttpCareDependentLocationStreamRemoteDataSource
 import com.example.passedpath.feature.care.data.remote.api.CareDependentApi
 import com.example.passedpath.feature.care.data.remote.api.CareDependentDayRouteApi
@@ -178,6 +181,18 @@ class AppContainer(
 
     val locationTrackingServiceStateWriter: LocationTrackingServiceStateWriter by lazy {
         locationTrackingServiceStateHolder
+    }
+
+    private val trackingUploadModeStateHolder by lazy {
+        InMemoryTrackingUploadModeStateHolder()
+    }
+
+    val trackingUploadModeReader: TrackingUploadModeReader by lazy {
+        trackingUploadModeStateHolder
+    }
+
+    val trackingUploadModeWriter: TrackingUploadModeWriter by lazy {
+        trackingUploadModeStateHolder
     }
 
     private val trackingDatabase: PassedPathDatabase by lazy {
