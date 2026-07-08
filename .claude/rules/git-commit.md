@@ -26,7 +26,7 @@
 ## 커밋 메시지 형식
 
 ```
-<type> #<이슈번호>: <한국어 설명>
+<type> : <한국어 설명>
 ```
 
 작업이 특정 이슈에 연결되지 않는 경우에만 이슈 번호를 생략한다.
@@ -49,17 +49,10 @@
 ## 브랜치 명명
 
 ```
-<type>/#<이슈번호>-<slug>
-```
-
-이슈 번호가 없는 작업(문서 정리, 잡일성 chore 등)은 이슈 번호를 생략한다.
-
-```
 <type>/<slug>
 ```
 
-예시: `feat/#38-weekly`, `fix/#4-place-search`, `docs/readme`, `chore/gitignore`.
-
+예시: `docs/readme`, `chore/gitignore`.
 `slug`는 영어 kebab-case로, 무엇을 하는 브랜치인지 간단히 드러나게 짓는다.
 
 ## 참고사항
