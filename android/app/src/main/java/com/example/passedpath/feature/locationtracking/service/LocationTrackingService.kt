@@ -12,6 +12,7 @@ import com.example.passedpath.feature.locationtracking.domain.policy.LocationUpl
 import com.example.passedpath.feature.locationtracking.domain.policy.TrackingLocationMode
 import com.example.passedpath.feature.locationtracking.domain.policy.TrackingModePolicy
 import com.example.passedpath.feature.locationtracking.domain.policy.TrackingUploadMode
+import com.example.passedpath.feature.locationtracking.domain.policy.UploadTrigger
 import com.example.passedpath.feature.locationtracking.domain.repository.SaveRawLocationResult
 import com.example.passedpath.feature.locationtracking.domain.tracker.LocationTrackingSession
 import com.example.passedpath.feature.locationtracking.data.manager.LocationTrackingServiceStateWriter
@@ -119,9 +120,14 @@ class LocationTrackingService : Service() {
                 }
 
                 if (trackedLocationResult.shouldUploadImmediately || currentUploadMode == TrackingUploadMode.IMMEDIATE) {
-                    val didUpload = uploadPendingPoints(trackedLocationResult.dateKey)
+                    val trigger = if (currentUploadMode == TrackingUploadMode.IMMEDIATE) {
+                        UploadTrigger.WATCHING_IMMEDIATE
+                    } else {
+                        UploadTrigger.BATCH_SIZE
+                    }
+                    val didUpload = uploadPendingPoints(trackedLocationResult.dateKey, trigger)
                     if (didUpload) {
-                        Log.i(TAG, "Immediate upload succeeded for dateKey=${trackedLocationResult.dateKey} mode=$currentUploadMode")
+                        Log.i(TAG, "Immediate upload succeeded for dateKey=${trackedLocationResult.dateKey} mode=$currentUploadMode trigger=$trigger")
                         resetPeriodicUploadLoop()
                     }
                 }
@@ -220,8 +226,8 @@ class LocationTrackingService : Service() {
                     }
                 }
 
-                val didUploadPrevious = uploadPendingPoints(previousDateKey)
-                val didUploadCurrent = uploadPendingPoints(currentDateKey)
+                val didUploadPrevious = uploadPendingPoints(previousDateKey, UploadTrigger.PERIODIC)
+                val didUploadCurrent = uploadPendingPoints(currentDateKey, UploadTrigger.PERIODIC)
                 if (didUploadPrevious || didUploadCurrent) {
                     Log.i(TAG, "Periodic upload succeeded previous=$didUploadPrevious current=$didUploadCurrent")
                     resetPeriodicUploadLoop()
@@ -242,7 +248,7 @@ class LocationTrackingService : Service() {
                 delay(delayMillis)
 
                 val activeDateKey = applicationContext.appContainer.trackingDateKeyResolver.resolveCurrentDateKey()
-                val didUpload = uploadPendingPoints(activeDateKey)
+                val didUpload = uploadPendingPoints(activeDateKey, UploadTrigger.PRE_BOUNDARY)
                 if (didUpload) {
                     Log.i(TAG, "Pre-boundary upload succeeded for dateKey=$activeDateKey")
                     resetPeriodicUploadLoop()
@@ -279,8 +285,8 @@ class LocationTrackingService : Service() {
                         dateKey = currentDateKey
                     )
 
-                    val didUploadPrevious = uploadAllPendingPoints(previousDateKey)
-                    val didUploadCurrent = uploadAllPendingPoints(currentDateKey)
+                    val didUploadPrevious = uploadAllPendingPoints(previousDateKey, UploadTrigger.NETWORK_RECOVERY)
+                    val didUploadCurrent = uploadAllPendingPoints(currentDateKey, UploadTrigger.NETWORK_RECOVERY)
                     if (didUploadPrevious || didUploadCurrent) {
                         Log.i(TAG, "Network recovery upload succeeded previous=$didUploadPrevious current=$didUploadCurrent")
                         resetPeriodicUploadLoop()
@@ -351,20 +357,20 @@ class LocationTrackingService : Service() {
             "Flushing pending points on stop currentDateKey=$currentDateKey previousDateKey=$previousDateKey"
         )
 
-        val didUploadPrevious = uploadPendingPoints(previousDateKey)
-        val didUploadCurrent = uploadPendingPoints(currentDateKey)
+        val didUploadPrevious = uploadPendingPoints(previousDateKey, UploadTrigger.STOP_FLUSH)
+        val didUploadCurrent = uploadPendingPoints(currentDateKey, UploadTrigger.STOP_FLUSH)
         Log.i(
             TAG,
             "Stop flush completed previous=$didUploadPrevious current=$didUploadCurrent"
         )
     }
 
-    private suspend fun uploadPendingPoints(dateKey: String): Boolean {
+    private suspend fun uploadPendingPoints(dateKey: String, trigger: UploadTrigger): Boolean {
         return uploadMutex.withLock {
             try {
                 val appContainer = applicationContext.appContainer
                 appContainer.authSessionStorage.warmTokenCacheIfNeeded()
-                val didUpload = appContainer.uploadGpsPointsBatchUseCase(dateKey)
+                val didUpload = appContainer.uploadGpsPointsBatchUseCase(dateKey, trigger)
                 if (!didUpload) {
                     Log.d(TAG, "No pending points to upload for dateKey=$dateKey")
                 }
@@ -383,9 +389,9 @@ class LocationTrackingService : Service() {
         }
     }
 
-    private suspend fun uploadAllPendingPoints(dateKey: String): Boolean {
+    private suspend fun uploadAllPendingPoints(dateKey: String, trigger: UploadTrigger): Boolean {
         var didUploadAny = false
-        while (uploadPendingPoints(dateKey)) {
+        while (uploadPendingPoints(dateKey, trigger)) {
             didUploadAny = true
         }
         return didUploadAny
