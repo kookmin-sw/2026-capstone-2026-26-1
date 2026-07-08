@@ -27,6 +27,8 @@ import com.example.passedpath.feature.daynote.domain.repository.DayRouteMemoRepo
 import com.example.passedpath.feature.daynote.domain.repository.DayRouteTitleRepository
 import com.example.passedpath.feature.daynote.domain.usecase.PatchDayRouteMemoUseCase
 import com.example.passedpath.feature.daynote.domain.usecase.PatchDayRouteTitleUseCase
+import com.example.passedpath.feature.fcm.data.remote.api.FcmTokenApi
+import com.example.passedpath.feature.fcm.data.repository.FcmTokenRepository
 import com.example.passedpath.feature.care.data.remote.datasource.OkHttpCareDependentLocationStreamRemoteDataSource
 import com.example.passedpath.feature.care.data.remote.api.CareDependentApi
 import com.example.passedpath.feature.care.data.remote.api.CareDependentDayRouteApi
@@ -273,6 +275,10 @@ class AppContainer(
         retrofit.create(DayRouteMemoApi::class.java)
     }
 
+    private val fcmTokenApi by lazy {
+        retrofit.create(FcmTokenApi::class.java)
+    }
+
     private val placeApi by lazy {
         retrofit.create(PlaceApi::class.java)
     }
@@ -408,7 +414,8 @@ class AppContainer(
         AuthRepository(
             authApi = authApi,
             tokenManager = authTokenManager,
-            sessionStorage = authSessionStorage
+            sessionStorage = authSessionStorage,
+            fcmTokenRepository = fcmTokenRepository
         )
     }
 
@@ -426,6 +433,10 @@ class AppContainer(
 
     val dayRouteMemoRepository: DayRouteMemoRepository by lazy {
         DayRouteMemoRepositoryImpl(dayRouteMemoApi)
+    }
+
+    val fcmTokenRepository: FcmTokenRepository by lazy {
+        FcmTokenRepository(fcmTokenApi = fcmTokenApi)
     }
 
     val placeRepository: PlaceRepository by lazy {
