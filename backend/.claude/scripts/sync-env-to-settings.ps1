@@ -5,9 +5,10 @@
 $ErrorActionPreference = "Stop"
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$repoRoot = Resolve-Path (Join-Path $scriptDir "..\..")
-$envFile = Join-Path $repoRoot ".env.local"
-$settingsFile = Join-Path $repoRoot ".claude\settings.local.json"
+$backendRoot = Resolve-Path (Join-Path $scriptDir "..\..")
+$monorepoRoot = Resolve-Path (Join-Path $scriptDir "..\..\..")
+$envFile = Join-Path $backendRoot ".env.local"
+$settingsFile = Join-Path $monorepoRoot ".claude\settings.local.json"
 
 if (-not (Test-Path $envFile)) {
     throw "$envFile 을(를) 찾을 수 없습니다."

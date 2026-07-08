@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "149326717518",
+    "project_id": "gilbut-a2d7e",
+    "storage_bucket": "gilbut-a2d7e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:149326717518:android:f64fe202a5ec547514191f",
+        "android_client_info": {
+          "package_name": "com.example.passedpath"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDXApNnTQPeVSC0mZvtOXLnLm8DmnUTTnY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

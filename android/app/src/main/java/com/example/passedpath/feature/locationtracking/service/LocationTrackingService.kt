@@ -11,6 +11,7 @@ import com.example.passedpath.debug.TrackingDiagnosticsLogger
 import com.example.passedpath.feature.locationtracking.domain.policy.LocationUploadPolicy
 import com.example.passedpath.feature.locationtracking.domain.policy.TrackingLocationMode
 import com.example.passedpath.feature.locationtracking.domain.policy.TrackingModePolicy
+import com.example.passedpath.feature.locationtracking.domain.policy.TrackingUploadMode
 import com.example.passedpath.feature.locationtracking.domain.repository.SaveRawLocationResult
 import com.example.passedpath.feature.locationtracking.domain.tracker.LocationTrackingSession
 import com.example.passedpath.feature.locationtracking.data.manager.LocationTrackingServiceStateWriter
@@ -40,10 +41,13 @@ class LocationTrackingService : Service() {
     private var periodicUploadJob: Job? = null
     private var preBoundaryUploadJob: Job? = null
     private var networkConnectivityUploadJob: Job? = null
+    private var uploadModeObservationJob: Job? = null
+    private var watchingTimeoutJob: Job? = null
     private var idleModeFallbackJob: Job? = null
     private var stopJob: Job? = null
     private var lastLocationCallbackAtEpochMillis: Long? = null
     private var currentTrackingMode: TrackingLocationMode = TrackingModePolicy.initialMode()
+    private var currentUploadMode: TrackingUploadMode = TrackingUploadMode.NORMAL
 
     override fun onCreate() {
         super.onCreate()
@@ -97,6 +101,7 @@ class LocationTrackingService : Service() {
         startPeriodicUploadLoop()
         startPreBoundaryUploadLoop()
         startNetworkConnectivityUploadLoop()
+        startUploadModeObservationLoop()
         scheduleIdleModeFallback()
         trackingSession = appContainer.trackingLocationTracker.startLocationUpdates { trackedLocation ->
             serviceScope.launch {
@@ -113,10 +118,10 @@ class LocationTrackingService : Service() {
                     scheduleIdleModeFallback()
                 }
 
-                if (trackedLocationResult.shouldUploadImmediately) {
+                if (trackedLocationResult.shouldUploadImmediately || currentUploadMode == TrackingUploadMode.IMMEDIATE) {
                     val didUpload = uploadPendingPoints(trackedLocationResult.dateKey)
                     if (didUpload) {
-                        Log.i(TAG, "Immediate upload succeeded for dateKey=${trackedLocationResult.dateKey} after reaching batch size")
+                        Log.i(TAG, "Immediate upload succeeded for dateKey=${trackedLocationResult.dateKey} mode=$currentUploadMode")
                         resetPeriodicUploadLoop()
                     }
                 }
@@ -171,6 +176,10 @@ class LocationTrackingService : Service() {
         preBoundaryUploadJob = null
         networkConnectivityUploadJob?.cancel()
         networkConnectivityUploadJob = null
+        uploadModeObservationJob?.cancel()
+        uploadModeObservationJob = null
+        watchingTimeoutJob?.cancel()
+        watchingTimeoutJob = null
         idleModeFallbackJob?.cancel()
         idleModeFallbackJob = null
 
@@ -275,6 +284,35 @@ class LocationTrackingService : Service() {
                     if (didUploadPrevious || didUploadCurrent) {
                         Log.i(TAG, "Network recovery upload succeeded previous=$didUploadPrevious current=$didUploadCurrent")
                         resetPeriodicUploadLoop()
+                    }
+                }
+        }
+    }
+
+    private fun startUploadModeObservationLoop() {
+        uploadModeObservationJob?.cancel()
+        uploadModeObservationJob = serviceScope.launch {
+            applicationContext.appContainer.trackingUploadModeReader
+                .uploadMode
+                .collectLatest { mode ->
+                    currentUploadMode = mode
+                    Log.i(TAG, "Upload mode changed to $mode")
+                    diagnosticsLogger.log(
+                        category = TrackingDiagnosticsLogger.CATEGORY_SERVICE,
+                        message = "upload_mode=$mode"
+                    )
+
+                    watchingTimeoutJob?.cancel()
+                    if (mode == TrackingUploadMode.IMMEDIATE) {
+                        watchingTimeoutJob = serviceScope.launch {
+                            delay(LocationUploadPolicy.WATCHING_TIMEOUT_MS)
+                            Log.w(TAG, "Watching timeout reached. Reverting upload mode to NORMAL")
+                            diagnosticsLogger.log(
+                                category = TrackingDiagnosticsLogger.CATEGORY_SERVICE,
+                                message = "watching_timeout_fallback"
+                            )
+                            currentUploadMode = TrackingUploadMode.NORMAL
+                        }
                     }
                 }
         }

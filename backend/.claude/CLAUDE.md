@@ -42,9 +42,11 @@ Android 앱(API 24+)과 이 Spring Boot 백엔드로 구성되며 Kakao/Naver/Go
 커밋 타입은 다음을 사용합니다: feat, fix, docs, style, design, test, refactor, build,
 ci, perf, chore, rename, remove.
 
-- 커밋 메시지 형식과 브랜치 명명 규칙: `.claude/rules/git-commit.md` 참고.
-- 이슈 작성 구조: `.claude/rules/github-issue.md` 참고.
-- PR 작성 구조: `.claude/rules/github-pr.md` 참고.
+`android/`와 공용으로 쓰는 규칙이라 저장소 루트 `.claude/rules/`에 있습니다.
+
+- 커밋 메시지 형식과 브랜치 명명 규칙: `../../.claude/rules/git-commit.md` 참고.
+- 이슈 작성 구조: `../../.claude/rules/github-issue.md` 참고.
+- PR 작성 구조: `../../.claude/rules/github-pr.md` 참고. backend 작업 이슈/PR 라벨은 `💻BE`.
 
 ## 아키텍처
 
@@ -105,8 +107,8 @@ public void example(TypeA a, TypeB b, TypeC c) {
 - 명시적인 요청 없는 대규모 구조적 변경
 - 기존 어노테이션을 절대 삭제하지 않습니다.
 - 명령이 없으면 테스트 코드를 건드리지 않습니다.
-- 사용자의 명시적인 지시 없이 git 커밋이나 push를 수행하지 않습니다. 코드/테스트 변경을
-  완료한 뒤에도 커밋 여부는 반드시 사용자에게 먼저 확인받습니다.
+- 커밋 정책(사용자가 명시적으로 지시하기 전까지 절대 커밋/푸시하지 않음)은
+  `../../.claude/CLAUDE.md`의 "커밋 정책" 참고.
 
 ## 포트폴리오 관점 제안
 

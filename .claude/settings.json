@@ -4,11 +4,8 @@
   "outputStyle": "Explanatory",
   "permissions": {
     "defaultMode": "plan",
-    "additionalDirectories": [
-      "../"
-    ],
     "deny": [
-      "Read(./.env.local)"
+      "Read(./backend/.env.local)"
     ]
   }
 }
