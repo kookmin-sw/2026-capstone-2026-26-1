@@ -38,4 +38,5 @@ UI 카피 한국어 우선), UI State 패턴(`AsyncUiState<T>`), 기능 폴더 �
 
 - 편집하기 전에 관련 코드와 컨텍스트를 조사합니다.
 - 새로운 추상화를 도입하기 전에 기존 패턴(Route/Screen/ViewModel/UiState)을 재사용합니다.
-- 사용자의 명시적인 지시 없이 git 커밋이나 push를 수행하지 않습니다.
+- 커밋 정책(사용자가 명시적으로 지시하기 전까지 절대 커밋/푸시하지 않음)은
+  [../../.claude/CLAUDE.md](../../.claude/CLAUDE.md)의 "커밋 정책" 참고.
