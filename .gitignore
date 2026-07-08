@@ -68,8 +68,10 @@ backend/out
 backend/gilbut-firebase-adminsdk.json
 backend/docs/resume
 backend/.claude/skills/resume-bullet
+backend/.claude/skills/portfolio-ppt
 # test data
 /backend/src/test/resources/test-data
+/backend/portfolio
 # Keep placeholder
 !backend/.gitkeep
 
