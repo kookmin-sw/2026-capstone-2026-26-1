@@ -24,6 +24,12 @@ AGENTS.md
 agents.md
 .codex/
 
+# Claude
+.claude/settings.local.json
+.claude/plans
+
+/reference
+
 # =========================
 # Android module (root-level safety)
 # =========================
@@ -54,14 +60,14 @@ android/**/*.dex
 # =========================
 
 backend/.env.local
+backend/local.properties
 backend/build/
 backend/out/
 backend/target/
 backend/node_modules/
 backend/AGENTS.md
-backend/.claude/plans
 backend/.claude/rules/*.local.md
-backend/.claude/settings.local.json
+backend/.claude/plans/
 backend/.gradle
 backend/build
 backend/out
@@ -74,5 +80,3 @@ backend/.claude/skills/portfolio-ppt
 /backend/portfolio
 # Keep placeholder
 !backend/.gitkeep
-
-/reference
