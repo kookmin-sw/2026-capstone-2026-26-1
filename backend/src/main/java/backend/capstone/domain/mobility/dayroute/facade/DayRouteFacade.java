@@ -26,6 +26,7 @@ import backend.capstone.global.exception.BusinessException;
 import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.CannotAcquireLockException;
 import org.springframework.retry.annotation.Backoff;
@@ -34,6 +35,7 @@ import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class DayRouteFacade {
@@ -58,6 +60,9 @@ public class DayRouteFacade {
         DayRoute dayRoute = dayRouteService.getOrCreate(userId, date);
 
         if (!request.gpsPoints().isEmpty()) {
+            log.info("GPS 좌표 업로드 수신 userId={} dayRouteId={} uploadTrigger={} pointCount={} distanceKm={}",
+                userId, dayRoute.getId(), request.uploadTrigger(), request.gpsPoints().size(),
+                request.distance());
             gpsPointService.batchInsert(dayRoute.getId(), request);
             careLocationSseEventService.publishLocationUpdated(
                 latestGpsPointService.upsertLatestLocation(userId, request.gpsPoints()));
