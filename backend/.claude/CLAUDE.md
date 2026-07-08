@@ -42,9 +42,11 @@ Android 앱(API 24+)과 이 Spring Boot 백엔드로 구성되며 Kakao/Naver/Go
 커밋 타입은 다음을 사용합니다: feat, fix, docs, style, design, test, refactor, build,
 ci, perf, chore, rename, remove.
 
-- 커밋 메시지 형식과 브랜치 명명 규칙: `.claude/rules/git-commit.md` 참고.
-- 이슈 작성 구조: `.claude/rules/github-issue.md` 참고.
-- PR 작성 구조: `.claude/rules/github-pr.md` 참고.
+`android/`와 공용으로 쓰는 규칙이라 저장소 루트 `.claude/rules/`에 있습니다.
+
+- 커밋 메시지 형식과 브랜치 명명 규칙: `../.claude/rules/git-commit.md` 참고.
+- 이슈 작성 구조: `../.claude/rules/github-issue.md` 참고.
+- PR 작성 구조: `../.claude/rules/github-pr.md` 참고. backend 작업 이슈/PR 라벨은 `💻BE`.
 
 ## 아키텍처
 

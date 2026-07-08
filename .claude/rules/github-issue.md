@@ -1,9 +1,10 @@
 # 이슈 작성 규칙
 
 이 저장소(모노레포 루트 `2026-capstone-26`)의 `.github/ISSUE_TEMPLATE/이슈-템플릿.md`가
-실제 이슈 템플릿이다. `backend/`는 이 루트 저장소의 하위 디렉터리이므로 GitHub이 이 템플릿을
-그대로 적용한다. `.github/ISSUE_TEMPLATE/config.yml`에서 `blank_issues_enabled: false`로
-설정되어 있어, 템플릿 없이 빈 이슈를 만드는 것 자체가 막혀 있다.
+`backend/`, `android/` 작업 공용 이슈 템플릿이다. GitHub은 저장소 루트의 `.github/`만
+인식하므로, `backend/`나 `android/` 어느 쪽에서 작업하든 이 루트 템플릿이 그대로 적용된다.
+`.github/ISSUE_TEMPLATE/config.yml`에서 `blank_issues_enabled: false`로 설정되어 있어,
+템플릿 없이 빈 이슈를 만드는 것 자체가 막혀 있다.
 
 ## 제목 형식
 
@@ -20,8 +21,13 @@
 
 ## 라벨
 
-`backend/` 작업으로 만드는 이슈에는 항상 `💻BE` 라벨을 붙인다. 템플릿의 `labels: ''`는
-기본값이 없다는 뜻이므로, `gh issue create --label "💻BE"`처럼 직접 지정해야 한다.
+작업 대상 모듈에 따라 라벨을 다르게 붙인다.
+
+- `backend/` 아래 작업으로 만드는 이슈 → 항상 `💻BE` 라벨
+- `android/` 아래 작업으로 만드는 이슈 → 항상 `📱AND` 라벨
+
+템플릿의 `labels: ''`는 기본값이 없다는 뜻이므로, `gh issue create --label "💻BE"` /
+`gh issue create --label "📱AND"`처럼 직접 지정해야 한다.
 
 ## 본문 구조 (실제 템플릿)
 
