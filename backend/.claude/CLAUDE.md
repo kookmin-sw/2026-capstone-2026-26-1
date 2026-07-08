@@ -44,9 +44,9 @@ ci, perf, chore, rename, remove.
 
 `android/`와 공용으로 쓰는 규칙이라 저장소 루트 `.claude/rules/`에 있습니다.
 
-- 커밋 메시지 형식과 브랜치 명명 규칙: `../.claude/rules/git-commit.md` 참고.
-- 이슈 작성 구조: `../.claude/rules/github-issue.md` 참고.
-- PR 작성 구조: `../.claude/rules/github-pr.md` 참고. backend 작업 이슈/PR 라벨은 `💻BE`.
+- 커밋 메시지 형식과 브랜치 명명 규칙: `../../.claude/rules/git-commit.md` 참고.
+- 이슈 작성 구조: `../../.claude/rules/github-issue.md` 참고.
+- PR 작성 구조: `../../.claude/rules/github-pr.md` 참고. backend 작업 이슈/PR 라벨은 `💻BE`.
 
 ## 아키텍처
 
