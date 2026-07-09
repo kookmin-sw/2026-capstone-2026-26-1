@@ -23,6 +23,10 @@ Android 앱(API 24+)과 이 Spring Boot 백엔드로 구성되며 Kakao/Naver/Go
 - 빌드: `./gradlew build`
 - 전체 테스트: `./gradlew test`
 - 단일 테스트: `./gradlew test --tests "backend.capstone.<패키지>.<클래스명>"`
+- 로컬 인프라(MySQL/Redis)는 `docker compose -f docker-compose.local.yml up -d`로 컨테이너를 띄운 뒤
+  네이티브 `bootRun`으로 앱을 실행하는 하이브리드 방식이다(컨테이너는 MySQL 3307, Redis 6380 포트로
+  네이티브 서비스와 공존). DB를 초기화하려면 `docker compose -f docker-compose.local.yml down -v`.
+  `.env.local`의 `DB_URL`/`REDIS_HOST`/`REDIS_PORT`가 이 포트를 가리켜야 한다(예시는 `.env.example`).
 - 로컬 `bootRun`이 환경변수 누락으로 실패하면 `.claude/scripts/sync-env-to-settings.ps1`을 실행해 `.env.local` 값을 `.claude/settings.local.json`의 `env` 필드로 동기화한다(`.env.local`이 바뀐 뒤에도 동일하게 재실행).
 - Checkstyle/Spotless 등 빌드 강제 플러그인은 없음— 코드 스타일은 `config/codestyle/GoogleStyle_java`를 IntelliJ에 수동
   import해서 적용합니다.
