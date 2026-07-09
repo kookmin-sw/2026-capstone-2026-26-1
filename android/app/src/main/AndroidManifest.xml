@@ -64,6 +64,15 @@
             android:exported="false"
             android:foregroundServiceType="location" />
 
+        <!-- 서버 -> 피보호자 기기로 위치 업로드 정책 변경 신호(FCM data message)를 수신 -->
+        <service
+            android:name=".feature.fcm.service.GilbutFirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
         <activity
             android:name="com.kakao.sdk.auth.AuthCodeHandlerActivity"
             android:exported="true">

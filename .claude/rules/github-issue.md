@@ -1,9 +1,10 @@
 # 이슈 작성 규칙
 
 이 저장소(모노레포 루트 `2026-capstone-26`)의 `.github/ISSUE_TEMPLATE/이슈-템플릿.md`가
-실제 이슈 템플릿이다. `backend/`는 이 루트 저장소의 하위 디렉터리이므로 GitHub이 이 템플릿을
-그대로 적용한다. `.github/ISSUE_TEMPLATE/config.yml`에서 `blank_issues_enabled: false`로
-설정되어 있어, 템플릿 없이 빈 이슈를 만드는 것 자체가 막혀 있다.
+`backend/`, `android/` 작업 공용 이슈 템플릿이다. GitHub은 저장소 루트의 `.github/`만
+인식하므로, `backend/`나 `android/` 어느 쪽에서 작업하든 이 루트 템플릿이 그대로 적용된다.
+`.github/ISSUE_TEMPLATE/config.yml`에서 `blank_issues_enabled: false`로 설정되어 있어,
+템플릿 없이 빈 이슈를 만드는 것 자체가 막혀 있다.
 
 ## 제목 형식
 
@@ -20,8 +21,13 @@
 
 ## 라벨
 
-`backend/` 작업으로 만드는 이슈에는 항상 `💻BE` 라벨을 붙인다. 템플릿의 `labels: ''`는
-기본값이 없다는 뜻이므로, `gh issue create --label "💻BE"`처럼 직접 지정해야 한다.
+작업 대상 모듈에 따라 라벨을 다르게 붙인다.
+
+- `backend/` 아래 작업으로 만드는 이슈 → 항상 `💻BE` 라벨
+- `android/` 아래 작업으로 만드는 이슈 → 항상 `📱AND` 라벨
+
+템플릿의 `labels: ''`는 기본값이 없다는 뜻이므로, `gh issue create --label "💻BE"` /
+`gh issue create --label "📱AND"`처럼 직접 지정해야 한다.
 
 ## 본문 구조 (실제 템플릿)
 
@@ -48,3 +54,15 @@
 이슈를 새로 만들면 GitHub이 부여한 번호를 이후 커밋/브랜치/PR에서 일관되게 사용한다.
 자세한 커밋·브랜치 형식은 [git-commit.md](git-commit.md), PR에서 이슈를 닫는 방법은
 [github-pr.md](github-pr.md) 참고.
+
+## 초안 작성 워크플로우
+
+사용자가 이슈 작성을 요청하면:
+
+- 이슈 본문 마크다운 전체를 대화창에 그대로 출력하지 않는다. 스크래치패드(세션의 임시 파일
+  디렉터리)에 `.md` 파일로 작성하고, 그 파일 경로만 짧게 안내한다.
+- 사용자가 그 파일을 직접 열어 수정할 수 있다는 전제로 대기한다.
+- "올려줘"/"게시해줘"처럼 명시적으로 게시를 지시받으면, 그 시점에 파일을 다시 읽어(사용자가
+  수정했을 수 있으므로 항상 최신 내용을 반영) `gh issue create --body-file <경로>`로 그대로
+  게시한다. 이미 알고 있는 이전 버전 내용을 임의로 다시 쓰지 않는다.
+- 명시적 게시 지시 전까지는 `gh issue create`를 절대 실행하지 않는다.

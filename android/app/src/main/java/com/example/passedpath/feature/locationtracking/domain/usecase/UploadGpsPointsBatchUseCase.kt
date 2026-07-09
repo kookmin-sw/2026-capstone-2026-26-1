@@ -7,6 +7,7 @@ import com.example.passedpath.feature.locationtracking.data.local.mapper.toGpsPo
 import com.example.passedpath.feature.locationtracking.data.remote.api.DayRouteApi
 import com.example.passedpath.feature.locationtracking.data.remote.dto.GpsPointBatchUploadRequestDto
 import com.example.passedpath.feature.locationtracking.domain.policy.LocationUploadPolicy
+import com.example.passedpath.feature.locationtracking.domain.policy.UploadTrigger
 import com.example.passedpath.feature.locationtracking.domain.repository.DayRouteRepository
 import com.example.passedpath.feature.locationtracking.domain.repository.LocationTrackingRepository
 
@@ -18,6 +19,7 @@ class UploadGpsPointsBatchUseCase(
 ) {
     suspend operator fun invoke(
         dateKey: String,
+        trigger: UploadTrigger,
         limit: Int = LocationUploadPolicy.BATCH_SIZE
     ): Boolean {
         val pendingLocations = locationTrackingRepository.getPendingUploadLocations(
@@ -37,15 +39,16 @@ class UploadGpsPointsBatchUseCase(
         val localDayRoute = dayRouteRepository.getLocalDayRoute(dateKey) ?: return false
         val request = GpsPointBatchUploadRequestDto(
             distance = localDayRoute.totalDistanceMeters.metersToKilometers(),
-            gpsPoints = pendingLocations.map { it.toGpsPointRequestDto() }
+            gpsPoints = pendingLocations.map { it.toGpsPointRequestDto() },
+            uploadTrigger = trigger.name
         )
         Log.i(
             TAG,
-            "Uploading ${pendingLocations.size} gps points for dateKey=$dateKey distanceKm=${request.distance}"
+            "Uploading ${pendingLocations.size} gps points for dateKey=$dateKey distanceKm=${request.distance} trigger=${trigger.name}"
         )
         diagnosticsLogger.log(
             category = TrackingDiagnosticsLogger.CATEGORY_UPLOAD,
-            message = "attempt count=${pendingLocations.size} distanceKm=${request.distance}",
+            message = "attempt count=${pendingLocations.size} distanceKm=${request.distance} trigger=${trigger.name}",
             dateKey = dateKey
         )
 
@@ -61,10 +64,10 @@ class UploadGpsPointsBatchUseCase(
             dateKey = dateKey,
             syncedAtEpochMillis = System.currentTimeMillis()
         )
-        Log.i(TAG, "Upload completed for dateKey=$dateKey")
+        Log.i(TAG, "Upload completed for dateKey=$dateKey trigger=${trigger.name}")
         diagnosticsLogger.log(
             category = TrackingDiagnosticsLogger.CATEGORY_UPLOAD,
-            message = "success count=${pendingLocations.size}",
+            message = "success count=${pendingLocations.size} trigger=${trigger.name}",
             dateKey = dateKey
         )
         return true
