@@ -13,6 +13,7 @@ import com.example.passedpath.feature.locationtracking.domain.policy.TrackingLoc
 import com.example.passedpath.feature.locationtracking.domain.policy.TrackingModePolicy
 import com.example.passedpath.feature.locationtracking.domain.policy.TrackingUploadMode
 import com.example.passedpath.feature.locationtracking.domain.policy.UploadTrigger
+import com.example.passedpath.feature.locationtracking.domain.policy.WatchingTimeoutCoordinator
 import com.example.passedpath.feature.locationtracking.domain.repository.SaveRawLocationResult
 import com.example.passedpath.feature.locationtracking.domain.tracker.LocationTrackingSession
 import com.example.passedpath.feature.locationtracking.data.manager.LocationTrackingServiceStateWriter
@@ -43,12 +44,22 @@ class LocationTrackingService : Service() {
     private var preBoundaryUploadJob: Job? = null
     private var networkConnectivityUploadJob: Job? = null
     private var uploadModeObservationJob: Job? = null
-    private var watchingTimeoutJob: Job? = null
     private var idleModeFallbackJob: Job? = null
     private var stopJob: Job? = null
     private var lastLocationCallbackAtEpochMillis: Long? = null
     private var currentTrackingMode: TrackingLocationMode = TrackingModePolicy.initialMode()
     private var currentUploadMode: TrackingUploadMode = TrackingUploadMode.NORMAL
+    private val watchingTimeoutCoordinator = WatchingTimeoutCoordinator(
+        scope = serviceScope,
+        onTimeout = {
+            Log.w(TAG, "Watching timeout reached. Reverting upload mode to NORMAL")
+            diagnosticsLogger.log(
+                category = TrackingDiagnosticsLogger.CATEGORY_SERVICE,
+                message = "watching_timeout_fallback"
+            )
+            currentUploadMode = TrackingUploadMode.NORMAL
+        }
+    )
 
     override fun onCreate() {
         super.onCreate()
@@ -184,8 +195,7 @@ class LocationTrackingService : Service() {
         networkConnectivityUploadJob = null
         uploadModeObservationJob?.cancel()
         uploadModeObservationJob = null
-        watchingTimeoutJob?.cancel()
-        watchingTimeoutJob = null
+        watchingTimeoutCoordinator.cancel()
         idleModeFallbackJob?.cancel()
         idleModeFallbackJob = null
 
@@ -299,7 +309,7 @@ class LocationTrackingService : Service() {
         uploadModeObservationJob?.cancel()
         uploadModeObservationJob = serviceScope.launch {
             applicationContext.appContainer.trackingUploadModeReader
-                .uploadMode
+                .watchingSignalEvents
                 .collectLatest { mode ->
                     currentUploadMode = mode
                     Log.i(TAG, "Upload mode changed to $mode")
@@ -307,19 +317,7 @@ class LocationTrackingService : Service() {
                         category = TrackingDiagnosticsLogger.CATEGORY_SERVICE,
                         message = "upload_mode=$mode"
                     )
-
-                    watchingTimeoutJob?.cancel()
-                    if (mode == TrackingUploadMode.IMMEDIATE) {
-                        watchingTimeoutJob = serviceScope.launch {
-                            delay(LocationUploadPolicy.WATCHING_TIMEOUT_MS)
-                            Log.w(TAG, "Watching timeout reached. Reverting upload mode to NORMAL")
-                            diagnosticsLogger.log(
-                                category = TrackingDiagnosticsLogger.CATEGORY_SERVICE,
-                                message = "watching_timeout_fallback"
-                            )
-                            currentUploadMode = TrackingUploadMode.NORMAL
-                        }
-                    }
+                    watchingTimeoutCoordinator.onSignal(mode)
                 }
         }
     }
