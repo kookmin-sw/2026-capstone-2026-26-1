@@ -76,22 +76,21 @@
 
 ### 사전 요구사항
 
-- MySQL (기본 포트 `3306`, `capstone` 데이터베이스)
-- Redis (기본 포트 `6379`)
+- Docker Desktop (또는 Docker Engine + Compose) — 로컬 MySQL/Redis를 컨테이너로 띄우는 데 사용
 - Android Studio + Android SDK (API 36), 에뮬레이터 또는 실기기 (API 24 이상)
+
+> MySQL·Redis는 별도로 설치할 필요 없이, `backend/docker-compose.local.yml`로 컨테이너
+> 실행합니다(MySQL 호스트 포트 `3307`, Redis 호스트 포트 `6380`, `capstone` 데이터베이스).
+> Spring Boot 애플리케이션은 컨테이너가 아닌 네이티브로 직접 실행합니다.
 
 ### 1. 백엔드 실행
 
-```bash
-cd backend
-```
-
 `backend/.env.example`을 참고해 `backend/.env.local` 파일을 생성하고 값을 채워 넣습니다.
 
-애플리케이션을 실행합니다.
-
 ```bash
-./gradlew bootRun
+cd backend
+docker compose -f docker-compose.local.yml up -d #MySQL/Redis 컨테이너를 기동
+./gradlew bootRun #애플리케이션 실행
 ```
 
 실행 후 아래 주소에서 API 문서를 확인할 수 있습니다.
@@ -101,14 +100,6 @@ cd backend
 ### 2. Android 앱 실행
 
 `android` 디렉토리의 `local.properties.example`을 참고하여 `android/local.properties` 파일을 생성합니다.
-
-```properties
-sdk.dir=<Android SDK 경로>
-kakao.nativeAppKey=<Kakao Native App Key>
-app.baseUrl=<백엔드 서버 주소, 예: http://<PC-IP>:8080/>
-google.mapsApiKey=<Google Maps API Key>
-```
-
 > 실기기 또는 에뮬레이터에서 로컬 백엔드와 통신하려면 `app.baseUrl`을 `localhost`가 아닌 PC의 IP 주소로 설정해야 합니다.
 
 Android Studio로 `android` 디렉토리를 열어 실행하거나, CLI로 아래 명령을 사용합니다.
