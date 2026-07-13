@@ -1,8 +1,0 @@
-# 이 파일을 terraform.tfvars 로 복사해 사용한다 (terraform.tfvars 는 gitignore됨).
-# 아래 기본값이 이미 실물과 일치하므로, 대부분 그대로 두면 된다.
-# 실제 시크릿(DB 비밀번호·JWT 등)은 여기에 넣지 않는다 — RDS 비번은 ignore_changes로 흡수한다.
-
-region              = "ap-northeast-2"
-app_instance_id     = "i-0d282f307bfe0f7d7"
-db_identifier       = "capstone-db"
-ecr_repository_name = "capstone"
