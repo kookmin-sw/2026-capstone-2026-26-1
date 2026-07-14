@@ -7,7 +7,7 @@
 #    나온 값(gilbut-tfstate-<새 계정 ID>)으로 아래 <NEW_ACCOUNT_ID>를 교체한다.
 terraform {
   backend "s3" {
-    bucket       = "gilbut-tfstate-<NEW_ACCOUNT_ID>"
+    bucket       = "gilbut-tfstate-520426835144"
     key          = "prod/terraform.tfstate"
     region       = "ap-northeast-2"
     use_lockfile = true

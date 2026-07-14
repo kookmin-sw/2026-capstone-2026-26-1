@@ -23,8 +23,11 @@ data "aws_ami" "ubuntu" {
 }
 
 resource "aws_instance" "app" {
-  ami                         = data.aws_ami.ubuntu.id
-  instance_type               = "t2.micro"
+  ami = data.aws_ami.ubuntu.id
+  # t2.micro는 새 계정의 프리티어 대상 인스턴스 타입에 포함되지 않아(2025년 개편)
+  # t3.micro로 대체한다. 메모리(1GiB)는 t2.micro와 동일해 기존 OOM 튜닝이 그대로 유효하고,
+  # 아키텍처도 amd64로 동일해 Docker 이미지 재빌드가 불필요하다.
+  instance_type               = "t3.micro"
   subnet_id                   = tolist(data.aws_subnets.default.ids)[0]
   associate_public_ip_address = false # 자동할당 끔 — 아래 EIP로 고정(주소 1개 유지)
   key_name                    = var.key_name
@@ -57,6 +60,13 @@ resource "aws_instance" "app" {
     volume_size           = 20
     delete_on_termination = true
     encrypted             = false
+  }
+
+  lifecycle {
+    # EIP를 연결하면 AWS가 이 속성을 항상 true로 재보고한다(현재 공인 IP 존재 여부만 반영).
+    # 무시하지 않으면 매 plan마다 "false로 되돌리기 위한 재생성"이 감지되어, 정상 동작 중인
+    # 인스턴스가 실수로 destroy/recreate될 위험이 있다.
+    ignore_changes = [associate_public_ip_address]
   }
 }
 
