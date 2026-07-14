@@ -1,0 +1,13 @@
+# 이 파일을 terraform.tfvars 로 복사해 실제 값을 채운다 (terraform.tfvars 는 gitignore됨).
+# db_password는 반드시 여기(로컬 tfvars)에만 두고 커밋하지 않는다.
+
+region              = "ap-northeast-2"
+db_identifier       = "capstone-db"
+db_username         = "admin"
+db_password         = "CHANGE_ME" # RDS 마스터 비밀번호 (앱 .env의 DB_PASSWORD와 동일하게)
+ecr_repository_name = "capstone"
+key_name            = "capstone-key" # 새 계정에 미리 만들어 둔 EC2 key pair 이름
+
+# DNS
+domain_name     = "example.com" # 실제 서비스 도메인
+app_record_name = ""            # 빈 값이면 apex(example.com). 서브도메인 쓰면 "api.example.com" 등
