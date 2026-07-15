@@ -66,7 +66,12 @@ resource "aws_instance" "app" {
     # EIP를 연결하면 AWS가 이 속성을 항상 true로 재보고한다(현재 공인 IP 존재 여부만 반영).
     # 무시하지 않으면 매 plan마다 "false로 되돌리기 위한 재생성"이 감지되어, 정상 동작 중인
     # 인스턴스가 실수로 destroy/recreate될 위험이 있다.
-    ignore_changes = [associate_public_ip_address]
+    #
+    # ami도 같은 이유로 무시한다 — data.aws_ami.ubuntu가 most_recent=true라 Canonical이
+    # 새 AMI를 배포할 때마다 값이 바뀌고, ami는 불변 속성이라 바뀌면 인스턴스 전체가
+    # destroy/recreate(replace) 대상이 된다. 이미 뜬 인스턴스는 최초 생성 시점의 AMI를
+    # 그대로 유지해야 하므로, 이후 AMI 갱신은 별도로 명시적인 재배포를 통해서만 반영한다.
+    ignore_changes = [associate_public_ip_address, ami]
   }
 }
 
