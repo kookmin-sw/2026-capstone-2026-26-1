@@ -13,7 +13,11 @@ services:
     # 해석되므로, 같은 이름으로 읽기 전용 마운트한다. 파일 자체는 CI가 아니라 운영자가 EC2에 직접 배치한다.
     volumes:
       - ./gilbut-firebase-adminsdk.json:/app/gilbut-firebase-adminsdk.json:ro
-    # t2.micro(955M) OOM 대응: 컨테이너 메모리 천장. 실사용은 ~414MB, 부하 시 ~500-650MB 추정.
+    # 컨테이너 메모리 천장(cgroup). t3.micro(913MiB 가용) 운영 실측 기반:
+    # java RSS 3일 최대 509.5MiB / 컨테이너 cgroup 512.6MiB(anon 498.5 + file 10.0)를 관측했다.
+    # 700m은 그 피크의 약 1.37배로, 통상 권장 마진(피크의 1.3~1.5배) 범위다. Dockerfile에서 힙 비율
+    # 플래그를 제거해 힙 상한이 175MB(=700m의 25%)로 잡히므로 실사용은 약 458MiB로 예상된다.
+    # 산출 과정: docs/tech/infra/EC2 응답 불능 문제 해결하기.md
     mem_limit: 700m
     restart: always
 
@@ -23,6 +27,8 @@ services:
     volumes:
       - redis-data:/data
     # maxmemory로 Redis 사용량 고정. RefreshToken 저장소라 상한 초과 시 오래된 키부터 축출(LRU).
+    # mem_limit 150m은 maxmemory 100mb에 맞춘 천장 — 나머지 50MB는 프로세스 자체 오버헤드와
+    # AOF 재작성(BGREWRITEAOF) 시 fork COW 스파이크 대비다(운영 실측 RSS는 4.5MB로 여유 있음).
     command: redis-server --appendonly yes --maxmemory 100mb --maxmemory-policy allkeys-lru
     mem_limit: 150m
     restart: always

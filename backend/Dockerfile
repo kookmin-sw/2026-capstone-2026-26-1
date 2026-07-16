@@ -32,13 +32,20 @@ COPY --from=builder /app/build/libs/*.jar app.jar
 # (선택) Spring Boot 기본 포트
 EXPOSE 8080
 
-# JVM 메모리/기동 옵션 (t2.micro OOM 대응)
-# - MaxRAMPercentage=50: 컨테이너 mem_limit의 50%를 최대 힙으로 (나머지는 논힙/버퍼 여유)
+# JVM 기동 옵션
+#
+# 힙 상한은 명시하지 않고 Java 21의 컨테이너 인식 기본 ergonomics에 맡긴다. UseContainerSupport가
+# 기본 활성이라 JVM이 compose의 mem_limit(cgroup 한도)을 자동으로 읽어 그 25%를 힙 상한으로 잡는다.
+# 과거 MaxRAMPercentage=50.0을 걸었으나 실측 결과 역효과여서 제거했다 — 700m 기준 힙 상한을
+# 350MB로 잡아 기본값(25% = 175MB)의 2배로 오히려 힙 천장을 키우고 RSS를 부풀렸다. 힙 실사용량은
+# idle 기준 약 68MB(로컬 NMT 실측)라 기본 25%로도 2.6배 여유이고, 메모리 위험은 늘 상한이 없는
+# 논힙(Metaspace 등 약 197MB)에서 왔지 힙에서 온 적이 없다. InitialRAMPercentage=30.0도 초기 힙을
+# 미리 커밋시켜 RSS를 앞당겨 부풀리므로 함께 제거했다.
+# 산출 근거: docs/tech/infra/EC2 응답 불능 문제 해결하기.md
+#
 # - ExitOnOutOfMemoryError: 힙 고갈 시 매달리지 않고 즉시 종료 → 깔끔한 재기동
 # - TieredStopAtLevel=1: C2 JIT 생략으로 기동 CPU 버스트/코드캐시 절감
 ENTRYPOINT ["java", \
-  "-XX:MaxRAMPercentage=50.0", \
-  "-XX:InitialRAMPercentage=30.0", \
   "-XX:+ExitOnOutOfMemoryError", \
   "-XX:TieredStopAtLevel=1", \
   "-jar", "app.jar"]
