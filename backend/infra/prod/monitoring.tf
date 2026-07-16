@@ -198,7 +198,10 @@ resource "aws_cloudwatch_dashboard" "oom" {
           period = 60
           stat   = "Average"
           metrics = [
-            [{ expression = "SEARCH('{Gilbut/EC2} MetricName=\"procstat_memory_rss\"', 'Average', 60)", label = "java RSS", id = "r1" }]
+            # {Namespace,Dim1,Dim2,...} 스키마 검색은 "정확히 이 dimension들만 가진" 메트릭을 찾는다.
+            # procstat_memory_rss는 dimension이 3개(InstanceId·process_name·pattern)라 dimension을
+            # 하나도 안 적은 {Gilbut/EC2}(=dimension 0개 스키마)와 매칭되지 않아 늘 빈 결과였다.
+            [{ expression = "SEARCH('{Gilbut/EC2,InstanceId,process_name,pattern} MetricName=\"procstat_memory_rss\"', 'Average', 60)", label = "java RSS", id = "r1" }]
           ]
         }
       },
