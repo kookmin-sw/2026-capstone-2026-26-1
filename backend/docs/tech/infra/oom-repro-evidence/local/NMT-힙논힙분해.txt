@@ -1,0 +1,115 @@
+### NMT (1 vCPU + MaxRAM=955m, SerialGC — t2.micro 충실 조건) 2026-07-13T13:28:51Z
+# cgroup cpu.max=100000 100000 → 1.00 CPU / Memory 무제약
+1:
+
+Native Memory Tracking:
+
+(Omitting categories weighting less than 1KB)
+
+Total: reserved=1781515KB, committed=447347KB
+       malloc: 54319KB #415015
+       mmap:   reserved=1727196KB, committed=393028KB
+
+-                 Java Heap (reserved=245760KB, committed=245760KB)
+                            (mmap: reserved=245760KB, committed=245760KB, at peak) 
+ 
+-                     Class (reserved=1050497KB, committed=16513KB)
+                            (classes #21873)
+                            (  instance classes #20417, array classes #1456)
+                            (malloc=1921KB #56377) (at peak) 
+                            (mmap: reserved=1048576KB, committed=14592KB, at peak) 
+                            (  Metadata:   )
+                            (    reserved=131072KB, committed=91712KB)
+                            (    used=91244KB)
+                            (    waste=468KB =0.51%)
+                            (  Class space:)
+                            (    reserved=1048576KB, committed=14592KB)
+                            (    used=14135KB)
+                            (    waste=457KB =3.13%)
+ 
+-                    Thread (reserved=36982KB, committed=3450KB)
+                            (threads #36)
+                            (stack: reserved=36864KB, committed=3332KB, peak=3332KB)
+                            (malloc=78KB #222) (peak=86KB #226) 
+                            (arena=40KB #70) (peak=2949KB #70)
+ 
+-                      Code (reserved=249920KB, committed=26100KB)
+                            (malloc=2232KB #10928) (peak=2334KB #10980) 
+                            (mmap: reserved=247688KB, committed=23868KB, at peak) 
+                            (arena=0KB #0) (peak=33KB #1)
+ 
+-                        GC (reserved=831KB, committed=827KB)
+                            (malloc=23KB #80) (peak=434KB #185) 
+                            (mmap: reserved=808KB, committed=804KB, at peak) 
+ 
+-                  Compiler (reserved=274KB, committed=274KB)
+                            (malloc=110KB #900) (peak=125KB #905) 
+                            (arena=164KB #4) (peak=39942KB #12)
+ 
+-                  Internal (reserved=1461KB, committed=1461KB)
+                            (malloc=1425KB #11539) (at peak) 
+                            (mmap: reserved=36KB, committed=36KB, at peak) 
+ 
+-                     Other (reserved=36KB, committed=36KB)
+                            (malloc=36KB #6) (peak=46KB #7) 
+ 
+-                    Symbol (reserved=40900KB, committed=40900KB)
+                            (malloc=37759KB #327501) (at peak) 
+                            (arena=3141KB #1) (at peak)
+ 
+-    Native Memory Tracking (reserved=6598KB, committed=6598KB)
+                            (malloc=113KB #2039) (at peak) 
+                            (tracking overhead=6485KB)
+ 
+-        Shared class space (reserved=16384KB, committed=12916KB, readonly=0KB)
+                            (mmap: reserved=16384KB, committed=12916KB, peak=13164KB) 
+ 
+-               Arena Chunk (reserved=100KB, committed=100KB)
+                            (malloc=100KB #171) (peak=42317KB #1048) 
+ 
+-                 Arguments (reserved=0KB, committed=0KB)
+                            (malloc=0KB #5) (peak=10KB #6) 
+ 
+-                    Module (reserved=186KB, committed=186KB)
+                            (malloc=186KB #4200) (at peak) 
+ 
+-                 Safepoint (reserved=8KB, committed=8KB)
+                            (mmap: reserved=8KB, committed=8KB, at peak) 
+ 
+-           Synchronization (reserved=87KB, committed=87KB)
+                            (malloc=87KB #842) (at peak) 
+ 
+-            Serviceability (reserved=17KB, committed=17KB)
+                            (malloc=17KB #15) (at peak) 
+ 
+-                 Metaspace (reserved=131473KB, committed=92113KB)
+                            (malloc=401KB #174) (at peak) 
+                            (mmap: reserved=131072KB, committed=91712KB, at peak) 
+ 
+-      String Deduplication (reserved=1KB, committed=1KB)
+                            (malloc=1KB #8) (at peak) 
+ 
+-           Object Monitors (reserved=0KB, committed=0KB)
+                            (malloc=0KB #1) (peak=5KB #23) 
+ 
+-                   Unknown (reserved=0KB, committed=0KB)
+                            (mmap: reserved=0KB, committed=0KB, peak=20KB) 
+ 
+
+### GC.heap_info
+1:
+ def new generation   total 73728K, used 19956K [0x00000000f1000000, 0x00000000f6000000, 0x00000000f6000000)
+  eden space 65536K,  30% used [0x00000000f1000000, 0x00000000f237d048, 0x00000000f5000000)
+  from space 8192K,   0% used [0x00000000f5000000, 0x00000000f5000000, 0x00000000f5800000)
+  to   space 8192K,   0% used [0x00000000f5800000, 0x00000000f5800000, 0x00000000f6000000)
+ tenured generation   total 163840K, used 48328K [0x00000000f6000000, 0x0000000100000000, 0x0000000100000000)
+   the space 163840K,  29% used [0x00000000f6000000, 0x00000000f8f32010, 0x00000000f8f32200, 0x0000000100000000)
+ Metaspace       used 105379K, committed 106304K, reserved 1179648K
+  class space    used 14135K, committed 14592K, reserved 1048576K
+
+### VM.flags (파리티 근거)
+-XX:CICompilerCount=2
+-XX:MaxHeapSize=251658240
+-XX:MaxRAM=1001390080
+-XX:SoftMaxHeapSize=251658240
+-XX:+UseSerialGC

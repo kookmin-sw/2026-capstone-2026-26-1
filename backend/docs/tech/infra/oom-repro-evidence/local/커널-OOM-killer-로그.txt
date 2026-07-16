@@ -1,0 +1,85 @@
+[  883.877400] java invoked oom-killer: gfp_mask=0xcc0(GFP_KERNEL), order=0, oom_score_adj=0
+[  883.878541] CPU: 8 PID: 11485 Comm: java Not tainted 6.6.87.2-microsoft-standard-WSL2 #1
+[  883.879602] Call Trace:
+[  883.880053]  <TASK>
+[  883.880416]  dump_stack_lvl+0x4c/0x70
+[  883.881860]  dump_stack+0x14/0x20
+[  883.882180]  dump_header+0x51/0x260
+[  883.882994]  oom_kill_process+0x100/0x1a0
+[  883.883434]  out_of_memory+0x11d/0x560
+[  883.883887]  mem_cgroup_out_of_memory+0x13b/0x150
+[  883.884595]  try_charge_memcg+0x76b/0x830
+[  883.885455]  charge_memcg+0x35/0xb0
+[  883.885900]  __mem_cgroup_charge+0x31/0x90
+[  883.886263]  do_anonymous_page+0x98/0x420
+[  883.886688]  __handle_mm_fault+0x818/0x840
+[  883.887130]  handle_mm_fault+0xc7/0x2f0
+[  883.887636]  do_user_addr_fault+0x188/0x660
+[  883.888477]  exc_page_fault+0x73/0x160
+[  883.888926]  asm_exc_page_fault+0x2b/0x30
+[  883.889369] RIP: 0033:0x7fb7c9823d6e
+[  883.889884] Code: 49 89 bf b8 01 00 00 48 c7 00 01 00 00 00 48 8b ca 49 ba 00 00 00 87 b7 7f 00 00 49 2b ca 89 48 08 48 33 c9 89 48 0c 48 33 c9 <48> 89 48 10 48 89 48 18 48 89 84 24 00 01 00 00 48 8b d0 48 b9 e8
+[  883.892113] RSP: 002b:00007fb7e75b39c0 EFLAGS: 00010246
+[  883.892716] RAX: 00000000f46a2ff0 RBX: 00000000f46a27e8 RCX: 0000000000000000
+[  883.893514] RDX: 00007fb788de2b90 RSI: 00000000f46a26b0 RDI: 00000000f46a3010
+[  883.894322] RBP: 00007fb7e75b3b80 R08: 0000000000000006 R09: 0000000000000003
+[  883.895129] R10: 00007fb787000000 R11: 00000000f46a27a0 R12: 0000000000000000
+[  883.896619] R13: 00000000f46a26b0 R14: 00007fb7870063d0 R15: 00007fb7e002c590
+[  883.898010]  </TASK>
+[  883.898443] memory: usage 409600kB, limit 409600kB, failcnt 118
+[  883.899999] swap: usage 0kB, limit 0kB, failcnt 0
+[  883.901183] Memory cgroup stats for /docker/6fca5b49a747458ea1814263704b958aef9b6d2124a58ac9ccbcfbddc8b5905e:
+[  883.901899] anon 416317440
+[  883.903613] file 32768
+[  883.903856] kernel 3080192
+[  883.904131] kernel_stack 770048
+[  883.904492] pagetables 1294336
+[  883.904859] sec_pagetables 0
+[  883.905218] percpu 4480
+[  883.905441] sock 0
+[  883.905761] vmalloc 0
+[  883.906050] shmem 0
+[  883.906472] file_mapped 0
+[  883.906737] file_dirty 0
+[  883.907050] file_writeback 0
+[  883.907420] swapcached 0
+[  883.907685] anon_thp 0
+[  883.908457] file_thp 0
+[  883.908678] shmem_thp 0
+[  883.908909] inactive_anon 416301056
+[  883.909237] active_anon 4096
+[  883.909551] inactive_file 32768
+[  883.909989] active_file 0
+[  883.910334] unevictable 0
+[  883.910846] slab_reclaimable 222568
+[  883.911269] slab_unreclaimable 764160
+[  883.911755] slab 986728
+[  883.912006] workingset_refault_anon 0
+[  883.912392] workingset_refault_file 0
+[  883.912784] workingset_activate_anon 0
+[  883.913129] workingset_activate_file 0
+[  883.913471] workingset_restore_anon 0
+[  883.913951] workingset_restore_file 0
+[  883.914784] workingset_nodereclaim 0
+[  883.916006] pgscan 659
+[  883.916265] pgsteal 25
+[  883.916532] pgscan_kswapd 0
+[  883.916796] pgscan_direct 659
+[  883.917172] pgscan_khugepaged 0
+[  883.917615] pgsteal_kswapd 0
+[  883.917976] pgsteal_direct 25
+[  883.918543] pgsteal_khugepaged 0
+[  883.919000] pgfault 117757
+[  883.919270] pgmajfault 0
+[  883.919607] pgrefill 27
+[  883.919908] pgactivate 26
+[  883.920184] pgdeactivate 26
+[  883.920487] pglazyfree 0
+[  883.920817] pglazyfreed 0
+[  883.921115] thp_fault_alloc 0
+[  883.921606] thp_collapse_alloc 0
+[  883.922027] Tasks state (memory values in pages):
+[  883.922660] [  pid  ]   uid  tgid total_vm      rss pgtables_bytes swapents oom_score_adj name
+[  883.923805] [  11455]     0 11455  1247935   107610  1306624        0             0 java
+[  883.924733] oom-kill:constraint=CONSTRAINT_MEMCG,nodemask=(null),cpuset=6fca5b49a747458ea1814263704b958aef9b6d2124a58ac9ccbcfbddc8b5905e,mems_allowed=0,oom_memcg=/docker/6fca5b49a747458ea1814263704b958aef9b6d2124a58ac9ccbcfbddc8b5905e,task_memcg=/docker/6fca5b49a747458ea1814263704b958aef9b6d2124a58ac9ccbcfbddc8b5905e,task=java,pid=11455,uid=0
+[  883.929279] Memory cgroup out of memory: Killed process 11455 (java) total-vm:4991740kB, anon-rss:406120kB, file-rss:24320kB, shmem-rss:0kB, UID:0 pgtables:1276kB oom_score_adj:0
