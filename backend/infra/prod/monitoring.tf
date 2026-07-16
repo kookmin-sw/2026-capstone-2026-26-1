@@ -40,7 +40,10 @@ resource "aws_ssm_parameter" "cw_agent_config" {
       }
       metrics_collected = {
         mem = {
-          measurement = ["mem_used_percent", "mem_available", "mem_used", "mem_total"]
+          # mem_used_percent는 buff/cache를 전부 "안 쓴 것"으로 계산해 캐시 고갈 상황을
+          # 못 잡아낸다(2026-07-14 11:34 OOM-kill 사건 실측으로 확인). mem_available_percent는
+          # 커널이 실제 회수 가능 여부까지 반영한 수치라 훨씬 신뢰할 수 있는 조기 경보 지표다.
+          measurement = ["mem_used_percent", "mem_available_percent", "mem_available", "mem_used", "mem_total"]
         }
         swap = {
           measurement = ["swap_used_percent", "swap_used"]
@@ -123,14 +126,14 @@ resource "aws_cloudwatch_metric_alarm" "oom_kill" {
 
 resource "aws_cloudwatch_metric_alarm" "mem_high" {
   alarm_name          = "gilbut-mem-high"
-  alarm_description   = "메모리 사용률 90% 초과"
+  alarm_description   = "가용 메모리 5% 미만(mem_used_percent는 buff/cache 고갈을 못 잡아내 조기경보로 부적합함이 2026-07-14 11:34 OOM-kill 사건 실측으로 확인됨 — mem_available_percent로 대체)"
   namespace           = "Gilbut/EC2"
-  metric_name         = "mem_used_percent"
+  metric_name         = "mem_available_percent"
   statistic           = "Average"
   period              = 60
   evaluation_periods  = 1
-  threshold           = 90
-  comparison_operator = "GreaterThanThreshold"
+  threshold           = 5
+  comparison_operator = "LessThanThreshold"
   treat_missing_data  = "notBreaching"
 
   dimensions = {
@@ -160,6 +163,7 @@ resource "aws_cloudwatch_dashboard" "oom" {
           yAxis  = { left = { min = 0, max = 100 } }
           metrics = [
             [{ expression = "SEARCH('{Gilbut/EC2,InstanceId} MetricName=\"mem_used_percent\"', 'Average', 60)", label = "mem_used_percent", id = "m1" }],
+            [{ expression = "SEARCH('{Gilbut/EC2,InstanceId} MetricName=\"mem_available_percent\"', 'Average', 60)", label = "mem_available_percent", id = "m3" }],
             [{ expression = "SEARCH('{Gilbut/EC2,InstanceId} MetricName=\"swap_used_percent\"', 'Average', 60)", label = "swap_used_percent", id = "m2" }]
           ]
         }
