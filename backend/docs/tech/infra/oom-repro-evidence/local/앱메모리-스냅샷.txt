@@ -1,0 +1,11 @@
+### 1 vCPU 충실 조건 앱 메모리 실측 (2026-07-13T13:28:53Z)
+# -XX:MaxRAM=955m, OOM 대응 옵션 제거 이미지, --cpus=1, 메모리 무제약
+memory.peak(기동피크) = 619 MiB
+memory.current(정착)  = 595 MiB
+  ├ anon(회수불가)     = 456 MiB
+  └ file(회수가능캐시) = 132 MiB
+redis                  = 6 MiB
+기동 시간              = 23.5s (8 vCPU 11s 대비 느림 → CPU 제약 방증)
+GC                     = SerialGC (인지메모리<1792 → t2.micro와 동일)
+MaxHeapSize            = 240 MiB (=MaxRAM 955의 25%)
+# 비교: 8 vCPU에선 peak 729 / anon 562 → 1 vCPU에서 각각 619 / 456으로 하락(논힙 과대평가 제거)

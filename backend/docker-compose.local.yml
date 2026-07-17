@@ -1,0 +1,47 @@
+# 로컬 개발용 인프라(MySQL/Redis) 컨테이너 구성.
+# Spring Boot는 네이티브(bootRun)로 실행하는 하이브리드 방식 — 이 파일은 DB/캐시만 띄운다.
+# 운영용 docker-compose.prod.yml과 별개다(운영은 외부 RDS를 쓰므로 여기에 MySQL이 있고, prod엔 없다).
+#
+# 사용법:
+#   docker compose -f docker-compose.local.yml up -d     # 기동
+#   docker compose -f docker-compose.local.yml ps        # 상태 확인
+#   docker compose -f docker-compose.local.yml down       # 중지(데이터 유지)
+#   docker compose -f docker-compose.local.yml down -v    # 중지 + 데이터 초기화
+#
+# 포트는 로컬 네이티브 서비스와 공존하도록 대체 포트를 쓴다(네이티브 3306/6379, SSM 포워딩 13306과 충돌 회피).
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: gilbut-mysql-local
+    ports:
+      - "3307:3306"             # 호스트 3307 → 컨테이너 3306
+    environment:
+      MYSQL_DATABASE: capstone
+      # 로컬 전용 throwaway 자격증명 — 비밀 아님. 필요하면 셸 환경변수로 오버라이드 가능.
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-1234}
+      MYSQL_USER: ${DB_USERNAME:-gilbut}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-1234}
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - mysql-local-data:/var/lib/mysql
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7               # 운영(docker-compose.prod.yml)과 동일 메이저 버전
+    container_name: gilbut-redis-local
+    ports:
+      - "6380:6379"             # 호스트 6380 → 컨테이너 6379
+    # 운영과 동일한 축출 정책으로 파리티 확보 (RefreshToken LRU 축출 동작을 로컬에서 재현 가능).
+    command: redis-server --appendonly yes --maxmemory 100mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-local-data:/data
+
+volumes:
+  mysql-local-data:
+  redis-local-data:

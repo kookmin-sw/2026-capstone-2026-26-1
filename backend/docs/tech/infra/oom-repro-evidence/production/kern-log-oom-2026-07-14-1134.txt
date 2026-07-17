@@ -1,0 +1,70 @@
+출처: CloudWatch Logs /gilbut/ec2/kern (EC2 instance i-09cf2646d48142d46)
+조회 구간: 2026-07-14T11:25:00Z ~ 2026-07-14T11:45:00Z
+
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883250] run3-watch.sh invoked oom-killer: gfp_mask=0x140cca(GFP_HIGHUSER_MOVABLE|__GFP_COMP), order=0, oom_score_adj=0
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883263] CPU: 1 PID: 1973 Comm: run3-watch.sh Not tainted 6.8.0-1060-aws #63~22.04.1-Ubuntu
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883268] Hardware name: Amazon EC2 t3.micro/, BIOS 1.0 10/16/2017
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883271] Call Trace:
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883274]  <TASK>
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883278]  dump_stack_lvl+0x76/0xa0
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883285]  dump_stack+0x10/0x20
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883289]  dump_header+0x49/0x220
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883295]  oom_kill_process+0x116/0x270
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883299]  ? oom_evaluate_task+0x143/0x1e0
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883304]  out_of_memory+0x103/0x330
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883309]  __alloc_pages_may_oom+0x112/0x1e0
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883314]  __alloc_pages_slowpath.constprop.0+0x464/0xa80
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883319]  __alloc_pages+0x304/0x330
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883324]  alloc_pages_mpol+0x91/0x200
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883335]  alloc_pages+0x5b/0xd0
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883339]  folio_alloc+0x15/0x40
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883343]  filemap_alloc_folio+0x31/0x40
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883348]  __filemap_get_folio+0x199/0x2f0
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883355]  filemap_fault+0x46a/0x870
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883359]  __do_fault+0x3d/0x190
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883365]  do_read_fault+0x114/0x1e0
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883369]  do_fault+0xe8/0x250
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883372]  handle_pte_fault+0x74/0x1c0
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883376]  __handle_mm_fault+0x659/0x7a0
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883381]  handle_mm_fault+0x17f/0x380
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883385]  do_user_addr_fault+0x158/0x670
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883391]  exc_page_fault+0x83/0x190
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883397]  asm_exc_page_fault+0x27/0x30
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883438] Mem-Info:
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883441] active_anon:145250 inactive_anon:40347 isolated_anon:0
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883441]  active_file:225 inactive_file:35 isolated_file:0
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883441]  unevictable:11006 dirty:0 writeback:0
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883441]  slab_reclaimable:2559 slab_unreclaimable:13019
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883441]  mapped:2296 shmem:746 pagetables:1614
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883441]  kernel_misc_reclaimable:0
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883441]  free:12124 free_pcp:0 free_cma:0
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883448] Node 0 active_anon:581000kB inactive_anon:161388kB active_file:900kB inactive_file:140kB unevictable:44024kB ... all_unreclaimable? yes
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883552] 7002 total pagecache pages
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883554] 0 pages in swap cache
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883556] Free swap  = 0kB
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883557] Total swap = 0kB
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883559] 249867 pages RAM
+
+Tasks state (memory values in pages): pid tgid total_vm rss rss_anon rss_file rss_shmem pgtables_bytes swapents oom_score_adj name
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883575] [    128]     0   128    12032     1056      256      800         0   110592        0          -250 systemd-journal
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883582] [    168]     0   168    72328     6848     4608     2240         0   110592        0         -1000 multipathd
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883587] [    171]     0   171     5759     1088      448      640         0    77824        0         -1000 systemd-udevd
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883607] [    373]   997   373   379524     6698     6666       32         0   479232        0         -1000 amazon-cloudwat
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883636] [    394]     0   394   458202     2203     2171       32         0   208896        0             0 amazon-ssm-agen
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883659] [    441]     0   441   448779     4333     3949      384         0   294912        0          -999 containerd
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883683] [    618]     0   618   524048     7486     6846      640         0   430080        0          -500 dockerd
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883687] [    642]     0   642     3860     1184      384      800         0    73728        0         -1000 sshd
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883696] [    935]     0   935   308774      924      924        0         0   114688        0          -998 containerd-shim
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883701] [    958]   999   958    33415      672      672        0         0   114688        0             0 redis-server
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883715] [   1565]     0  1565   710143   127208   127186       22         0  1359872        0             0 java
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883737] [   1973]  1000  1973     1941      544       64      480         0    61440        0             0 run3-watch.sh
+
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883752] oom-kill:constraint=CONSTRAINT_NONE,nodemask=(null),cpuset=user.slice,mems_allowed=0,global_oom,task_memcg=/system.slice/docker-78fadb0059d64a29a4c12a87b994041959ac495c1b6e1c4c7b34e039671df83a.scope,task=java,pid=1565,uid=0
+Jul 14 11:34:34 ip-172-31-16-44 kernel: [15861.883852] Out of memory: Killed process 1565 (java) total-vm:2840572kB, anon-rss:508744kB, file-rss:88kB, shmem-rss:0kB, UID:0 pgtables:1328kB oom_score_adj:0
+Jul 14 11:34:36 ip-172-31-16-44 kernel: [15863.666031] veth346d0d5: renamed from eth0
+Jul 14 11:34:36 ip-172-31-16-44 kernel: [15864.017171] eth0: renamed from veth9f58e79  (docker가 myapp 컨테이너를 재시작하며 새 veth 페어를 생성)
+
+---
+출처: CloudWatch Logs /gilbut/ec2/docker-events
+Jul 14 11:34:36 UTC  container/die   name=myapp exitCode=137
+Jul 14 11:34:36 UTC  container/start name=myapp
