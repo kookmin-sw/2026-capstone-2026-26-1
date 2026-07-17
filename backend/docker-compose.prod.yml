@@ -13,12 +13,14 @@ services:
     # 해석되므로, 같은 이름으로 읽기 전용 마운트한다. 파일 자체는 CI가 아니라 운영자가 EC2에 직접 배치한다.
     volumes:
       - ./gilbut-firebase-adminsdk.json:/app/gilbut-firebase-adminsdk.json:ro
-    # 컨테이너 메모리 천장(cgroup). t3.micro(913MiB 가용) 운영 실측 기반:
-    # java RSS 3일 최대 509.5MiB / 컨테이너 cgroup 512.6MiB(anon 498.5 + file 10.0)를 관측했다.
-    # 700m은 그 피크의 약 1.37배로, 통상 권장 마진(피크의 1.3~1.5배) 범위다. Dockerfile에서 힙 비율
-    # 플래그를 제거해 힙 상한이 175MB(=700m의 25%)로 잡히므로 실사용은 약 458MiB로 예상된다.
+    # 컨테이너 메모리 천장(cgroup). "피크×1.3~1.5배" 마진 규칙은 이 인스턴스에서 물리 메모리
+    # 자체를 넘어서(피크 실측 최대 728.5MiB 기준 947~1093MiB 필요, t3.micro 가용은 913MiB뿐)
+    # 성립하지 않아, 대신 호스트가 절대 메모리 부족에 빠지지 않도록 물리 예산을 엄격히 나눠
+    # 역산했다: 913(가용) - 230(OS+dockerd) - 40(redis mem_limit) = 643 → 640m.
+    # 힙 상한은 기본 ergonomics로 160MB(=640m의 25%). 앱의 진짜 수요(swap-free 추정
+    # ~700~730MiB)보다 작게 잡은 값이라, 초과분은 swap이 상시적으로 흡수하는 걸 전제로 한다.
     # 산출 과정: docs/tech/infra/EC2 응답 불능 문제 해결하기.md
-    mem_limit: 700m
+    mem_limit: 640m
     restart: always
 
   redis:
@@ -27,10 +29,12 @@ services:
     volumes:
       - redis-data:/data
     # maxmemory로 Redis 사용량 고정. RefreshToken 저장소라 상한 초과 시 오래된 키부터 축출(LRU).
-    # mem_limit 150m은 maxmemory 100mb에 맞춘 천장 — 나머지 50MB는 프로세스 자체 오버헤드와
-    # AOF 재작성(BGREWRITEAOF) 시 fork COW 스파이크 대비다(운영 실측 RSS는 4.5MB로 여유 있음).
-    command: redis-server --appendonly yes --maxmemory 100mb --maxmemory-policy allkeys-lru
-    mem_limit: 150m
+    # 캡스톤 프로젝트라 실가입자 수가 매우 적어 20mb로 재산정(기존 100mb는 검증 없이 물려받은
+    # 값이었음, 실제 필요량 대비 20~60배 여유). mem_limit 40m은 maxmemory 20mb + 프로세스
+    # 오버헤드·AOF 재작성(BGREWRITEAOF) 시 fork COW 스파이크 대비 20MB(운영 실측 RSS는
+    # 4.5MB로 여유 있음). 실 가입자 수가 늘면 재산출 필요.
+    command: redis-server --appendonly yes --maxmemory 20mb --maxmemory-policy allkeys-lru
+    mem_limit: 40m
     restart: always
 
 volumes:

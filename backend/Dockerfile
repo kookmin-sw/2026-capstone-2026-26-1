@@ -36,8 +36,8 @@ EXPOSE 8080
 #
 # 힙 상한은 명시하지 않고 Java 21의 컨테이너 인식 기본 ergonomics에 맡긴다. UseContainerSupport가
 # 기본 활성이라 JVM이 compose의 mem_limit(cgroup 한도)을 자동으로 읽어 그 25%를 힙 상한으로 잡는다.
-# 과거 MaxRAMPercentage=50.0을 걸었으나 실측 결과 역효과여서 제거했다 — 700m 기준 힙 상한을
-# 350MB로 잡아 기본값(25% = 175MB)의 2배로 오히려 힙 천장을 키우고 RSS를 부풀렸다. 힙 실사용량은
+# 과거 MaxRAMPercentage=50.0을 걸었으나 실측 결과 역효과여서 제거했다 — 640m 기준 힙 상한을
+# 320MB로 잡아 기본값(25% = 160MB)의 2배로 오히려 힙 천장을 키우고 RSS를 부풀렸다. 힙 실사용량은
 # idle 기준 약 68MB(로컬 NMT 실측)라 기본 25%로도 2.6배 여유이고, 메모리 위험은 늘 상한이 없는
 # 논힙(Metaspace 등 약 197MB)에서 왔지 힙에서 온 적이 없다. InitialRAMPercentage=30.0도 초기 힙을
 # 미리 커밋시켜 RSS를 앞당겨 부풀리므로 함께 제거했다.
