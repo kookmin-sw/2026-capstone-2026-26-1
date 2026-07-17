@@ -1,0 +1,26 @@
+services:
+  app:
+    # OOM 재현(무방어) 이미지 — 새 계정 ECR. JVM 방어 플래그·mem_limit 모두 없음.
+    image: 520426835144.dkr.ecr.ap-northeast-2.amazonaws.com/capstone:oom-repro
+    container_name: myapp
+    ports:
+      - "80:8080"
+    depends_on:
+      - redis
+    env_file:
+      - .env
+    # Firebase 크리덴셜은 운영자가 EC2에 직접 배치한 파일을 읽기 전용 마운트(운영과 동일).
+    volumes:
+      - ./gilbut-firebase-adminsdk.json:/app/gilbut-firebase-adminsdk.json:ro
+    restart: always
+
+  redis:
+    image: redis:7
+    container_name: redis
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    restart: always
+
+volumes:
+  redis-data:

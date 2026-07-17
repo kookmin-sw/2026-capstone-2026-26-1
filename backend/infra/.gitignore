@@ -1,0 +1,38 @@
+# ── Terraform ────────────────────────────────────────────────
+# 로컬 provider 캐시 / 플러그인
+.terraform/
+.terraform.tfstate.lock.info
+
+# state 파일 (원격 S3 백엔드를 쓰지만, bootstrap은 로컬 state라 반드시 무시)
+*.tfstate
+*.tfstate.*
+
+# crash 로그
+crash.log
+crash.*.log
+
+# 변수 파일: 실제 값(계정 ID·엔드포인트·시크릿 참조)이 들어가므로 커밋 금지.
+# 단, 키만 담은 예시 파일은 커밋한다.
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+
+# import 시 자동 생성되는 초안 HCL (정리 후 concern별 파일로 이관하므로 커밋하지 않음)
+generated.tf
+
+# 저장된 plan 파일 (환경 종속·바이너리, 커밋하지 않음)
+*.plan
+*.tfplan
+
+# override 파일
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# CLI 설정
+.terraformrc
+terraform.rc
+
+# ── 커밋해야 하는 것 (참고) ──────────────────────────────────
+# .terraform.lock.hcl 는 provider 버전 고정을 위해 반드시 커밋한다 (여기서 무시하지 않음).
