@@ -1,0 +1,31 @@
+### 부팅 버스트 힙 피크 - GC 로그 발췌 (실험 C, run5 대표)
+# -Xmx400m, --cpus=1, DDL_AUTO=create, 로컬 MySQL(3307)/Redis(6380)
+# GC(0)~GC(49): 스키마 DDL + Security 초기화 구간, 힙 완만(29M~96M) — 발췌 생략
+# GC(50)~GC(66): region seed 5034건 벌크 삽입 구간 — 폭증 구간, 전체 발췌
+
+[2026-07-17T09:24:46.499+0000][27.139s][info][gc ] GC(50) Pause Young (Allocation Failure) 93M->64M(104M) 2.684ms
+[2026-07-17T09:24:46.528+0000][27.168s][info][gc ] GC(51) Pause Young (Allocation Failure) 93M->64M(104M) 3.180ms
+[2026-07-17T09:24:46.555+0000][27.195s][info][gc ] GC(52) Pause Young (Allocation Failure) 93M->65M(104M) 4.502ms
+[2026-07-17T09:24:46.583+0000][27.223s][info][gc ] GC(53) Pause Young (Allocation Failure) 93M->65M(104M) 4.287ms
+[2026-07-17T09:24:46.616+0000][27.256s][info][gc ] GC(54) Pause Young (Allocation Failure) 94M->65M(104M) 3.745ms
+[2026-07-17T09:24:46.646+0000][27.286s][info][gc ] GC(55) Pause Young (Allocation Failure) 94M->66M(104M) 5.779ms
+[2026-07-17T09:24:46.672+0000][27.312s][info][gc ] GC(56) Pause Young (Allocation Failure) 94M->66M(104M) 5.340ms
+[2026-07-17T09:24:46.708+0000][27.348s][info][gc ] GC(57) Pause Young (Allocation Failure) 95M->66M(104M) 8.608ms
+[2026-07-17T09:24:46.736+0000][27.376s][info][gc ] GC(58) Pause Young (Allocation Failure) 95M->67M(104M) 5.991ms
+[2026-07-17T09:24:46.763+0000][27.403s][info][gc ] GC(59) Pause Young (Allocation Failure) 95M->67M(104M) 5.589ms
+[2026-07-17T09:24:46.862+0000][27.502s][info][gc ] GC(60) Pause Young (Allocation Failure) 96M->77M(106M) 30.540ms
+[2026-07-17T09:24:47.015+0000][27.655s][info][gc ] GC(61) Pause Full  (Allocation Failure) 77M->71M(172M) 152.352ms
+[2026-07-17T09:24:47.334+0000][27.974s][info][gc ] GC(62) Pause Young (Allocation Failure) 118M->103M(172M) 132.192ms
+[2026-07-17T09:24:47.862+0000][28.502s][info][gc ] GC(63) Pause Young (Allocation Failure) 151M->129M(176M) 186.680ms
+[2026-07-17T09:24:48.239+0000][28.879s][info][gc ] GC(64) Pause Full  (Allocation Failure) 129M->129M(298M) 376.626ms
+[2026-07-17T09:24:48.997+0000][29.636s][info][gc ] GC(65) Pause Young (Allocation Failure) 205M->149M(298M) 231.082ms
+[2026-07-17T09:24:53.938+0000][34.578s][info][gc ] GC(66) Pause Young (Allocation Failure) 231M->171M(298M) 287.480ms
+# ↑ GC(66)의 "before" 값 231M이 이번 실험의 H_peak. 5회 전 런 동일.
+# 힙 committed(괄호 안 총량)도 GC(64)에서 298M까지 확장 — 이후 추가 GC 없이 seed 종료.
+
+### 5회 런 요약 (모든 런에서 GC(66) before = 231M 동일 확인)
+run1: max_before=231M max_total_capacity=298M  cgroup_peak=475701248B(453.65MiB)
+run2: max_before=231M max_total_capacity=297M  cgroup_peak=476258304B(454.19MiB)
+run3: max_before=231M max_total_capacity=298M  cgroup_peak=475058176B(453.02MiB)
+run4: max_before=231M max_total_capacity=298M  cgroup_peak=475009024B(452.97MiB)
+run5: max_before=231M max_total_capacity=298M  cgroup_peak=477429760B(455.28MiB) <- 최대
