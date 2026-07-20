@@ -38,7 +38,3 @@ kakao:
 
 firebase:
   credentials-path: ${FIREBASE_CREDENTIALS_PATH}
-
-seed:
-  region:
-    enabled: true #region initializer 실행 여부
