@@ -89,6 +89,18 @@ jobs:
           strip_components: 1
           overwrite: true
 
+      # EC2로 nginx 설정 업로드 (디렉터리째 업로드 — conf 파일이 늘어도 이 스텝은 안 바뀜)
+      - name: Upload nginx conf to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "backend/nginx"
+          target: "/home/${{ secrets.EC2_USER }}/app"
+          strip_components: 1
+          overwrite: true
+
       # EC2에서 최신 이미지 pull + 재기동
       - name: Deploy on EC2
         uses: appleboy/ssh-action@v1.0.3

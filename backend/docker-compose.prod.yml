@@ -3,8 +3,11 @@ services:
     # 이미지 주소는 APP_IMAGE 환경변수로 분리. 미설정 시 아래 기본값으로 폴백(하위 호환).
     image: ${APP_IMAGE}
     container_name: myapp
-    ports:
-      - "80:8080"
+    # nginx가 80/443을 대신 받아 8080으로 프록시하므로 호스트 포트를 직접 물지 않는다
+    # (compose 기본 네트워크에서 서비스명 app:8080으로 컨테이너 간 통신은 expose 없이도 가능하나,
+    # 의도 문서화 목적으로 명시).
+    expose:
+      - "8080"
     depends_on:
       - redis
     env_file:
@@ -16,11 +19,15 @@ services:
     # 컨테이너 메모리 천장(cgroup). "피크×1.3~1.5배" 마진 규칙은 이 인스턴스에서 물리 메모리
     # 자체를 넘어서(피크 실측 최대 728.5MiB 기준 947~1093MiB 필요, t3.micro 가용은 913MiB뿐)
     # 성립하지 않아, 대신 호스트가 절대 메모리 부족에 빠지지 않도록 물리 예산을 엄격히 나눠
-    # 역산했다: 913(가용) - 230(OS+dockerd) - 40(redis mem_limit) = 643 → 640m.
-    # 힙 상한은 기본 ergonomics로 160MB(=640m의 25%). 앱의 진짜 수요(swap-free 추정
-    # ~700~730MiB)보다 작게 잡은 값이라, 초과분은 swap이 상시적으로 흡수하는 걸 전제로 한다.
-    # 산출 과정: docs/tech/infra/EC2 응답 불능 문제 해결하기.md
-    mem_limit: 640m
+    # 역산했다: 913(가용) - 230(OS+dockerd) - 40(redis) - 20(nginx) - 30(certbot) = 613 → 590m
+    # (HTTPS 적용으로 nginx/certbot 컨테이너가 추가되며 640m에서 재조정됨. nginx/certbot 값은
+    # 실측 전 추정치이므로 배포 후 docker stats로 재조정 필요).
+    # 힙 상한은 기본 ergonomics로 mem_limit의 25%. 앱의 진짜 수요(swap-free 추정 ~700~730MiB)보다
+    # 작게 잡은 값이라, 초과분은 swap이 상시적으로 흡수하는 걸 전제로 한다(캡이 줄어든 만큼
+    # swap 의존도가 기존보다 늘어남).
+    # 산출 과정: docs/tech/infra/EC2 응답 불능 문제 해결하기.md,
+    # docs/tech/infra/nginx-certbot로 HTTPS 적용하기.md
+    mem_limit: 590m
     restart: always
 
   redis:
@@ -37,5 +44,42 @@ services:
     mem_limit: 40m
     restart: always
 
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - app
+    # conf.d는 배포 시 레포(backend/nginx/conf.d)에서 그대로 올라온다. 인증서 발급 전(Phase A)엔
+    # 80만 쓰는 conf, 발급 후(Phase C)엔 443 TLS 종료가 추가된 conf로 교체된다 — 산출 근거·순서는
+    # docs/tech/infra/nginx-certbot로 HTTPS 적용하기.md 참고.
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - certbot-etc:/etc/letsencrypt:ro
+      - certbot-www:/var/www/certbot:ro
+    mem_limit: 20m
+    restart: always
+
+  certbot:
+    image: certbot/certbot:latest
+    container_name: certbot
+    volumes:
+      - certbot-etc:/etc/letsencrypt
+      - certbot-www:/var/www/certbot
+    # webroot 방식 자동 갱신 루프(공식 권장 패턴). 최초 발급은 이 루프가 아니라 수동 1회
+    # `docker compose run --rm certbot certonly ...`로 한다(문서 참고) — 인증서가 없으면
+    # renew는 아무 것도 하지 않으므로 최초 배포 시점부터 떠 있어도 무해하다.
+    entrypoint: >
+      /bin/sh -c "trap exit TERM; while :; do
+      certbot renew --webroot -w /var/www/certbot --quiet;
+      sleep 12h & wait $${!};
+      done"
+    mem_limit: 30m
+    restart: always
+
 volumes:
   redis-data:
+  certbot-etc:
+  certbot-www:

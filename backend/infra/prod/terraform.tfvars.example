@@ -11,3 +11,7 @@ key_name            = "capstone-key" # 새 계정에 미리 만들어 둔 EC2 ke
 # DNS
 domain_name     = "example.com" # 실제 서비스 도메인
 app_record_name = ""            # 빈 값이면 apex(example.com). 서브도메인 쓰면 "api.example.com" 등
+
+# Slack 알림 (AWS Chatbot) - 최초 1회 콘솔에서 Slack OAuth 인증 필요
+slack_workspace_id = "T0000000000" # AWS Chatbot 콘솔의 Workspace ID
+slack_channel_id   = "C0000000000" # 알림 받을 Slack 채널 ID

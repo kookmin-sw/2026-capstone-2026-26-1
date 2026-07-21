@@ -6,6 +6,10 @@
     "defaultMode": "plan",
     "deny": [
       "Read(./backend/.env.local)"
+    ],
+    "allow": [
+      "Bash(git push:*)",
+      "Bash(gh pr merge:*)"
     ]
   }
 }
