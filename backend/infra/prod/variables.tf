@@ -50,3 +50,16 @@ variable "app_record_name" {
   type        = string
   default     = ""
 }
+
+# ── 알림 (Slack via AWS Chatbot) ──────────────────────────────
+# slack_workspace_id/slack_channel_id는 Terraform으로 만들 수 없다 — AWS Chatbot
+# 콘솔에서 Slack 워크스페이스를 최초 1회 OAuth 인증해야 발급된다(수동 단계).
+variable "slack_workspace_id" {
+  description = "AWS Chatbot에 인증 완료된 Slack 워크스페이스(팀) ID. 콘솔 'Workspace details'에서 확인."
+  type        = string
+}
+
+variable "slack_channel_id" {
+  description = "알림을 받을 Slack 채널 ID (채널 링크 복사 또는 About 패널에서 확인)."
+  type        = string
+}

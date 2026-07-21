@@ -110,10 +110,28 @@ resource "aws_cloudwatch_log_metric_filter" "container_die" {
   }
 }
 
-# ── 경보 (SNS 액션 없이 상태만; 콘솔 Alarms에서 확인) ────────
+# ── 알림 채널: SNS → AWS Chatbot → Slack ─────────────────────
+# 같은 계정 내 CloudWatch 알람은 SNS가 기본 부여하는 토픽 정책(aws:SourceOwner 조건)만으로
+# Publish가 허용된다 — 교차 계정이 아니므로 별도 aws_sns_topic_policy 불필요.
+#
+# slack_workspace_id/slack_channel_id는 AWS Chatbot 콘솔에서 Slack 워크스페이스를
+# 최초 1회 수동으로 OAuth 인증해야 발급된다(Terraform으로 자동화 불가).
+resource "aws_sns_topic" "alerts" {
+  name = "gilbut-alerts"
+}
+
+resource "aws_chatbot_slack_channel_configuration" "alerts" {
+  configuration_name = "gilbut-alerts"
+  iam_role_arn       = aws_iam_role.chatbot.arn
+  slack_channel_id   = var.slack_channel_id
+  slack_team_id      = var.slack_workspace_id
+  sns_topic_arns     = [aws_sns_topic.alerts.arn]
+}
+
+# ── 경보 (SNS → Slack 알림) ──────────────────────────────────
 resource "aws_cloudwatch_metric_alarm" "oom_kill" {
   alarm_name          = "gilbut-oom-kill"
-  alarm_description   = "커널 OOM-killer 발화 감지"
+  alarm_description   = "❗ [긴급] 커널 OOM-killer 발화 감지"
   namespace           = "Gilbut/EC2"
   metric_name         = "OOMKillCount"
   statistic           = "Sum"
@@ -122,11 +140,14 @@ resource "aws_cloudwatch_metric_alarm" "oom_kill" {
   threshold           = 1
   comparison_operator = "GreaterThanOrEqualToThreshold"
   treat_missing_data  = "notBreaching"
+
+  alarm_actions = [aws_sns_topic.alerts.arn]
+  ok_actions    = [aws_sns_topic.alerts.arn]
 }
 
 resource "aws_cloudwatch_metric_alarm" "mem_high" {
   alarm_name          = "gilbut-mem-high"
-  alarm_description   = "가용 메모리 5% 미만(mem_used_percent는 buff/cache 고갈을 못 잡아내 조기경보로 부적합함이 2026-07-14 11:34 OOM-kill 사건 실측으로 확인됨 — mem_available_percent로 대체)"
+  alarm_description   = "❗ [긴급] 가용 메모리 5% 미만(mem_used_percent는 buff/cache 고갈을 못 잡아내 조기경보로 부적합함이 2026-07-14 11:34 OOM-kill 사건 실측으로 확인됨 — mem_available_percent로 대체). 실측상 붕괴가 몇 분 안에 벌어져 evaluation_periods=1 유지."
   namespace           = "Gilbut/EC2"
   metric_name         = "mem_available_percent"
   statistic           = "Average"
@@ -139,6 +160,49 @@ resource "aws_cloudwatch_metric_alarm" "mem_high" {
   dimensions = {
     InstanceId = aws_instance.app.id
   }
+
+  alarm_actions = [aws_sns_topic.alerts.arn]
+  ok_actions    = [aws_sns_topic.alerts.arn]
+}
+
+resource "aws_cloudwatch_metric_alarm" "mem_warning" {
+  alarm_name          = "gilbut-mem-warning"
+  alarm_description   = "⚠️ [경고] 가용 메모리 15% 미만 3분 연속. 5% 미만 즉시 발동은 gilbut-mem-high(긴급)가 담당 — 대응 시간을 벌기 위한 조기 경보."
+  namespace           = "Gilbut/EC2"
+  metric_name         = "mem_available_percent"
+  statistic           = "Average"
+  period              = 60
+  evaluation_periods  = 3
+  threshold           = 15
+  comparison_operator = "LessThanThreshold"
+  treat_missing_data  = "notBreaching"
+
+  dimensions = {
+    InstanceId = aws_instance.app.id
+  }
+
+  alarm_actions = [aws_sns_topic.alerts.arn]
+  ok_actions    = [aws_sns_topic.alerts.arn]
+}
+
+resource "aws_cloudwatch_metric_alarm" "swap_high" {
+  alarm_name          = "gilbut-swap-high"
+  alarm_description   = "❗ [긴급] swap 사용률 50% 이상 2분 연속. vm.swappiness=10 환경에서는 평소 스왑을 거의 안 쓰므로, 유의미한 스왑 사용 자체가 방어선이 가동 중이라는 신호."
+  namespace           = "Gilbut/EC2"
+  metric_name         = "swap_used_percent"
+  statistic           = "Average"
+  period              = 60
+  evaluation_periods  = 2
+  threshold           = 50
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  treat_missing_data  = "notBreaching"
+
+  dimensions = {
+    InstanceId = aws_instance.app.id
+  }
+
+  alarm_actions = [aws_sns_topic.alerts.arn]
+  ok_actions    = [aws_sns_topic.alerts.arn]
 }
 
 # ── 대시보드 ─────────────────────────────────────────────────

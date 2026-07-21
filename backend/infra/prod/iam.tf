@@ -45,3 +45,30 @@ resource "aws_iam_role_policy_attachment" "ec2_ecr" {
   role       = aws_iam_role.ec2.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
 }
+
+# ─────────────────────────────────────────────────────────────
+# IAM: AWS Chatbot(Slack 알림) 전용 역할
+#
+# 이 채널은 CloudWatch 알람 발생/해제를 Slack으로 전달하는 순수 알림 수신용이다.
+# Slack에서 @aws 슬래시 커맨드로 인프라를 변경/실행할 필요가 없으므로 조회 전용
+# 관리형 정책(CloudWatchReadOnlyAccess)만 붙이고 쓰기 권한은 부여하지 않는다.
+# ─────────────────────────────────────────────────────────────
+
+resource "aws_iam_role" "chatbot" {
+  name = "gilbut-chatbot-role"
+  path = "/"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action    = "sts:AssumeRole"
+      Effect    = "Allow"
+      Principal = { Service = "chatbot.amazonaws.com" }
+    }]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "chatbot_cw_readonly" {
+  role       = aws_iam_role.chatbot.name
+  policy_arn = "arn:aws:iam::aws:policy/CloudWatchReadOnlyAccess"
+}
