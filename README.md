@@ -68,6 +68,7 @@
 <div align="center">
 
 ![img.png](docs/images/서비스 아키텍처.png)
+
 </div>
 
 <br>
