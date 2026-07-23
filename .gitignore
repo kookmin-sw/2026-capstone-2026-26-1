@@ -75,11 +75,7 @@ backend/gilbut-firebase-adminsdk.json
 
 # 계정 이관 작업용 로컬 시크릿(EC2 SSH 프라이빗 키 등) — 절대 커밋하지 않는다.
 backend/.secrets/
-backend/docs/resume
-backend/.claude/skills/resume-bullet
-backend/.claude/skills/portfolio-ppt
 # test data
 /backend/src/test/resources/test-data
-/backend/portfolio
 # Keep placeholder
 !backend/.gitkeep
