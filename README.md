@@ -67,7 +67,7 @@
 
 <div align="center">
 
-![img.png](docs/images/서비스 아키텍처.png)
+<img src="docs/images/서비스 아키텍처.png" alt="길벗 서비스 아키텍처">
 
 </div>
 
