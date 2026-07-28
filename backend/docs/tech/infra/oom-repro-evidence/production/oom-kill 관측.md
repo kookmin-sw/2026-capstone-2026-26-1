@@ -16,7 +16,7 @@ OOM-killer 발동 기록이다. 유저·GPS 데이터가 전혀 없고 외부 �
 
 ## 타임라인
 
-![img.png](img.png)
+![img.png](idle-oom-kill-메모리-cpu-타임라인.png)
 
 | 시각(UTC)      | mem_used_percent  | mem_available    | CPUUtilization | 사건                 |
 |--------------|-------------------|------------------|----------------|--------------------|
@@ -124,7 +124,7 @@ container/start name=myapp                (restart:always로 즉시 재기동)
 
 ## CPU 사용률이 함께 오른 이유
 
-![img_1.png](img_1.png)
+![img_1.png](idle-oom-kill-cpu-스파이크-콜드스타트.png)
 
 11:34(52.5%)→11:35(41.4%)→11:36(3%대 복귀)로 이어지는 스파이크는 두 단계가 한 구간에
 섞여 있다.

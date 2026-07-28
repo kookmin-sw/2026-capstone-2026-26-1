@@ -97,7 +97,7 @@ JPA의 정의를 살펴보자. JPA는 ORM(Object-Relationoal Mapping, 객체 관
 
 테이블의 외래키를 객체에 그대로 가져와서 객체 설계를 테이블 설계에 맞춰보자. 다음과 같이 말이다.
 
-![img.png](images/img.png)
+![img.png](images/fk-필드-직접보유-엔티티-예시.png)
 
 ```java
 
