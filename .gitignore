@@ -72,6 +72,8 @@ backend/.gradle
 backend/build
 backend/out
 backend/gilbut-firebase-adminsdk.json
+backend/.claude/skills/tech-blog-post
+backend/docs/blog
 
 # 계정 이관 작업용 로컬 시크릿(EC2 SSH 프라이빗 키 등) — 절대 커밋하지 않는다.
 backend/.secrets/
