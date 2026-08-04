@@ -36,7 +36,7 @@ public class SecurityConfig {
                     "/swagger-ui/**",
                     "/swagger-ui.html",
                     "/v3/api-docs/**", "/webjars/**", "/swagger-resources/**", "/favicon.ico",
-                    "/error")
+                    "/error", "/actuator/health")
                 .permitAll()
                 .anyRequest().authenticated()
             )

@@ -29,6 +29,29 @@ logging:
 server:
   forward-headers-strategy: framework
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+  metrics:
+    enable:
+      all: false
+      jvm:
+        memory: true
+        gc: true
+        threads: true
+  cloudwatch:
+    metrics:
+      export:
+        enabled: ${CLOUDWATCH_METRICS_ENABLED:false}
+        namespace: Gilbut/App
+        step: 1m
+        batch-size: 20
+
 kakao:
   auth:
     base-url: https://kapi.kakao.com
