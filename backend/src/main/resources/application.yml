@@ -25,6 +25,9 @@ jwt:
 logging:
   level:
     org.springframework.security: DEBUG
+    # 임시 진단용 — CloudWatch push가 운영에서 조용히 성공/실패하는지 확인한 뒤 제거한다.
+    io.micrometer: DEBUG
+    software.amazon.awssdk: DEBUG
 
 server:
   forward-headers-strategy: framework
