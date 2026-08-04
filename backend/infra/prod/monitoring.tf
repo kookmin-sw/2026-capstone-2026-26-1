@@ -226,7 +226,7 @@ resource "aws_cloudwatch_dashboard" "oom" {
         width  = 12
         height = 6
         properties = {
-          title  = "java process RSS (bytes)"
+          title  = "java process RSS vs JVM committed (bytes)"
           region = var.region
           view   = "timeSeries"
           period = 60
@@ -235,7 +235,11 @@ resource "aws_cloudwatch_dashboard" "oom" {
             # {Namespace,Dim1,Dim2,...} 스키마 검색은 "정확히 이 dimension들만 가진" 메트릭을 찾는다.
             # procstat_memory_rss는 dimension이 3개(InstanceId·process_name·pattern)라 dimension을
             # 하나도 안 적은 {Gilbut/EC2}(=dimension 0개 스키마)와 매칭되지 않아 늘 빈 결과였다.
-            [{ expression = "SEARCH('{Gilbut/EC2,InstanceId,process_name,pattern} MetricName=\"procstat_memory_rss\"', 'Average', 60)", label = "java RSS", id = "r1" }]
+            [{ expression = "SEARCH('{Gilbut/EC2,InstanceId,process_name,pattern} MetricName=\"procstat_memory_rss\"', 'Average', 60)", label = "java RSS", id = "r1" }],
+            # app.memory.heap/nonheap.committed는 태그 없는 단일 Gauge라 SEARCH 없이 직접 참조.
+            # RSS − (heap.committed + nonheap.committed) = 순수 네이티브 오버헤드(스레드 스택 등)다.
+            ["Gilbut/App", "app.memory.heap.committed.value", { label = "heap committed" }],
+            ["Gilbut/App", "app.memory.nonheap.committed.value", { label = "nonheap committed" }]
           ]
         }
       },
@@ -272,6 +276,44 @@ resource "aws_cloudwatch_dashboard" "oom" {
           metrics = [
             ["AWS/EC2", "NetworkPacketsIn", "InstanceId", aws_instance.app.id, { label = "NetworkPacketsIn" }],
             ["AWS/EC2", "NetworkPacketsOut", "InstanceId", aws_instance.app.id, { label = "NetworkPacketsOut" }]
+          ]
+        }
+      },
+      {
+        type   = "metric"
+        x      = 0
+        y      = 18
+        width  = 12
+        height = 6
+        properties = {
+          title  = "JVM Heap/Non-Heap used vs committed (bytes)"
+          region = var.region
+          view   = "timeSeries"
+          period = 60
+          stat   = "Average"
+          metrics = [
+            ["Gilbut/App", "app.memory.heap.used.value", { label = "heap used" }],
+            ["Gilbut/App", "app.memory.heap.committed.value", { label = "heap committed" }],
+            ["Gilbut/App", "app.memory.nonheap.used.value", { label = "nonheap used" }],
+            ["Gilbut/App", "app.memory.nonheap.committed.value", { label = "nonheap committed" }]
+          ]
+        }
+      },
+      {
+        type   = "metric"
+        x      = 12
+        y      = 18
+        width  = 12
+        height = 6
+        properties = {
+          title  = "GC pause (cumulative since JVM start)"
+          region = var.region
+          view   = "timeSeries"
+          period = 60
+          stat   = "Maximum"
+          metrics = [
+            ["Gilbut/App", "app.gc.pause.count.value", { label = "GC count" }],
+            ["Gilbut/App", "app.gc.pause.time.value", { label = "GC time (ms)", yAxis = "right" }]
           ]
         }
       }
