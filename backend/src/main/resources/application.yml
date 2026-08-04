@@ -44,13 +44,13 @@ management:
         memory: true
         gc: true
         threads: true
+  # Spring Boot 3.x는 CloudWatch export 자동 설정을 제공하지 않아 이 값은 Spring이 자동으로
+  # 바인딩하지 않는다 — CloudWatchMetricsConfig(global/config)가 @ConditionalOnProperty로
+  # enabled만 직접 읽고, namespace/step/batchSize는 그 클래스 안에 하드코딩돼 있다.
   cloudwatch:
     metrics:
       export:
         enabled: ${CLOUDWATCH_METRICS_ENABLED:false}
-        namespace: Gilbut/App
-        step: 1m
-        batch-size: 20
 
 kakao:
   auth:
