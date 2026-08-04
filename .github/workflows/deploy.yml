@@ -64,6 +64,8 @@ jobs:
           KAKAO_REST_API_KEY=${{ secrets.KAKAO_REST_API_KEY }}
           DDL_AUTO=${{ secrets.DDL_AUTO }}
           FIREBASE_CREDENTIALS_PATH=${{ secrets.FIREBASE_CREDENTIALS_PATH }}
+          AWS_REGION=ap-northeast-2
+          CLOUDWATCH_METRICS_ENABLED=true
           EOF
 
       # EC2로 .env 업로드
