@@ -41,7 +41,9 @@ management:
     enable:
       all: false
       jvm:
-        memory: true
+        # 풀별(Eden/Survivor/Metaspace 등)로 태그가 갈라져 CloudWatch 지표 수를 크게 불려서
+        # 끈다 — 대신 CloudWatchMetricsConfig의 집계 Gauge(jvm.memory.heap.*, .nonheap.*)를 쓴다.
+        memory: false
         gc: true
         threads: true
   # Spring Boot 3.x는 CloudWatch export 자동 설정을 제공하지 않아 이 값은 Spring이 자동으로
