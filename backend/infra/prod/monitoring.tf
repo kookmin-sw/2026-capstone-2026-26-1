@@ -52,10 +52,8 @@ resource "aws_ssm_parameter" "cw_agent_config" {
           # swap_used는 같은 이유로 제거 — swap_high 알람이 쓰는 swap_used_percent만 남긴다.
           measurement = ["swap_used_percent"]
         }
-        cpu = {
-          measurement = ["usage_active"]
-          totalcpu    = true
-        }
+        # cpu_usage_active는 CloudWatch 프리티어(10개)에 잡히면서 대시보드 어느 위젯에도
+        # 안 쓰였다(CPU 위젯은 무료인 AWS/EC2 CPUUtilization을 씀) — 2026-08-04 제거.
         procstat = [
           {
             pattern     = "app.jar"
