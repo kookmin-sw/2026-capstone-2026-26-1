@@ -79,7 +79,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             || uri.startsWith("/api/auth")
             || uri.startsWith("/oauth2")
             || uri.startsWith("/login")
-            || uri.equals("/favicon.ico");
+            || uri.equals("/favicon.ico")
+            || uri.startsWith("/actuator/health");
     }
 
     private String resolveBearerToken(HttpServletRequest request) {

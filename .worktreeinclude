@@ -6,6 +6,9 @@
 # 빌드 캐시/산출물(.gradle, build/, node_modules/, .terraform/ 등)은 각 워크트리에서 빌드
 # 도구가 알아서 재생성하므로 일부러 제외했다 — 용량만 크고 복사할 이유가 없다.
 
+.claude/settings.local.json
+AGENTS.md
+
 # ── backend ──────────────────────────────────────────────────
 # 로컬 개발 환경변수 (backend/.claude/CLAUDE.md의 하이브리드 로컬 실행에 필요)
 backend/.env.local
@@ -17,6 +20,7 @@ backend/.claude/rules/*.local.md
 backend/infra/**/*.tfvars
 # 계정 이관 작업용 로컬 시크릿(EC2 SSH 프라이빗 키 등)
 backend/.secrets/
+backend/local.properties
 
 # ── android ───────────────────────────────────────────────────
 # SDK 경로 + 시크릿(kakao.nativeAppKey, app.baseUrl, google.mapsApiKey)
