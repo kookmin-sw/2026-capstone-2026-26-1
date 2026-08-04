@@ -43,10 +43,14 @@ resource "aws_ssm_parameter" "cw_agent_config" {
           # mem_used_percent는 buff/cache를 전부 "안 쓴 것"으로 계산해 캐시 고갈 상황을
           # 못 잡아낸다(2026-07-14 11:34 OOM-kill 사건 실측으로 확인). mem_available_percent는
           # 커널이 실제 회수 가능 여부까지 반영한 수치라 훨씬 신뢰할 수 있는 조기 경보 지표다.
-          measurement = ["mem_used_percent", "mem_available_percent", "mem_available", "mem_used", "mem_total"]
+          # mem_used_percent/mem_available/mem_used/mem_total은 CloudWatch 커스텀 지표
+          # 프리티어(계정+리전 통틀어 10개)를 맞추기 위해 제거 — mem_high/mem_warning 알람이
+          # 쓰는 mem_available_percent만 남긴다.
+          measurement = ["mem_available_percent"]
         }
         swap = {
-          measurement = ["swap_used_percent", "swap_used"]
+          # swap_used는 같은 이유로 제거 — swap_high 알람이 쓰는 swap_used_percent만 남긴다.
+          measurement = ["swap_used_percent"]
         }
         cpu = {
           measurement = ["usage_active"]
@@ -82,33 +86,13 @@ resource "aws_ssm_parameter" "cw_agent_config" {
 }
 
 # ── 메트릭 필터: 로그 → 메트릭 ───────────────────────────────
-# 커널 OOM-killer 발화. "?" 는 OR(둘 중 하나라도 포함하는 라인 매칭).
-resource "aws_cloudwatch_log_metric_filter" "oom_kill" {
-  name           = "gilbut-oom-kill"
-  log_group_name = aws_cloudwatch_log_group.kern.name
-  pattern        = "?\"invoked oom-killer\" ?\"Out of memory: Killed process\""
-
-  metric_transformation {
-    name          = "OOMKillCount"
-    namespace     = "Gilbut/EC2"
-    value         = "1"
-    default_value = "0"
-  }
-}
-
-# docker events 로거가 남기는 "exitCode=137"(SIGKILL, 컨테이너 OOM 사망) 라인.
-resource "aws_cloudwatch_log_metric_filter" "container_die" {
-  name           = "gilbut-container-die"
-  log_group_name = aws_cloudwatch_log_group.docker_events.name
-  pattern        = "\"exitCode=137\""
-
-  metric_transformation {
-    name          = "ContainerDieCount"
-    namespace     = "Gilbut/EC2"
-    value         = "1"
-    default_value = "0"
-  }
-}
+# OOMKillCount/ContainerDieCount 로그 지표 필터는 CloudWatch 커스텀 지표 프리티어
+# (계정+리전 통틀어 10개)를 맞추기 위해 제거했다(2026-08-04). 커널 OOM-killer 발화
+# ("invoked oom-killer"/"Out of memory: Killed process")와 컨테이너 OOM 사망(exitCode=137)
+# 로그 자체는 kern/docker_events 로그 그룹에 계속 수집되므로, 필요시 CloudWatch Logs
+# Insights로 수동 조회하거나 로그 지표 필터를 다시 만들면 복구 가능하다. 다만 이 변경으로
+# gilbut-oom-kill 알람(Slack 긴급 알림)은 더 이상 발동하지 않는다 — mem_high/mem_warning/
+# swap_high 알람은 그대로 유지된다.
 
 # ── 알림 채널: SNS → AWS Chatbot → Slack ─────────────────────
 # 같은 계정 내 CloudWatch 알람은 SNS가 기본 부여하는 토픽 정책(aws:SourceOwner 조건)만으로
@@ -129,21 +113,8 @@ resource "aws_chatbot_slack_channel_configuration" "alerts" {
 }
 
 # ── 경보 (SNS → Slack 알림) ──────────────────────────────────
-resource "aws_cloudwatch_metric_alarm" "oom_kill" {
-  alarm_name          = "gilbut-oom-kill"
-  alarm_description   = "❗ [긴급] 커널 OOM-killer 발화 감지"
-  namespace           = "Gilbut/EC2"
-  metric_name         = "OOMKillCount"
-  statistic           = "Sum"
-  period              = 60
-  evaluation_periods  = 1
-  threshold           = 1
-  comparison_operator = "GreaterThanOrEqualToThreshold"
-  treat_missing_data  = "notBreaching"
-
-  alarm_actions = [aws_sns_topic.alerts.arn]
-  ok_actions    = [aws_sns_topic.alerts.arn]
-}
+# gilbut-oom-kill(OOMKillCount 기반) 알람은 지표 프리티어를 맞추기 위해 위의 로그 지표
+# 필터와 함께 제거했다 — 커널 OOM-killer 발화에 대한 실시간 Slack 알림은 더 이상 없다.
 
 resource "aws_cloudwatch_metric_alarm" "mem_high" {
   alarm_name          = "gilbut-mem-high"
@@ -219,14 +190,13 @@ resource "aws_cloudwatch_dashboard" "oom" {
         width  = 12
         height = 6
         properties = {
-          title  = "Memory & Swap used %"
+          title  = "Memory & Swap available/used %"
           region = var.region
           view   = "timeSeries"
           period = 60
           stat   = "Average"
           yAxis  = { left = { min = 0, max = 100 } }
           metrics = [
-            [{ expression = "SEARCH('{Gilbut/EC2,InstanceId} MetricName=\"mem_used_percent\"', 'Average', 60)", label = "mem_used_percent", id = "m1" }],
             [{ expression = "SEARCH('{Gilbut/EC2,InstanceId} MetricName=\"mem_available_percent\"', 'Average', 60)", label = "mem_available_percent", id = "m3" }],
             [{ expression = "SEARCH('{Gilbut/EC2,InstanceId} MetricName=\"swap_used_percent\"', 'Average', 60)", label = "swap_used_percent", id = "m2" }]
           ]
@@ -273,24 +243,6 @@ resource "aws_cloudwatch_dashboard" "oom" {
         type   = "metric"
         x      = 12
         y      = 6
-        width  = 12
-        height = 6
-        properties = {
-          title  = "OOM kills & Container deaths (per min)"
-          region = var.region
-          view   = "timeSeries"
-          period = 60
-          stat   = "Sum"
-          metrics = [
-            ["Gilbut/EC2", "OOMKillCount", { label = "OOMKillCount" }],
-            ["Gilbut/EC2", "ContainerDieCount", { label = "ContainerDieCount (exit137)" }]
-          ]
-        }
-      },
-      {
-        type   = "metric"
-        x      = 0
-        y      = 12
         width  = 12
         height = 6
         properties = {
