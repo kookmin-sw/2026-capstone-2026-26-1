@@ -42,10 +42,14 @@ management:
       all: false
       jvm:
         # 풀/GC종류별로 태그가 갈라져 CloudWatch 지표 수를 크게 불려서 끈다 — 대신
-        # CloudWatchMetricsConfig의 집계 Gauge(jvm.memory.heap/nonheap.*, jvm.gc.pause.*)를 쓴다.
+        # CloudWatchMetricsConfig의 집계 Gauge(app.memory.heap/nonheap.*, app.gc.pause.*)를 쓴다.
         memory: false
         gc: false
         threads: false
+      # CloudWatchMetricsConfig의 커스텀 Gauge는 이름이 app.*라 all:false의 영향을 받는다 —
+      # 반드시 명시적으로 허용해야 한다(잠깐 jvm.memory/jvm.gc와 이름이 겹쳐서 이 필터에
+      # 스스로 걸려 조용히 등록이 안 되는 문제가 있었다 — 2026-08-04).
+      app: true
   # Spring Boot 3.x는 CloudWatch export 자동 설정을 제공하지 않아 이 값은 Spring이 자동으로
   # 바인딩하지 않는다 — CloudWatchMetricsConfig(global/config)가 @ConditionalOnProperty로
   # enabled만 직접 읽고, namespace/step/batchSize는 그 클래스 안에 하드코딩돼 있다.
