@@ -25,6 +25,13 @@ import software.amazon.awssdk.services.cloudwatch.CloudWatchAsyncClient;
  * management.metrics.enable.jvm.memory/jvm.gc=false로 꺼둠). 대신 MemoryMXBean/
  * GarbageCollectorMXBean(JVM이 이미 풀·GC 종류를 합산해주는 API)을 직접 읽어 태그 없는
  * 집계 지표로 대체한다 — CloudWatch 프리티어(계정+리전 통틀어 10개)를 맞추기 위함.
+ *
+ * 지표 이름을 반드시 "jvm.memory"/"jvm.gc"가 아닌 "app.memory"/"app.gc"로 지어야 한다 —
+ * management.metrics.enable.*는 "누가 등록했는지"가 아니라 "이름이 무엇인지"로 걸러내는
+ * MeterFilter라서, jvm.memory/jvm.gc를 끄면 이 커스텀 Gauge도 이름이 겹쳐 조용히
+ * 거부(DENY)당한다(에러 없이 등록만 안 됨 — 2026-08-04 실제로 이 문제로 데이터가
+ * 하나도 안 들어온 적이 있음). application.yml의 management.metrics.enable.app=true와 짝을
+ * 이룬다.
  */
 @Configuration
 @ConditionalOnProperty(name = "management.cloudwatch.metrics.export.enabled", havingValue = "true")
@@ -39,13 +46,13 @@ public class CloudWatchMetricsConfig {
   public MeterBinder totalMemoryMetrics() {
     MemoryMXBean memoryMxBean = ManagementFactory.getMemoryMXBean();
     return registry -> {
-      Gauge.builder("jvm.memory.heap.used", memoryMxBean,
+      Gauge.builder("app.memory.heap.used", memoryMxBean,
           bean -> bean.getHeapMemoryUsage().getUsed()).register(registry);
-      Gauge.builder("jvm.memory.heap.committed", memoryMxBean,
+      Gauge.builder("app.memory.heap.committed", memoryMxBean,
           bean -> bean.getHeapMemoryUsage().getCommitted()).register(registry);
-      Gauge.builder("jvm.memory.nonheap.used", memoryMxBean,
+      Gauge.builder("app.memory.nonheap.used", memoryMxBean,
           bean -> bean.getNonHeapMemoryUsage().getUsed()).register(registry);
-      Gauge.builder("jvm.memory.nonheap.committed", memoryMxBean,
+      Gauge.builder("app.memory.nonheap.committed", memoryMxBean,
           bean -> bean.getNonHeapMemoryUsage().getCommitted()).register(registry);
     };
   }
@@ -54,10 +61,10 @@ public class CloudWatchMetricsConfig {
   public MeterBinder totalGcMetrics() {
     List<GarbageCollectorMXBean> gcBeans = ManagementFactory.getGarbageCollectorMXBeans();
     return registry -> {
-      Gauge.builder("jvm.gc.pause.count", gcBeans,
+      Gauge.builder("app.gc.pause.count", gcBeans,
           beans -> beans.stream().mapToLong(GarbageCollectorMXBean::getCollectionCount).sum())
           .register(registry);
-      Gauge.builder("jvm.gc.pause.time", gcBeans,
+      Gauge.builder("app.gc.pause.time", gcBeans,
           beans -> beans.stream().mapToLong(GarbageCollectorMXBean::getCollectionTime).sum())
           .register(registry);
     };
