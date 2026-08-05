@@ -166,13 +166,60 @@ CloudWatchAsyncClient.builder()
 관련 개선안(위 1~4번)은 아직 하나도 적용되지 않은 상태이며, 별도로 진행해야 줄어드는
 부분이다.
 
+## 재측정 (CloudWatch AWS SDK CRT 전환, PR #78 배포 결과)
+
+PR #78("CloudWatch AWS SDK HTTP 클라이언트를 CRT로 전환해 논힙 메모리 절감")이 위 개선안
+1번(`apache-client` 제외)·2번(`netty-nio-client` → `aws-crt-client` 전환)을 그대로 구현해
+`develop`에 머지된 뒤, 같은 날 `release-server`에 배포됐다. 새 컨테이너 기동 직후(가동
+수 분 이내) 같은 운영 인스턴스를 동일한 방법론(`jcmd VM.metaspace`/`VM.classes`, SSM
+`terraform-admin` 프로파일)으로 배포 전/후 비교 측정했다.
+
+| 항목 | 배포 전(webflux 제거만 반영) | 배포 후(CRT 전환 반영) | 변화 |
+|---|---:|---:|---:|
+| 로드된 클래스 총합 | 25,531개 | 25,016개 | **-515개 (-2.0%)** |
+| Metaspace 실사용량(Non-Class+Class) | 109.94 MB | 102.47 MB | **-7.47 MB (-6.8%)** |
+| `io.netty.*` | 914개 | 498개 | **-416개 (-45.5%)** |
+| `software.amazon.awssdk.http.crt`/`awssdk.crt`(신규) | 0개 | 184개 | +184개(신규 도입) |
+| `software.amazon.awssdk.*` 전체 | 1,944개 | 1,970개 | +26개 |
+| `io.lettuce.*` | 528개 | 528개 | 변화 없음(예상대로) |
+| `reactor.core.*` | 333개 | 333개 | 변화 없음(예상대로) |
+
+`software.amazon.awssdk.*` 전체 카운트가 소폭 늘어난 건(1,944→1,970) `aws-crt-client`의
+JNI 래퍼 클래스도 같은 네임스페이스에 속해 함께 집계되기 때문이다. 실제 절감은
+`io.netty.*`에서 뚜렷하게 드러난다 — AWS SDK가 물고 있던 Netty 이벤트루프·코덱 스택이
+184개짜리 CRT 바인딩으로 교체되며 거의 절반(-45.5%)으로 줄었다. `io.lettuce.*`/
+`reactor.core.*`는 예상대로 전혀 변화가 없다(Lettuce는 `netty-nio-client`가 아니라
+`io.netty`를 직접 의존하므로 이번 exclude와 무관).
+
+개선안 1번(`apache-client` 제외)은 이미 로드되지 않고 있었으므로(측정 0개) 이번 절감폭에
+직접 기여하지 않았고, 실측 절감은 2번(CRT 전환)에서 전부 나왔다.
+
+## 종합 정리 — webflux 제거 + CloudWatch CRT 전환 두 PR 합산 효과
+
+이 문서에서 다룬 두 차례의 개선(`refactor: WebClient를 RestClient로 전환...`,
+`refactor: CloudWatch AWS SDK HTTP 클라이언트를 CRT로 전환...`)을 모두 반영하기 전(8/5
+최초 측정 시점)과 모두 반영한 뒤(오늘)를 직접 비교하면:
+
+| 항목 | 두 PR 반영 전(8/5 최초 측정) | 두 PR 반영 후(오늘) | 변화 |
+|---|---:|---:|---:|
+| 로드된 클래스 총합 | 26,387개 | 25,016개 | **-1,371개 (-5.2%)** |
+| Metaspace 실사용량(Non-Class+Class) | 114.63 MB | 102.47 MB | **-12.16 MB (-10.6%)** |
+
+8/4 최초 OOM 원인 규명 시점(124.6MiB)까지 거슬러 올라가면, 이번 세션에서 진행한 webflux
+제거 + CloudWatch CRT 전환 두 변경만으로 논힙 사용량을 약 12MB(10% 이상) 줄인 셈이다.
+절대적인 감소폭 자체는 t3.micro 총 메모리 대비 크지 않지만, "논힙은 무제한
+(`MaxMetaspaceSize: unlimited`)으로 계속 자라나 결국 OOM을 유발한다"는 원인 구조를 그대로
+둔 채 증상만 완화한 게 아니라, 실제로 불필요하게 로드되던 클래스 자체를 줄여 문제의 성장
+속도를 늦춘 조치라는 점에서 의미가 있다.
+
 ## 남은 공백
 
-- 위 CloudWatch 개선안은 아직 코드에 적용하지 않았다 — 우선순위와 적용 여부는 별도 논의 후 진행.
-- 개선안 적용 시 실제 절감폭은 추정치이며, 로컬/운영 재측정으로 검증이 필요하다.
-- `netty-nio-client`가 실제로 몇 개의 `io.netty.*` 클래스를 책임지는지(Lettuce·webflux
-  몫과 겹치지 않게) 정확히 분리 측정하지 못했다 — 패키지명 기반 집계의 한계로, 더 정밀한
-  분리는 클래스별 소속 JAR 확인이 필요하다.
+- CloudWatch 개선안 1번(`apache-client` 제외)·2번(CRT 전환)은 PR #78로 적용·배포·재측정까지
+  완료했다(위 "재측정" 섹션). 3번(SDK 자체 제거)·4번(AppCDS)은 여전히 미적용 — 3번은
+  리스크가 커서 권장하지 않고, 4번은 별도 작업으로 검토 가능하다.
+- `netty-nio-client`가 실제로 몇 개의 `io.netty.*` 클래스를 책임지는지 추정만 하고 정확히
+  분리 측정하지 못했던 공백은, 이번 재측정에서 전환 전/후 `io.netty.*`가 914→498개로 줄어든
+  것으로 간접 확인됐다(-416개 ≈ netty-nio-client 몫).
 
 ## 참고
 
