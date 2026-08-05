@@ -4,7 +4,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.client.RestClient;
 
 @Configuration
 public class KakaoAuthConfig {
@@ -12,9 +12,9 @@ public class KakaoAuthConfig {
     @Value("${kakao.auth.base-url}")
     private String baseUrl;
 
-    @Bean("kakaoAuthWebClient")
-    public WebClient kakaoAuthWebClient(
-        @Qualifier("webClientBuilder") WebClient.Builder builder
+    @Bean("kakaoAuthRestClient")
+    public RestClient kakaoAuthRestClient(
+        @Qualifier("restClientBuilder") RestClient.Builder builder
     ) {
         return builder
             .baseUrl(baseUrl)

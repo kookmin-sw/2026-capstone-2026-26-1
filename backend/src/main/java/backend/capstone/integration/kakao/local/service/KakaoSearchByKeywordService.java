@@ -9,7 +9,7 @@ import backend.capstone.integration.kakao.local.mapper.KakaoPlaceMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.reactive.function.client.WebClientException;
+import org.springframework.web.client.RestClientException;
 
 @Service
 @RequiredArgsConstructor
@@ -27,7 +27,7 @@ public class KakaoSearchByKeywordService {
             }
 
             return KakaoPlaceMapper.toPlaceSearchResponse(page, result);
-        } catch (WebClientException e) {
+        } catch (RestClientException e) {
             throw new BusinessException(KakaoPlaceErrorCode.KAKAO_PLACE_SEARCH_FAILED);
         }
     }

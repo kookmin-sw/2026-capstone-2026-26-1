@@ -5,7 +5,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
-import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.client.RestClient;
 
 @Configuration
 public class KakaoLocalConfig {
@@ -16,9 +16,9 @@ public class KakaoLocalConfig {
     @Value("${kakao.local.rest-api-key}")
     private String restApiKey;
 
-    @Bean("kakaoLocalWebClient")
-    public WebClient kakaoLocalWebClient(
-        @Qualifier("webClientBuilder") WebClient.Builder builder
+    @Bean("kakaoLocalRestClient")
+    public RestClient kakaoLocalRestClient(
+        @Qualifier("restClientBuilder") RestClient.Builder builder
     ) {
         return builder
             .baseUrl(baseUrl)

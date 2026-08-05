@@ -20,7 +20,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.reactive.function.client.WebClientException;
+import org.springframework.web.client.RestClientException;
 
 @Service
 @RequiredArgsConstructor
@@ -87,7 +87,7 @@ public class StayAnalysisService {
         try {
             searchResult = kakaoSearchByCategoryService.searchByCategory(stay.getCenterLatitude(),
                 stay.getCenterLongitude(), dayRoute.getUser().getId());
-        } catch (WebClientException e) {
+        } catch (RestClientException e) {
             log.error(
                 "카카오 장소 조회에 실패했습니다. 이름 없는 장소로 저장합니다. dayRouteId={}, lat={}, lon={}",
                 dayRoute.getId(), stay.getCenterLatitude(), stay.getCenterLongitude(), e);
