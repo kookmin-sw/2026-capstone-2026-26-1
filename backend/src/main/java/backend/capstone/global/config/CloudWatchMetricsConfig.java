@@ -13,6 +13,7 @@ import java.util.List;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import software.amazon.awssdk.http.crt.AwsCrtAsyncHttpClient;
 import software.amazon.awssdk.services.cloudwatch.CloudWatchAsyncClient;
 
 /**
@@ -32,7 +33,9 @@ public class CloudWatchMetricsConfig {
 
   @Bean
   public CloudWatchAsyncClient cloudWatchAsyncClient() {
-    return CloudWatchAsyncClient.create();
+    return CloudWatchAsyncClient.builder()
+        .httpClientBuilder(AwsCrtAsyncHttpClient.builder())
+        .build();
   }
 
   @Bean
